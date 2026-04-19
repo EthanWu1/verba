@@ -294,7 +294,8 @@ form{display:flex;flex-direction:column;gap:14px}
 
     <div class="divider">or with email</div>
 
-    <form onsubmit="event.preventDefault();location.href='app.html'">
+    <form id="auth-form">
+      <p class="err" id="auth-err" style="display:none;color:#c33;font:500 12px/1.3 var(--font-display);margin-top:4px"></p>
       <div class="field" id="name-field" style="display:none">
         <label>Name</label>
         <input type="text" placeholder="Jordan Reyes" autocomplete="name">
@@ -384,6 +385,7 @@ form{display:flex;flex-direction:column;gap:14px}
   </div>
 </aside>
 
+<script src="/api.js"></script>
 <script>
 (function(){
   const params = new URLSearchParams(location.search);
@@ -431,6 +433,31 @@ form{display:flex;flex-direction:column;gap:14px}
   tabs.forEach(t=>t.addEventListener('click',()=>setMode(t.dataset.mode)));
   switcherLink.addEventListener('click',e=>{e.preventDefault();setMode(switcherLink.dataset.target||'signup')});
   setMode(initMode);
+
+  const form = document.getElementById('auth-form');
+  const errEl = document.getElementById('auth-err');
+  function showErr(msg) { errEl.textContent = msg; errEl.style.display = ''; }
+  function clearErr() { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErr();
+    const mode = document.querySelector('.mode-tab.on')?.dataset?.mode || 'login';
+    const email = form.querySelector('input[type="email"]').value.trim();
+    const password = form.querySelector('input[type="password"]').value;
+    const nameField = document.getElementById('name-field');
+    const name = nameField && nameField.style.display !== 'none' ? nameField.querySelector('input').value.trim() : null;
+    try {
+      if (mode === 'signup') {
+        await window.VerbaAPI.auth.signup(email, password, name);
+      } else {
+        await window.VerbaAPI.auth.login(email, password);
+      }
+      location.href = '/app';
+    } catch (err) {
+      showErr(err.message || 'Sign-in failed');
+    }
+  });
 })();
 </script>
 </body>

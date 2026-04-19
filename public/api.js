@@ -72,6 +72,17 @@
       return { blob, filename };
     },
 
+    // --- auth ---
+    auth: {
+      signup: (email, password, name) => jsonFetch('/api/auth/signup', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
+      login:  (email, password)       => jsonFetch('/api/auth/login',  { method: 'POST', body: JSON.stringify({ email, password }) }),
+      logout: ()                      => jsonFetch('/api/auth/logout', { method: 'POST' }),
+      me:     ()                      => jsonFetch('/api/auth/me'),
+      google: (idToken)               => jsonFetch('/api/auth/google', { method: 'POST', body: JSON.stringify({ idToken }) }),
+      forgot: (email)                 => jsonFetch('/api/auth/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+      reset:  (token, password)       => jsonFetch('/api/auth/reset',  { method: 'POST', body: JSON.stringify({ token, password }) }),
+    },
+
     // --- contentions ---
     contentions: (topic) => jsonFetch('/api/contentions' + (topic ? `?topic=${encodeURIComponent(topic)}` : '')),
     createContention: (payload) => jsonFetch('/api/contentions', { method: 'POST', body: JSON.stringify(payload) }),
