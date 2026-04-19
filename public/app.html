@@ -1514,32 +1514,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   </div>
 </div>
 
-<!-- SETTINGS MODAL (opened via sidebar user-menu → Settings) -->
-<div class="modal-backdrop" id="settings-modal">
-  <div class="modal" role="dialog" aria-label="Settings" style="width:min(560px,92vw)">
-    <div class="modal-head"><h3>Settings</h3><button class="close" id="settings-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button></div>
-    <div class="modal-body">
-      <div class="filter-group"><span class="filter-group-label">Highlight color</span>
-        <div class="check-row" data-settings="highlight">
-          <button class="check-pill" data-val="cyan"><span style="width:14px;height:14px;border-radius:4px;background:#00FFFF;border:1px solid rgba(0,0,0,.08)"></span>Cyan</button>
-          <button class="check-pill" data-val="green"><span style="width:14px;height:14px;border-radius:4px;background:#00FF00;border:1px solid rgba(0,0,0,.08)"></span>Green</button>
-          <button class="check-pill on" data-val="yellow"><span style="width:14px;height:14px;border-radius:4px;background:#FFFF00;border:1px solid rgba(0,0,0,.08)"></span>Yellow</button>
-        </div></div>
-      <div class="filter-group"><span class="filter-group-label">Body font</span>
-        <select id="font-select" class="font-select">
-          <option value="calibri">Calibri</option>
-          <option value="inter">Inter</option>
-          <option value="times">Times New Roman</option>
-          <option value="georgia">Georgia</option>
-          <option value="serif">Newsreader (serif)</option>
-          <option value="mono">JetBrains Mono</option>
-          <option value="system">System UI</option>
-        </select></div>
-    </div>
-    <div class="modal-foot"><span style="font:12px/1 var(--font-display);color:var(--muted)">Changes apply live</span><button class="apply" id="settings-done">Done</button></div>
-  </div>
-</div>
-
 <!-- OLD TWEAKS (hidden) -->
 <button class="tweak-toggle hidden" id="tweak-toggle" title="Tweaks" style="display:none">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"></path></svg>
@@ -1787,14 +1761,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   const cardDel=document.getElementById('card-delete');
   if(cardDel){cardDel.addEventListener('click',()=>{if(confirm('Delete this generated card?'))showToast('Card deleted')})}
 
-  // Settings modal
-  const sM=document.getElementById('settings-modal'),sO=document.getElementById('settings-open'),sC=document.getElementById('settings-close'),sD=document.getElementById('settings-done');
-  if(sM){
-    if(sO)sO.addEventListener('click',()=>sM.classList.add('open'));
-    if(sC)sC.addEventListener('click',()=>sM.classList.remove('open'));
-    if(sD)sD.addEventListener('click',()=>sM.classList.remove('open'));
-    sM.addEventListener('click',e=>{if(e.target===sM)sM.classList.remove('open')});
-  }
   document.querySelectorAll('[data-settings]').forEach(g=>{
     g.querySelectorAll('.check-pill').forEach(p=>{
       p.addEventListener('click',()=>{
