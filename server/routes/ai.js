@@ -306,7 +306,7 @@ router.post('/chat-library-summary', async (req, res) => {
   }
 });
 
-router.get('/research-source-stream', async (req, res) => {
+router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), async (req, res) => {
   const query = String(req.query.query || '');
   const url = String(req.query.url || '');
   const argument = String(req.query.argument || query || '');
