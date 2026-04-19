@@ -24,7 +24,7 @@ function sessionMeta(req) {
 }
 
 function publicUser(u) {
-  return { id: u.id, email: u.email, name: u.name, tier: u.tier };
+  return { id: u.id, email: u.email, name: u.name, tier: u.tier, nameUpdatedAt: u.nameUpdatedAt };
 }
 
 router.post('/signup', async (req, res) => {
@@ -139,6 +139,49 @@ router.post('/reset', async (req, res) => {
   await auth.updatePassword(row.userId, password);
   db.prepare('UPDATE password_resets SET usedAt = ? WHERE tokenHash = ?').run(new Date().toISOString(), tokenHash);
   db.prepare('DELETE FROM sessions WHERE userId = ?').run(row.userId);
+  res.json({ ok: true });
+});
+
+router.patch('/profile', requireUser, (req, res) => {
+  const patch = req.body || {};
+  try {
+    if (typeof patch.name === 'string') {
+      const updated = auth.updateUserName(req.user.id, patch.name);
+      return res.json({ user: publicUser(updated) });
+    }
+    res.status(400).json({ error: 'no valid fields' });
+  } catch (err) {
+    if (err.code === 'NAME_COOLDOWN') {
+      return res.status(429).json({ error: err.message, nextAllowedAt: err.nextAllowedAt });
+    }
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.get('/sessions', requireUser, (req, res) => {
+  const rows = auth.listSessions(req.user.id).map(s => ({
+    id: s.id,
+    current: s.id === req.sessionId,
+    createdAt: s.createdAt,
+    lastSeenAt: s.lastSeenAt,
+    userAgent: s.userAgent,
+    ip: s.ip,
+  }));
+  res.json({ sessions: rows });
+});
+
+router.delete('/sessions/:id', requireUser, (req, res) => {
+  const targetId = String(req.params.id || '');
+  const mine = auth.listSessions(req.user.id).some(s => s.id === targetId);
+  if (!mine) return res.status(404).json({ error: 'not found' });
+  auth.deleteSession(targetId);
+  if (targetId === req.sessionId) res.clearCookie('verba.sid', { path: '/' });
+  res.json({ ok: true });
+});
+
+router.delete('/sessions', requireUser, (req, res) => {
+  auth.deleteAllSessionsForUser(req.user.id);
+  res.clearCookie('verba.sid', { path: '/' });
   res.json({ ok: true });
 });
 
