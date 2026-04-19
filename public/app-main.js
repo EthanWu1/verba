@@ -5,6 +5,17 @@
   const API = window.VerbaAPI;
   if (!API) { console.error('VerbaAPI missing'); return; }
 
+  (async () => {
+    try {
+      const who = await API.auth.me();
+      window.__verbaUser = who.user;
+      const btn = document.getElementById('settings-btn');
+      if (btn) btn.title = who.user.email;
+    } catch {
+      location.href = '/signin';
+    }
+  })();
+
   const $  = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -46,6 +57,10 @@
 
   $('#new-card-btn')?.addEventListener('click', () => go('home'));
   $('#settings-btn')?.addEventListener('click', () => $('#settings-modal')?.classList.add('open'));
+  document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    try { await API.auth.logout(); } catch {}
+    location.href = '/signin';
+  });
 
   try {
     const saved = localStorage.getItem('verba.page');
@@ -468,7 +483,7 @@
         finishProgress(true);
         const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
         if (activeJob === job) renderCardInPane(card);
-        API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model });
+        API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
         if (c.fidelity && c.fidelity.ok === false) {
           toast(`Fidelity: ${c.fidelity.missing.length} paraphrased span(s) — review`);
         } else {
@@ -779,9 +794,9 @@
 
     // If no projects — auto-save to All ("My Cards"/mine localStorage)
     if (!projects.length) {
-      const r = API.mine.save(card);
+      const r = await API.mine.save(card);
       if (r.duplicate) { toast('Already saved'); return; }
-      API.history.push({ type: 'save', tag: card.tag, cite: card.cite });
+      API.history.push({ type: 'save', tag: card.tag, cite: card.cite }).catch(() => {});
       toast('Added to All');
       return;
     }
@@ -805,9 +820,9 @@
       const pid = row.dataset.pid;
       try {
         await API.addProjectCard(pid, card);
-        const r = API.mine.save(card);
+        const r = await API.mine.save(card);
         if (r.duplicate) { toast('Already saved'); }
-        else { API.history.push({ type: 'save', tag: card.tag, cite: card.cite }); toast('Added ✓'); }
+        else { API.history.push({ type: 'save', tag: card.tag, cite: card.cite }).catch(() => {}); toast('Added ✓'); }
       } catch (err) { toast('Add failed: ' + err.message); }
       pop.classList.remove('open');
     }));
@@ -817,7 +832,7 @@
       try {
         const { project } = await API.createProject(name, '#6B7280');
         await API.addProjectCard(project.id, card);
-        const r = API.mine.save(card);
+        const r = await API.mine.save(card);
         toast(r.duplicate ? 'Already saved · added to ' + name : 'Added to ' + name);
       } catch (err) { toast('Create failed: ' + err.message); }
       pop.classList.remove('open');
@@ -909,7 +924,7 @@
           try {
             const { blob, filename } = await API.exportDocx(c);
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
-            API.history.push({ type: 'export', tag: c.tag, filename }); toast('Exported ' + filename);
+            API.history.push({ type: 'export', tag: c.tag, filename }).catch(() => {}); toast('Exported ' + filename);
           } catch (err) { toast('Export failed: ' + err.message); }
           finally { btn.classList.remove('busy'); }
           return;
@@ -998,9 +1013,9 @@
     renderProjectRail();
   }
 
-  function renderProjectRail() {
+  async function renderProjectRail() {
     const items = $('#proj-items'); if (!items) return;
-    const mine = API.mine.get();
+    const mine = await API.mine.get();
     const countFor = (pid) => pid === 'all' ? mine.length : (projState.list.find((p) => p.id === pid)?.cards || []).length;
     const rows = ['all', ...projState.list.map((p) => p.id)].map((pid) => {
       if (pid === 'all') {
@@ -1028,7 +1043,7 @@
           e.preventDefault(); el.classList.remove('drag-over');
           const cardId = e.dataTransfer.getData('text/verba-card');
           if (!cardId) return;
-          const card = API.mine.get().find((c) => c.id === cardId); if (!card) return;
+          const card = (await API.mine.get()).find((c) => c.id === cardId); if (!card) return;
           try {
             await API.addProjectCard(el.dataset.pid, card);
             await loadProjects();
@@ -1111,7 +1126,7 @@
       const blob = await res.blob();
       const filename = (res.headers.get('content-disposition') || '').match(/filename="?([^";]+)/)?.[1] || `${name || 'project'}.docx`;
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
-      API.history.push({ type: 'export', tag: 'Project: ' + (name || pid), filename });
+      API.history.push({ type: 'export', tag: 'Project: ' + (name || pid), filename }).catch(() => {});
       toast('Exported ' + filename);
     } catch (err) { toast('Export failed: ' + err.message); }
   }
@@ -1219,9 +1234,9 @@
     return yr ? `${name} '${yr}` : name;
   }
 
-  function renderMyCards() {
+  async function renderMyCards() {
     const grid = $('#mine-grid'); if (!grid) return;
-    const mine = API.mine.get();
+    const mine = await API.mine.get();
     const q = ($('#mine-search')?.value || '').toLowerCase().trim();
     let filtered = mine;
     if (projState.selected !== 'all') {
@@ -1273,13 +1288,13 @@
   document.addEventListener('click', async (e) => {
     const card = e.target.closest('#mine-grid .mycard'); if (!card) return;
     const id = card.dataset.mid;
-    const item = API.mine.get().find((c) => c.id === id); if (!item) return;
+    const item = (await API.mine.get()).find((c) => c.id === id); if (!item) return;
     const btn = e.target.closest('button');
     const act = btn?.dataset.act;
     if (btn) e.stopPropagation();
     if (act === 'del-mine') {
-      openConfirm({ title: 'Remove this card?', body: 'It will be removed from My Cards. Project references stay intact.' }, () => {
-        API.mine.remove(id); renderMyCards(); renderProjectRail(); toast('Removed');
+      openConfirm({ title: 'Remove this card?', body: 'It will be removed from My Cards. Project references stay intact.' }, async () => {
+        await API.mine.remove(id); renderMyCards(); renderProjectRail(); toast('Removed');
       });
       return;
     }
@@ -1289,7 +1304,7 @@
       try {
         const { blob, filename } = await API.exportDocx(item);
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
-        API.history.push({ type: 'export', tag: item.tag, filename }); toast('Exported ' + filename);
+        API.history.push({ type: 'export', tag: item.tag, filename }).catch(() => {}); toast('Exported ' + filename);
       } catch (err) { toast('Export failed: ' + err.message); }
       finally { btn?.classList.remove('busy'); }
       return;
@@ -1356,9 +1371,9 @@
     return datePart;
   }
 
-  function renderHistory() {
+  async function renderHistory() {
     const wrap = $('#hist-list'); if (!wrap) return;
-    const items = API.history.get();
+    const items = await API.history.get();
     const activeFilter = $('.hist-filter.on')?.dataset.hf || 'all';
     const ct = { all: items.length, cut: 0, save: 0, export: 0, edit: 0 };
     items.forEach((e) => { if (ct[e.type] != null) ct[e.type]++; });
@@ -1496,7 +1511,7 @@
         <span class="ap-cc-saved">+ Add</span>`;
       chip.querySelector('.ap-cc-tag').textContent = tag;
       chip.querySelector('.ap-cc-author').textContent = author;
-      chip.addEventListener('click', () => {
+      chip.addEventListener('click', async () => {
         const full = lastChatCards.get(id);
         if (!full) { toast('Card not found'); return; }
         const card = {
@@ -1507,7 +1522,7 @@
           body_markdown: full.body_markdown || full.body_plain || '',
           body_html: full.body_html || '',
         };
-        const r = API.mine.save(card);
+        const r = await API.mine.save(card);
         if (r && r.duplicate) { toast('Already saved'); return; }
         chip.classList.add('saved');
         const savedEl = chip.querySelector('.ap-cc-saved');
