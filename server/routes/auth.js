@@ -16,6 +16,13 @@ const COOKIE_OPTS = {
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
+function sessionMeta(req) {
+  return {
+    userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
+    ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim() || null,
+  };
+}
+
 function publicUser(u) {
   return { id: u.id, email: u.email, name: u.name, tier: u.tier };
 }
@@ -28,7 +35,7 @@ router.post('/signup', async (req, res) => {
   if (password.length < 8) return res.status(400).json({ error: 'password must be at least 8 characters' });
   try {
     const user = await auth.createUser({ email, password, name });
-    const sid = auth.createSession(user.id);
+    const sid = auth.createSession(user.id, sessionMeta(req));
     res.cookie('verba.sid', sid, COOKIE_OPTS);
     res.status(201).json({ user: publicUser(user) });
   } catch (err) {
@@ -44,7 +51,7 @@ router.post('/login', async (req, res) => {
   const user = auth.findUserByEmail(email);
   const ok = user ? await auth.verifyPassword(user, password) : false;
   if (!ok) return res.status(401).json({ error: 'invalid credentials' });
-  const sid = auth.createSession(user.id);
+  const sid = auth.createSession(user.id, sessionMeta(req));
   res.cookie('verba.sid', sid, COOKIE_OPTS);
   res.json({ user: publicUser(user) });
 });
@@ -80,7 +87,7 @@ router.post('/google', async (req, res) => {
       if (byEmail) { auth.linkGoogleSub(byEmail.id, sub); user = auth.findUserById(byEmail.id); }
       else         { user = auth._insertUserSync({ email, googleSub: sub, name }); }
     }
-    const sid = auth.createSession(user.id);
+    const sid = auth.createSession(user.id, sessionMeta(req));
     res.cookie('verba.sid', sid, COOKIE_OPTS);
     res.json({ user: publicUser(user) });
   } catch (err) {
@@ -98,8 +105,9 @@ router.get('/usage', requireUser, (req, res) => {
   const cutCard = limitsSvc.getCount(req.user.id, 'cutCard');
   res.json({
     tier: req.user.tier,
-    chat:   { used: chat,    limit: Number(process.env.FREE_CHAT_DAILY || 20) },
-    cutCard:{ used: cutCard, limit: Number(process.env.FREE_CUTCARD_DAILY || 10) },
+    chat:   { used: chat,    limit: Number(process.env.FREE_CHAT_DAILY || 10) },
+    cutCard:{ used: cutCard, limit: Number(process.env.FREE_CUTCARD_DAILY || 5) },
+    resetAt: limitsSvc.nextResetAt(),
   });
 });
 
