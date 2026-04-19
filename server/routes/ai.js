@@ -7,6 +7,9 @@
 
 const express = require('express');
 const router = express.Router();
+const requireUser = require('../middleware/requireUser');
+const enforceLimit = require('../middleware/enforceLimit');
+const CUT_DAILY_LIMIT = Number(process.env.FREE_CUTCARD_DAILY || 10);
 
 const { complete, completeStream, parseJSON, smartTruncate, getTokenStats, MODEL_CHAIN } = require('../services/llm');
 const { SYSTEM_PROMPT, buildCutPrompt, buildEditPrompt } = require('../prompts/cardCutter');
@@ -51,7 +54,7 @@ function verifyBodyFidelity(cardBody, sourceText) {
   };
 }
 
-router.post('/cut-card', async (req, res) => {
+router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), async (req, res) => {
   const { argument = '', bodyText = '', meta = {}, cite = '' } = req.body;
 
   if (!bodyText || bodyText.trim().length < 50) {

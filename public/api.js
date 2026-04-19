@@ -9,8 +9,10 @@
     let data;
     try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
     if (!res.ok) {
-      const msg = (data && data.error) || res.statusText || ('HTTP ' + res.status);
-      throw new Error(msg);
+      const err = new Error((data && data.error) || res.statusText || ('HTTP ' + res.status));
+      err.status = res.status;
+      err.body = data;
+      throw err;
     }
     return data;
   }
@@ -79,6 +81,7 @@
       logout: ()                      => jsonFetch('/api/auth/logout', { method: 'POST' }),
       me:     ()                      => jsonFetch('/api/auth/me'),
       google: (idToken)               => jsonFetch('/api/auth/google', { method: 'POST', body: JSON.stringify({ idToken }) }),
+      usage:  ()                      => jsonFetch('/api/auth/usage'),
       forgot: (email)                 => jsonFetch('/api/auth/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
       reset:  (token, password)       => jsonFetch('/api/auth/reset',  { method: 'POST', body: JSON.stringify({ token, password }) }),
     },

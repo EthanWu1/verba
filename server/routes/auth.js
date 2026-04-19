@@ -89,4 +89,15 @@ router.get('/config', (_req, res) => {
   res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID || null });
 });
 
+const limitsSvc = require('../services/limits');
+router.get('/usage', requireUser, (req, res) => {
+  const chat = limitsSvc.getCount(req.user.id, 'chat');
+  const cutCard = limitsSvc.getCount(req.user.id, 'cutCard');
+  res.json({
+    tier: req.user.tier,
+    chat:   { used: chat,    limit: Number(process.env.FREE_CHAT_DAILY || 20) },
+    cutCard:{ used: cutCard, limit: Number(process.env.FREE_CUTCARD_DAILY || 10) },
+  });
+});
+
 module.exports = router;
