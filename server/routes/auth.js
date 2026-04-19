@@ -1,9 +1,12 @@
 'use strict';
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const auth = require('../services/auth');
 const requireUser = require('../middleware/requireUser');
 const { OAuth2Client } = require('google-auth-library');
+const { sendPasswordReset } = require('../services/emailSender');
+const { getDb } = require('../services/db');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -98,6 +101,22 @@ router.get('/usage', requireUser, (req, res) => {
     chat:   { used: chat,    limit: Number(process.env.FREE_CHAT_DAILY || 20) },
     cutCard:{ used: cutCard, limit: Number(process.env.FREE_CUTCARD_DAILY || 10) },
   });
+});
+
+router.post('/forgot', async (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (!email) return res.status(400).json({ error: 'email required' });
+  const user = auth.findUserByEmail(email);
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    getDb().prepare('INSERT INTO password_resets (tokenHash, userId, expiresAt) VALUES (?, ?, ?)').run(tokenHash, user.id, expiresAt);
+    const base = process.env.PUBLIC_BASE_URL || 'http://localhost:3000';
+    const url = `${base}/reset?token=${encodeURIComponent(token)}`;
+    try { await sendPasswordReset(email, url); } catch (e) { console.error('[email] send failed', e.message); }
+  }
+  res.json({ ok: true });
 });
 
 module.exports = router;

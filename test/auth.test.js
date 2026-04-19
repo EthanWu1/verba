@@ -179,3 +179,20 @@ test('POST /api/auth/google rejects invalid token', async () => {
     assert.equal(r.status, 401);
   } finally { srv.close(); ctx.cleanup(); }
 });
+
+test('POST /api/auth/forgot creates token even for unknown email (no enumeration)', async () => {
+  const ctx = useTempDb();
+  process.env.SMTP_SKIP = '1';
+  process.env.PUBLIC_BASE_URL = 'http://localhost:3000';
+  const { srv, port } = await bootApp();
+  try {
+    const sent = await fetch(`http://127.0.0.1:${port}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'f@r.co', password: 'hunter22hunter22' }) });
+    assert.equal(sent.status, 201);
+    const known = await fetch(`http://127.0.0.1:${port}/api/auth/forgot`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'f@r.co' }) });
+    assert.equal(known.status, 200);
+    assert.equal((await known.json()).ok, true);
+    const unknown = await fetch(`http://127.0.0.1:${port}/api/auth/forgot`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'nobody@nope.co' }) });
+    assert.equal(unknown.status, 200);
+    assert.equal((await unknown.json()).ok, true);
+  } finally { srv.close(); ctx.cleanup(); }
+});
