@@ -53,12 +53,13 @@ async function verifyPassword(user, password) {
   return bcrypt.compare(password, user.passwordHash);
 }
 
-function createSession(userId) {
-  const db = getDb();
-  const id = crypto.randomBytes(32).toString('hex');
-  const now = Date.now();
-  db.prepare('INSERT INTO sessions (id, userId, createdAt, expiresAt) VALUES (?, ?, ?, ?)')
-    .run(id, userId, new Date(now).toISOString(), new Date(now + SESSION_TTL_MS).toISOString());
+function createSession(userId, meta = {}) {
+  const id = _newId('sess');
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  getDb().prepare(
+    'INSERT INTO sessions (id, userId, createdAt, expiresAt, lastSeenAt, userAgent, ip) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(id, userId, now, expiresAt, now, meta.userAgent || null, meta.ip || null);
   return id;
 }
 
@@ -81,6 +82,44 @@ function deleteSession(sessionId) {
   getDb().prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
 }
 
+function touchSession(sessionId) {
+  if (!sessionId) return;
+  try {
+    getDb().prepare('UPDATE sessions SET lastSeenAt = ? WHERE id = ?')
+      .run(new Date().toISOString(), sessionId);
+  } catch {}
+}
+
+function listSessions(userId) {
+  return getDb().prepare(
+    'SELECT id, createdAt, lastSeenAt, userAgent, ip FROM sessions WHERE userId = ? ORDER BY lastSeenAt DESC, createdAt DESC'
+  ).all(userId);
+}
+
+function deleteAllSessionsForUser(userId) {
+  getDb().prepare('DELETE FROM sessions WHERE userId = ?').run(userId);
+}
+
+function updateUserName(userId, name) {
+  const cleaned = String(name || '').trim();
+  if (!cleaned) throw new Error('name required');
+  if (cleaned.length > 60) throw new Error('name too long');
+  const u = findUserById(userId);
+  if (!u) throw new Error('user not found');
+  const last = u.nameUpdatedAt ? new Date(u.nameUpdatedAt).getTime() : 0;
+  const waitMs = 24 * 60 * 60 * 1000;
+  if (last && Date.now() - last < waitMs) {
+    const err = new Error('name was changed recently');
+    err.code = 'NAME_COOLDOWN';
+    err.nextAllowedAt = new Date(last + waitMs).toISOString();
+    throw err;
+  }
+  const now = new Date().toISOString();
+  getDb().prepare('UPDATE users SET name = ?, nameUpdatedAt = ? WHERE id = ?')
+    .run(cleaned, now, userId);
+  return findUserById(userId);
+}
+
 async function updatePassword(userId, newPassword) {
   if (!newPassword || newPassword.length < 8) throw new Error('password must be >= 8 chars');
   const hash = await bcrypt.hash(newPassword, 10);
@@ -90,5 +129,6 @@ async function updatePassword(userId, newPassword) {
 module.exports = {
   createUser, findUserByEmail, findUserById, findUserByGoogleSub, linkGoogleSub,
   verifyPassword, createSession, validateSession, deleteSession, updatePassword,
+  touchSession, listSessions, deleteAllSessionsForUser, updateUserName,
   _insertUserSync,
 };

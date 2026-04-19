@@ -160,6 +160,9 @@ function _initSchema(db) {
     try { db.exec(`ALTER TABLE sessions ADD COLUMN ${col.name} ${col.type}`); }
     catch (e) { /* column already exists */ }
   }
+
+  try { db.exec('ALTER TABLE users ADD COLUMN nameUpdatedAt TEXT'); }
+  catch (e) { /* already exists */ }
 }
 
 function _runMigrations(db) {
