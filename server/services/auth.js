@@ -81,8 +81,9 @@ function deleteSession(sessionId) {
   getDb().prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
 }
 
-function updatePassword(userId, newPassword) {
-  const hash = bcrypt.hashSync(newPassword, 10);
+async function updatePassword(userId, newPassword) {
+  if (!newPassword || newPassword.length < 8) throw new Error('password must be >= 8 chars');
+  const hash = await bcrypt.hash(newPassword, 10);
   getDb().prepare('UPDATE users SET passwordHash = ? WHERE id = ?').run(hash, userId);
 }
 
