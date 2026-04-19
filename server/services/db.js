@@ -91,11 +91,14 @@ function _initSchema(db) {
     );
 
     CREATE TABLE IF NOT EXISTS sessions (
-      id         TEXT PRIMARY KEY,
-      userId     TEXT NOT NULL,
-      createdAt  TEXT NOT NULL,
-      expiresAt  TEXT NOT NULL,
-      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      createdAt TEXT NOT NULL,
+      expiresAt TEXT NOT NULL,
+      lastSeenAt TEXT,
+      userAgent TEXT,
+      ip TEXT,
+      FOREIGN KEY(userId) REFERENCES users(id) ON DELETE CASCADE
     );
     CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions(userId);
 
@@ -147,6 +150,16 @@ function _initSchema(db) {
       FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
+
+  // Idempotent column adds for older DB files.
+  for (const col of [
+    { name: 'lastSeenAt', type: 'TEXT' },
+    { name: 'userAgent',  type: 'TEXT' },
+    { name: 'ip',         type: 'TEXT' },
+  ]) {
+    try { db.exec(`ALTER TABLE sessions ADD COLUMN ${col.name} ${col.type}`); }
+    catch (e) { /* column already exists */ }
+  }
 }
 
 function _runMigrations(db) {
