@@ -25,6 +25,16 @@
     clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2000);
   };
 
+  function handleLimitError(err) {
+    if (err && err.status === 429) {
+      const b = err.body || {};
+      toast(`Daily ${b.kind === 'cutCard' ? 'card-cut' : 'assistant-message'} limit (${b.limit}) reached. Resets at midnight UTC.`);
+      return true;
+    }
+    return false;
+  }
+  window.__handleLimitError = handleLimitError;
+
   /* ──────────────────────────────────────────
      ROUTER — 2 pages: home (Card Cutter), library
      ────────────────────────────────────────── */
@@ -1582,6 +1592,7 @@
         renderBot(reply);
       } catch (err) {
         thinking.stop();
+        if (handleLimitError(err)) return;
         const el = document.createElement('div');
         el.className = 'ap-msg bot';
         el.style.color = 'var(--danger)';
