@@ -105,9 +105,8 @@ router.get('/usage', requireUser, (req, res) => {
   const cutCard = limitsSvc.getCount(req.user.id, 'cutCard');
   res.json({
     tier: req.user.tier,
-    chat:   { used: chat,    limit: Number(process.env.FREE_CHAT_DAILY || 10) },
-    cutCard:{ used: cutCard, limit: Number(process.env.FREE_CUTCARD_DAILY || 5) },
-    resetAt: limitsSvc.nextResetAt(),
+    chat:   { used: chat,    limit: Number(process.env.FREE_CHAT_DAILY || 20) },
+    cutCard:{ used: cutCard, limit: Number(process.env.FREE_CUTCARD_DAILY || 10) },
   });
 });
 
