@@ -23,6 +23,7 @@ const chatRoutes        = require('./routes/chat');
 const projectsRoutes    = require('./routes/projects');
 const authRoutes        = require('./routes/auth');
 const mineRoutes        = require('./routes/mine');
+const historyRoutes     = require('./routes/history');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -54,6 +55,7 @@ app.use('/api/chat',          chatRoutes);
 app.use('/api/projects',      projectsRoutes);
 app.use('/api/auth',          authRoutes);
 app.use('/api/mine',          mineRoutes);
+app.use('/api/history',       historyRoutes);
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {

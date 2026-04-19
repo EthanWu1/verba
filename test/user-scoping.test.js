@@ -81,3 +81,26 @@ test('saved cards are per-user and dedup by fingerprint', async () => {
     assert.equal(listB.items.length, 0);
   } finally { srv.close(); ctx.cleanup(); }
 });
+
+test('history is per-user, ordered desc, capped', async () => {
+  const ctx = useTempDb();
+  delete require.cache[require.resolve('../server/routes/history')];
+  const express = require('express');
+  const cookieParser = require('cookie-parser');
+  const app = express();
+  app.use(express.json());
+  app.use(cookieParser());
+  app.use('/api/auth', require('../server/routes/auth'));
+  app.use('/api/history', require('../server/routes/history'));
+  const srv = app.listen(0);
+  const port = srv.address().port;
+  try {
+    const cookieA = await signupAndCookie(port, 'ha@s.co');
+    for (let i = 0; i < 3; i++) {
+      await fetch(`http://127.0.0.1:${port}/api/history`, { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookieA }, body: JSON.stringify({ entry: { label: 'e' + i } }) });
+    }
+    const list = await (await fetch(`http://127.0.0.1:${port}/api/history`, { headers: { Cookie: cookieA } })).json();
+    assert.equal(list.items.length, 3);
+    assert.equal(list.items[0].label, 'e2');
+  } finally { srv.close(); ctx.cleanup(); }
+});
