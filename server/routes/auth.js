@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../services/auth');
 const requireUser = require('../middleware/requireUser');
+const { OAuth2Client } = require('google-auth-library');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -54,6 +55,38 @@ router.post('/logout', (req, res) => {
   if (sid) auth.deleteSession(sid);
   res.clearCookie('verba.sid', { path: '/' });
   res.json({ ok: true });
+});
+
+router.post('/google', async (req, res) => {
+  const idToken = String(req.body?.idToken || '');
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!idToken) return res.status(400).json({ error: 'idToken required' });
+  if (!clientId) return res.status(500).json({ error: 'GOOGLE_CLIENT_ID not configured' });
+  try {
+    const client = new OAuth2Client(clientId);
+    const ticket = await client.verifyIdToken({ idToken, audience: clientId });
+    const payload = ticket.getPayload();
+    const sub = payload.sub;
+    const email = String(payload.email || '').toLowerCase();
+    const name = payload.name || null;
+    if (!email) return res.status(400).json({ error: 'google token missing email' });
+
+    let user = auth.findUserByGoogleSub(sub);
+    if (!user) {
+      const byEmail = auth.findUserByEmail(email);
+      if (byEmail) { auth.linkGoogleSub(byEmail.id, sub); user = auth.findUserById(byEmail.id); }
+      else         { user = auth._insertUserSync({ email, googleSub: sub, name }); }
+    }
+    const sid = auth.createSession(user.id);
+    res.cookie('verba.sid', sid, COOKIE_OPTS);
+    res.json({ user: publicUser(user) });
+  } catch (err) {
+    res.status(401).json({ error: 'google verification failed' });
+  }
+});
+
+router.get('/config', (_req, res) => {
+  res.json({ googleClientId: process.env.GOOGLE_CLIENT_ID || null });
 });
 
 module.exports = router;

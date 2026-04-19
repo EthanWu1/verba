@@ -166,3 +166,16 @@ test('POST /api/auth/logout clears session', async () => {
     assert.equal(who.status, 401);
   } finally { srv.close(); ctx.cleanup(); }
 });
+
+test('POST /api/auth/google rejects invalid token', async () => {
+  const ctx = useTempDb();
+  process.env.GOOGLE_CLIENT_ID = 'test-client-id.apps.googleusercontent.com';
+  const { srv, port } = await bootApp();
+  try {
+    const r = await fetch(`http://127.0.0.1:${port}/api/auth/google`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: 'not-a-real-token' }),
+    });
+    assert.equal(r.status, 401);
+  } finally { srv.close(); ctx.cleanup(); }
+});
