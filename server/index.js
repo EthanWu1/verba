@@ -11,6 +11,7 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const cookieParser = require('cookie-parser');
 
 const aiRoutes          = require('./routes/ai');
 const importRoutes      = require('./routes/import');
@@ -28,6 +29,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 /* ── Request logger ── */
 app.use((req, res, next) => {

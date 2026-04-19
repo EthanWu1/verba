@@ -50,3 +50,34 @@ test('createSession + validateSession + deleteSession', () => {
     assert.equal(auth.validateSession(sid), null);
   } finally { ctx.cleanup(); }
 });
+
+test('requireUser rejects missing cookie and accepts valid session', (t, done) => {
+  const ctx = useTempDb();
+  try {
+    delete require.cache[require.resolve('../server/services/db')];
+    delete require.cache[require.resolve('../server/services/auth')];
+    delete require.cache[require.resolve('../server/middleware/requireUser')];
+    const express = require('express');
+    const cookieParser = require('cookie-parser');
+    const auth = require('../server/services/auth');
+    const requireUser = require('../server/middleware/requireUser');
+
+    const app = express();
+    app.use(cookieParser());
+    app.get('/who', requireUser, (req, res) => res.json({ id: req.user.id }));
+
+    const u = auth._insertUserSync({ email: 'r@q.co', passwordHash: 'h' });
+    const sid = auth.createSession(u.id);
+
+    const srv = app.listen(0, async () => {
+      const port = srv.address().port;
+      const noCookie = await fetch(`http://127.0.0.1:${port}/who`);
+      assert.equal(noCookie.status, 401);
+      const ok = await fetch(`http://127.0.0.1:${port}/who`, { headers: { Cookie: `verba.sid=${sid}` } });
+      assert.equal(ok.status, 200);
+      const body = await ok.json();
+      assert.equal(body.id, u.id);
+      srv.close(() => { ctx.cleanup(); done(); });
+    });
+  } catch (e) { ctx.cleanup(); done(e); }
+});
