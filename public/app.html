@@ -1019,6 +1019,8 @@ p.figure-omitted{display:block;text-align:center}
 }
 .assistant-panel.open{transform:translateX(0)}
 .ap-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+.usage-pill{font:11px/1 var(--font-mono);color:var(--muted);background:var(--panel);border:1px solid var(--line-soft);border-radius:999px;padding:5px 10px;white-space:nowrap;opacity:.85}
+.usage-pill.warn{color:#B45309;border-color:#FCD34D;background:#FFFBEB}
 .ap-title{display:flex;align-items:center;gap:10px}
 .ap-dot{width:8px;height:8px;border-radius:50%;background:#10B981;box-shadow:0 0 0 0 rgba(16,185,129,0.55);animation:apDotPulse 2.2s ease-in-out infinite}
 @keyframes apDotPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.55);transform:scale(1)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0);transform:scale(1.08)}}
@@ -1054,12 +1056,38 @@ p.figure-omitted{display:block;text-align:center}
 .ap-card-chip.saved{background:#dcfce7;border-color:#16a34a;animation:chipPulse .5s ease-out}
 .ap-card-chip.saved .ap-cc-saved{color:#15803d;font-weight:600}
 @keyframes chipPulse{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
-.ap-input-row{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line-soft);background:#fafafa}
-.ap-input-row textarea{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:13px/1.4 var(--font-ui);resize:none;background:#fff}
-.ap-input-row textarea:focus{outline:none;border-color:var(--lilac-2);box-shadow:0 0 0 3px var(--lilac-soft)}
-.ap-send{width:34px;height:34px;align-self:flex-end;border-radius:8px;background:#111;color:#fff;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.ap-send:hover{background:#000}
+.ap-input-row{position:relative;display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px;border-top:1px solid var(--line-soft);background:linear-gradient(180deg,#fafafa,#f4f3f7)}
+.ap-composer{display:flex;align-items:flex-end;gap:6px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 12px;transition:border-color .14s,box-shadow .14s,transform .12s}
+.ap-composer:focus-within{border-color:var(--lilac-2);box-shadow:0 0 0 3px var(--lilac-soft)}
+.ap-input-row textarea{flex:1;padding:8px 2px;border:0;outline:none;background:transparent;font:13.5px/1.5 var(--font-ui);resize:none;color:var(--ink);min-height:22px;max-height:140px}
+.ap-input-row textarea::placeholder{color:var(--muted-2)}
+.ap-send{width:30px;height:30px;flex:none;align-self:flex-end;border-radius:9px;background:linear-gradient(180deg,#1f1b2e,#111);color:#fff;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .14s,transform .09s}
+.ap-send:hover{background:linear-gradient(180deg,var(--lilac-ink),#3d2a66)}
 .ap-send:active{transform:scale(.94)}
+.ap-hint{display:flex;gap:10px;align-items:center;padding:2px 6px 0;font:11px/1 var(--font-mono);color:var(--muted)}
+.ap-hint kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:1px 5px;font:10.5px/1 var(--font-mono);color:var(--ink-2)}
+.ap-hint .ap-hint-sp{flex:1}
+
+/* Assistant empty state + suggestion chips */
+.ap-empty{padding:22px 18px 4px;display:flex;flex-direction:column;gap:12px}
+.ap-empty h4{margin:0;font:600 15.5px/1.3 var(--font-display);color:var(--ink);letter-spacing:-0.01em}
+.ap-empty p{margin:0;font:13px/1.5 var(--font-ui);color:var(--muted)}
+.ap-empty p kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 5px;font:10.5px/1.4 var(--font-mono);color:var(--ink-2)}
+.ap-suggestions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ap-sugg{text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 11px;cursor:pointer;font:12.5px/1.35 var(--font-ui);color:var(--ink-2);transition:border-color .14s,background .14s,transform .12s,box-shadow .14s;display:flex;flex-direction:column;gap:2px}
+.ap-sugg:hover{border-color:var(--lilac-2);background:var(--lilac-soft);color:#111;box-shadow:var(--shadow-sm)}
+.ap-sugg:active{transform:scale(.98)}
+.ap-sugg .ap-sugg-h{font-weight:600;color:var(--ink);font-family:var(--font-display);font-size:12.5px}
+.ap-sugg .ap-sugg-s{color:var(--muted);font-size:11.5px}
+
+/* Slash command popover in assistant */
+.ap-slash-pop{position:absolute;left:12px;right:12px;bottom:calc(100% + 2px);z-index:11;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);padding:4px;display:none;max-height:260px;overflow:auto}
+.ap-slash-pop.open{display:block}
+.ap-slash-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;cursor:pointer;font:500 12.5px/1.2 var(--font-ui);color:var(--ink-2)}
+.ap-slash-row:hover,.ap-slash-row.sel{background:var(--lilac-soft);color:#111}
+.ap-slash-row .cmd{font:600 11.5px/1 var(--font-mono);color:#111;background:var(--panel);padding:3px 6px;border-radius:3px}
+.ap-slash-row .desc{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:auto}
+.ap-slash-row:hover .desc,.ap-slash-row.sel .desc{color:var(--ink-2)}
 
 /* Modal animations — generic .modal-backdrop */
 .modal-backdrop{transition:opacity .18s ease}
@@ -1110,6 +1138,40 @@ p.figure-omitted{display:block;text-align:center}
 .side-account .acct-settings:hover{background:var(--panel);color:var(--ink)}
 .side-account .acct-settings svg{width:14px;height:14px}
 
+.side-account{cursor:pointer;user-select:none}
+.side-account:hover{background:var(--panel)}
+.acct-caret{color:var(--muted);flex:0 0 auto;margin-left:6px;transition:transform .14s}
+.side-account[aria-expanded="true"] .acct-caret{transform:rotate(180deg);color:var(--ink)}
+
+.user-menu{
+  position:fixed;z-index:260;min-width:228px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 14px 32px -8px rgba(16,24,40,.18),0 2px 6px rgba(16,24,40,.06);
+  padding:6px;display:none;opacity:0;transform:translateY(6px);
+  transition:opacity .14s ease,transform .14s ease;
+}
+.user-menu.open{display:block;opacity:1;transform:translateY(0)}
+.user-menu-email{
+  padding:8px 10px 6px;font:500 12.5px/1.3 var(--font-display);
+  color:var(--ink-2);border-bottom:1px solid var(--line-soft);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;
+}
+.user-menu-item{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:6px;
+  font:500 13px/1 var(--font-display);color:var(--ink-2);
+  background:transparent;border:0;text-align:left;cursor:pointer;
+}
+.user-menu-item:hover{background:var(--panel);color:var(--ink)}
+.user-menu-item .user-menu-kbd{
+  margin-left:auto;font:500 10.5px/1 var(--font-mono);
+  color:var(--muted);background:var(--panel);border:1px solid var(--line);
+  border-radius:4px;padding:2px 5px;
+}
+.user-menu-item.danger{color:#B42318}
+.user-menu-item.danger:hover{background:#FEF2F2;color:#912018}
+.user-menu-sep{height:1px;background:var(--line-soft);margin:4px 2px}
+
 /* Uniform my-card layout */
 .mycard{position:relative}
 .mycard .date{position:absolute;top:10px;right:12px;font:11px/1 var(--font-mono);color:var(--muted)}
@@ -1152,9 +1214,9 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     <div>
       <div class="nav-group-label">Workspace</div>
       <nav class="nav">
-        <button class="nav-item active" data-page="home" data-screen-label="01 Card Cutter">
+        <button class="nav-item active" data-page="home" data-screen-label="01 Cutter">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15zM12 20l5-5 5 5-5-15-5 15z"></path></svg>
-          <span>Card Cutter</span>
+          <span>Cutter</span>
         </button>
       </nav>
       <div class="nav-group-label">Library</div>
@@ -1186,14 +1248,36 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <button class="upgrade-btn">Upgrade</button>
     </div>
 
-    <div class="side-account">
-      <div class="avatar">MA</div>
-      <div>
-        <div class="name">Marlborough A</div>
-        <div class="email">ma@verba.app</div>
+    <div class="side-account" id="side-account-row" role="button" tabindex="0" aria-haspopup="menu">
+      <div class="avatar" id="side-avatar">··</div>
+      <div style="min-width:0;flex:1;overflow:hidden">
+        <div class="name" id="side-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+        <div class="email" id="side-email" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
       </div>
-      <button class="acct-settings" id="settings-btn" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
+      <svg class="acct-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+
+    <div class="user-menu" id="user-menu" role="menu" aria-hidden="true">
+      <div class="user-menu-email" id="user-menu-email">—</div>
+      <button class="user-menu-item" data-act="settings" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6 1.65 1.65 0 0010 3.09V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.26.26.43.62.45 1V10a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Settings</span>
+        <kbd class="user-menu-kbd">⌘,</kbd>
+      </button>
+      <div class="user-menu-sep"></div>
+      <button class="user-menu-item" data-act="upgrade" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><path d="M12 3l9 9h-5v9h-8v-9H3z"/></svg>
+        <span>Upgrade plan</span>
+      </button>
+      <button class="user-menu-item" data-act="shortcuts" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
+        <span>Keyboard shortcuts</span>
+        <kbd class="user-menu-kbd">⌘/</kbd>
+      </button>
+      <div class="user-menu-sep"></div>
+      <button class="user-menu-item danger" data-act="logout" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        <span>Log out</span>
       </button>
     </div>
   </aside>
@@ -1202,7 +1286,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   <main class="main">
     <div class="topbar">
       <div class="crumb">
-        <span class="muted">Workspace</span><span class="sep">/</span><span id="crumb-page">Card Cutter</span>
+        <span class="muted">Workspace</span><span class="sep">/</span><span id="crumb-page">Cutter</span>
       </div>
       <button class="btn btn-sm source-reopen" id="source-reopen" style="display:none">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"></path></svg>
@@ -1221,9 +1305,10 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         <div class="page-head" style="margin-bottom:12px">
           <div>
             <p class="eyebrow">Workspace</p>
-            <h1 class="page-title" id="wb-title">Card Cutter</h1>
+            <h1 class="page-title" id="wb-title">Cutter</h1>
             <p class="page-sub">Paste a URL or type an argument. Select text in the generated card to highlight, underline, or bold.</p>
           </div>
+          <div class="usage-pill" id="cutter-usage" hidden></div>
         </div>
 
         <div class="research-bar-wrap">
@@ -1322,7 +1407,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               <div class="pane-head">
                 <div class="pane-title card"><span class="pip"></span><span id="ev-detail-title">Preview</span></div>
                 <div class="pane-actions">
-                  <button class="pane-action-btn" id="ev-open" title="Open in card cutter">
+                  <button class="pane-action-btn" id="ev-open" title="Open in cutter">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
                     Open
                   </button>
@@ -1363,7 +1448,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
                 <kbd class="k">/</kbd>
               </div>
               <div class="cards-grid" id="mine-grid">
-                <div style="grid-column:1/-1;padding:32px;color:var(--muted);font-size:13px">No saved cards yet. Cut one in Card Cutter.</div>
+                <div style="grid-column:1/-1;padding:32px;color:var(--muted);font-size:13px">No saved cards yet. Cut one in Cutter.</div>
               </div>
             </div>
           </div>
@@ -1429,7 +1514,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   </div>
 </div>
 
-<!-- SETTINGS MODAL (trigger lives beside nameplate as #settings-btn) -->
+<!-- SETTINGS MODAL (opened via sidebar user-menu → Settings) -->
 <div class="modal-backdrop" id="settings-modal">
   <div class="modal" role="dialog" aria-label="Settings" style="width:min(560px,92vw)">
     <div class="modal-head"><h3>Settings</h3><button class="close" id="settings-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button></div>
@@ -1451,7 +1536,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
           <option value="system">System UI</option>
         </select></div>
     </div>
-    <div class="modal-foot"><button class="apply" id="logout-btn" style="background:transparent;color:var(--muted);border:1px solid var(--muted);margin-right:auto">Log out</button><span style="font:12px/1 var(--font-display);color:var(--muted)">Changes apply live</span><button class="apply" id="settings-done">Done</button></div>
+    <div class="modal-foot"><span style="font:12px/1 var(--font-display);color:var(--muted)">Changes apply live</span><button class="apply" id="settings-done">Done</button></div>
   </div>
 </div>
 
@@ -1495,7 +1580,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <kbd>esc</kbd>
     </div>
     <div class="cmd-list" id="cmd-list">
-      <div class="cmd-item sel" data-go="home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15z"></path></svg>Open Card Cutter<span class="hint">Go</span></div>
+      <div class="cmd-item sel" data-go="home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15z"></path></svg>Open Cutter<span class="hint">Go</span></div>
       <div class="cmd-item" data-go="community"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h12a4 4 0 014 4v12H8a4 4 0 01-4-4V4z"></path></svg>Open Evidence<span class="hint">Go</span></div>
       <div class="cmd-item" data-go="contentions"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M3 12h18M3 18h12"></path></svg>Open Contentions<span class="hint">Go</span></div>
       <div class="cmd-item" data-go="saved"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>Open My Cards<span class="hint">Go</span></div>
@@ -1538,12 +1623,22 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <span class="ap-dot"></span>
       <div class="ap-heading"><span class="ap-name">Assistant</span><span class="ap-sep">•</span><span class="ap-sub">strategy chat</span></div>
     </div>
+    <div class="usage-pill" id="assistant-usage" hidden style="margin-left:auto;margin-right:8px"></div>
     <button class="ap-close" id="assistant-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
   </div>
   <div class="ap-messages" id="assistant-messages"></div>
   <div class="ap-input-row">
-    <textarea id="assistant-input" placeholder="Ask the assistant… (⌘↵ to send)" rows="2"></textarea>
-    <button id="assistant-send" class="ap-send" title="Send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+    <div class="ap-slash-pop" id="ap-slash-pop"></div>
+    <div class="ap-composer">
+      <textarea id="assistant-input" placeholder="Ask the assistant — type / for commands" rows="1"></textarea>
+      <button id="assistant-send" class="ap-send" title="Send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="ap-hint">
+      <span><kbd>/</kbd> commands</span>
+      <span><kbd>⇧↵</kbd> newline</span>
+      <span class="ap-hint-sp"></span>
+      <span><kbd>↵</kbd> send</span>
+    </div>
   </div>
 </aside>
 

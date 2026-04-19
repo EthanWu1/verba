@@ -5,12 +5,36 @@
   const API = window.VerbaAPI;
   if (!API) { console.error('VerbaAPI missing'); return; }
 
+  function computeInitials(name, email) {
+    const n = String(name || '').trim();
+    if (n) {
+      const parts = n.split(/\s+/).filter(Boolean);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      if (parts[0].length >= 2) return (parts[0][0] + parts[0][1]).toUpperCase();
+      return parts[0][0].toUpperCase();
+    }
+    const e = String(email || '').trim();
+    if (!e) return '··';
+    const local = e.split('@')[0] || '';
+    if (local.length >= 2) return (local[0] + local[1]).toUpperCase();
+    return (local[0] || e[0] || '·').toUpperCase();
+  }
+
+  function paintAccount(user) {
+    const av = document.getElementById('side-avatar');
+    const nm = document.getElementById('side-name');
+    const em = document.getElementById('side-email');
+    if (av) av.textContent = computeInitials(user.name, user.email);
+    if (nm) nm.textContent = user.name || (user.email ? user.email.split('@')[0] : 'Account');
+    if (em) em.textContent = user.email || '';
+  }
+
   (async () => {
     try {
       const who = await API.auth.me();
       window.__verbaUser = who.user;
-      const btn = document.getElementById('settings-btn');
-      if (btn) btn.title = who.user.email;
+      window.__verba = window.__verba || {};
+      paintAccount(who.user);
     } catch {
       location.href = '/signin';
     }
@@ -28,7 +52,7 @@
   function handleLimitError(err) {
     if (err && err.status === 429) {
       const b = err.body || {};
-      toast(`Daily ${b.kind === 'cutCard' ? 'card-cut' : 'assistant-message'} limit (${b.limit}) reached. Resets at midnight UTC.`);
+      toast(`Monthly ${b.kind === 'cutCard' ? 'card-cut' : 'assistant-message'} limit (${b.limit}) reached. Resets on the 1st (UTC).`);
       return true;
     }
     return false;
@@ -55,7 +79,7 @@
     });
     try { localStorage.setItem('verba.page', page); } catch {}
     const crumb = $('#crumb-page');
-    if (page === 'home' && crumb) crumb.textContent = 'Card Cutter';
+    if (page === 'home' && crumb) crumb.textContent = 'Cutter';
     if (page === 'library') {
       loadLibrary();
       if (libTab) switchLibTab(libTab);
@@ -66,11 +90,63 @@
   window.VerbaGo = go;
 
   $('#new-card-btn')?.addEventListener('click', () => go('home'));
-  $('#settings-btn')?.addEventListener('click', () => $('#settings-modal')?.classList.add('open'));
-  document.getElementById('logout-btn')?.addEventListener('click', async () => {
-    try { await API.auth.logout(); } catch {}
-    location.href = '/signin';
-  });
+  (function initUserMenu() {
+    const row = document.getElementById('side-account-row');
+    const menu = document.getElementById('user-menu');
+    if (!row || !menu) return;
+
+    function positionMenu() {
+      const r = row.getBoundingClientRect();
+      menu.style.left = r.left + 'px';
+      menu.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+      menu.style.width = r.width + 'px';
+    }
+    function openMenu() {
+      const u = window.__verbaUser || {};
+      const emEl = document.getElementById('user-menu-email');
+      if (emEl) emEl.textContent = u.email || '';
+      positionMenu();
+      menu.classList.add('open');
+      menu.setAttribute('aria-hidden', 'false');
+      row.setAttribute('aria-expanded', 'true');
+    }
+    function closeMenu() {
+      menu.classList.remove('open');
+      menu.setAttribute('aria-hidden', 'true');
+      row.setAttribute('aria-expanded', 'false');
+    }
+    row.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.contains('open') ? closeMenu() : openMenu();
+    });
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target) && e.target !== row) closeMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMenu();
+    });
+    window.addEventListener('resize', () => { if (menu.classList.contains('open')) positionMenu(); });
+
+    menu.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.user-menu-item');
+      if (!btn) return;
+      closeMenu();
+      const act = btn.dataset.act;
+      if (act === 'settings')   window.__verba.openSettings('general');
+      if (act === 'upgrade')    window.__verba.openPricing();
+      if (act === 'shortcuts')  window.__verba.openShortcuts();
+      if (act === 'logout') {
+        try { await API.auth.logout(); } catch {}
+        location.href = '/signin';
+      }
+    });
+
+    // ⌘, opens settings; ⌘/ opens shortcuts.
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); window.__verba.openSettings('general'); }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); window.__verba.openShortcuts(); }
+    });
+  })();
 
   try {
     const saved = localStorage.getItem('verba.page');
@@ -494,6 +570,7 @@
         const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
         if (activeJob === job) renderCardInPane(card);
         API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
+        try { window.__refreshUsage?.(); } catch {}
         if (c.fidelity && c.fidelity.ok === false) {
           toast(`Fidelity: ${c.fidelity.missing.length} paraphrased span(s) — review`);
         } else {
@@ -983,7 +1060,7 @@
     renderCardInPane(c);
     go('home');
     $('#wb-body')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    toast('Opened in card cutter');
+    toast('Opened in cutter');
   });
   $('#ev-addto')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1424,6 +1501,7 @@
   (function initAssistant() {
     const panel = $('#assistant-panel'), btn = $('#assistant-btn'), closeBtn = $('#assistant-close');
     const msgs = $('#assistant-messages'), input = $('#assistant-input'), send = $('#assistant-send');
+    const slashPop = $('#ap-slash-pop');
     if (!panel || !btn) return;
     const convo = [];
     const lastChatCards = new Map();
@@ -1433,7 +1511,21 @@
     btn.addEventListener('click', () => panel.classList.contains('open') ? close() : open());
     closeBtn?.addEventListener('click', close);
 
+    // Auto-grow textarea
+    function autosize() {
+      if (!input) return;
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+    }
+    input?.addEventListener('input', autosize);
+
+    function clearEmpty() {
+      const e = msgs.querySelector('.ap-empty');
+      if (e) e.remove();
+    }
+
     function appendUser(text) {
+      clearEmpty();
       const el = document.createElement('div');
       el.className = 'ap-msg user';
       el.textContent = text;
@@ -1573,16 +1665,122 @@
       return { el, stop: () => { clearInterval(iv); el.remove(); } };
     }
 
+    /* ── Slash commands + suggestions ── */
+    const COMMANDS = [
+      { cmd: '/clear',   desc: 'Clear chat' },
+      { cmd: '/find',    arg: '<query>', desc: 'Search My Cards' },
+      { cmd: '/block',   arg: '<topic>', desc: 'Draft a block — cards or analytics as fits' },
+      { cmd: '/explain', arg: '<what>',  desc: 'Explain a card or argument' },
+    ];
+
+    function runCommand(name, arg) {
+      arg = (arg || '').trim();
+      switch (name) {
+        case '/clear':
+          convo.length = 0; lastChatCards.clear(); msgs.innerHTML = ''; renderEmpty(); return;
+        case '/find': {
+          const s = $('#mine-search');
+          if (s) { s.value = arg; s.dispatchEvent(new Event('input')); }
+          try { go('library', 'mine'); } catch {}
+          toast(arg ? `Searching cards: "${arg}"` : 'Opened My Cards'); return;
+        }
+        case '/block': {
+          if (!arg) { input.value = '/block '; autosize(); input.focus(); return; }
+          input.value = `Write a block on: ${arg}. Use cards only if they actually help; otherwise give analytics, warrants, and framing. Choose the number of cards based on what's useful — not a fixed count.`;
+          autosize(); doSend(); return;
+        }
+        case '/explain': {
+          if (!arg) { input.value = '/explain '; autosize(); input.focus(); return; }
+          input.value = `Explain: ${arg}. State warrants, impact, and a response to the most likely answer.`;
+          autosize(); doSend(); return;
+        }
+      }
+    }
+
+    function handleSlashSubmit() {
+      const v = (input.value || '').trim();
+      if (!v.startsWith('/')) return false;
+      const sp = v.indexOf(' ');
+      const name = (sp === -1 ? v : v.slice(0, sp)).toLowerCase();
+      const arg  = sp === -1 ? '' : v.slice(sp + 1);
+      if (!COMMANDS.some(c => c.cmd === name)) return false;
+      input.value = ''; autosize();
+      slashPop?.classList.remove('open');
+      runCommand(name, arg);
+      return true;
+    }
+
+    let slashSel = 0;
+    function refreshSlashPop() {
+      if (!slashPop) return;
+      const v = input.value || '';
+      if (!v.startsWith('/')) { slashPop.classList.remove('open'); return; }
+      const first = v.slice(1).split(' ')[0].toLowerCase();
+      const matches = COMMANDS.filter(c => c.cmd.slice(1).startsWith(first));
+      if (!matches.length) { slashPop.classList.remove('open'); return; }
+      slashSel = Math.min(slashSel, matches.length - 1);
+      slashPop.innerHTML = matches.map((c, i) =>
+        `<div class="ap-slash-row${i === slashSel ? ' sel' : ''}" data-i="${i}">
+          <span class="cmd">${esc(c.cmd)}</span>
+          <span>${esc(c.desc)}</span>
+          ${c.arg ? `<span class="desc">${esc(c.arg)}</span>` : ''}
+        </div>`).join('');
+      slashPop._matches = matches;
+      slashPop.classList.add('open');
+      slashPop.querySelectorAll('.ap-slash-row').forEach((row, i) => {
+        row.addEventListener('mouseenter', () => { slashSel = i; refreshSlashHighlight(); });
+        row.addEventListener('click', () => selectSlash(i));
+      });
+    }
+    function refreshSlashHighlight() {
+      slashPop?.querySelectorAll('.ap-slash-row').forEach((r, i) => r.classList.toggle('sel', i === slashSel));
+    }
+    function selectSlash(i) {
+      const m = slashPop?._matches; if (!m || !m[i]) return;
+      const c = m[i];
+      input.value = c.arg ? c.cmd + ' ' : c.cmd;
+      autosize(); input.focus();
+      slashPop.classList.remove('open');
+      const n = input.value.length; input.setSelectionRange(n, n);
+    }
+
+    input?.addEventListener('input', refreshSlashPop);
+    input?.addEventListener('blur', () => setTimeout(() => slashPop?.classList.remove('open'), 150));
+
+    function renderEmpty() {
+      msgs.innerHTML = `
+        <div class="ap-empty">
+          <div>
+            <h4>What's on your mind?</h4>
+            <p>Ask for blocks, warrants, or evidence. Type <kbd>/</kbd> for commands.</p>
+          </div>
+          <div class="ap-suggestions">
+            <button class="ap-sugg" data-s="Write a block on AI regulation"><span class="ap-sugg-h">Block</span><span class="ap-sugg-s">on AI regulation</span></button>
+            <button class="ap-sugg" data-s="Give me the strongest warrant against deterrence theory"><span class="ap-sugg-h">Counter-warrant</span><span class="ap-sugg-s">against deterrence</span></button>
+            <button class="ap-sugg" data-s="Summarize my last saved card in 2 sentences"><span class="ap-sugg-h">Summarize</span><span class="ap-sugg-s">last saved card</span></button>
+            <button class="ap-sugg" data-s="Outline an affirmative case on climate adaptation"><span class="ap-sugg-h">Case outline</span><span class="ap-sugg-s">climate adaptation aff</span></button>
+          </div>
+        </div>`;
+      msgs.querySelectorAll('.ap-sugg').forEach(b => b.addEventListener('click', () => {
+        input.value = b.dataset.s; autosize();
+        if (b.dataset.s.startsWith('/')) handleSlashSubmit();
+        else doSend();
+      }));
+    }
+    renderEmpty();
+
     async function doSend() {
       const text = (input.value || '').trim();
       if (!text) return;
-      input.value = '';
+      if (text.startsWith('/') && handleSlashSubmit()) return;
+      input.value = ''; autosize();
       convo.push({ role: 'user', content: text });
       appendUser(text);
       const thinking = showThinking();
       try {
         const r = await API.chat({ messages: convo });
         thinking.stop();
+        refreshUsage();
         const reply = r.reply || r.message || r.content || (typeof r === 'string' ? r : JSON.stringify(r));
         if (Array.isArray(r.cards)) {
           lastChatCards.clear();
@@ -1602,9 +1800,55 @@
     }
     send?.addEventListener('click', doSend);
     input?.addEventListener('keydown', (e) => {
+      if (slashPop && slashPop.classList.contains('open')) {
+        const m = slashPop._matches || [];
+        if (e.key === 'ArrowDown') { e.preventDefault(); slashSel = (slashSel + 1) % m.length; refreshSlashHighlight(); return; }
+        if (e.key === 'ArrowUp')   { e.preventDefault(); slashSel = (slashSel - 1 + m.length) % m.length; refreshSlashHighlight(); return; }
+        if (e.key === 'Tab')       { e.preventDefault(); selectSlash(slashSel); return; }
+        if (e.key === 'Escape')    { e.preventDefault(); slashPop.classList.remove('open'); return; }
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); selectSlash(slashSel); return; }
+      }
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
     });
   })();
+
+  /* ──────────────────────────────────────────
+     Usage pill (free tier)
+     ────────────────────────────────────────── */
+  async function refreshUsage() {
+    const cutEl = document.getElementById('cutter-usage');
+    const chatEl = document.getElementById('assistant-usage');
+    if (!cutEl && !chatEl) return;
+    try {
+      const u = await API.usage();
+      if (!u || u.tier !== 'free') {
+        cutEl && (cutEl.hidden = true);
+        chatEl && (chatEl.hidden = true);
+        return;
+      }
+      const resetStr = u.resetAt
+        ? new Date(u.resetAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        : '';
+      const fmt = (k) => {
+        const used = k.used || 0, lim = k.limit || 0, left = Math.max(0, lim - used);
+        return { text: `${left}/${lim} left · resets ${resetStr}`, warn: left <= Math.max(1, Math.floor(lim * 0.2)) };
+      };
+      if (cutEl) {
+        const f = fmt(u.cutCard || {});
+        cutEl.textContent = `Cuts: ${f.text}`;
+        cutEl.classList.toggle('warn', f.warn);
+        cutEl.hidden = false;
+      }
+      if (chatEl) {
+        const f = fmt(u.chat || {});
+        chatEl.textContent = `Messages: ${f.text}`;
+        chatEl.classList.toggle('warn', f.warn);
+        chatEl.hidden = false;
+      }
+    } catch {}
+  }
+  window.__refreshUsage = refreshUsage;
+  refreshUsage();
 
   /* ──────────────────────────────────────────
      Bootstrap
