@@ -139,3 +139,30 @@ test('POST /api/auth/login success + wrong password', async () => {
     assert.equal(bad.status, 401);
   } finally { srv.close(); ctx.cleanup(); }
 });
+
+test('GET /api/auth/me returns user for valid cookie, 401 without', async () => {
+  const ctx = useTempDb();
+  const { srv, port } = await bootApp();
+  try {
+    const s = await fetch(`http://127.0.0.1:${port}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'm@e.co', password: 'hunter22hunter22' }) });
+    const cookie = s.headers.get('set-cookie').split(';')[0];
+    const who = await fetch(`http://127.0.0.1:${port}/api/auth/me`, { headers: { Cookie: cookie } });
+    assert.equal(who.status, 200);
+    assert.equal((await who.json()).user.email, 'm@e.co');
+    const anon = await fetch(`http://127.0.0.1:${port}/api/auth/me`);
+    assert.equal(anon.status, 401);
+  } finally { srv.close(); ctx.cleanup(); }
+});
+
+test('POST /api/auth/logout clears session', async () => {
+  const ctx = useTempDb();
+  const { srv, port } = await bootApp();
+  try {
+    const s = await fetch(`http://127.0.0.1:${port}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'o@u.co', password: 'hunter22hunter22' }) });
+    const cookie = s.headers.get('set-cookie').split(';')[0];
+    const out = await fetch(`http://127.0.0.1:${port}/api/auth/logout`, { method: 'POST', headers: { Cookie: cookie } });
+    assert.equal(out.status, 200);
+    const who = await fetch(`http://127.0.0.1:${port}/api/auth/me`, { headers: { Cookie: cookie } });
+    assert.equal(who.status, 401);
+  } finally { srv.close(); ctx.cleanup(); }
+});

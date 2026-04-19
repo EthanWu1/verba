@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../services/auth');
+const requireUser = require('../middleware/requireUser');
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -42,6 +43,17 @@ router.post('/login', async (req, res) => {
   const sid = auth.createSession(user.id);
   res.cookie('verba.sid', sid, COOKIE_OPTS);
   res.json({ user: publicUser(user) });
+});
+
+router.get('/me', requireUser, (req, res) => {
+  res.json({ user: publicUser(req.user) });
+});
+
+router.post('/logout', (req, res) => {
+  const sid = req.cookies && req.cookies['verba.sid'];
+  if (sid) auth.deleteSession(sid);
+  res.clearCookie('verba.sid', { path: '/' });
+  res.json({ ok: true });
 });
 
 module.exports = router;
