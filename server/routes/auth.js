@@ -32,4 +32,16 @@ router.post('/signup', async (req, res) => {
   }
 });
 
+router.post('/login', async (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const password = String(req.body?.password || '');
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  const user = auth.findUserByEmail(email);
+  const ok = user ? await auth.verifyPassword(user, password) : false;
+  if (!ok) return res.status(401).json({ error: 'invalid credentials' });
+  const sid = auth.createSession(user.id);
+  res.cookie('verba.sid', sid, COOKIE_OPTS);
+  res.json({ user: publicUser(user) });
+});
+
 module.exports = router;

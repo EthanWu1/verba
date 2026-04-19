@@ -126,3 +126,16 @@ test('POST /api/auth/signup rejects duplicate email', async () => {
     assert.equal(r2.status, 409);
   } finally { srv.close(); ctx.cleanup(); }
 });
+
+test('POST /api/auth/login success + wrong password', async () => {
+  const ctx = useTempDb();
+  const { srv, port } = await bootApp();
+  try {
+    await fetch(`http://127.0.0.1:${port}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'l@i.co', password: 'hunter22hunter22' }) });
+    const good = await fetch(`http://127.0.0.1:${port}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'l@i.co', password: 'hunter22hunter22' }) });
+    assert.equal(good.status, 200);
+    assert.match(good.headers.get('set-cookie') || '', /verba\.sid=/);
+    const bad = await fetch(`http://127.0.0.1:${port}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'l@i.co', password: 'WRONG' }) });
+    assert.equal(bad.status, 401);
+  } finally { srv.close(); ctx.cleanup(); }
+});
