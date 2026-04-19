@@ -6,7 +6,7 @@ const Database = require('better-sqlite3');
 const { deriveAllLabels } = require('./labelDerivation');
 
 const DATA_DIR = path.resolve(__dirname, '..', 'data');
-const DB_PATH = path.join(DATA_DIR, 'library.db');
+const DB_PATH = process.env.DB_PATH || path.join(DATA_DIR, 'library.db');
 
 let _db = null;
 
@@ -78,6 +78,73 @@ function _initSchema(db) {
     CREATE TABLE IF NOT EXISTS meta (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id            TEXT PRIMARY KEY,
+      email         TEXT NOT NULL UNIQUE,
+      passwordHash  TEXT,
+      googleSub     TEXT UNIQUE,
+      name          TEXT,
+      tier          TEXT NOT NULL DEFAULT 'free',
+      createdAt     TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id         TEXT PRIMARY KEY,
+      userId     TEXT NOT NULL,
+      createdAt  TEXT NOT NULL,
+      expiresAt  TEXT NOT NULL,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions(userId);
+
+    CREATE TABLE IF NOT EXISTS user_projects (
+      id         TEXT PRIMARY KEY,
+      userId     TEXT NOT NULL,
+      name       TEXT NOT NULL,
+      color      TEXT NOT NULL DEFAULT '#6B7280',
+      cards      TEXT NOT NULL DEFAULT '[]',
+      createdAt  TEXT NOT NULL,
+      updatedAt  TEXT NOT NULL,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_projects_userId ON user_projects(userId);
+
+    CREATE TABLE IF NOT EXISTS user_saved_cards (
+      id         TEXT PRIMARY KEY,
+      userId     TEXT NOT NULL,
+      payload    TEXT NOT NULL,
+      fingerprint TEXT NOT NULL,
+      savedAt    TEXT NOT NULL,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_user_saved_cards_fp ON user_saved_cards(userId, fingerprint);
+
+    CREATE TABLE IF NOT EXISTS user_history (
+      id        TEXT PRIMARY KEY,
+      userId    TEXT NOT NULL,
+      entry     TEXT NOT NULL,
+      at        TEXT NOT NULL,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_history_user_at ON user_history(userId, at DESC);
+
+    CREATE TABLE IF NOT EXISTS usage_counters (
+      userId   TEXT NOT NULL,
+      kind     TEXT NOT NULL,
+      day      TEXT NOT NULL,
+      count    INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (userId, kind, day),
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS password_resets (
+      tokenHash  TEXT PRIMARY KEY,
+      userId     TEXT NOT NULL,
+      expiresAt  TEXT NOT NULL,
+      usedAt     TEXT,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
 }
