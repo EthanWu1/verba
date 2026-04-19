@@ -21,6 +21,7 @@ const exportRoutes      = require('./routes/export');
 const contentionsRoutes = require('./routes/contentions');
 const chatRoutes        = require('./routes/chat');
 const projectsRoutes    = require('./routes/projects');
+const authRoutes        = require('./routes/auth');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -50,6 +51,7 @@ app.use('/api/export',        exportRoutes);
 app.use('/api/contentions',   contentionsRoutes);
 app.use('/api/chat',          chatRoutes);
 app.use('/api/projects',      projectsRoutes);
+app.use('/api/auth',          authRoutes);
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {

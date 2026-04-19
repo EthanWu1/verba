@@ -81,3 +81,48 @@ test('requireUser rejects missing cookie and accepts valid session', (t, done) =
     });
   } catch (e) { ctx.cleanup(); done(e); }
 });
+
+async function bootApp() {
+  delete require.cache[require.resolve('../server/services/db')];
+  delete require.cache[require.resolve('../server/services/auth')];
+  delete require.cache[require.resolve('../server/middleware/requireUser')];
+  delete require.cache[require.resolve('../server/routes/auth')];
+  const express = require('express');
+  const cookieParser = require('cookie-parser');
+  const app = express();
+  app.use(express.json());
+  app.use(cookieParser());
+  app.use('/api/auth', require('../server/routes/auth'));
+  return new Promise((resolve) => {
+    const srv = app.listen(0, () => resolve({ srv, port: srv.address().port }));
+  });
+}
+
+test('POST /api/auth/signup creates user + sets cookie', async () => {
+  const ctx = useTempDb();
+  const { srv, port } = await bootApp();
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'n@w.co', password: 'hunter22hunter22', name: 'N' }),
+    });
+    assert.equal(res.status, 201);
+    const body = await res.json();
+    assert.equal(body.user.email, 'n@w.co');
+    assert.match(res.headers.get('set-cookie') || '', /verba\.sid=/);
+    assert.match(res.headers.get('set-cookie') || '', /HttpOnly/i);
+  } finally { srv.close(); ctx.cleanup(); }
+});
+
+test('POST /api/auth/signup rejects duplicate email', async () => {
+  const ctx = useTempDb();
+  const { srv, port } = await bootApp();
+  try {
+    const payload = { email: 'd@u.co', password: 'hunter22hunter22' };
+    const r1 = await fetch(`http://127.0.0.1:${port}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    assert.equal(r1.status, 201);
+    const r2 = await fetch(`http://127.0.0.1:${port}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    assert.equal(r2.status, 409);
+  } finally { srv.close(); ctx.cleanup(); }
+});
