@@ -196,3 +196,35 @@ test('POST /api/auth/forgot creates token even for unknown email (no enumeration
     assert.equal((await unknown.json()).ok, true);
   } finally { srv.close(); ctx.cleanup(); }
 });
+
+test('POST /api/auth/reset consumes token and updates password', async () => {
+  const ctx = useTempDb();
+  process.env.SMTP_SKIP = '1';
+  process.env.PUBLIC_BASE_URL = 'http://localhost:3000';
+  const { srv, port } = await bootApp();
+  try {
+    await fetch(`http://127.0.0.1:${port}/api/auth/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 's@r.co', password: 'hunter22hunter22' }) });
+
+    const crypto = require('crypto');
+    delete require.cache[require.resolve('../server/services/db')];
+    const { getDb } = require('../server/services/db');
+    const auth = require('../server/services/auth');
+    const user = auth.findUserByEmail('s@r.co');
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    getDb().prepare('INSERT INTO password_resets (tokenHash, userId, expiresAt) VALUES (?, ?, ?)').run(tokenHash, user.id, expiresAt);
+
+    const bad = await fetch(`http://127.0.0.1:${port}/api/auth/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: 'wrong', password: 'newpass22newpass22' }) });
+    assert.equal(bad.status, 400);
+
+    const ok = await fetch(`http://127.0.0.1:${port}/api/auth/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password: 'newpass22newpass22' }) });
+    assert.equal(ok.status, 200);
+
+    const reuse = await fetch(`http://127.0.0.1:${port}/api/auth/reset`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password: 'again22again22' }) });
+    assert.equal(reuse.status, 400);
+
+    const login = await fetch(`http://127.0.0.1:${port}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 's@r.co', password: 'newpass22newpass22' }) });
+    assert.equal(login.status, 200);
+  } finally { srv.close(); ctx.cleanup(); }
+});

@@ -119,4 +119,20 @@ router.post('/forgot', async (req, res) => {
   res.json({ ok: true });
 });
 
+router.post('/reset', async (req, res) => {
+  const token = String(req.body?.token || '');
+  const password = String(req.body?.password || '');
+  if (!token || password.length < 8) return res.status(400).json({ error: 'token and 8+ char password required' });
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM password_resets WHERE tokenHash = ?').get(tokenHash);
+  if (!row) return res.status(400).json({ error: 'invalid token' });
+  if (row.usedAt) return res.status(400).json({ error: 'token already used' });
+  if (new Date(row.expiresAt).getTime() < Date.now()) return res.status(400).json({ error: 'token expired' });
+  await auth.updatePassword(row.userId, password);
+  db.prepare('UPDATE password_resets SET usedAt = ? WHERE tokenHash = ?').run(new Date().toISOString(), tokenHash);
+  db.prepare('DELETE FROM sessions WHERE userId = ?').run(row.userId);
+  res.json({ ok: true });
+});
+
 module.exports = router;
