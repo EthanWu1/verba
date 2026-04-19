@@ -84,6 +84,10 @@
       usage:  ()                      => jsonFetch('/api/auth/usage'),
       forgot: (email)                 => jsonFetch('/api/auth/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
       reset:  (token, password)       => jsonFetch('/api/auth/reset',  { method: 'POST', body: JSON.stringify({ token, password }) }),
+      updateProfile:    (patch)    => jsonFetch('/api/auth/profile', { method: 'PATCH', body: JSON.stringify(patch) }),
+      listSessions:     ()         => jsonFetch('/api/auth/sessions'),
+      revokeSession:    (id)       => jsonFetch('/api/auth/sessions/' + encodeURIComponent(id), { method: 'DELETE' }),
+      revokeAllSessions:()         => jsonFetch('/api/auth/sessions', { method: 'DELETE' }),
     },
 
     // --- contentions ---
