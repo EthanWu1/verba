@@ -51,3 +51,33 @@ test('projects require auth and are isolated per user', async () => {
     assert.equal(listB.items.length, 0);
   } finally { srv.close(); ctx.cleanup(); }
 });
+
+test('saved cards are per-user and dedup by fingerprint', async () => {
+  const ctx = useTempDb();
+  delete require.cache[require.resolve('../server/routes/mine')];
+  const express = require('express');
+  const cookieParser = require('cookie-parser');
+  const app = express();
+  app.use(express.json());
+  app.use(cookieParser());
+  app.use('/api/auth', require('../server/routes/auth'));
+  app.use('/api/mine', require('../server/routes/mine'));
+  const srv = app.listen(0);
+  const port = srv.address().port;
+  try {
+    const cookieA = await signupAndCookie(port, 'ma@s.co');
+    const cookieB = await signupAndCookie(port, 'mb@s.co');
+
+    const card = { tag: 'T', cite: 'C', body_plain: 'hello world' };
+    const r1 = await fetch(`http://127.0.0.1:${port}/api/mine`, { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookieA }, body: JSON.stringify({ card }) });
+    assert.equal(r1.status, 201);
+    const r2 = await fetch(`http://127.0.0.1:${port}/api/mine`, { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookieA }, body: JSON.stringify({ card }) });
+    assert.equal(r2.status, 200);
+    assert.equal((await r2.json()).duplicate, true);
+
+    const listA = await (await fetch(`http://127.0.0.1:${port}/api/mine`, { headers: { Cookie: cookieA } })).json();
+    const listB = await (await fetch(`http://127.0.0.1:${port}/api/mine`, { headers: { Cookie: cookieB } })).json();
+    assert.equal(listA.items.length, 1);
+    assert.equal(listB.items.length, 0);
+  } finally { srv.close(); ctx.cleanup(); }
+});
