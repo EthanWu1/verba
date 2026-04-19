@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+*.log
+
+# Env
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated/import artifacts
+imports/
+*.zip
+*.docx
+*.dotm
+obsidian-context.json
+
+# SQLite DB + big regeneratable JSON corpora
+server/data/library.db
+server/data/library.db-shm
+server/data/library.db-wal
+server/data/library.db.bak-*
+server/data/library-cards.json
+server/data/library-meta.json
+server/data/*.log
+
+# Editor / IDE
+.vscode/
+.idea/

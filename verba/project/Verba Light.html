@@ -1,0 +1,1913 @@
+<!DOCTYPE html><html lang="en"><head>
+
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verba — Soft-Paper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+
+<script>
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "accent": "lilac",
+  "density": "comfy",
+  "terminal": "closed",
+  "font": "calibri",
+  "highlight": "cyan"
+}/*EDITMODE-END*/;
+</script>
+
+<style>
+:root{
+  --bg:#FFFFFF;
+  --panel:#F9FAFB;
+  --panel-2:#F3F4F6;
+  --panel-3:#FFFFFF;
+  --line:#E5E7EB;
+  --line-2:#D1D5DB;
+  --line-soft:#F1F2F4;
+  --ink:#0F172A;
+  --ink-2:#1F2937;
+  --muted:#6B7280;
+  --muted-2:#9CA3AF;
+  --muted-3:#C7CAD1;
+
+  --lilac:#000000;
+  --lilac-2:#111111;
+  --lilac-3:#262626;
+  --lilac-ink:#FFFFFF;
+  --lilac-soft:#F4F4F5;
+
+  --ok:#047857;
+  --ok-soft:#ECFDF5;
+  --warn:#B45309;
+  --warn-soft:#FFF7ED;
+  --danger:#B91C1C;
+  --danger-soft:#FEF2F2;
+  --info:#1D4ED8;
+  --info-soft:#EFF6FF;
+
+  --shadow-sm: 0 1px 2px rgba(16,24,40,0.04), 0 1px 1px rgba(16,24,40,0.03);
+  --shadow:   0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 24px -8px rgba(16,24,40,0.10), 0 4px 8px -4px rgba(16,24,40,0.06);
+  --shadow-glow: 0 0 0 4px rgba(220,208,255,0.55), 0 6px 16px -4px rgba(124,101,212,0.18);
+
+  --radius-sm:4px;
+  --radius:8px;
+  --radius-lg:12px;
+
+  --font-ui:'Calibri','Calibri MS',Inter,system-ui,-apple-system,sans-serif;
+  --font-display:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+body.font-inter{ --font-ui:'Inter',system-ui,sans-serif; }
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow:hidden;font-size:15px;line-height:1.5}
+button,input,textarea,select{font:inherit;color:inherit;background:none;border:0;outline:0}
+button{cursor:pointer}
+a{color:inherit;text-decoration:none}
+kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:2px 5px}
+::selection{background:#D1D5DB;color:var(--ink)}
+.pane-body.doc .hl::selection,.pane-body.doc .hl ::selection,.warrant.hl::selection,.warrant.hl ::selection{background:#9CA3AF;color:#111}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(15,23,42,0.10);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(15,23,42,0.20);background-clip:padding-box;border:2px solid transparent}
+
+/* ── Shell ── */
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr) var(--nexus-w,360px);height:100vh;transition:grid-template-columns .25s ease}
+body.nexus-closed .shell{grid-template-columns:240px minmax(0,1fr) 0}
+
+/* ── Sidebar ── */
+.sidebar{
+  background:var(--panel);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:18px 14px 14px;gap:16px;min-height:0;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 6px 0}
+.brand-mark{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(160deg,#FFFFFF,var(--lilac-soft));
+  border:1px solid var(--line);
+  display:grid;place-items:center;
+  font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--lilac-ink);
+  box-shadow:var(--shadow-sm);
+  letter-spacing:-0.02em;
+}
+.brand-name{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-0.01em;color:var(--ink)}
+.brand-plan{color:var(--muted);font-size:11.5px;margin-top:1px;font-family:var(--font-display)}
+
+.side-search{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;margin:2px 0;
+  background:#fff;border:1px solid var(--line);border-radius:var(--radius-sm);
+  color:var(--muted);font-size:13px;cursor:pointer;transition:border-color .15s,color .15s,box-shadow .15s;
+  font-family:var(--font-display);box-shadow:var(--shadow-sm);
+}
+.side-search:hover{border-color:var(--line-2);color:var(--ink-2)}
+.side-search .s-k{margin-left:auto}
+
+.nav-group-label{color:var(--muted-2);font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;padding:14px 10px 6px;font-family:var(--font-display)}
+.nav{display:flex;flex-direction:column;gap:1px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:6px;
+  color:var(--ink-2);font-size:14px;font-weight:500;
+  font-family:var(--font-display);
+  transition:background .14s,color .14s;position:relative;
+}
+.nav-item:hover{background:#fff;box-shadow:var(--shadow-sm)}
+.nav-item.active{background:#fff;box-shadow:var(--shadow-sm);color:var(--ink)}
+.nav-item.active::before{
+  content:"";position:absolute;left:-14px;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;
+  background:var(--lilac-3);
+}
+.nav-item .ico{width:16px;height:16px;color:var(--muted);flex:0 0 auto;stroke-width:1.5}
+.nav-item.active .ico{color:#111}
+.nav-item .count{margin-left:auto;font:500 11px/1 var(--font-mono);color:var(--muted)}
+
+.side-spacer{flex:1}
+
+.upgrade-card{
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:linear-gradient(180deg,#fff,var(--lilac-soft));
+  padding:14px;position:relative;box-shadow:var(--shadow-sm);
+}
+.upgrade-orb{
+  width:32px;height:32px;border-radius:50%;
+  background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.9),transparent 55%),
+             radial-gradient(circle at 70% 70%,var(--lilac-3),var(--lilac) 70%);
+  margin-bottom:10px;box-shadow:0 2px 6px rgba(124,101,212,0.25);
+}
+.upgrade-card h4{margin:0 0 3px;font-size:13px;font-weight:600;font-family:var(--font-display)}
+.upgrade-card p{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.45;font-family:var(--font-display)}
+.upgrade-btn{
+  width:100%;padding:8px 10px;border-radius:6px;
+  background:var(--lilac);color:var(--lilac-ink);font-size:12.5px;font-weight:600;
+  font-family:var(--font-display);transition:background .14s;
+  border:1px solid transparent;
+}
+.upgrade-btn:hover{background:var(--lilac-2)}
+.upgrade-dismiss{position:absolute;top:8px;right:8px;color:var(--muted-2);padding:3px;border-radius:4px}
+.upgrade-dismiss:hover{color:var(--ink-2);background:rgba(0,0,0,0.04)}
+
+.side-account{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 6px 2px;border-top:1px solid var(--line);margin-top:2px;
+}
+.avatar{
+  width:28px;height:28px;border-radius:50%;flex:0 0 auto;
+  background:linear-gradient(140deg,var(--lilac-2),var(--lilac));
+  color:var(--lilac-ink);display:grid;place-items:center;
+  font-size:11px;font-weight:700;font-family:var(--font-display);
+  box-shadow:var(--shadow-sm);
+}
+.side-account .name{font-size:13px;font-weight:600;font-family:var(--font-display)}
+.side-account .email{font-size:11px;color:var(--muted);font-family:var(--font-display)}
+.side-account .more{margin-left:auto;color:var(--muted);padding:4px;border-radius:4px}
+.side-account .more:hover{color:var(--ink);background:rgba(0,0,0,0.04)}
+
+/* ── Main area ── */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--bg)}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 28px 10px;
+  flex:0 0 auto;min-height:52px;background:var(--bg);
+}
+.topbar .crumb{display:flex;align-items:center;gap:10px;font:600 14px/1 var(--font-display);color:var(--ink);letter-spacing:-.01em}
+.topbar .crumb .sep{color:var(--muted-3)}
+.topbar .crumb .muted{color:var(--muted);font-weight:500}
+.tabs{display:flex;gap:4px;align-items:center}
+.tab{
+  padding:8px 14px 10px;font-size:13.5px;font-weight:500;font-family:var(--font-display);
+  color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-12px;
+  transition:color .14s,border-color .14s;
+  display:flex;align-items:center;gap:6px;
+}
+.tab:hover{color:var(--ink-2)}
+.tab.active{color:var(--ink);border-bottom-color:var(--lilac-3)}
+.tab .count{font:500 10.5px/1 var(--font-mono);color:var(--muted-2);background:var(--panel);padding:2px 5px;border-radius:4px}
+.tab.active .count{color:#111;background:var(--lilac-soft)}
+
+.top-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{
+  width:32px;height:32px;border-radius:6px;display:grid;place-items:center;
+  color:var(--muted);border:1px solid transparent;
+  transition:background .14s,color .14s,border-color .14s;
+}
+.icon-btn:hover{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.icon-btn svg{stroke-width:1.5}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:6px;font-size:13px;font-weight:500;font-family:var(--font-display);
+  background:#fff;color:var(--ink);border:1px solid var(--line);
+  transition:background .14s,border-color .14s,transform .14s,box-shadow .14s;
+  box-shadow:var(--shadow-sm);
+}
+.btn:hover{border-color:var(--line-2);background:var(--panel)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{
+  background:var(--lilac);color:var(--lilac-ink);border-color:transparent;
+  box-shadow:var(--shadow-sm),0 1px 0 rgba(255,255,255,0.6) inset;
+}
+.btn-primary:hover{background:var(--lilac-2)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--muted);box-shadow:none}
+.btn-ghost:hover{background:var(--panel);color:var(--ink)}
+.btn-sm{padding:5px 10px;font-size:12.5px;border-radius:5px}
+
+/* ── Content ── */
+.content{flex:1;min-height:0;overflow:auto;padding:28px 36px 60px}
+.page{display:none}
+.page.active{display:block}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
+.eyebrow{color:var(--muted);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;margin:0 0 8px;font-family:var(--font-display)}
+.page-title{
+  font-size:32px;font-weight:700;letter-spacing:-0.025em;margin:0 0 6px;color:var(--ink);
+  font-family:var(--font-display);
+}
+.page-sub{color:var(--muted);font-size:14px;margin:0;max-width:560px;line-height:1.55;font-family:var(--font-display)}
+
+/* ── Research bar (center, top) ── */
+.research-bar-wrap{display:flex;justify-content:center;padding:6px 0 22px}
+.research-bar{
+  width:min(720px,100%);
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  padding:10px 14px;box-shadow:var(--shadow-sm);
+  transition:box-shadow .2s,border-color .2s;
+}
+.research-bar:focus-within{
+  border-color:var(--lilac-2);
+  box-shadow:var(--shadow-glow);
+}
+.research-bar svg{color:var(--muted);flex:0 0 auto}
+.research-bar input{
+  flex:1;font-size:15px;color:var(--ink);font-family:var(--font-ui);
+  background:transparent;
+}
+.research-bar input::placeholder{color:var(--muted-2)}
+.research-bar .enter{
+  display:grid;place-items:center;width:30px;height:30px;border-radius:6px;
+  background:var(--lilac);color:var(--lilac-ink);transition:background .14s;
+}
+.research-bar .enter:hover{background:var(--lilac-2)}
+.research-bar .plus{
+  display:grid;place-items:center;width:30px;height:30px;border-radius:6px;
+  color:var(--muted);border:1px dashed var(--line-2);
+}
+.research-bar .plus:hover{color:var(--ink);border-color:var(--lilac-3);background:var(--lilac-soft)}
+
+/* Staging chips (4px rounded) */
+.staging{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:22px;max-width:820px;margin-left:auto;margin-right:auto}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:4px 8px 4px 7px;border-radius:4px;
+  background:var(--panel);border:1px solid var(--line);
+  font-size:12px;color:var(--ink-2);font-family:var(--font-display);
+  transition:border-color .14s;
+}
+.chip:hover{border-color:var(--line-2)}
+.chip .spin{animation:spin 1.2s linear infinite;color:var(--lilac-3)}
+.chip.done .dot{background:var(--ok)}
+.chip.err .dot{background:var(--danger)}
+.chip .dot{width:6px;height:6px;border-radius:50%;background:var(--muted-2)}
+.chip .x{color:var(--muted-2);padding:0 2px;border-radius:3px}
+.chip .x:hover{color:var(--ink)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Section heading */
+.section-head{display:flex;align-items:baseline;justify-content:space-between;margin:24px 0 12px}
+.section-head h3{margin:0;font-size:15px;font-weight:600;font-family:var(--font-display);letter-spacing:-0.01em}
+.section-head .hint{color:var(--muted);font-size:12px;font-family:var(--font-display)}
+
+/* Workbench */
+.workbench{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;
+  min-height:520px;
+  transition:grid-template-columns .45s cubic-bezier(.22,.8,.3,1), gap .45s cubic-bezier(.22,.8,.3,1);
+  position:relative;
+}
+.workbench .pane.source{
+  transition:opacity .22s ease, transform .45s cubic-bezier(.22,.8,.3,1);
+  transform-origin:left center;min-width:0;
+}
+.workbench .pane:not(.source){
+  transition:transform .45s cubic-bezier(.22,.8,.3,1);
+}
+.workbench.source-hidden{grid-template-columns:0fr minmax(0,1fr);gap:0}
+.workbench.source-hidden .pane.source{
+  opacity:0;transform:scale(.96) translateX(-12px);pointer-events:none;overflow:hidden;
+}
+/* Nondescript reopen handle — a slim vertical tab on the left edge */
+.source-handle{
+  position:absolute;top:50%;left:-2px;transform:translateY(-50%) scaleX(0);transform-origin:left center;
+  width:14px;height:56px;border-radius:0 6px 6px 0;
+  background:var(--panel-2);border:1px solid var(--line);border-left:0;
+  display:grid;place-items:center;color:var(--muted);cursor:pointer;z-index:4;
+  transition:transform .35s cubic-bezier(.22,.8,.3,1) .15s, background .14s, color .14s, width .14s;
+  box-shadow:var(--shadow-sm);
+}
+.source-handle:hover{background:#fff;color:var(--ink);width:18px}
+.source-handle svg{width:10px;height:10px;stroke-width:1.8;opacity:.75}
+.workbench.source-hidden .source-handle{transform:translateY(-50%) scaleX(1)}
+.source-reopen{display:none}
+.pane-close{width:24px;height:24px;border-radius:5px;display:grid;place-items:center;color:var(--muted);border:1px solid transparent;cursor:pointer}
+.pane-close:hover{background:var(--panel);color:var(--danger);border-color:var(--line)}
+.pane{
+  border:1px solid var(--line);border-radius:8px;background:#fff;
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.pane-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid var(--line-soft);flex:0 0 auto;
+}
+.pane-title{
+  display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;
+  color:var(--ink-2);font-family:var(--font-display);letter-spacing:-0.005em;
+}
+.pane-title .pip{width:7px;height:7px;border-radius:50%;background:var(--muted-3)}
+.pane-title.card .pip{background:var(--lilac-3)}
+.pane-actions{display:flex;gap:4px;align-items:center}
+.pane-body{flex:1;overflow:auto;padding:18px 22px}
+.pane-body.doc{font-family:var(--font-ui);font-size:14.5px;line-height:1.7;color:var(--ink-2)}
+.pane-body.doc p{margin:0 0 12px}
+.pane-body.doc .hl{background:#FEF3C7;padding:0 1px;border-radius:2px}
+body.hl-cyan .pane-body.doc .hl, body.hl-cyan .warrant.hl{background:#00FFFF}
+body.hl-green .pane-body.doc .hl, body.hl-green .warrant.hl{background:#1BFC06}
+body.hl-yellow .pane-body.doc .hl, body.hl-yellow .warrant.hl{background:#FBF719}
+/* Warrants: Bold + Underlined */
+.pane-body.doc .warrant{font-weight:700;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;color:var(--ink)}
+.pane-body.doc .u{text-decoration:underline;text-decoration-thickness:1.2px;text-underline-offset:2.5px;text-decoration-color:rgba(15,23,42,0.35);color:var(--ink)}
+/* Shrink: 8pt light gray */
+.pane-body.doc .shrink{font-size:8pt;color:#9CA3AF}
+
+.cite-block{
+  border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px;
+}
+.cite-block .tag{
+  font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);
+  letter-spacing:-0.01em;margin-bottom:6px;line-height:1.4;
+}
+.cite-block .meta{font-family:var(--font-display);font-size:11.5px;color:var(--muted)}
+.cite-block .meta b{color:var(--ink-2);font-weight:600}
+
+.pane-foot{
+  display:flex;align-items:center;gap:2px;padding:8px 10px;
+  border-top:1px solid var(--line-soft);background:var(--panel);
+  flex:0 0 auto;overflow-x:auto;
+}
+.tool-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 9px;border-radius:5px;
+  color:var(--ink-2);font-size:12px;font-weight:500;font-family:var(--font-display);
+  transition:background .14s,color .14s;white-space:nowrap;
+}
+.tool-btn:hover{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+.tool-btn svg{width:13px;height:13px;stroke-width:1.6}
+.tool-sep{width:1px;height:14px;background:var(--line);margin:0 4px}
+
+/* Tips card */
+.tips-card{
+  border:1px solid var(--line);border-radius:8px;background:#fff;padding:14px;box-shadow:var(--shadow-sm);
+}
+.tips-card h4{margin:0 0 10px;font-size:12.5px;font-weight:600;font-family:var(--font-display)}
+.tip-row{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--line-soft);align-items:flex-start}
+.tip-row:last-child{border-bottom:0}
+.tip-row span{font-size:12.5px;color:var(--ink-2);font-family:var(--font-display)}
+
+/* Evidence */
+.search-bar{
+  display:flex;align-items:center;gap:10px;
+  background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:9px 14px;margin-bottom:14px;box-shadow:var(--shadow-sm);
+}
+.search-bar input{flex:1;color:var(--ink);font-size:14px}
+.search-bar input::placeholder{color:var(--muted-2)}
+.search-bar .k{color:var(--muted)}
+
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filter-row .count{margin-left:auto;font:500 12px/1 var(--font-mono);color:var(--muted);font-family:var(--font-mono)}
+.filter-chip{
+  padding:5px 10px;border-radius:6px;background:#fff;
+  border:1px solid var(--line);font-size:12.5px;color:var(--ink-2);font-family:var(--font-display);
+  transition:all .14s;box-shadow:var(--shadow-sm);
+}
+.filter-chip:hover{border-color:var(--line-2)}
+.filter-chip.active{background:#111;color:#fff;border-color:#111}
+
+/* Filter button + summary */
+.filter-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 12px 7px 10px;border-radius:7px;background:#fff;
+  border:1px solid var(--line);font:500 12.5px/1 var(--font-display);color:var(--ink);
+  box-shadow:var(--shadow-sm);transition:all .14s;cursor:pointer;
+}
+.filter-btn:hover{border-color:var(--line-2);background:var(--panel)}
+.filter-btn svg{color:var(--muted)}
+.filter-btn-pill{
+  display:inline-grid;place-items:center;min-width:17px;height:17px;padding:0 5px;
+  border-radius:999px;background:var(--lilac-soft);color:var(--lilac-ink);
+  font:600 10.5px/1 var(--font-mono);border:1px solid var(--lilac-2);
+}
+.filter-summary{font:12px/1 var(--font-display);color:var(--muted);margin-left:4px}
+.filter-row .count{margin-left:auto}
+
+/* Filter modal */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(20,18,28,.28);backdrop-filter:blur(2px);
+  display:none;align-items:center;justify-content:center;z-index:200;
+  opacity:0;transition:opacity .16s ease;
+}
+.modal-backdrop.open{display:flex;opacity:1}
+.modal{
+  width:min(520px,92vw);background:#fff;border-radius:12px;
+  border:1px solid var(--line);box-shadow:0 24px 60px -20px rgba(30,25,50,.28),0 2px 8px rgba(0,0,0,.04);
+  overflow:hidden;transform:translateY(6px);transition:transform .18s ease;
+}
+.modal-backdrop.open .modal{transform:translateY(0)}
+.modal-head{padding:16px 20px 12px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font:600 15px/1.2 var(--font-display);color:var(--ink);letter-spacing:-0.01em}
+.modal-head .close{width:26px;height:26px;border-radius:5px;display:grid;place-items:center;color:var(--muted);border:1px solid transparent;cursor:pointer}
+.modal-head .close:hover{background:var(--panel);border-color:var(--line)}
+.modal-body{padding:18px 20px}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--panel)}
+.modal-foot .clear{font:500 12px/1 var(--font-display);color:var(--muted);padding:7px 10px;border-radius:6px;cursor:pointer}
+.modal-foot .clear:hover{background:#fff;color:var(--ink)}
+.modal-foot .apply{
+  padding:8px 14px;border-radius:7px;background:var(--ink);color:#fff;
+  font:600 12.5px/1 var(--font-display);border:1px solid var(--ink);cursor:pointer;box-shadow:var(--shadow-sm);
+}
+.modal-foot .apply:hover{background:#000}
+
+.filter-group{margin-bottom:18px}
+.filter-group:last-child{margin-bottom:0}
+.filter-group-label{font:600 10.5px/1 var(--font-mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:block}
+.check-row{display:flex;flex-wrap:wrap;gap:8px}
+.check-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;
+  border:1px solid var(--line);border-radius:7px;background:#fff;
+  font:500 12.5px/1 var(--font-display);color:#111;cursor:pointer;transition:all .14s;
+  user-select:none;
+}
+.check-pill:hover{border-color:var(--line-2);color:#000}
+.check-pill.on{background:#111;color:#fff;border-color:#111}
+.filter-group-label{color:#374151;font-weight:700}
+.modal-head h3{color:#000}
+.modal-foot .apply{background:#111;border-color:#111}
+.research-bar .enter{background:#111;color:#fff}
+.research-bar .enter:hover{background:#000}
+.research-bar .enter svg{color:#fff}
+.brand-mark{background:#111;color:#fff;border-color:#111}
+.check-pill:hover{border-color:var(--line-2)}
+.check-pill input{position:absolute;opacity:0;pointer-events:none}
+.check-pill .box{
+  width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line-2);background:#fff;
+  display:grid;place-items:center;transition:all .14s;flex:none;
+}
+.check-pill .box svg{opacity:0;transition:opacity .14s}
+.check-pill.on{background:var(--lilac-soft);color:#111;border-color:#111}
+.check-pill.on .box{background:#111;border-color:#111}
+.check-pill.on .box svg{opacity:1;color:#fff}
+
+.radio-row{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.radio-row label{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;
+  font:500 13px/1.2 var(--font-display);color:var(--ink);border-bottom:1px solid var(--line-soft);
+  transition:background .14s;
+}
+.radio-row label:last-child{border-bottom:0}
+.radio-row label:hover{background:var(--panel)}
+.radio-row input{position:absolute;opacity:0;pointer-events:none}
+.radio-row .dot{width:14px;height:14px;border-radius:999px;border:1.5px solid var(--line-2);background:#fff;flex:none;transition:all .14s;position:relative}
+.radio-row label.on .dot{border-color:var(--lilac-ink);background:var(--lilac-ink);box-shadow:inset 0 0 0 3px #fff}
+.radio-row .sub{color:var(--muted);font-weight:400;font-size:11.5px;margin-left:auto;font-family:var(--font-mono)}
+
+.evidence-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px;align-items:start}
+.ev-list{display:flex;flex-direction:column;gap:0;max-height:calc(100vh - 260px);overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;box-shadow:var(--shadow-sm)}
+.ev-item{
+  border:0;border-bottom:1px solid var(--line-soft);border-radius:0;background:#fff;
+  padding:10px 14px 28px;cursor:pointer;transition:background .14s;box-shadow:none;position:relative;
+}
+.ev-list .ev-item:last-child{border-bottom:0}
+.ev-item:hover{background:var(--panel)}
+.ev-item.active{background:var(--lilac-soft);box-shadow:inset 3px 0 0 var(--lilac-3)}
+.ev-item .head{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}
+.ev-item .row-actions{
+  position:absolute;right:10px;bottom:8px;display:flex;gap:4px;
+  opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;pointer-events:none;
+}
+.ev-item:hover .row-actions,.ev-item.active .row-actions{opacity:1;transform:translateY(0);pointer-events:auto}
+.row-action{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:5px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);font:500 11.5px/1 var(--font-display);color:var(--ink-2);cursor:pointer;transition:all .12s}
+.row-action:hover{background:#111;color:#fff;border-color:#111}
+.row-action svg{width:11px;height:11px;stroke-width:1.8}
+.row-action.primary{background:#111;color:#fff;border-color:#111}
+.row-action.primary:hover{background:#000}
+
+/* Folder popover */
+.folder-pop{position:absolute;z-index:120;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow-lg);min-width:220px;padding:6px;display:none}
+.folder-pop.open{display:block}
+.folder-pop .pop-head{padding:6px 10px 4px;font:600 10.5px/1 var(--font-display);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.folder-pop-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;cursor:pointer;font:500 12.5px/1.2 var(--font-display);color:var(--ink-2)}
+.folder-pop-row:hover{background:var(--panel)}
+.folder-pop-row .sw{width:8px;height:8px;border-radius:2px;flex:none}
+.folder-pop-row .ct{margin-left:auto;font:500 11px/1 var(--font-mono);color:var(--muted)}
+.folder-pop-row.new{border-top:1px solid var(--line-soft);color:#111;font-weight:600;margin-top:4px;padding-top:9px}
+
+/* My Cards folders rail */
+.saved-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;align-items:start}
+.folders-rail{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;box-shadow:var(--shadow-sm);position:sticky;top:0}
+.folders-rail h4{margin:4px 8px 8px;font:600 10.5px/1 var(--font-display);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.folder-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font:500 13px/1.2 var(--font-display);color:var(--ink-2);transition:background .14s}
+.folder-row:hover{background:var(--panel)}
+.folder-row.active{background:var(--lilac-soft);color:#111;font-weight:600}
+.folder-row .sw{width:8px;height:8px;border-radius:2px;flex:none;background:var(--muted-2)}
+.folder-row .ct{margin-left:auto;font:500 11px/1 var(--font-mono);color:var(--muted)}
+.folder-row.active .ct{color:#111}
+.folder-add{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;font:500 12.5px/1.2 var(--font-display);color:var(--muted);cursor:pointer;border-top:1px solid var(--line-soft);margin-top:4px;padding-top:10px}
+.folder-add:hover{color:#111;background:var(--panel)}
+.badge.topic{background:#fff;color:var(--ink-2);border-color:var(--line-2);font-weight:500}
+
+/* History */
+.hist-wrap{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:start}
+.hist-filters{display:flex;flex-direction:column;gap:2px;position:sticky;top:0}
+.hist-filter{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;font:500 13px/1 var(--font-display);color:var(--ink-2);transition:background .14s;border:0;background:none;text-align:left}
+.hist-filter:hover{background:var(--panel)}
+.hist-filter.on{background:#111;color:#fff}
+.hist-filter .ct{margin-left:auto;font:500 11px/1 var(--font-mono);color:inherit;opacity:.7}
+.hist-day{margin-bottom:28px}
+.hist-day-h{font:600 11px/1 var(--font-display);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line-soft)}
+.hist-row{display:grid;grid-template-columns:64px 28px minmax(0,1fr) auto;gap:12px;padding:9px 0;align-items:center}
+.hist-row+.hist-row{border-top:1px solid var(--line-soft)}
+.hist-time{font:500 11.5px/1 var(--font-mono);color:var(--muted)}
+.hist-dot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--panel);color:var(--ink-2);border:1px solid var(--line)}
+.hist-dot.cut{background:#F5F3FF;color:#5B21B6;border-color:#DDD6FE}
+.hist-dot.edit{background:#EFF6FF;color:var(--info);border-color:#DBEAFE}
+.hist-dot.export{background:#ECFDF5;color:var(--ok);border-color:#D1FAE5}
+.hist-dot.undelete{background:#FFF7ED;color:var(--warn);border-color:#FED7AA}
+.hist-dot svg{width:11px;height:11px;stroke-width:1.8}
+.hist-text{font-size:13.5px;color:var(--ink-2);font-family:var(--font-ui);line-height:1.45;min-width:0}
+.hist-text b{color:var(--ink);font-weight:600}
+.hist-text .src{color:var(--muted);font-size:12px;margin-left:6px}
+.hist-open{font:500 11.5px/1 var(--font-display);color:var(--muted);padding:5px 9px;border-radius:5px;border:1px solid var(--line);background:#fff;cursor:pointer;opacity:0;transition:opacity .14s}
+.hist-row:hover .hist-open{opacity:1}
+.hist-open:hover{background:#111;color:#fff;border-color:#111}
+.ev-item .tag{font-size:13.5px;margin-bottom:2px}
+.badge{
+  font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:600;letter-spacing:0.02em;
+  background:var(--panel);color:var(--ink-2);border:1px solid var(--line);font-family:var(--font-display);
+}
+.badge.aff{background:var(--ok-soft);color:var(--ok);border-color:#D1FAE5}
+.badge.neg{background:var(--danger-soft);color:var(--danger);border-color:#FECACA}
+.badge.k{background:#F5F3FF;color:#5B21B6;border-color:#DDD6FE}
+.badge.t{background:var(--info-soft);color:var(--info);border-color:#DBEAFE}
+.ev-item .date{margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+.ev-item .tag{font-size:14.5px;font-weight:600;color:var(--ink);font-family:var(--font-display);letter-spacing:-0.01em;line-height:1.4;margin-bottom:4px}
+.ev-item .cite{font-size:12px;color:var(--muted);font-family:var(--font-display)}
+
+.ev-detail{
+  border:1px solid var(--line);border-radius:8px;background:#fff;
+  overflow:hidden;position:sticky;top:0;box-shadow:var(--shadow);display:flex;flex-direction:column;
+  max-height:calc(100vh - 230px);
+}
+
+/* Contentions */
+.cont-grid{display:grid;grid-template-columns:220px 260px minmax(0,1fr);gap:14px;min-height:520px}
+.cont-col{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px;min-height:520px;display:flex;flex-direction:column;box-shadow:var(--shadow-sm)}
+.cont-col h4{margin:4px 8px 10px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--font-display)}
+.cont-list{display:flex;flex-direction:column;gap:2px;overflow:auto}
+.cont-row{
+  padding:9px 10px;border-radius:6px;cursor:pointer;transition:background .14s;
+  display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2);font-family:var(--font-display);
+}
+.cont-row:hover{background:var(--panel)}
+.cont-row.active{background:var(--lilac-soft);color:#111;font-weight:600}
+.cont-row .num{font:500 10.5px/1 var(--font-mono);color:var(--muted);min-width:14px}
+.cont-row .count{margin-left:auto;font:500 11px/1 var(--font-mono);color:var(--muted)}
+
+.cont-detail{padding:20px 22px;overflow:auto}
+.cont-detail h2{margin:0 0 6px;font-size:22px;font-weight:700;letter-spacing:-0.02em;font-family:var(--font-display)}
+.cont-detail .thesis{color:var(--ink-2);font-size:14.5px;line-height:1.65;margin:0 0 20px;max-width:640px;font-family:var(--font-ui)}
+.cont-detail .sub{
+  font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);font-weight:600;
+  margin:18px 0 8px;font-family:var(--font-display);
+}
+.arg-row{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:6px;
+  background:#fff;border:1px solid var(--line);margin-bottom:6px;box-shadow:var(--shadow-sm);
+}
+.arg-row .lnk{
+  font-size:10px;color:#111;font-family:var(--font-mono);
+  text-transform:uppercase;letter-spacing:0.06em;font-weight:600;
+  background:var(--lilac-soft);padding:3px 6px;border-radius:4px;
+}
+.arg-row .tag{font-size:13.5px;color:var(--ink);flex:1;font-weight:500;font-family:var(--font-display);letter-spacing:-0.005em}
+.arg-row .meta{font-size:11.5px;color:var(--muted);font-family:var(--font-display)}
+
+/* Contentions matrix view */
+.cont-viewtabs{display:flex;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.cont-vtab{padding:8px 12px;font:500 13px/1 var(--font-display);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;background:none;border-top:0;border-left:0;border-right:0}
+.cont-vtab:hover{color:var(--ink-2)}
+.cont-vtab.on{color:var(--ink);border-bottom-color:#111}
+.matrix{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:14px;min-height:560px}
+.matrix-cell{border:1px solid var(--line);border-radius:10px;background:#fff;padding:14px;display:flex;flex-direction:column;box-shadow:var(--shadow-sm);min-height:0}
+.matrix-cell h5{margin:0 0 2px;font:600 13px/1.2 var(--font-display);color:var(--ink);display:flex;align-items:center;gap:8px}
+.matrix-cell h5 .q{font:500 10px/1 var(--font-mono);color:#fff;background:#111;padding:3px 5px;border-radius:3px;letter-spacing:.04em}
+.matrix-cell .quad-sub{font-size:11.5px;color:var(--muted);margin:0 0 10px;font-family:var(--font-display)}
+.matrix-drop{flex:1;border:1.5px dashed transparent;border-radius:8px;padding:2px;display:flex;flex-direction:column;gap:6px;min-height:120px;transition:background .14s,border-color .14s}
+.matrix-drop.over{background:var(--lilac-soft);border-color:var(--lilac-2)}
+.mcard{background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px 10px;cursor:grab;box-shadow:var(--shadow-sm);transition:box-shadow .14s;user-select:none}
+.mcard:active{cursor:grabbing}
+.mcard.dragging{opacity:.4}
+.mcard .mcard-head{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.mcard .mcard-tag{font:500 12.5px/1.35 var(--font-display);color:var(--ink)}
+.mcard .mcard-cite{font:11px/1 var(--font-display);color:var(--muted);margin-top:3px}
+
+/* Slash command popover */
+.slash-pop{position:absolute;left:12px;right:12px;bottom:70px;z-index:10;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow-lg);padding:4px;display:none;max-height:240px;overflow:auto}
+.slash-pop.open{display:block}
+.slash-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:5px;cursor:pointer;font:500 12.5px/1.2 var(--font-ui);color:var(--ink-2)}
+.slash-row:hover,.slash-row.sel{background:var(--lilac-soft);color:#111}
+.slash-row .cmd{font:600 11.5px/1 var(--font-mono);color:#111;background:var(--panel);padding:3px 6px;border-radius:3px}
+.slash-row .desc{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:auto}
+.slash-row:hover .desc,.slash-row.sel .desc{color:var(--ink-2)}
+
+/* Pinned cites strip */
+.nx-pinned{padding:8px 12px;border-top:1px solid var(--line);background:#fff;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nx-pinned .pin-lbl{font:600 10px/1 var(--font-display);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-right:2px}
+.pin-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:4px;background:var(--lilac-soft);color:#111;border:1px solid var(--lilac-2);font:500 11px/1 var(--font-display);cursor:pointer}
+.pin-chip .x{color:var(--muted);padding:0 1px;border-radius:3px}
+.pin-chip .x:hover{color:var(--danger)}
+
+/* Scratchpad */
+.nx-scratch{padding:8px 12px;border-top:1px solid var(--line);background:var(--panel-2)}
+.nx-scratch-h{display:flex;align-items:center;gap:6px;font:600 10px/1 var(--font-display);color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.nx-scratch textarea{width:100%;min-height:42px;background:#fff;border:1px solid var(--line);border-radius:5px;padding:6px 8px;font:13px/1.4 var(--font-ui);resize:vertical;color:var(--ink-2)}
+
+/* My Cards */
+
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.mycard{
+  position:relative;
+  border:1px solid var(--line);border-radius:8px;background:#fff;
+  padding:16px;cursor:pointer;transition:all .14s;min-height:180px;
+  display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-sm);
+}
+.mycard:hover{border-color:var(--line-2);box-shadow:var(--shadow);transform:translateY(-1px)}
+.mycard .export-btn{
+  position:absolute;top:10px;right:10px;
+  width:26px;height:26px;border-radius:5px;display:grid;place-items:center;
+  color:var(--muted);background:#fff;border:1px solid var(--line);
+  transition:all .14s;opacity:0;cursor:pointer;z-index:2;
+}
+.mycard:hover .export-btn{opacity:1}
+.mycard .export-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2)}
+.mycard .head{display:flex;align-items:center;gap:6px;padding-right:32px}
+.mycard .tag{font-size:14.5px;font-weight:600;color:var(--ink);font-family:var(--font-display);letter-spacing:-0.01em;line-height:1.4}
+.mycard .cite{font-size:11.5px;color:var(--muted);font-family:var(--font-display)}
+.mycard .preview{
+  font-family:var(--font-ui);font-size:13px;line-height:1.5;color:var(--muted);
+  flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+}
+.mycard .foot{display:flex;gap:6px;align-items:center;padding-top:10px;border-top:1px solid var(--line-soft)}
+.mycard .foot .meta{font-size:10.5px;color:var(--muted);font-family:var(--font-mono)}
+.mycard .foot .meta.right{margin-left:auto}
+
+/* ── Nexus Strategy Terminal ── */
+.nexus{
+  background:#fff;border-left:1px solid var(--line);
+  display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;
+}
+body.nexus-closed .nexus{display:none}
+.nexus-head{
+  padding:12px 16px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;
+  background:linear-gradient(180deg,var(--lilac-soft),#fff);
+}
+.nexus-title{display:flex;align-items:center;gap:8px;font-family:var(--font-ui);font-size:13px;color:var(--ink)}
+.nexus-title .live-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);position:relative;animation:dotPulse 2.4s ease-in-out infinite}
+.nexus-title .live-dot::after{content:"";position:absolute;inset:-3px;border-radius:50%;background:var(--ok);opacity:0.35;animation:dotHalo 2.4s ease-out infinite}
+@keyframes dotPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(4,120,87,0.45)}50%{transform:scale(1.08);box-shadow:0 0 0 4px rgba(4,120,87,0.08)}}
+@keyframes dotHalo{0%{transform:scale(0.8);opacity:0.4}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
+.nexus-title b{font-weight:600;letter-spacing:-0.01em;font-family:var(--font-display)}
+.nexus-title .sep{color:var(--muted);margin:0 2px;font-size:13px}
+.nexus-title .sub{color:var(--muted);font-family:var(--font-display);font-size:12.5px}
+
+.nexus-body{flex:1;overflow:auto;padding:14px 16px;font-family:var(--font-ui);font-size:13.5px;line-height:1.65;color:var(--ink-2);min-height:0}
+.nx-msg{margin-bottom:16px}
+.nx-msg .role{
+  font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;margin-bottom:4px;
+  display:flex;align-items:center;gap:6px;
+}
+.nx-msg.user .role{color:var(--lilac-ink)}
+.nx-msg.sys .role{color:var(--muted)}
+.nx-msg.ai .role{color:var(--ok)}
+.nx-msg .role::before{content:">";opacity:0.5}
+.nx-msg .body{white-space:pre-wrap}
+.nx-msg .body .tok{color:var(--lilac-ink);background:var(--lilac-soft);padding:0 4px;border-radius:3px}
+.nx-msg .body .ok{color:var(--ok)}
+.nx-msg .body .warn{color:var(--warn)}
+.nx-msg .body .dim{color:var(--muted)}
+.nx-msg .body .k{color:var(--ink);font-weight:500}
+.nx-msg .body .cite{color:var(--info);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+
+/* compact citation row cards */
+.nx-cites{display:flex;flex-direction:column;gap:6px;margin:8px 0 4px}
+.nx-cite{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 10px;border:1px solid var(--line);border-radius:6px;
+  background:#fff;font-family:var(--font-ui);font-size:12.5px;
+  transition:border-color .14s,background .14s;
+}
+.nx-cite:hover{border-color:var(--lilac-2);background:var(--lilac-soft)}
+.nx-cite .tag{
+  font-family:var(--font-display);font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--lilac-ink);background:var(--lilac-soft);border:1px solid var(--line);
+  padding:2px 6px;border-radius:3px;flex:0 0 auto;font-weight:600;
+}
+.nx-cite .author{color:var(--ink);font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nx-cite .author .src{color:var(--muted);font-weight:400;margin-left:4px}
+.nx-cite .open{color:var(--info);font-size:11.5px;text-decoration:none;flex:0 0 auto;display:inline-flex;align-items:center;gap:3px}
+.nx-cite .open:hover{text-decoration:underline}
+
+.nx-compose{
+  border-top:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:8px;
+  background:var(--panel);flex:0 0 auto;
+}
+.nx-compose .nx-field{
+  position:relative;display:flex;align-items:center;gap:8px;
+  background:#fff;border:1px solid var(--line);border-radius:999px;
+  padding:6px 6px 6px 14px;transition:border-color .14s,box-shadow .14s;
+}
+.nx-compose .nx-field:focus-within{border-color:var(--lilac-2);box-shadow:0 0 0 3px var(--lilac-soft)}
+.nx-compose textarea{
+  flex:1;background:transparent;border:0;outline:0;
+  padding:8px 0;font-family:var(--font-ui);font-size:13.5px;
+  color:var(--ink);resize:none;min-height:22px;max-height:120px;line-height:1.5;
+}
+.nx-compose textarea::placeholder{color:var(--muted-2)}
+.nx-compose .nx-attach,.nx-compose .nx-mic{
+  width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;border:0;background:transparent;color:var(--muted);cursor:pointer;
+  transition:color .14s,background .14s;
+}
+.nx-compose .nx-attach:hover,.nx-compose .nx-mic:hover{color:var(--ink);background:var(--lilac-soft)}
+.nx-compose .nx-send{
+  width:30px;height:30px;border-radius:50%;border:0;cursor:pointer;
+  background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;
+  transition:transform .14s,background .14s;
+}
+.nx-compose .nx-send:hover{background:#000;transform:translateX(1px)}
+.nx-compose-row{display:flex;gap:6px;align-items:center;padding:0 4px}
+.nx-compose-row .spacer{flex:1}
+.nx-mini{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);font-family:var(--font-ui);
+  padding:3px 7px;border-radius:999px;background:transparent;border:1px solid var(--line);cursor:pointer;
+}
+.nx-mini:hover{color:var(--ink);border-color:var(--line-2);background:#fff}
+
+.nexus-closed-rail{
+  position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:40;
+  padding:10px 8px;background:var(--lilac-soft);border:1px solid var(--line);border-right:0;
+  border-radius:10px 0 0 10px;display:none;flex-direction:column;gap:6px;align-items:center;
+  box-shadow:var(--shadow);cursor:pointer;color:var(--lilac-ink);
+  font-family:var(--font-ui);font-size:10.5px;
+}
+body.nexus-closed .nexus-closed-rail{display:flex}
+.nexus-closed-rail .v{writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:0.15em;padding:6px 0}
+
+/* ── Command palette ── */
+.cmd-overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,0.35);backdrop-filter:blur(4px);
+  z-index:80;display:none;align-items:flex-start;justify-content:center;padding-top:120px;
+}
+.cmd-overlay.open{display:flex}
+.cmd-box{
+  width:560px;max-width:90vw;background:#fff;border:1px solid var(--line);
+  border-radius:12px;box-shadow:0 30px 80px rgba(15,23,42,0.25);overflow:hidden;
+}
+.cmd-input-row{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.cmd-input-row input{flex:1;color:var(--ink);font-size:15px;font-family:var(--font-ui)}
+.cmd-list{max-height:340px;overflow:auto;padding:6px}
+.cmd-item{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;
+  color:var(--ink-2);font-size:13.5px;cursor:pointer;font-family:var(--font-display);
+}
+.cmd-item:hover, .cmd-item.sel{background:var(--lilac-soft);color:var(--lilac-ink)}
+.cmd-item .ico{color:var(--muted);width:14px;height:14px;stroke-width:1.6}
+.cmd-item .hint{margin-left:auto;font-size:11px;color:var(--muted)}
+.cmd-foot{padding:8px 14px;border-top:1px solid var(--line);display:flex;gap:14px;font-size:11px;color:var(--muted)}
+
+/* ── Tweaks ── */
+.tweak-toggle{
+  position:fixed;bottom:20px;right:20px;z-index:69;
+  width:36px;height:36px;border-radius:10px;
+  background:#fff;border:1px solid var(--line);color:var(--ink-2);
+  display:grid;place-items:center;box-shadow:var(--shadow);
+}
+.tweak-toggle:hover{background:var(--panel)}
+.tweak-toggle.hidden{display:none}
+.tweaks-panel{
+  position:fixed;bottom:20px;right:20px;width:260px;z-index:70;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--shadow-lg);overflow:hidden;display:none;
+}
+.tweaks-panel.open{display:block}
+.tweaks-head{
+  padding:10px 14px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:600;font-family:var(--font-display);
+}
+.tweaks-body{padding:12px 14px;display:flex;flex-direction:column;gap:14px}
+.tweak-field{display:flex;flex-direction:column;gap:6px}
+.tweak-field label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;font-family:var(--font-display)}
+.tweak-opts{display:flex;gap:4px;flex-wrap:wrap}
+.tweak-opt{
+  padding:5px 9px;border-radius:5px;background:#fff;border:1px solid var(--line);
+  font-size:11.5px;color:var(--ink-2);cursor:pointer;transition:all .14s;font-family:var(--font-display);
+}
+.tweak-opt:hover{border-color:var(--line-2)}
+.tweak-opt.on{background:var(--lilac-soft);color:var(--lilac-ink);border-color:var(--lilac-2)}
+.tweak-swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,0.08)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#fff;border:1px solid var(--line);color:var(--ink);
+  padding:10px 16px;border-radius:8px;font-size:13px;font-family:var(--font-display);
+  opacity:0;pointer-events:none;transition:all .2s;z-index:90;box-shadow:var(--shadow-lg);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Density modes */
+body.density-cozy .content{padding:22px 26px 48px}
+body.density-cozy .page-title{font-size:28px}
+body.density-dense .content{padding:16px 20px 36px}
+body.density-dense .page-title{font-size:22px}
+body.density-dense .nav-item{padding:6px 10px;font-size:13.5px}
+
+/* Accent modes (alternates) */
+body.accent-sky{--lilac:#BAE6FD;--lilac-2:#7DD3FC;--lilac-3:#38BDF8;--lilac-ink:#075985;--lilac-soft:#F0F9FF}
+body.accent-peach{--lilac:#FED7AA;--lilac-2:#FDBA74;--lilac-3:#FB923C;--lilac-ink:#9A3412;--lilac-soft:#FFF7ED}
+body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink:#166534;--lilac-soft:#F0FDF4}
+</style>
+</head>
+<body class="accent-ink font-calibri nexus-closed hl-lilac density-comfy" data-cc-id="cc-1" style="cursor: crosshair; background-color: rgb(226, 226, 226);">
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">V</div>
+      <div>
+        <div class="brand-name">Verba</div>
+        <div class="brand-plan">Workspace · Free</div>
+      </div>
+    </div>
+
+    <div class="side-search" id="cmd-trigger">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+      <span>Quick find</span>
+      <kbd class="s-k">⌘K</kbd>
+    </div>
+
+    <div>
+      <div class="nav-group-label">Workspace</div>
+      <nav class="nav">
+        <button class="nav-item" data-page="home" data-screen-label="01 Card Cutter">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15zM12 20l5-5 5 5-5-15-5 15z"></path></svg>
+          <span>Card Cutter</span>
+        </button>
+        <button class="nav-item" data-page="community" data-screen-label="02 Evidence">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h12a4 4 0 014 4v12H8a4 4 0 01-4-4V4z"></path><path d="M4 4v12a4 4 0 004 4"></path></svg>
+          <span>Evidence</span>
+          <span class="count">1,284</span>
+        </button>
+        <button class="nav-item" data-page="contentions" data-screen-label="03 Contentions">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M3 12h18M3 18h12"></path></svg>
+          <span>Contentions</span>
+          <span class="count">12</span>
+        </button>
+        <button class="nav-item active" data-page="saved" data-screen-label="04 My Cards">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>
+          <span>My Cards</span>
+          <span class="count">47</span>
+        </button>
+        <button class="nav-item" data-page="history" data-screen-label="05 History">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 4v6h6"></path><path d="M3.51 15a9 9 0 102.13-9.36L1 10"></path><path d="M12 8v4l3 2"></path></svg>
+          <span>History</span>
+        </button>
+      </nav>
+
+      <div class="nav-group-label">Library</div>
+      <nav class="nav">
+        <button class="nav-item">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+          <span>Tournaments</span>
+        </button>
+        <button class="nav-item">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 7H4a1 1 0 00-1 1v12a1 1 0 001 1h16a1 1 0 001-1V8a1 1 0 00-1-1z"></path><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"></path></svg>
+          <span>Backfiles</span>
+          <span class="count">8</span>
+        </button>
+        <button class="nav-item">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4l3 2"></path></svg>
+          <span>Recent</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="side-spacer"></div>
+
+    <div class="upgrade-card">
+      <button class="upgrade-dismiss" aria-label="Dismiss">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+      </button>
+      <div class="upgrade-orb"></div>
+      <h4>Upgrade to Pro</h4>
+      <p>Unlimited cards, team backfiles, priority AI.</p>
+      <button class="upgrade-btn">Upgrade</button>
+    </div>
+
+    <div class="side-account">
+      <div class="avatar">MA</div>
+      <div>
+        <div class="name">Marlborough A</div>
+        <div class="email">ma@verba.app</div>
+      </div>
+      <button class="more" aria-label="Account menu">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="19" cy="12" r="1.2"></circle></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="crumb">
+        <span class="muted">Workspace</span><span class="sep">/</span><span id="crumb-page">Card Cutter</span>
+      </div>
+      <button class="btn btn-sm source-reopen" id="source-reopen" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"></path></svg>
+        Show source
+      </button>
+      <div class="top-actions">
+        <button class="btn btn-sm btn-ghost" title="History">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 4v6h6"></path><path d="M3.51 15a9 9 0 102.13-9.36L1 10"></path></svg>
+          History
+        </button>
+        <button class="btn btn-sm btn-ghost" title="Export">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"></path><path d="M16 6l-4-4-4 4"></path><path d="M12 2v13"></path></svg>
+          Export
+        </button>
+        <button class="btn btn-sm" id="toggle-nexus" title="Toggle Assistant">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M15 3v18"></path></svg>
+          Assistant
+        </button>
+        <div style="width:1px;height:18px;background:var(--line);margin:0 2px"></div>
+        <button class="btn btn-primary btn-sm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"></path></svg>
+          New card
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── CARD CUTTER ── -->
+      <section class="page" id="page-home">
+        <div class="research-bar-wrap">
+          <div class="research-bar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"></path></svg>
+            <input id="zone-input" placeholder="Paste a URL or type an argument to research…">
+            <button class="plus" id="zone-plus" title="Manual draft">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"></path></svg>
+            </button>
+            <button class="enter" id="zone-enter" title="Submit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="staging">
+          <div class="chip skeleton" title="Cutting card…">
+            <div class="sk-head">
+              <svg class="spin" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="color:var(--lilac-3)"><path d="M21 12a9 9 0 11-6.22-8.56"></path></svg>
+              <span>nytimes.com/2024/iran-diplomacy</span>
+            </div>
+            <div class="sk-row sk-tag"></div>
+            <div class="sk-row sk-cite"></div>
+          </div>
+          <div class="chip done">
+            <span class="dot"></span>
+            <span>Sanctions cause backlash</span>
+            <button class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+          </div>
+          <div class="chip">
+            <span class="dot"></span>
+            <span>Manual draft · untitled</span>
+            <button class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+          </div>
+        </div>
+
+        <div class="page-head" style="margin-bottom:12px">
+          <div>
+            <p class="eyebrow">Workbench</p>
+            <h1 class="page-title">Iran · Sanctions Link</h1>
+            <p class="page-sub">Source on the left, generated card on the right. Select text to apply warrant styling.</p>
+          </div>
+
+        </div>
+
+        <div class="workbench" id="workbench">
+          <button class="source-handle" id="source-handle" title="Show source" aria-label="Show source">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <!-- SOURCE -->
+          <div class="pane source" id="pane-source">
+            <div class="pane-head">
+              <div class="pane-title"><span class="pip"></span>Source · foreignaffairs.com</div>
+              <div class="pane-actions">
+                <button class="pane-close" id="source-close" title="Hide source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+                <button class="icon-btn" title="Open original"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><path d="M15 3h6v6M10 14L21 3"></path></svg></button>
+                <button class="icon-btn" title="Expand"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg></button>
+              </div>
+            </div>
+            <div class="pane-body doc">
+              <p class="shrink">Mahbubani · Foreign Affairs · March 12 2024</p>
+              <p>The durability of any agreement with Tehran hinges not on the narrow question of centrifuge counts, but on whether Washington is willing to lift the secondary sanctions architecture that has, over a decade, hardened into a structural feature of the global financial system. Without that concession, verification regimes collapse into performance, and Iranian negotiators retreat to the constituencies that benefit from isolation.</p>
+              <p>Proponents of maximal pressure argue that a sanctions-forward posture forces concessions. The evidence is the opposite: between 2018 and 2023, sanctions coincided with expanded enrichment, deeper ties with Russia and China, and the collapse of the monitoring framework. Pressure without an exit ramp produces the behavior it claims to deter.</p>
+              <p>An agreement premised on incremental, reciprocal, and verifiable relief is the only architecture consistent with the empirical record. The alternative — a return to open-ended coercion — has been tried and measured. Its half-life is short, its costs are accumulating, and its strategic yield is negative.</p>
+            </div>
+            <div class="pane-foot">
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M3 12h18M3 18h12"></path></svg>Cite</button>
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>Paste</button>
+              <div class="tool-sep"></div>
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>Extract</button>
+            </div>
+          </div>
+
+          <!-- CARD -->
+          <div class="pane">
+            <div class="pane-head">
+              <div class="pane-title card"><span class="pip"></span>Generated card</div>
+              <div class="pane-actions">
+                <button class="btn btn-sm btn-ghost">Copy</button>
+                <button class="btn btn-sm btn-primary">Save</button>
+                <button class="pane-close" id="card-delete" title="Delete card"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"></path></svg></button>
+              </div>
+            </div>
+            <div class="pane-body doc">
+              <div class="cite-block">
+                <div class="tag">Sanctions collapse verification — reciprocal relief is the only durable exit</div>
+                <div class="meta"><b>Mahbubani '24</b> · Kishore Mahbubani, former President UN Security Council, <i>Foreign Affairs</i>, 3/12/24, accessed 4/17/26</div>
+              </div>
+              <p>The durability of any agreement with Tehran hinges not on <span class="shrink">the narrow question of centrifuge counts</span>, but on whether Washington is willing <span class="warrant">to lift the secondary sanctions architecture</span> that has, over a decade, <span class="u">hardened into a structural feature of the global financial system</span>. <span class="warrant">Without that concession, verification regimes collapse</span> into <span class="shrink">performance, and Iranian negotiators retreat to the constituencies that benefit from isolation.</span></p>
+              <p>Proponents of maximal pressure argue that a sanctions-forward posture forces concessions. <span class="u">The evidence is the opposite</span>: between 2018 and 2023, <span class="warrant">sanctions coincided with expanded enrichment</span>, deeper ties with Russia and China, and the collapse of the monitoring framework. <span class="warrant hl">Pressure without an exit ramp produces the behavior it claims to deter.</span></p>
+              <p>An agreement premised on <span class="u">incremental, reciprocal, and verifiable relief</span> is the only architecture consistent with the empirical record.</p>
+            </div>
+            <div class="pane-foot">
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline><line x1="10" y1="14" x2="21" y2="3"></line><line x1="3" y1="21" x2="14" y2="10"></line></svg>Shrink</button>
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 11-6 6v3h9l3-3"></path><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path></svg>Highlight</button>
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3v7a6 6 0 0 0 12 0V3"></path><line x1="4" y1="21" x2="20" y2="21"></line></svg>Underline</button>
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 4h8a4 4 0 0 1 0 8H6z"></path><path d="M6 12h9a4 4 0 0 1 0 8H6z"></path></svg>Warrant</button>
+              <div class="tool-sep"></div>
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path></svg>Condense</button>
+              <button class="tool-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"></path></svg>Ask AIxus</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── EVIDENCE ── -->
+      <section class="page" id="page-community">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Library</p>
+            <h1 class="page-title">Evidence</h1>
+            <p class="page-sub">Search across your cards, backfiles, and the shared community graph.</p>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--muted)"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+          <input placeholder="Search tags, cites, topics, authors, bodies…">
+          <kbd class="k">/</kbd>
+        </div>
+
+        <div class="filter-row">
+          <button class="filter-btn" id="open-filters">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M6 12h12"></path><path d="M10 18h4"></path></svg>
+            Filters
+            <span class="filter-btn-pill" id="filter-count" style="display: inline-grid;">2</span>
+          </button>
+          <span class="filter-summary" id="filter-summary">All types · Most recentdefault</span>
+        </div>
+
+        <div class="evidence-grid">
+          <div class="ev-list">
+            <div class="ev-item active">
+              <div class="head"><span class="badge neg">Neg</span><span class="badge topic">Iran</span><span class="date">Mar 12 · 2024</span></div>
+              <div class="tag">Pressure without an exit ramp produces the behavior it claims to deter</div>
+              <div class="cite">Mahbubani, Foreign Affairs</div>
+              <div class="row-actions">
+                <button class="row-action" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>Open</button>
+                <button class="row-action primary" data-act="addto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add to…</button>
+              </div>
+            </div>
+            <div class="ev-item">
+              <div class="head"><span class="badge aff">Aff</span><span class="badge topic">China</span><span class="date">Feb 04 · 2024</span></div>
+              <div class="tag">US-PRC competition makes war in Taiwan Strait inevitable absent de-escalation</div>
+              <div class="cite">Glaser, International Security</div>
+              <div class="row-actions"><button class="row-action" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>Open</button><button class="row-action primary" data-act="addto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add to…</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="head"><span class="badge k">K</span><span class="badge topic">Cap</span><span class="date">Jan 22 · 2024</span></div>
+              <div class="tag">Abstraction of sanctions masks the material violence of the dollar system</div>
+              <div class="cite">Ali, New Left Review</div>
+              <div class="row-actions"><button class="row-action" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>Open</button><button class="row-action primary" data-act="addto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add to…</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="head"><span class="badge t">Theory</span><span class="badge topic">T</span><span class="date">Dec 10 · 2023</span></div>
+              <div class="tag">Topicality — subsets: must affirm all instances, not just one</div>
+              <div class="cite">[T] Subsets Masterfile</div>
+              <div class="row-actions"><button class="row-action" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>Open</button><button class="row-action primary" data-act="addto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add to…</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="head"><span class="badge aff">Aff</span><span class="badge topic">War Powers</span><span class="date">Nov 30 · 2023</span></div>
+              <div class="tag">War powers reform prevents executive adventurism</div>
+              <div class="cite">Hathaway, Yale Law</div>
+              <div class="row-actions"><button class="row-action" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>Open</button><button class="row-action primary" data-act="addto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add to…</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="head"><span class="badge neg">Neg</span><span class="badge topic">Econ</span><span class="date">Oct 18 · 2023</span></div>
+              <div class="tag">Flexibility DA — reducing sanctions authority collapses crisis response</div>
+              <div class="cite">Zarate, CSIS</div>
+              <div class="row-actions"><button class="row-action" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>Open</button><button class="row-action primary" data-act="addto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add to…</button></div>
+            </div>
+            <div class="ev-item">
+              <div class="head"><span class="badge k">K</span><span class="badge topic">Security</span><span class="date">Sep 14 · 2023</span></div>
+              <div class="tag">Threat construction produces the insecurity it purports to resolve</div>
+              <div class="cite">Campbell, Writing Security</div>
+              <div class="row-actions"><button class="row-action" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>Open</button><button class="row-action primary" data-act="addto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add to…</button></div>
+            </div>
+          </div>
+
+          <div class="ev-detail">
+            <div class="pane-head">
+              <div class="pane-title card"><span class="pip"></span>Preview</div>
+              <div class="pane-actions">
+                <button class="btn btn-sm btn-ghost"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M10 14L21 3M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/></svg>Open</button>
+                <button class="btn btn-sm btn-primary"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>Add to</button>
+              </div>
+            </div>
+            <div class="pane-body doc" style="flex:1;overflow:auto">
+              <div class="cite-block">
+                <div class="tag">Pressure without an exit ramp produces the behavior it claims to deter</div>
+                <div class="meta"><b>Mahbubani '24</b> · Kishore Mahbubani, <i>Foreign Affairs</i>, 3/12/24</div>
+              </div>
+              <p>The durability of any agreement with Tehran hinges not on <span class="shrink">the narrow question of centrifuge counts</span>, but on whether Washington is willing <span class="warrant">to lift the secondary sanctions architecture</span> that has hardened into a structural feature of the global financial system. <span class="warrant">Without that concession, verification regimes collapse</span>.</p>
+              <p>Between 2018 and 2023, <span class="warrant">sanctions coincided with expanded enrichment</span>, deeper ties with Russia and China, and the collapse of the monitoring framework. <span class="warrant hl">Pressure without an exit ramp produces the behavior it claims to deter.</span></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── CONTENTIONS ── -->
+      <section class="page" id="page-contentions">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Strategy</p>
+            <h1 class="page-title">Contentions</h1>
+            <p class="page-sub">Group arguments into contentions. Each is a tree of subpoints, warrants, and linked cards.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div class="cont-viewtabs">
+              <button class="cont-vtab on" data-cv="list">Outline</button>
+              <button class="cont-vtab" data-cv="matrix">Strategy matrix</button>
+            </div>
+            <button class="btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg>Export round doc</button>
+            <button class="btn btn-primary"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"></path></svg>New contention</button>
+          </div>
+        </div>
+
+        <div id="cont-view-list">
+        <div class="cont-grid">
+          <div class="cont-col">
+            <h4>Topics</h4>
+            <div class="cont-list">
+              <div class="cont-row active"><span class="num">01</span><span>Iran</span><span class="count">4</span></div>
+              <div class="cont-row"><span class="num">02</span><span>China</span><span class="count">3</span></div>
+              <div class="cont-row"><span class="num">03</span><span>War Powers</span><span class="count">2</span></div>
+              <div class="cont-row"><span class="num">04</span><span>Cap K</span><span class="count">2</span></div>
+              <div class="cont-row"><span class="num">05</span><span>Topicality</span><span class="count">1</span></div>
+            </div>
+          </div>
+          <div class="cont-col">
+            <h4>Iran — 4 contentions</h4>
+            <div class="cont-list">
+              <div class="cont-row active"><span>Conflict</span><span class="count">12</span></div>
+              <div class="cont-row"><span>Regime change DA</span><span class="count">7</span></div>
+              <div class="cont-row"><span>Sanctions good</span><span class="count">9</span></div>
+              <div class="cont-row"><span>Cleanup CP</span><span class="count">4</span></div>
+            </div>
+          </div>
+          <div class="cont-col cont-detail">
+            <h2>Conflict</h2>
+            <p class="thesis">Maximal pressure collapses diplomacy, breaks the monitoring regime, and converges on the scenario it claims to prevent — extended regional conflict with second-order great-power consequences.</p>
+
+            <div class="sub">Uniqueness</div>
+            <div class="arg-row">
+              <span class="lnk">U1</span>
+              <span class="tag">Back-channel talks are live — a deal is possible now</span>
+              <span class="meta">Parsi · Quincy · 2/24</span>
+            </div>
+
+            <div class="sub">Link</div>
+            <div class="arg-row">
+              <span class="lnk">L1</span>
+              <span class="tag">Secondary sanctions architecture is the binding constraint</span>
+              <span class="meta">Mahbubani · FA · 3/24</span>
+            </div>
+            <div class="arg-row">
+              <span class="lnk">L2</span>
+              <span class="tag">Pressure without an exit ramp produces the behavior it claims to deter</span>
+              <span class="meta">Mahbubani · FA · 3/24</span>
+            </div>
+
+            <div class="sub">Internal link</div>
+            <div class="arg-row">
+              <span class="lnk">IL</span>
+              <span class="tag">Enrichment expansion risks Israeli preemption within 6 months</span>
+              <span class="meta">Kroenig · FP · 1/24</span>
+            </div>
+
+            <div class="sub">Impact</div>
+            <div class="arg-row">
+              <span class="lnk">I1</span>
+              <span class="tag">Regional war draws in Russia and China — nuclear escalation</span>
+              <span class="meta">Posen · Survival · 11/23</span>
+            </div>
+            <div class="arg-row">
+              <span class="lnk">I2</span>
+              <span class="tag">Oil shock collapses global recovery</span>
+              <span class="meta">IMF · WEO · 10/23</span>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <div id="cont-view-matrix" style="display:none">
+          <div class="matrix-head">
+            <p>Drag cards between quadrants. Axes: <b>Strategic leverage</b> (y) × <b>Evidence strength</b> (x). Exports as a round doc in priority order (Q1 → Q2 → Q3).</p>
+          </div>
+          <div class="matrix">
+            <div class="matrix-cell q1"><h5><span class="q">Q1</span>High leverage · Strong evidence</h5><p class="quad-sub">Lead arguments.</p>
+              <div class="matrix-drop">
+                <div class="mcard" draggable="true"><div class="mcard-head"><span class="badge neg">Neg</span><span class="badge topic">Iran</span></div><div class="mcard-tag">Pressure without an exit ramp produces the behavior it claims to deter</div><div class="mcard-cite">Mahbubani · FA · 3/24</div></div>
+                <div class="mcard" draggable="true"><div class="mcard-head"><span class="badge neg">Neg</span><span class="badge topic">Iran</span></div><div class="mcard-tag">Secondary sanctions architecture is the binding constraint</div><div class="mcard-cite">Mahbubani · FA · 3/24</div></div>
+              </div>
+            </div>
+            <div class="matrix-cell q2"><h5><span class="q">Q2</span>High leverage · Thin evidence</h5><p class="quad-sub">Develop before round.</p>
+              <div class="matrix-drop">
+                <div class="mcard" draggable="true"><div class="mcard-head"><span class="badge aff">Aff</span><span class="badge topic">Iran</span></div><div class="mcard-tag">Back-channel diplomacy dying now</div><div class="mcard-cite">Parsi · Quincy · 2/24</div></div>
+              </div>
+            </div>
+            <div class="matrix-cell q3"><h5><span class="q">Q3</span>Low leverage · Strong evidence</h5><p class="quad-sub">Block depth.</p>
+              <div class="matrix-drop">
+                <div class="mcard" draggable="true"><div class="mcard-head"><span class="badge k">K</span><span class="badge topic">Cap</span></div><div class="mcard-tag">Abstraction of sanctions masks material violence of the dollar system</div><div class="mcard-cite">Ali · NLR · 1/24</div></div>
+                <div class="mcard" draggable="true"><div class="mcard-head"><span class="badge neg">Neg</span><span class="badge topic">Econ</span></div><div class="mcard-tag">Flexibility DA — curtailment collapses crisis response</div><div class="mcard-cite">Zarate · CSIS · 10/23</div></div>
+              </div>
+            </div>
+            <div class="matrix-cell q4"><h5><span class="q">Q4</span>Low leverage · Thin evidence</h5><p class="quad-sub">Cut or retire.</p>
+              <div class="matrix-drop">
+                <div class="mcard" draggable="true"><div class="mcard-head"><span class="badge t">Theory</span><span class="badge topic">T</span></div><div class="mcard-tag">Subsets — must affirm all instances</div><div class="mcard-cite">[T] Subsets Masterfile</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── MY CARDS ── -->
+      <section class="page active" id="page-saved">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Library</p>
+            <h1 class="page-title">My Cards</h1>
+            <p class="page-sub">47 saved cards across 6 project folders. Drag to reorder, double-click to open in the editor.</p>
+          </div>
+        </div>
+
+        <div class="saved-grid">
+          <aside class="folders-rail">
+            <h4>Projects</h4>
+            <div class="folder-row active" data-folder="all"><span class="sw" style="background:#111"></span>All cards<span class="ct">47</span></div>
+            <div class="folder-row" data-folder="iran-neg"><span class="sw" style="background:#B91C1C"></span>Iran Neg<span class="ct">12</span></div>
+            <div class="folder-row" data-folder="iran-aff"><span class="sw" style="background:#047857"></span>Iran Aff<span class="ct">9</span></div>
+            <div class="folder-row" data-folder="taiwan-aff"><span class="sw" style="background:#1D4ED8"></span>Taiwan Aff<span class="ct">8</span></div>
+            <div class="folder-row" data-folder="cap-k"><span class="sw" style="background:#7C3AED"></span>Cap K<span class="ct">6</span></div>
+            <div class="folder-row" data-folder="war-powers"><span class="sw" style="background:#EA580C"></span>War Powers<span class="ct">7</span></div>
+            <div class="folder-row" data-folder="t-shells"><span class="sw" style="background:#6B7280"></span>T Shells<span class="ct">5</span></div>
+            <div class="folder-add"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>New project</div>
+          </aside>
+          <div>
+            <div class="search-bar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--muted)"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+              <input placeholder="Search your cards">
+              <kbd class="k">/</kbd>
+            </div>
+            <div class="filter-row">
+              <button class="filter-chip active">All · 47</button>
+              <button class="filter-chip">Aff · 18</button>
+              <button class="filter-chip">Neg · 22</button>
+              <button class="filter-chip">K · 4</button>
+              <button class="filter-chip">Theory · 3</button>
+              <span class="count">sorted · recent</span>
+            </div>
+            <div class="cards-grid">
+          <div class="mycard">
+            <button class="export-btn" title="Export card" onclick="event.stopPropagation();"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg></button>
+            <div class="head"><span class="badge neg">Neg</span><span class="badge topic">Iran</span><span class="date" style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--font-mono)">today</span></div>
+            <div class="tag">Pressure without an exit ramp produces the behavior it claims to deter</div>
+            <div class="cite">Mahbubani, FA · 3/24</div>
+            <div class="preview">The durability of any agreement with Tehran hinges not on the narrow question of centrifuge counts, but on whether Washington is willing to lift the secondary sanctions architecture…</div>
+            <div class="foot"><span class="meta">284 words</span><span class="meta right">↵ 2 revs</span></div>
+          </div>
+          <div class="mycard">
+            <button class="export-btn" title="Export card" onclick="event.stopPropagation();"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg></button>
+            <div class="head"><span class="badge aff">Aff</span><span class="badge topic">China</span><span class="date" style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--font-mono)">yesterday</span></div>
+            <div class="tag">US-PRC competition makes Taiwan war inevitable absent de-escalation</div>
+            <div class="cite">Glaser, Int'l Security · 2/24</div>
+            <div class="preview">Glaser argues the security dilemma in the Western Pacific is structural: each side's reassurance reads as weakness to the other, producing a ratchet that escalates the cost of climbdown…</div>
+            <div class="foot"><span class="meta">412 words</span><span class="meta right">↵ 5 revs</span></div>
+          </div>
+          <div class="mycard">
+            <button class="export-btn" title="Export card" onclick="event.stopPropagation();"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg></button>
+            <div class="head"><span class="badge k">K</span><span class="badge topic">Cap</span><span class="date" style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--font-mono)">Apr 14</span></div>
+            <div class="tag">Abstraction of sanctions masks the material violence of the dollar system</div>
+            <div class="cite">Ali, NLR · 1/24</div>
+            <div class="preview">Ali develops a reading of dollar hegemony as a latent sanctions regime — the material architecture of financial exclusion that operates continuously, not episodically…</div>
+            <div class="foot"><span class="meta">356 words</span><span class="meta right">↵ 1 rev</span></div>
+          </div>
+          <div class="mycard">
+            <button class="export-btn" title="Export card" onclick="event.stopPropagation();"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg></button>
+            <div class="head"><span class="badge t">Theory</span><span class="badge topic">T</span><span class="date" style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--font-mono)">Apr 11</span></div>
+            <div class="tag">Topicality — subsets: must affirm all instances, not just one</div>
+            <div class="cite">[T] Subsets Masterfile</div>
+            <div class="preview">A-subsets interpretation requires the affirmative to defend the full topical set. Voter: predictable ground, because the negative prepares against every topical affirmative…</div>
+            <div class="foot"><span class="meta">198 words</span><span class="meta right">↵ 3 revs</span></div>
+          </div>
+          <div class="mycard">
+            <button class="export-btn" title="Export card" onclick="event.stopPropagation();"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg></button>
+            <div class="head"><span class="badge aff">Aff</span><span class="badge topic">War Powers</span><span class="date" style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--font-mono)">Apr 09</span></div>
+            <div class="tag">War powers reform prevents executive adventurism — empirical record is damning</div>
+            <div class="cite">Hathaway, Yale Law · 11/23</div>
+            <div class="preview">From Iraq through Libya to Yemen, unilateral executive action has been the overwhelming driver of costly interventions — reforms that reintroduce congressional veto points…</div>
+            <div class="foot"><span class="meta">521 words</span><span class="meta right">↵ 4 revs</span></div>
+          </div>
+          <div class="mycard">
+            <button class="export-btn" title="Export card" onclick="event.stopPropagation();"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M7 8l5-5 5 5"></path><path d="M5 21h14"></path></svg></button>
+            <div class="head"><span class="badge neg">Neg</span><span class="badge topic">Econ</span><span class="date" style="margin-left:auto;font-size:11px;color:var(--muted);font-family:var(--font-mono)">Apr 07</span></div>
+            <div class="tag">Flexibility DA — reducing sanctions authority collapses crisis response</div>
+            <div class="cite">Zarate, CSIS · 10/23</div>
+            <div class="preview">Sanctions remain the executive's most agile coercive instrument. Statutory curtailment removes the only tool between diplomacy and force, compressing crisis response…</div>
+            <div class="foot"><span class="meta">302 words</span><span class="meta right">↵ 2 revs</span></div>
+          </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── HISTORY ── -->
+      <section class="page" id="page-history">
+        <div class="page-head">
+          <div>
+            <p class="eyebrow">Activity</p>
+            <h1 class="page-title">History</h1>
+            <p class="page-sub">Everything you’ve cut, edited, exported, or restored — grouped by day. Click a row to re-open it in the editor.</p>
+          </div>
+        </div>
+        <div class="hist-wrap">
+          <aside class="hist-filters">
+            <button class="hist-filter on" data-hf="all">All<span class="ct">28</span></button>
+            <button class="hist-filter" data-hf="cut">Cuts<span class="ct">18</span></button>
+            <button class="hist-filter" data-hf="export">Exports<span class="ct">7</span></button>
+            <button class="hist-filter" data-hf="undelete">Undeletes<span class="ct">3</span></button>
+          </aside>
+          <div class="hist-list">
+            <div class="hist-day">
+              <h3 class="hist-day-h">Today · Apr 18</h3>
+              <div class="hist-row" data-ht="cut"><span class="hist-time">10:42</span><span class="hist-dot cut" title="Cut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M3 8l3-3 3 3M15 8l3-3 3 3"/></svg></span><div class="hist-text"><b>Cut</b> “Pressure without an exit ramp produces the behavior it claims to deter” <span class="src">· foreignaffairs.com · Mahbubani</span></div><button class="hist-open">Re-open</button></div>
+              <div class="hist-row" data-ht="cut"><span class="hist-time">09:15</span><span class="hist-dot cut" title="Cut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M3 8l3-3 3 3M15 8l3-3 3 3"/></svg></span><div class="hist-text"><b>Cut</b> “Sanctions coincide with expanded enrichment” <span class="src">· manual draft</span></div><button class="hist-open">Re-open</button></div>
+            </div>
+            <div class="hist-day">
+              <h3 class="hist-day-h">Yesterday · Apr 17</h3>
+              <div class="hist-row" data-ht="export"><span class="hist-time">21:07</span><span class="hist-dot export" title="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg></span><div class="hist-text"><b>Exported</b> Iran Neg · 1NC shell <span class="src">→ Round3_vs_GDS.docx</span></div><button class="hist-open">Open file</button></div>
+              <div class="hist-row" data-ht="undelete"><span class="hist-time">15:22</span><span class="hist-dot undelete" title="Restore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6M3.51 15a9 9 0 102.13-9.36L3 10"/></svg></span><div class="hist-text"><b>Restored</b> Parsi ‘24 from trash <span class="src">· into Iran Neg</span></div><button class="hist-open">Re-open</button></div>
+              <div class="hist-row" data-ht="cut"><span class="hist-time">11:03</span><span class="hist-dot cut" title="Cut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M18 3v18M3 8l3-3 3 3M15 8l3-3 3 3"/></svg></span><div class="hist-text"><b>Cut</b> “Threat construction produces the insecurity it purports to resolve” <span class="src">· Campbell, Writing Security</span></div><button class="hist-open">Re-open</button></div>
+            </div>
+            <div class="hist-day">
+              <h3 class="hist-day-h">Apr 15</h3>
+              <div class="hist-row" data-ht="export"><span class="hist-time">22:18</span><span class="hist-dot export" title="Export"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 8l5-5 5 5M5 21h14"/></svg></span><div class="hist-text"><b>Exported</b> Cap K · Round doc <span class="src">→ CapK_v3.docx · 18 cards</span></div><button class="hist-open">Open file</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ── NEXUS STRATEGY TERMINAL ── -->
+  <aside class="nexus" id="nexus">
+    <div class="nexus-head">
+      <div class="nexus-title">
+        <span class="live-dot"></span>
+        <b>Assistant</b>
+        <span class="sep">•</span>
+        <span class="sub">strategy chat</span>
+      </div>
+      <div style="display:flex;gap:2px">
+        <button class="icon-btn" title="Clear"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"></path></svg></button>
+        <button class="icon-btn" id="nexus-close" title="Collapse"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18l6-6-6-6"></path></svg></button>
+      </div>
+    </div>
+    <div class="nexus-body" id="nexus-body">
+
+      <div class="nx-msg sys">
+        <div class="role">session</div>
+        <div class="body"><span class="dim">context: </span><span class="k">Iran · Sanctions Link</span>  <span class="dim">·  library: </span><span class="k">47 cards</span>  <span class="dim">·  model: </span><span class="k">haiku-4.5</span></div>
+      </div>
+
+      <div class="nx-msg user">
+        <div class="role">you</div>
+        <div class="body">Best link turn against the sanctions-good DA for our Iran aff?</div>
+      </div>
+
+      <div class="nx-msg ai">
+        <div class="role">assistant</div>
+        <div class="body"><span class="k">Ranked 3 candidates</span> from your library.<div class="nx-cites"><a class="nx-cite" href="#"><span class="tag">Link-turn</span><span class="author">Mahbubani<span class="src">· Foreign Affairs '24</span></span><span class="open">open ↗</span></a><a class="nx-cite" href="#"><span class="tag">UQ</span><span class="author">Parsi<span class="src">· Quincy '24</span></span><span class="open">open ↗</span></a><a class="nx-cite" href="#"><span class="tag">Framing</span><span class="author">Ali<span class="src">· NLR '24</span></span><span class="open">open ↗</span></a></div><span class="dim">→ suggested 2AR: pair [1] + [2] for link-turn + UQ, bracket [3] if they K-out.</span></div>
+      </div>
+
+      <div class="nx-msg user">
+        <div class="role">you</div>
+        <div class="body">Draft an overview using [1] and [2].</div>
+      </div>
+
+      <div class="nx-msg ai">
+        <div class="role">assistant</div>
+        <div class="body">overview.draft v1 — 42s
+
+  <span class="k">The neg's sanctions-good DA collapses on two</span>
+  <span class="k">independent warrants.</span>
+
+  <span class="k">First</span>, their uniqueness evaporates <span class="dim">(Parsi '24)</span>:
+  back-channel talks are live <span class="shrink" style="font-size:10px">right now</span>; their brink
+  claim is backwards-looking.
+
+  <span class="k">Second</span>, their link is a link-turn <span class="dim">(Mahbubani '24)</span>:
+  pressure without an exit ramp produces the
+  behavior it claims to deter — empirically,
+  2018–2023 saw enrichment <span class="warn">expand</span> under maximum
+  pressure.
+
+  <span class="dim">Generated cites + warrant emphasis.</span>
+<span class="dim">[accept] [revise] [cite-swap]</span></div>
+      </div>
+
+    </div>
+    <div class="nx-compose">
+      <div class="nx-field">
+        <button class="nx-attach" title="Attach"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path></svg></button>
+        <textarea id="nx-input" placeholder="Ask the assistant…"></textarea>
+        <button class="nx-mic" title="Voice"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"></path><path d="M19 10v2a7 7 0 01-14 0v-2"></path><path d="M12 19v4M8 23h8"></path></svg></button>
+        <button class="nx-send" id="nx-send" title="Send"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg></button>
+      </div>
+      <div class="nx-compose-row">
+        <button class="nx-mini" title="Context">context</button>
+        <button class="nx-mini" title="Cite">cite</button>
+        <button class="nx-mini">haiku-4.5</button>
+        <div class="spacer"></div>
+        <span class="nx-mini" style="border:0;color:var(--muted-2)">⌘↵ send</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="nexus-closed-rail" id="nexus-rail" role="button" tabindex="0" title="Open Assistant">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"></path></svg>
+    <div class="v">ASSISTANT</div>
+  </div>
+</div>
+
+<!-- FILTER MODAL -->
+<div class="modal-backdrop" id="filter-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Filter evidence">
+    <div class="modal-head">
+      <h3>Filter evidence</h3>
+      <button class="close" id="filter-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="filter-group">
+        <span class="filter-group-label">Type of argument</span>
+        <div class="check-row" data-filter-group="type">
+          <label class="check-pill on" data-val="all"><input type="checkbox" checked=""><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>All</label>
+          <label class="check-pill" data-val="aff"><input type="checkbox"><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>Aff</label>
+          <label class="check-pill on" data-val="neg"><input type="checkbox" checked=""><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>Neg</label>
+          <label class="check-pill" data-val="k"><input type="checkbox"><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>Kritik</label>
+          <label class="check-pill" data-val="t"><input type="checkbox"><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>Topicality</label>
+          <label class="check-pill" data-val="theory"><input type="checkbox"><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>Theory</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-group-label">Source</span>
+        <div class="check-row" data-filter-group="source">
+          <label class="check-pill on" data-val="mine"><input type="checkbox" checked=""><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>My library</label>
+          <label class="check-pill on" data-val="community"><input type="checkbox" checked=""><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>Community</label>
+          <label class="check-pill" data-val="backfile"><input type="checkbox"><span class="box"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><path d="M5 12l5 5L20 7"></path></svg></span>Backfiles</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-group-label">Sort by</span>
+        <div class="radio-row" data-filter-group="sort">
+          <label class="on" data-val="recent"><span class="dot"></span>Most recent<span class="sub">default</span></label>
+          <label data-val="cited"><span class="dot"></span>Most cited<span class="sub">community</span></label>
+          <label data-val="relevance"><span class="dot"></span>Relevance to round<span class="sub">Iran · Sanctions</span></label>
+          <label data-val="alpha"><span class="dot"></span>Alphabetical<span class="sub">A → Z</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="clear" id="filter-clear">Clear filters</button>
+      <button class="apply" id="filter-apply">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<button class="tweak-toggle" id="settings-open" title="Settings">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"></path></svg>
+</button>
+<div class="modal-backdrop" id="settings-modal">
+  <div class="modal" role="dialog" aria-label="Settings" style="width:min(560px,92vw)">
+    <div class="modal-head"><h3>Settings</h3><button class="close" id="settings-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button></div>
+    <div class="modal-body">
+      <div class="filter-group"><span class="filter-group-label">Highlight color</span>
+        <div class="check-row" data-settings="highlight">
+          <button class="check-pill on" data-val="cyan"><span style="width:14px;height:14px;border-radius:4px;background:#CFFAFE;border:1px solid rgba(0,0,0,.08)"></span>Cyan</button>
+          <button class="check-pill" data-val="green"><span style="width:14px;height:14px;border-radius:4px;background:#DCFCE7;border:1px solid rgba(0,0,0,.08)"></span>Green</button>
+          <button class="check-pill" data-val="yellow"><span style="width:14px;height:14px;border-radius:4px;background:#FEF3C7;border:1px solid rgba(0,0,0,.08)"></span>Yellow</button>
+        </div></div>
+      <div class="filter-group"><span class="filter-group-label">Body font</span>
+        <select id="font-select" class="font-select">
+          <option value="calibri">Calibri</option>
+          <option value="inter">Inter</option>
+          <option value="serif">Newsreader (serif)</option>
+          <option value="mono">JetBrains Mono</option>
+          <option value="system">System UI</option>
+        </select></div>
+      <div class="filter-group"><span class="filter-group-label">Density</span>
+        <div class="check-row" data-settings="density">
+          <button class="check-pill on" data-val="comfy">Comfy</button>
+          <button class="check-pill" data-val="cozy">Cozy</button>
+          <button class="check-pill" data-val="dense">Dense</button>
+        </div></div>
+    </div>
+    <div class="modal-foot"><span style="font:12px/1 var(--font-display);color:var(--muted)">Changes apply live</span><button class="apply" id="settings-done">Done</button></div>
+  </div>
+</div>
+
+<!-- OLD TWEAKS (hidden) -->
+<button class="tweak-toggle hidden" id="tweak-toggle" title="Tweaks" style="display:none">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"></path></svg>
+</button>
+<div class="tweaks-panel" id="tweaks-panel">
+  <div class="tweaks-head">
+    <span>Tweaks</span>
+    <button class="icon-btn" id="tweaks-close" style="width:24px;height:24px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
+  </div>
+  <div class="tweaks-body">
+    <div class="tweak-field">
+      <label>Accent</label>
+      <div class="tweak-opts" data-tweak="accent">
+        <button class="tweak-opt" data-val="lilac"><span class="tweak-swatch" style="background:#DCD0FF"></span>Lilac</button>
+        <button class="tweak-opt" data-val="sky"><span class="tweak-swatch" style="background:#BAE6FD"></span>Sky</button>
+        <button class="tweak-opt" data-val="peach"><span class="tweak-swatch" style="background:#FED7AA"></span>Peach</button>
+        <button class="tweak-opt" data-val="sage"><span class="tweak-swatch" style="background:#BBF7D0"></span>Sage</button>
+      </div>
+    </div>
+    <div class="tweak-field">
+      <label>Density</label>
+      <div class="tweak-opts" data-tweak="density">
+        <button class="tweak-opt on" data-val="comfy">Comfy</button>
+        <button class="tweak-opt" data-val="cozy">Cozy</button>
+        <button class="tweak-opt" data-val="dense">Dense</button>
+      </div>
+    </div>
+    <div class="tweak-field">
+      <label>Assistant panel</label>
+      <div class="tweak-opts" data-tweak="terminal">
+        <button class="tweak-opt" data-val="open">Open</button>
+        <button class="tweak-opt on" data-val="closed">Collapsed</button>
+      </div>
+    </div>
+    <div class="tweak-field">
+      <label>Body font</label>
+      <div class="tweak-opts" data-tweak="font">
+        <button class="tweak-opt on" data-val="calibri">Calibri</button>
+        <button class="tweak-opt" data-val="inter">Inter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CMD PALETTE -->
+<div class="cmd-overlay" id="cmd-overlay">
+  <div class="cmd-box">
+    <div class="cmd-input-row">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--muted)"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+      <input id="cmd-input" placeholder="Search cards, actions, pages…">
+      <kbd>esc</kbd>
+    </div>
+    <div class="cmd-list" id="cmd-list">
+      <div class="cmd-item sel" data-go="home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15z"></path></svg>Open Card Cutter<span class="hint">Go</span></div>
+      <div class="cmd-item" data-go="community"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h12a4 4 0 014 4v12H8a4 4 0 01-4-4V4z"></path></svg>Open Evidence<span class="hint">Go</span></div>
+      <div class="cmd-item" data-go="contentions"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M3 12h18M3 18h12"></path></svg>Open Contentions<span class="hint">Go</span></div>
+      <div class="cmd-item" data-go="saved"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>Open My Cards<span class="hint">Go</span></div>
+      <div class="cmd-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"></path></svg>New manual card<span class="hint">Action</span></div>
+      <div class="cmd-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path></svg>Import .docx backfile<span class="hint">Action</span></div>
+    </div>
+    <div class="cmd-foot">
+      <span><kbd>↑↓</kbd> navigate</span>
+      <span><kbd>↵</kbd> select</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const pages = document.querySelectorAll('.page');
+  const navItems = document.querySelectorAll('.nav-item[data-page]');
+  const tabs = document.querySelectorAll('.tab[data-page]');
+  const pageNames = {home:'Card Cutter',community:'Evidence',contentions:'Contentions',saved:'My Cards',history:'History'};
+  function go(page){
+    pages.forEach(p=>p.classList.toggle('active',p.id==='page-'+page));
+    navItems.forEach(n=>n.classList.toggle('active',n.dataset.page===page));
+    tabs.forEach(t=>t.classList.toggle('active',t.dataset.page===page));
+    try{localStorage.setItem('verba.page',page)}catch(e){}
+  }
+  navItems.forEach(n=>n.addEventListener('click',()=>go(n.dataset.page)));
+  tabs.forEach(t=>t.addEventListener('click',()=>go(t.dataset.page)));
+  try{const s=localStorage.getItem('verba.page');if(s&&pageNames[s])go(s);}catch(e){}
+
+  document.querySelectorAll('.ev-item').forEach(el=>{
+    el.addEventListener('click',()=>{
+      document.querySelectorAll('.ev-item').forEach(e=>e.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.cont-row').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const col = el.closest('.cont-col');
+      col.querySelectorAll('.cont-row').forEach(e=>e.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.filter-row').forEach(row=>{
+    row.querySelectorAll('.filter-chip').forEach(ch=>{
+      ch.addEventListener('click',()=>{
+        row.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+        ch.classList.add('active');
+      });
+    });
+  });
+
+  // Contentions view toggle
+  document.querySelectorAll('.cont-vtab').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.cont-vtab').forEach(x=>x.classList.toggle('on',x===b));
+      const v=b.dataset.cv;
+      const list=document.getElementById('cont-view-list'),mat=document.getElementById('cont-view-matrix');
+      if(list) list.style.display = v==='list'?'':'none';
+      if(mat) mat.style.display = v==='matrix'?'':'none';
+    });
+  });
+  // Matrix drag
+  document.querySelectorAll('.mcard[draggable="true"]').forEach(c=>{
+    c.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain','x');c.classList.add('dragging');window.__drag=c});
+    c.addEventListener('dragend',()=>{c.classList.remove('dragging');window.__drag=null});
+  });
+  document.querySelectorAll('.matrix-drop').forEach(d=>{
+    d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});
+    d.addEventListener('dragleave',()=>d.classList.remove('over'));
+    d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');if(window.__drag)d.appendChild(window.__drag)});
+  });
+
+  // History filters
+  document.querySelectorAll('.hist-filter').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.hist-filter').forEach(x=>x.classList.toggle('on',x===b));
+      const f=b.dataset.hf;
+      document.querySelectorAll('#page-history .hist-row').forEach(r=>{
+        r.style.display = (f==='all'||r.dataset.ht===f)?'':'none';
+      });
+      document.querySelectorAll('#page-history .hist-day').forEach(d=>{
+        const has=[...d.querySelectorAll('.hist-row')].some(r=>r.style.display!=='none');
+        d.style.display = has?'':'none';
+      });
+    });
+  });
+
+  // Folders rail
+  document.querySelectorAll('.folder-row').forEach(r=>{
+    r.addEventListener('click',()=>{
+      document.querySelectorAll('.folder-row').forEach(x=>x.classList.toggle('active',x===r));
+    });
+  });
+
+  const toast = document.getElementById('toast');let tT;
+  function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>toast.classList.remove('show'),1700)}
+
+  const pIn=document.getElementById('zone-input'),pBt=document.getElementById('zone-enter');
+  function submit(){const v=pIn.value.trim();if(!v){showToast('Paste a URL or type an argument');return}showToast('Queued · researching…');pIn.value=''}
+  pBt.addEventListener('click',submit);
+  pIn.addEventListener('keydown',e=>{if(e.key==='Enter')submit()});
+
+  // Nexus collapse
+  const nxClose=document.getElementById('nexus-close'),nxRail=document.getElementById('nexus-rail'),toggleNx=document.getElementById('toggle-nexus');
+  function setNexus(open){
+    document.body.classList.toggle('nexus-closed',!open);
+    TWEAKS.terminal = open?'open':'closed';
+    document.querySelectorAll('[data-tweak="terminal"] .tweak-opt').forEach(o=>o.classList.toggle('on',o.dataset.val===TWEAKS.terminal));
+  }
+  nxClose.addEventListener('click',()=>setNexus(false));
+  nxRail.addEventListener('click',()=>setNexus(true));
+  toggleNx.addEventListener('click',()=>setNexus(document.body.classList.contains('nexus-closed')));
+
+  // Nexus send
+  const nxIn=document.getElementById('nx-input'),nxSend=document.getElementById('nx-send'),nxBody=document.getElementById('nexus-body');
+  function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[c])}
+  function nxSubmit(){
+    const v=nxIn.value.trim();if(!v)return;
+    nxBody.insertAdjacentHTML('beforeend',`<div class="nx-msg user"><div class="role">you</div><div class="body">${esc(v)}</div></div>`);
+    nxBody.insertAdjacentHTML('beforeend',`<div class="nx-msg ai" id="nx-pend"><div class="role">assistant</div><div class="body"><span class="dim">thinking…</span></div></div>`);
+    nxIn.value='';
+    nxBody.scrollTop=nxBody.scrollHeight;
+    setTimeout(()=>{
+      const p=document.getElementById('nx-pend');if(!p)return;p.removeAttribute('id');
+      p.querySelector('.body').innerHTML = `<span class="k">3 cards</span> match your query. Top result: <span class="cite">Mahbubani '24 · FA</span> <span class="ok">0.91</span>\n<span class="dim">→ tap to insert into current card.</span>`;
+      nxBody.scrollTop=nxBody.scrollHeight;
+    },650);
+  }
+  nxSend.addEventListener('click',nxSubmit);
+  nxIn.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();nxSubmit()}});
+
+  // Command palette
+  const cmdO=document.getElementById('cmd-overlay'),cmdI=document.getElementById('cmd-input');
+  const cmdItems=()=>[...document.querySelectorAll('.cmd-item:not([hidden])')];
+  document.getElementById('cmd-trigger').addEventListener('click',()=>{cmdO.classList.add('open');setTimeout(()=>cmdI.focus(),20)});
+  cmdO.addEventListener('click',e=>{if(e.target===cmdO)cmdO.classList.remove('open')});
+  document.addEventListener('keydown',e=>{
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();cmdO.classList.toggle('open');if(cmdO.classList.contains('open'))setTimeout(()=>cmdI.focus(),20)}
+    if(e.key==='Escape'&&cmdO.classList.contains('open'))cmdO.classList.remove('open');
+    if(cmdO.classList.contains('open')){
+      const items=cmdItems();let i=items.findIndex(x=>x.classList.contains('sel'));
+      if(e.key==='ArrowDown'){e.preventDefault();items.forEach(x=>x.classList.remove('sel'));items[Math.min(i+1,items.length-1)].classList.add('sel')}
+      if(e.key==='ArrowUp'){e.preventDefault();items.forEach(x=>x.classList.remove('sel'));items[Math.max(i-1,0)].classList.add('sel')}
+      if(e.key==='Enter'){e.preventDefault();const s=items[i]||items[0];if(s){if(s.dataset.go)go(s.dataset.go);cmdO.classList.remove('open')}}
+    }
+  });
+  cmdI.addEventListener('input',()=>{
+    const q=cmdI.value.toLowerCase().trim();
+    document.querySelectorAll('.cmd-item').forEach(it=>{it.hidden=!!q&&!it.textContent.toLowerCase().includes(q);it.classList.remove('sel')});
+    const f=cmdItems()[0];if(f)f.classList.add('sel');
+  });
+  document.querySelectorAll('.cmd-item').forEach(it=>{it.addEventListener('click',()=>{if(it.dataset.go)go(it.dataset.go);cmdO.classList.remove('open')})});
+
+  // Tweaks
+  const panel=document.getElementById('tweaks-panel'),tgl=document.getElementById('tweak-toggle'),cl=document.getElementById('tweaks-close');
+  tgl.addEventListener('click',()=>panel.classList.toggle('open'));
+  cl.addEventListener('click',()=>panel.classList.remove('open'));
+  function applyTweaks(t){
+    document.body.classList.remove('accent-lilac','accent-sky','accent-peach','accent-sage');
+    document.body.classList.add('accent-'+t.accent);
+    document.body.classList.remove('density-comfy','density-cozy','density-dense');
+    document.body.classList.add('density-'+t.density);
+    document.body.classList.remove('font-calibri','font-inter');
+    document.body.classList.add('font-'+t.font);
+    document.body.classList.toggle('nexus-closed',t.terminal==='closed');
+    document.querySelectorAll('.tweak-opts').forEach(g=>{
+      const k=g.dataset.tweak;
+      g.querySelectorAll('.tweak-opt').forEach(o=>o.classList.toggle('on',o.dataset.val===t[k]));
+    });
+  }
+  applyTweaks(TWEAKS);
+  document.querySelectorAll('.tweak-opts').forEach(g=>{
+    g.querySelectorAll('.tweak-opt').forEach(o=>{
+      o.addEventListener('click',()=>{
+        const k=g.dataset.tweak,v=o.dataset.val;TWEAKS[k]=v;applyTweaks(TWEAKS);
+        if(window.parent!==window)window.parent.postMessage({type:'__edit_mode_set_keys',edits:{[k]:v}},'*');
+      });
+    });
+  });
+  window.addEventListener('message',e=>{
+    const d=e.data||{};
+    if(d.type==='__activate_edit_mode'){panel.classList.add('open');tgl.classList.add('hidden')}
+    if(d.type==='__deactivate_edit_mode'){panel.classList.remove('open');tgl.classList.remove('hidden')}
+  });
+  if(window.parent!==window)window.parent.postMessage({type:'__edit_mode_available'},'*');
+
+  // Filter modal
+  const fModal=document.getElementById('filter-modal');
+  const fOpen=document.getElementById('open-filters');
+  const fClose=document.getElementById('filter-close');
+  const fApply=document.getElementById('filter-apply');
+  const fClear=document.getElementById('filter-clear');
+  const fSummary=document.getElementById('filter-summary');
+  const fCount=document.getElementById('filter-count');
+  if(fOpen){
+    fOpen.addEventListener('click',()=>fModal.classList.add('open'));
+    fClose.addEventListener('click',()=>fModal.classList.remove('open'));
+    fModal.addEventListener('click',e=>{if(e.target===fModal)fModal.classList.remove('open')});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')fModal.classList.remove('open')});
+    // checkbox pills
+    document.querySelectorAll('[data-filter-group="type"] .check-pill, [data-filter-group="source"] .check-pill').forEach(p=>{
+      p.addEventListener('click',e=>{
+        e.preventDefault();
+        const inp=p.querySelector('input');
+        inp.checked=!inp.checked;
+        p.classList.toggle('on',inp.checked);
+      });
+    });
+    // radio
+    document.querySelectorAll('[data-filter-group="sort"] label').forEach(l=>{
+      l.addEventListener('click',e=>{
+        e.preventDefault();
+        l.parentElement.querySelectorAll('label').forEach(x=>x.classList.remove('on'));
+        l.classList.add('on');
+      });
+    });
+    function updateSummary(){
+      const types=[...document.querySelectorAll('[data-filter-group="type"] .check-pill.on')].map(p=>p.dataset.val);
+      const sort=document.querySelector('[data-filter-group="sort"] label.on')?.textContent.trim().split(/\s{2,}/)[0]||'Most recent';
+      const typeLabel = types.length===0?'None':(types.includes('all')||types.length>=6)?'All types':types.map(t=>({aff:'Aff',neg:'Neg',k:'K',t:'T',theory:'Theory'}[t]||t)).join(' · ');
+      const sources=[...document.querySelectorAll('[data-filter-group="source"] .check-pill.on')].length;
+      fSummary.textContent = `${typeLabel} · ${sort}`;
+      const active = types.filter(t=>t!=='all').length + (sources<3?1:0);
+      fCount.textContent = active;
+      fCount.style.display = active>0?'inline-grid':'none';
+    }
+    fApply.addEventListener('click',()=>{updateSummary();fModal.classList.remove('open')});
+    fClear.addEventListener('click',()=>{
+      document.querySelectorAll('#filter-modal .check-pill').forEach(p=>{const i=p.querySelector('input');i.checked=false;p.classList.remove('on')});
+      const allPill=document.querySelector('[data-filter-group="type"] [data-val="all"]');
+      if(allPill){allPill.classList.add('on');allPill.querySelector('input').checked=true}
+      document.querySelectorAll('[data-filter-group="source"] .check-pill').forEach(p=>{p.classList.add('on');p.querySelector('input').checked=true});
+      document.querySelectorAll('[data-filter-group="sort"] label').forEach((l,i)=>l.classList.toggle('on',i===0));
+      updateSummary();
+    });
+    updateSummary();
+  }
+  // Source pane close/reopen — card expands to fill space, small edge handle to bring source back
+  const srcClose=document.getElementById('source-close'), srcReopen=document.getElementById('source-reopen'), srcHandle=document.getElementById('source-handle');
+  const wb=document.getElementById('workbench');
+  if(srcClose&&wb){srcClose.addEventListener('click',()=>{wb.classList.add('source-hidden')})}
+  if(srcHandle&&wb){srcHandle.addEventListener('click',()=>{wb.classList.remove('source-hidden')})}
+  if(srcReopen){srcReopen.style.display='none'}
+  const cardDel=document.getElementById('card-delete');
+  if(cardDel){cardDel.addEventListener('click',()=>{if(confirm('Delete this generated card?'))showToast('Card deleted')})}
+
+  // Settings modal
+  const sM=document.getElementById('settings-modal'),sO=document.getElementById('settings-open'),sC=document.getElementById('settings-close'),sD=document.getElementById('settings-done');
+  if(sO){sO.addEventListener('click',()=>sM.classList.add('open'));sC.addEventListener('click',()=>sM.classList.remove('open'));sD.addEventListener('click',()=>sM.classList.remove('open'));sM.addEventListener('click',e=>{if(e.target===sM)sM.classList.remove('open')})}
+  document.querySelectorAll('[data-settings]').forEach(g=>{
+    g.querySelectorAll('.check-pill').forEach(p=>{
+      p.addEventListener('click',()=>{
+        const k=g.dataset.settings,v=p.dataset.val;
+        g.querySelectorAll('.check-pill').forEach(x=>x.classList.remove('on'));p.classList.add('on');
+        if(k==='accent'){document.body.classList.remove('accent-lilac','accent-sky','accent-peach','accent-sage','accent-graphite','accent-ink');document.body.classList.add('accent-'+v);TWEAKS.accent=v}
+        if(k==='highlight'){document.body.classList.remove('hl-lilac','hl-cyan','hl-green','hl-yellow');document.body.classList.add('hl-'+v);TWEAKS.highlight=v}
+        if(k==='font'){document.body.classList.remove('font-calibri','font-inter','font-serif');document.body.classList.add('font-'+v);TWEAKS.font=v}
+        if(k==='density'){document.body.classList.remove('density-comfy','density-cozy','density-dense');document.body.classList.add('density-'+v);TWEAKS.density=v}
+        if(window.parent!==window)window.parent.postMessage({type:'__edit_mode_set_keys',edits:{[k]:v}},'*');
+      });
+    });
+  });
+  // Default highlight + serif font-face
+  document.body.classList.add('hl-lilac');
+
+  const fs=document.getElementById('font-select');
+  if(fs){fs.value=TWEAKS.font||'calibri';fs.addEventListener('change',()=>{const v=fs.value;document.body.classList.remove('font-calibri','font-inter','font-serif','font-mono','font-system');document.body.classList.add('font-'+v);TWEAKS.font=v;if(window.parent!==window)window.parent.postMessage({type:'__edit_mode_set_keys',edits:{font:v}},'*')})}
+})();
+</script>
+
+
+</body></html>
