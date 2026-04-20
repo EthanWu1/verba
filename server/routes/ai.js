@@ -12,7 +12,15 @@ const enforceLimit = require('../middleware/enforceLimit');
 const CUT_DAILY_LIMIT = Number(process.env.FREE_CUTCARD_DAILY || 5);
 
 const { complete, completeStream, parseJSON, smartTruncate, getTokenStats, MODEL_CHAIN } = require('../services/llm');
-const { SYSTEM_PROMPT, buildCutPrompt, buildEditPrompt } = require('../prompts/cardCutter');
+const { SYSTEM_PROMPT, buildSystemPrompt, buildCutPrompt, buildEditPrompt, LENGTH_PRESETS, DENSITY_PRESETS } = require('../prompts/cardCutter');
+
+const LENGTH_BUDGETS = {
+  short:  { input: 4500, output: 1700 },
+  medium: { input: 6000, output: 2400 },
+  long:   { input: 10000, output: 3600 },
+};
+function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'standard'; }
+function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'medium'; }
 const { validateCut } = require('../services/cutValidator');
 const { buildChatContext } = require('../services/libraryQuery');
 const { buildCite, validateCiteMatchesMeta } = require('../services/autocite');
@@ -21,6 +29,7 @@ const {
   buildInstantLibraryBullets,
 } = require('../services/instantResearch');
 const { reachable } = require('../services/urlCheck');
+const { saveCutCardForUser } = require('../services/autoSaveCard');
 
 const CARD_CUT_MODEL = process.env.CARD_CUT_MODEL || 'anthropic/claude-sonnet-4.6';
 
@@ -56,22 +65,26 @@ function verifyBodyFidelity(cardBody, sourceText) {
 
 router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), async (req, res) => {
   const { argument = '', bodyText = '', meta = {}, cite = '' } = req.body;
+  const density = normalizeDensity(req.body?.density);
+  const length = normalizeLength(req.body?.length);
+  const budget = LENGTH_BUDGETS[length];
 
   if (!bodyText || bodyText.trim().length < 50) {
     return res.status(400).json({ error: 'bodyText must be at least 50 characters.' });
   }
 
-  const truncated = smartTruncate(bodyText, 6000);
-  const userMsg = buildCutPrompt({ argument, bodyText: truncated, meta, cite });
+  const truncated = smartTruncate(bodyText, budget.input);
+  const systemPrompt = buildSystemPrompt({ density, length });
+  const userMsg = buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length });
 
   try {
     const result = await complete({
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: userMsg },
       ],
       temperature: 0.15,
-      maxTokens: 2400,
+      maxTokens: budget.output,
       forceModel: CARD_CUT_MODEL,
     });
 
@@ -97,15 +110,15 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       card.cite = cite || card.cite;
     }
 
-    const cutCheck = validateCut(card.body_markdown || '', truncated);
+    const cutCheck = validateCut(card.body_markdown || '', truncated, { density });
     if (!cutCheck.ok) {
       const retryResult = await complete({
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: buildCutPrompt({ argument, bodyText: truncated, meta, cite, critique: cutCheck.critique }) },
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length, critique: cutCheck.critique }) },
         ],
         temperature: 0.1,
-        maxTokens: 2400,
+        maxTokens: budget.output,
         forceModel: CARD_CUT_MODEL,
       });
       try { card = parseJSON(retryResult.content); }
@@ -114,9 +127,17 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
 
     const fidelity = verifyBodyFidelity(card.body_markdown, truncated);
 
+    let saved = null;
+    try {
+      const r = await saveCutCardForUser(req.user?.id, { ...card, ...meta, cite: card.cite || cite });
+      if (r) saved = { id: r.card.id, duplicate: r.duplicate, typeLabel: r.card.typeLabel, topicLabel: r.card.topicLabel, argumentTypes: r.card.argumentTypes, argumentTags: r.card.argumentTags };
+      if (r && !card.id) card.id = r.card.id;
+    } catch {}
+
     return res.json({
       card,
       fidelity,
+      saved,
       stats: result.stats,
       model: result.model,
     });
@@ -137,6 +158,9 @@ router.post('/edit-card', async (req, res) => {
     sourceText = '',
     cite = '',
   } = req.body;
+  const density = normalizeDensity(req.body?.density);
+  const length = normalizeLength(req.body?.length);
+  const budget = LENGTH_BUDGETS[length];
 
   if (!instruction.trim()) {
     return res.status(400).json({ error: 'instruction is required.' });
@@ -150,18 +174,20 @@ router.post('/edit-card', async (req, res) => {
     instruction,
     argument,
     card,
-    sourceText: smartTruncate(sourceText, 4500),
+    sourceText: smartTruncate(sourceText, Math.min(budget.input, 5000)),
     cite,
+    density,
+    length,
   });
 
   try {
     const result = await complete({
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: buildSystemPrompt({ density, length }) },
         { role: 'user', content: prompt },
       ],
       temperature: 0.2,
-      maxTokens: 2200,
+      maxTokens: Math.min(budget.output, 2400),
     });
 
     let nextCard;
@@ -310,6 +336,10 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
   const query = String(req.query.query || '');
   const url = String(req.query.url || '');
   const argument = String(req.query.argument || query || '');
+  const density = normalizeDensity(req.query.density);
+  const length = normalizeLength(req.query.length);
+  const budget = LENGTH_BUDGETS[length];
+  const systemPrompt = buildSystemPrompt({ density, length });
 
   if (!query.trim() && !url.trim()) {
     return res.status(400).json({ error: 'A query or URL is required.' });
@@ -391,11 +421,13 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
 
     send('phase', { type: 'cut_start' });
     const cutBody = result.window?.text || result.article.bodyText || result.excerpt || '';
-    const truncated = smartTruncate(cutBody, 6000);
+    const truncated = smartTruncate(cutBody, budget.input);
     const userMsg = buildCutPrompt({
       argument,
       bodyText: truncated,
       cite,
+      density,
+      length,
       meta: {
         url: result.article.url,
         source: result.article.source,
@@ -409,11 +441,11 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
       cut = await Promise.race([
         completeStream({
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: userMsg },
           ],
           temperature: 0.15,
-          maxTokens: 2400,
+          maxTokens: budget.output,
           forceModel: CARD_CUT_MODEL,
           onToken: (_delta, acc) => { send('card_delta', { acc }); },
         }),
@@ -434,13 +466,15 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
     catch {
       card = { tag: result.article.title || 'Untitled', cite, body_markdown: cut.content || result.excerpt || '' };
     }
-    const cutCheck = validateCut(card.body_markdown || '', truncated);
+    const cutCheck = validateCut(card.body_markdown || '', truncated, { density });
     if (!cutCheck.ok) {
       send('phase', { type: 'cut_retry', reason: 'over-highlighted' });
       const retryMsg = buildCutPrompt({
         argument,
         bodyText: truncated,
         cite,
+        density,
+        length,
         critique: cutCheck.critique,
         meta: {
           url: result.article.url,
@@ -454,11 +488,11 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
         const cut2 = await Promise.race([
           completeStream({
             messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'system', content: systemPrompt },
               { role: 'user', content: retryMsg },
             ],
             temperature: 0.1,
-            maxTokens: 2400,
+            maxTokens: budget.output,
             forceModel: CARD_CUT_MODEL,
             onToken: (_delta, acc) => { send('card_delta', { acc }); },
           }),
@@ -477,7 +511,24 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
       card.cite = cite || card.cite;
     }
     const fidelity = verifyBodyFidelity(card.body_markdown, truncated);
-    send('card', { card: { ...card, cite: card.cite || cite }, fidelity, model: cut.model });
+    const finalCard = { ...card, cite: card.cite || cite };
+    let saved = null;
+    try {
+      const r = await saveCutCardForUser(req.user?.id, {
+        ...finalCard,
+        url: result.article.url,
+        source: result.article.source,
+        title: result.article.title,
+        author: result.article.author,
+        date: result.article.date,
+      });
+      if (r) {
+        saved = { id: r.card.id, duplicate: r.duplicate, typeLabel: r.card.typeLabel, topicLabel: r.card.topicLabel, argumentTypes: r.card.argumentTypes, argumentTags: r.card.argumentTags };
+        if (!finalCard.id) finalCard.id = r.card.id;
+      }
+    } catch {}
+    send('card', { card: finalCard, fidelity, saved, model: cut.model });
+    if (saved) send('saved', saved);
     send('done', { ok: true });
   } catch (err) {
     send('error', { error: err.message });

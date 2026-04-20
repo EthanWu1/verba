@@ -99,6 +99,36 @@ function splitIntoWindows(paragraphs, targetWords = 400, overlap = 1) {
   return windows;
 }
 
+const BOILERPLATE_RE = /\b(references|bibliography|acknowledg(e)?ments?|works cited|about the author|author bio|author note|disclosures?|conflicts of interest|funding statement|appendix|citation|doi:|©|copyright)\b/i;
+
+function tokenizeIntent(s) {
+  return [...new Set(
+    String(s || '').toLowerCase().split(/[^a-z0-9]+/)
+      .filter(t => t.length >= 4)
+  )];
+}
+
+function scoreWindowKeyword(text, tokens) {
+  if (!tokens.length) return 0;
+  const hay = String(text || '').toLowerCase();
+  let score = 0;
+  for (const t of tokens) {
+    const matches = hay.split(t).length - 1;
+    if (matches) score += 3 + Math.min(matches, 4);
+  }
+  return score;
+}
+
+function warrantSignals(text) {
+  const s = String(text || '').toLowerCase();
+  let n = 0;
+  if (/\b(because|therefore|thus|hence|consequently|as a result|leads to|causes?)\b/.test(s)) n += 2;
+  if (/\d+(\.\d+)?\s?(%|percent|million|billion|trillion|bps|years?|deaths?)/.test(s)) n += 2;
+  if (/\b(study|research|report|analysis|data|findings?|evidence|paper)\b/.test(s)) n += 1;
+  if (BOILERPLATE_RE.test(s)) n -= 4;
+  return n;
+}
+
 async function pickBestWindow({ intent, paragraphs }) {
   const windows = splitIntoWindows(paragraphs, 400, 1);
   if (windows.length <= 1) {
@@ -109,20 +139,34 @@ async function pickBestWindow({ intent, paragraphs }) {
     };
   }
 
-  const payload = windows.map(w => ({
-    idx: w.idx,
-    text: firstWords(w.text, 450),
+  const tokens = tokenizeIntent(intent);
+  const scored = windows.map(w => ({
+    w,
+    kw: scoreWindowKeyword(w.text, tokens),
+    sig: warrantSignals(w.text),
+  })).map(x => ({ ...x, pre: x.kw + x.sig }));
+
+  scored.sort((a, b) => b.pre - a.pre);
+  const top = scored.slice(0, Math.min(5, scored.length));
+
+  if (top.length === 1) {
+    return { window: top[0].w, reason: 'keyword-only-survivor', windows };
+  }
+
+  const payload = top.map(x => ({
+    idx: x.w.idx,
+    text: firstWords(x.w.text, 450),
   }));
 
   const system = `You select the single best passage from a long article for a debate card.
 Pick the window with the strongest warrants matching the debater INTENT.
 Prefer: empirical claims, causal mechanisms, quantified impacts, named experts.
-Avoid: intros, bios, throat-clearing, tangents.
+Avoid: intros, bios, throat-clearing, tangents, references lists.
 Return JSON only: {"best":N,"reason":"one sentence"}.`;
 
   const user = `DEBATER INTENT: ${intent}
 
-WINDOWS:
+WINDOWS (already pre-filtered by keyword+warrant signals):
 ${JSON.stringify(payload, null, 2)}
 
 Return strict JSON.`;
@@ -130,10 +174,10 @@ Return strict JSON.`;
   try {
     const out = await callGeminiJSON({ system, user, maxTokens: 300 });
     const bestIdx = Number(out?.best);
-    const picked = windows.find(w => w.idx === bestIdx) || windows[0];
+    const picked = windows.find(w => w.idx === bestIdx) || top[0].w;
     return { window: picked, reason: String(out?.reason || ''), windows };
   } catch {
-    return { window: windows[0], reason: 'fallback-first-window', windows };
+    return { window: top[0].w, reason: 'fallback-keyword-top', windows };
   }
 }
 

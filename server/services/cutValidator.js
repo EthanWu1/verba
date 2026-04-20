@@ -3,6 +3,12 @@
 const MAX_RUN_WORDS = 5;
 const MAX_HIGHLIGHT_RATIO = 0.40;
 
+const UNDERLINE_CAPS = {
+  minimal:  0.40,
+  standard: 0.55,
+  heavy:    0.72,
+};
+
 function stripMarks(text) {
   return String(text || '')
     .replace(/\*\*/g, '')
@@ -18,6 +24,16 @@ function wordCount(text) {
 function getHighlightRuns(paragraph) {
   const runs = [];
   const re = /==([^=]+)==/g;
+  let m;
+  while ((m = re.exec(paragraph)) !== null) {
+    runs.push(stripMarks(m[1]).trim());
+  }
+  return runs;
+}
+
+function getUnderlineRuns(paragraph) {
+  const runs = [];
+  const re = /<u>([\s\S]*?)<\/u>/gi;
   let m;
   while ((m = re.exec(paragraph)) !== null) {
     runs.push(stripMarks(m[1]).trim());
@@ -61,7 +77,9 @@ function buildSourceParagraphIndex(sourceText) {
   return splitParagraphs(sourceText).map(normalizeForMatch).filter(Boolean);
 }
 
-function validateCut(bodyMarkdown, sourceText = '') {
+function validateCut(bodyMarkdown, sourceText = '', opts = {}) {
+  const density = opts.density || 'standard';
+  const underlineCap = UNDERLINE_CAPS[density] ?? UNDERLINE_CAPS.standard;
   const paragraphs = splitParagraphs(bodyMarkdown);
   const issues = [];
   const sourceParas = sourceText ? buildSourceParagraphIndex(sourceText) : [];
@@ -79,6 +97,15 @@ function validateCut(bodyMarkdown, sourceText = '') {
     if (ratio > MAX_HIGHLIGHT_RATIO) {
       issues.push(
         `Paragraph ${i + 1}: ${Math.round(ratio * 100)}% highlighted (max ${Math.round(MAX_HIGHLIGHT_RATIO * 100)}%). Shrink highlight runs to 1–5 words each; leave ≥60% of words unhighlighted.`
+      );
+    }
+
+    const uRuns = getUnderlineRuns(p);
+    const underlinedWords = uRuns.reduce((sum, r) => sum + wordCount(r), 0);
+    const uRatio = underlinedWords / totalWords;
+    if (uRatio > underlineCap) {
+      issues.push(
+        `Paragraph ${i + 1}: ${Math.round(uRatio * 100)}% underlined (max ${Math.round(underlineCap * 100)}% for "${density}"). Remove filler/transitional sentences from <u>…</u> — underline ONLY clauses that carry the warrant.`
       );
     }
 

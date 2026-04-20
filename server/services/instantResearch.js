@@ -125,6 +125,37 @@ function dedupeByUrl(items) {
   return out;
 }
 
+function normalizeTitleKey(t) {
+  return String(t || '').toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 140);
+}
+
+function extractDoi(item) {
+  if (!item) return '';
+  if (item.doi) return String(item.doi).toLowerCase().replace(/^https?:\/\/(dx\.)?doi\.org\//, '');
+  const m = String(item.url || '').match(/doi\.org\/(10\.\d+\/[^\s?#]+)/i);
+  return m ? m[1].toLowerCase() : '';
+}
+
+const BOILERPLATE_PARA_RE = /^\s*(references|bibliography|works cited|acknowledg(e)?ments?|about the author|author(s)? (bio|biography|note)|disclosures?|conflicts of interest|funding|data availability|appendix|supplementary materials?)\b/i;
+
+function stripBoilerplateParagraphs(paragraphs) {
+  if (!Array.isArray(paragraphs)) return paragraphs;
+  const out = [];
+  let skipping = false;
+  for (const p of paragraphs) {
+    const t = String(p.text || '').trim();
+    if (BOILERPLATE_PARA_RE.test(t)) { skipping = true; continue; }
+    if (skipping) continue;
+    if (/^\[?\s*(\d+\.|\[\d+\])/.test(t) && t.length < 500 && /\b(doi|http|vol\.?\s*\d+|pp\.)\b/i.test(t)) continue;
+    out.push(p);
+  }
+  return out.length ? out : paragraphs;
+}
+
 function withTimeout(promise, ms, label) {
   return Promise.race([
     promise,
@@ -156,17 +187,42 @@ async function fanoutResearch(query, perAdapter = 4, onPhase = null) {
   });
   const results = await Promise.allSettled(wrapped);
   const flat = results.flatMap(r => (r.status === 'fulfilled' ? r.value : []));
-  // Dedupe but keep scholarly version if duplicate URL comes from multiple adapters
+  // Dedupe by DOI first (same paper, different URLs), then by URL, then by normalized title.
+  // Prefer scholarly adapter version when conflict.
   const byKey = new Map();
+  const pickBetter = (existing, item) => {
+    if (!existing) return item;
+    const exScholar = SCHOLARLY_ADAPTERS.has(existing.__adapter);
+    const itScholar = SCHOLARLY_ADAPTERS.has(item.__adapter);
+    if (!exScholar && itScholar) return item;
+    if (exScholar && !itScholar) return existing;
+    const exOA = /doi\.org|unpaywall|pmc|arxiv|openalex/i.test(existing.__adapter + ' ' + (existing.url || ''));
+    const itOA = /doi\.org|unpaywall|pmc|arxiv|openalex/i.test(item.__adapter + ' ' + (item.url || ''));
+    if (itOA && !exOA) return item;
+    return existing;
+  };
   for (const item of flat) {
     if (!item?.url) continue;
-    const key = String(item.url).split('#')[0].replace(/\/$/, '');
-    const existing = byKey.get(key);
-    if (!existing || (SCHOLARLY_ADAPTERS.has(item.__adapter) && !SCHOLARLY_ADAPTERS.has(existing.__adapter))) {
-      byKey.set(key, item);
+    const doi = extractDoi(item);
+    const urlKey = String(item.url).split('#')[0].replace(/\/$/, '');
+    const titleKey = normalizeTitleKey(item.title);
+    const keys = [doi && `doi:${doi}`, `url:${urlKey}`, titleKey && `title:${titleKey}`].filter(Boolean);
+    const existingKey = keys.find(k => byKey.has(k));
+    if (existingKey) {
+      const winner = pickBetter(byKey.get(existingKey), item);
+      for (const k of keys) byKey.set(k, winner);
+    } else {
+      for (const k of keys) byKey.set(k, item);
     }
   }
-  return [...byKey.values()];
+  const seen = new Set();
+  const out = [];
+  for (const v of byKey.values()) {
+    if (!v?.url || seen.has(v.url)) continue;
+    seen.add(v.url);
+    out.push(v);
+  }
+  return out;
 }
 
 async function scrapeWithConcurrency(candidates, limit = 5, onPhase = null) {
@@ -184,8 +240,11 @@ async function scrapeWithConcurrency(candidates, limit = 5, onPhase = null) {
         const bt = article.bodyText || '';
         const looksAbstractOnly = bt.length < 1800 || /^\s*abstract[:\s]/i.test(bt.slice(0, 200));
         if (bt && !looksAbstractOnly && !bt.startsWith('[SCRAPE LIMITED]')) {
+          const cleanedParas = stripBoilerplateParagraphs(article.paragraphs || []);
           const enriched = {
             ...article,
+            paragraphs: cleanedParas,
+            bodyText: cleanedParas.length ? cleanedParas.map(p => p.text).join('\n\n') : article.bodyText,
             author: article.author || c.author || '',
             date: article.date || c.date || '',
             doi: article.doi || c.doi || '',
@@ -235,6 +294,13 @@ async function findBestResearchSource({ query, url = '', onPhase = null }) {
     const article = await withTimeout(scrapeUrl(finalUrl), 12000, 'scrape-url');
     const doiMatch = finalUrl.match(/doi\.org\/(10\.\d+\/[^\s?#]+)/i);
     if (doiMatch && !article.doi) article.doi = doiMatch[1].toLowerCase();
+    if (Array.isArray(article.paragraphs)) {
+      const cleaned = stripBoilerplateParagraphs(article.paragraphs);
+      if (cleaned.length) {
+        article.paragraphs = cleaned;
+        article.bodyText = cleaned.map(p => p.text).join('\n\n') || article.bodyText;
+      }
+    }
     if (onPhase) onPhase({ type: 'scrape_done', url: article.url || url.trim(), chars: (article.bodyText || '').length });
     const pick = await withTimeout(
       pickBestWindow({ intent: query, paragraphs: article.paragraphs || [] }),
@@ -324,7 +390,8 @@ async function findBestResearchSource({ query, url = '', onPhase = null }) {
   });
 
   withBonus.sort((a, b) => b.total - a.total);
-  const winner = withBonus.find(s => s.total >= 6) || withBonus[0];
+  const WINNER_THRESHOLD = 9;
+  const winner = withBonus.find(s => s.total >= WINNER_THRESHOLD) || withBonus[0];
 
   if (onPhase) onPhase({ type: 'pick_start', url: winner.article.url, title: winner.article.title, source: winner.article.source });
   const pick = await withTimeout(
@@ -352,7 +419,7 @@ async function findBestResearchSource({ query, url = '', onPhase = null }) {
         reason: s.reason,
       })),
     },
-    lowConfidence: winner.total < 6,
+    lowConfidence: winner.total < WINNER_THRESHOLD,
   };
 }
 

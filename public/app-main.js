@@ -541,6 +541,8 @@
     const params = new URLSearchParams();
     if (isUrl) { params.set('url', val); params.set('argument', argument); }
     else       { params.set('query', val); params.set('argument', argument); }
+    params.set('density', TWEAKS.cutterDensity || 'standard');
+    params.set('length', TWEAKS.cutterLength || 'medium');
 
     const es = new EventSource('/api/research-source-stream?' + params.toString());
     job.es = es;
@@ -1979,6 +1981,24 @@
           applyTweaks(TWEAKS);
           persistTweaks();
           document.querySelectorAll('#hl-cards .hl-card').forEach(x => x.classList.toggle('on', x === card));
+        };
+      });
+      // Cutter length cards
+      document.querySelectorAll('#cut-length-cards .hl-card').forEach(card => {
+        card.classList.toggle('on', card.dataset.val === (TWEAKS.cutterLength || 'medium'));
+        card.onclick = () => {
+          TWEAKS.cutterLength = card.dataset.val;
+          persistTweaks();
+          document.querySelectorAll('#cut-length-cards .hl-card').forEach(x => x.classList.toggle('on', x === card));
+        };
+      });
+      // Cutter density cards
+      document.querySelectorAll('#cut-density-cards .hl-card').forEach(card => {
+        card.classList.toggle('on', card.dataset.val === (TWEAKS.cutterDensity || 'standard'));
+        card.onclick = () => {
+          TWEAKS.cutterDensity = card.dataset.val;
+          persistTweaks();
+          document.querySelectorAll('#cut-density-cards .hl-card').forEach(x => x.classList.toggle('on', x === card));
         };
       });
     }
