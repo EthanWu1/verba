@@ -196,6 +196,23 @@ function _runMigrations(db) {
     CREATE INDEX IF NOT EXISTS idx_cards_importedAt      ON cards(importedAt);
     CREATE INDEX IF NOT EXISTS idx_cards_warrantDensity  ON cards(warrantDensity);
     CREATE INDEX IF NOT EXISTS idx_cards_hasHighlight    ON cards(hasHighlight);
+
+    -- Partial indexes on hasHighlight=1 rows for facet hot path (48k of 157k rows).
+    -- facetCounts filters WHERE hasHighlight=1 AND col IS NOT NULL AND col != ''
+    -- and groups by col — a covering partial index makes each group a single seek.
+    CREATE INDEX IF NOT EXISTS idx_cards_hl_res    ON cards(resolutionLabel) WHERE hasHighlight = 1;
+    CREATE INDEX IF NOT EXISTS idx_cards_hl_type   ON cards(typeLabel)       WHERE hasHighlight = 1;
+    CREATE INDEX IF NOT EXISTS idx_cards_hl_topic  ON cards(topicLabel)      WHERE hasHighlight = 1;
+    CREATE INDEX IF NOT EXISTS idx_cards_hl_source ON cards(sourceLabel)     WHERE hasHighlight = 1;
+    CREATE INDEX IF NOT EXISTS idx_cards_hl_scope  ON cards(scope)           WHERE hasHighlight = 1;
+
+    -- Covering indexes for analytics COUNT(DISTINCT ...) hot path.
+    CREATE INDEX IF NOT EXISTS idx_cards_school_distinct     ON cards(school);
+    CREATE INDEX IF NOT EXISTS idx_cards_resolution_distinct ON cards(resolutionLabel);
+
+    -- Composite for default list sort: ORDER BY hasHighlight DESC, isCanonical DESC, variantCount DESC, importedAt DESC
+    -- Without this, every unfiltered list scan sorts 157k rows (8s+).
+    CREATE INDEX IF NOT EXISTS idx_cards_default_sort ON cards(hasHighlight DESC, isCanonical DESC, variantCount DESC, importedAt DESC);
   `);
   if (needBackfill) _backfillDerivedLabels(db);
   if (needHighlightBackfill) _backfillHasHighlight(db);

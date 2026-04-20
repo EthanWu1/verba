@@ -61,8 +61,8 @@ async function getLibraryCards(filters = {}) {
   };
 }
 
-const ANALYTICS_TTL_MS = 60 * 1000;
-const FACETS_TTL_MS = 60 * 1000;
+const ANALYTICS_TTL_MS = 10 * 60 * 1000;
+const FACETS_TTL_MS = 10 * 60 * 1000;
 let _analyticsCache = { at: 0, data: null };
 let _facetsCache = { at: 0, data: null };
 

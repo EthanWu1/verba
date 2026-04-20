@@ -51,7 +51,7 @@ router.get('/cards/:id', (req, res) => {
 });
 
 router.get('/analytics', (req, res) => {
-  res.set('Cache-Control', 'private, max-age=120, stale-while-revalidate=600');
+  res.set('Cache-Control', 'private, max-age=600, stale-while-revalidate=1800');
   return res.json(getLibraryAnalytics());
 });
 
