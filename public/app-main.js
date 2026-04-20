@@ -70,7 +70,7 @@
     contentions: 'library', projects: 'library',
   };
 
-  function go(page, libTab) {
+  function applyRoute(page, libTab) {
     if (LEGACY[page]) page = LEGACY[page];
     if (!PAGES.includes(page)) page = 'home';
     $$('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + page));
@@ -85,7 +85,32 @@
       loadLibrary();
       if (libTab) switchLibTab(libTab);
     }
+    return page;
   }
+  function go(page, libTab, fromPop) {
+    const resolved = applyRoute(page, libTab);
+    if (!fromPop) {
+      const cur = history.state || {};
+      const next = { verba: true, page: resolved, libTab: libTab || null };
+      if (cur.verba && cur.page === next.page && cur.libTab === next.libTab) {
+        history.replaceState(next, '');
+      } else {
+        history.pushState(next, '');
+      }
+    }
+  }
+  window.addEventListener('popstate', (e) => {
+    const s = e.state;
+    if (s && s.verba) {
+      applyRoute(s.page, s.libTab);
+    } else {
+      try {
+        const saved = localStorage.getItem('verba.page');
+        applyRoute(saved || 'home');
+      } catch { applyRoute('home'); }
+      history.replaceState({ verba: true, page: 'home', libTab: null }, '');
+    }
+  });
   $$('.nav-item[data-page]').forEach((n) => n.addEventListener('click', () => go(n.dataset.page, n.dataset.libGo)));
   $$('.cmd-item[data-go]').forEach((c) => c.addEventListener('click', () => go(c.dataset.go)));
   window.VerbaGo = go;
@@ -173,8 +198,12 @@
 
   try {
     const saved = localStorage.getItem('verba.page');
-    go(saved || 'home');
-  } catch { go('home'); }
+    const initial = saved || 'home';
+    const initState = { verba: true, page: initial, libTab: null };
+    history.replaceState(initState, '');
+    applyRoute(initial);
+    history.pushState(initState, '');
+  } catch { applyRoute('home'); }
 
   /* ──────────────────────────────────────────
      NAV COUNTS
@@ -726,7 +755,7 @@
       if (sel && sel.rangeCount) sel.removeAllRanges();
     }
 
-    $$('.pane-fmt-tools .tool-btn[data-fmt], .pane-foot .tool-btn[data-fmt]').forEach((b) => {
+    $$('.pane-fmt-tools .tool-btn[data-fmt], .pane-foot .tool-btn[data-fmt], .pane-foot-tools .tool-btn[data-fmt]').forEach((b) => {
       b.addEventListener('mousedown', (e) => {
         e.preventDefault(); // preserve selection
         const fmt = b.dataset.fmt;
@@ -1651,9 +1680,9 @@
         <span class="ap-cc-saved">+ Add</span>`;
       chip.querySelector('.ap-cc-tag').textContent = tag;
       chip.querySelector('.ap-cc-author').textContent = author;
-      chip.addEventListener('click', async () => {
+      async function doSave() {
         const full = lastChatCards.get(id);
-        if (!full) { toast('Card not found'); return; }
+        if (!full) { toast('Card not found'); return false; }
         const card = {
           tag: full.tag || tag,
           cite: full.cite || cite,
@@ -1663,11 +1692,26 @@
           body_html: full.body_html || '',
         };
         const r = await API.mine.save(card);
-        if (r && r.duplicate) { toast('Already saved'); return; }
+        if (r && r.duplicate) { toast('Already saved'); return false; }
         chip.classList.add('saved');
         const savedEl = chip.querySelector('.ap-cc-saved');
         if (savedEl) savedEl.textContent = 'Saved ✓';
         toast('Saved full card to My Cards ✓');
+        return true;
+      }
+      chip.addEventListener('click', async () => {
+        if (window.matchMedia('(max-width:768px)').matches && window.__verba && window.__verba.openCardPreview) {
+          const full = lastChatCards.get(id) || {};
+          window.__verba.openCardPreview({
+            title: full.tag || tag,
+            cite: full.cite || cite,
+            html: full.body_html || '',
+            text: full.body_plain || full.body_markdown || '',
+            onSave: doSave,
+          });
+          return;
+        }
+        doSave();
       });
       return chip;
     }
@@ -2119,6 +2163,39 @@
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && m.classList.contains('open')) m.classList.remove('open'); });
     window.__verba.openShortcuts = () => m.classList.add('open');
+  })();
+
+  (function initCardPreview() {
+    const m = document.getElementById('card-preview-modal');
+    if (!m) return;
+    const titleEl = document.getElementById('cpm-title');
+    const bodyEl = document.getElementById('cpm-body');
+    const closeBtn = document.getElementById('cpm-close');
+    const cancelBtn = document.getElementById('cpm-cancel');
+    const saveBtn = document.getElementById('cpm-save');
+    let pending = null;
+    function close(){ m.classList.remove('open'); pending = null; }
+    function open(opts){
+      pending = opts || {};
+      titleEl.textContent = pending.title || 'Card';
+      const cite = pending.cite ? `<div style="font:12px/1.4 var(--font-mono);color:var(--muted);margin-bottom:10px">${escapeHTML(pending.cite)}</div>` : '';
+      const body = pending.html ? pending.html : `<div style="white-space:pre-wrap">${escapeHTML(pending.text || '')}</div>`;
+      bodyEl.innerHTML = cite + body;
+      saveBtn.style.display = pending.onSave ? '' : 'none';
+      m.classList.add('open');
+    }
+    function escapeHTML(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    closeBtn.addEventListener('click', close);
+    cancelBtn.addEventListener('click', close);
+    m.addEventListener('click', e => { if (e.target === m) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && m.classList.contains('open')) close(); });
+    saveBtn.addEventListener('click', async () => {
+      if (pending && typeof pending.onSave === 'function') {
+        try { await pending.onSave(); } catch(_){}
+      }
+      close();
+    });
+    window.__verba.openCardPreview = open;
   })();
 
   (function initSidebarCollapse() {

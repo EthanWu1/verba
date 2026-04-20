@@ -1884,6 +1884,22 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 </div>
 
 <!-- FILTER MODAL -->
+<div class="modal-backdrop" id="card-preview-modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Card preview">
+    <div class="modal-head">
+      <h3 id="cpm-title">Card</h3>
+      <button class="close" id="cpm-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="cpm-body" style="padding:14px 16px;font:14px/1.5 var(--font-display);word-break:break-word"></div>
+    <div class="modal-foot">
+      <button class="clear" id="cpm-cancel">Close</button>
+      <button class="apply" id="cpm-save">Save to My Cards</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="filter-modal">
   <div class="modal" role="dialog" aria-modal="true" aria-label="Filter evidence">
     <div class="modal-head">
