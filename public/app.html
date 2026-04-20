@@ -1516,12 +1516,18 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   /* Cutter */
   .research-bar-wrap{padding:8px 0}
   .research-bar{
-    flex-wrap:wrap;gap:8px;padding:10px;border-radius:10px;
+    flex-direction:column;align-items:stretch;flex-wrap:wrap;
+    gap:8px;padding:10px;border-radius:10px;
   }
+  .research-bar>*{width:100%}
   .research-bar input,.research-bar textarea{
     width:100%;min-width:0;font-size:16px;
   }
-  .research-bar button{flex:1 1 auto}
+  .research-bar .plus,.research-bar .enter{
+    width:100%;min-height:44px;display:inline-flex;
+    align-items:center;justify-content:center;
+  }
+  .research-bar button{flex:0 0 auto;width:100%}
 
   .source-pane,.cut-pane{min-width:0;width:100%}
   .source-pane{max-height:50vh;overflow:auto}
