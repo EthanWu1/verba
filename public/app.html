@@ -14,7 +14,8 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   "terminal": "closed",
   "font": "calibri",
   "highlight": "yellow",
-  "upgradeDismissed": false
+  "upgradeDismissed": false,
+  "sidebarCollapsed": false
 }/*EDITMODE-END*/;
 try{
   const raw = localStorage.getItem('verba.tweaks');
@@ -97,6 +98,30 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
   border-right:1px solid var(--line);
   display:flex;flex-direction:column;padding:18px 14px 14px;gap:16px;min-height:0;
 }
+.sb-toggle{
+  position:absolute;top:14px;right:-12px;z-index:20;
+  width:22px;height:22px;border-radius:50%;
+  background:#fff;border:1px solid var(--line);color:var(--muted);
+  display:none;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:var(--shadow-sm);
+}
+.sidebar{position:relative}
+.sidebar:hover .sb-toggle{display:flex}
+.sb-toggle:hover{color:var(--ink);border-color:var(--line-2)}
+
+.shell.sb-collapsed{grid-template-columns:0px minmax(0,1fr)}
+.shell.sb-collapsed .sidebar{transform:translateX(-100%);transition:transform .22s cubic-bezier(.2,.9,.3,1.1)}
+.shell:not(.sb-collapsed) .sidebar{transform:translateX(0);transition:transform .22s cubic-bezier(.2,.9,.3,1.1)}
+
+.sb-open-fab{
+  position:fixed;top:14px;left:14px;z-index:30;
+  width:34px;height:34px;border-radius:8px;
+  background:#fff;border:1px solid var(--line);color:var(--muted);
+  display:none;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:var(--shadow-sm);
+}
+.shell.sb-collapsed .sb-open-fab{display:flex}
+.sb-open-fab:hover{color:var(--ink);border-color:var(--line-2)}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 0}
 .brand-mark{width:52px;height:52px;object-fit:contain;display:block}
 .brand-name{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-0.01em;color:var(--ink)}
@@ -1372,6 +1397,10 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 </head>
 <body class="accent-ink font-calibri nexus-closed hl-yellow" data-cc-id="cc-1">
 
+<button class="sb-open-fab" id="sb-open-fab" aria-label="Open sidebar" title="Open sidebar (⌘.)">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+</button>
+
 <div class="shell">
 
   <!-- SIDEBAR -->
@@ -1383,6 +1412,9 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         <div class="brand-plan">Free Plan</div>
       </div>
     </div>
+    <button class="sb-toggle" id="sb-toggle" aria-label="Collapse sidebar" title="Collapse (⌘.)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18l-6-6 6-6M15 18l6-6-6-6"/></svg>
+    </button>
 
     <div class="side-search" id="cmd-trigger">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>

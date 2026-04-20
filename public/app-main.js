@@ -2064,4 +2064,19 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && m.classList.contains('open')) m.classList.remove('open'); });
     window.__verba.openShortcuts = () => m.classList.add('open');
   })();
+
+  (function initSidebarCollapse() {
+    const shell = document.querySelector('.shell');
+    const toggle = document.getElementById('sb-toggle');
+    const fab = document.getElementById('sb-open-fab');
+    if (!shell) return;
+    function apply() { shell.classList.toggle('sb-collapsed', !!TWEAKS.sidebarCollapsed); }
+    function flip() { TWEAKS.sidebarCollapsed = !TWEAKS.sidebarCollapsed; persistTweaks(); apply(); }
+    apply();
+    toggle && toggle.addEventListener('click', flip);
+    fab && fab.addEventListener('click', flip);
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '.') { e.preventDefault(); flip(); }
+    });
+  })();
 })();
