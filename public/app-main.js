@@ -2012,4 +2012,20 @@
 
     window.__verba.openSettings = open;
   })();
+
+  /* --- Pricing overlay --- */
+  (function initPricing() {
+    const ov = document.getElementById('pricing-overlay');
+    if (!ov) return;
+    const back = document.getElementById('pricing-back');
+    function open() { ov.classList.add('open'); ov.setAttribute('aria-hidden','false'); }
+    function close(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true'); }
+    back.addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.classList.contains('open')) close(); });
+    document.getElementById('pp-squad-cta').addEventListener('click', () => {
+      close();
+      window.__verba.openPayment();
+    });
+    window.__verba.openPricing = open;
+  })();
 })();
