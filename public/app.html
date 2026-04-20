@@ -1545,8 +1545,17 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .cards-grid{grid-template-columns:1fr;gap:10px}
 
   /* Evidence */
+  .ev-item{padding:12px 12px;gap:6px}
   .ev-item .head{flex-wrap:wrap;gap:4px 6px}
-  .ev-item{padding:10px}
+  .ev-item .row-actions{
+    position:static !important;opacity:1 !important;transform:none !important;
+    pointer-events:auto !important;display:flex;gap:8px;margin-top:6px;
+    justify-content:flex-start;flex-wrap:wrap;
+  }
+  .ev-item .row-actions>*{min-height:36px}
+  .ev-item .tag{font-size:14px;line-height:1.35;white-space:normal}
+  .ev-item .cite{font-size:12px;line-height:1.4;word-break:break-word;white-space:normal}
+  .ev-item .date{margin-left:0;font-size:11px}
 
   /* History */
   .hist-wrap > :first-child{width:100%}
