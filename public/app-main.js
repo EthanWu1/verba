@@ -2028,4 +2028,31 @@
     });
     window.__verba.openPricing = open;
   })();
+
+  /* --- Payment overlay (mock) --- */
+  (function initPayment() {
+    const ov = document.getElementById('pay-overlay');
+    if (!ov) return;
+    const agree = document.getElementById('pay-agree');
+    const submit = document.getElementById('pay-submit');
+    const tiers = ov.querySelectorAll('.pay-tier');
+    tiers.forEach(t => t.addEventListener('click', () => {
+      tiers.forEach(x => x.classList.toggle('on', x === t));
+    }));
+    agree.addEventListener('change', () => { submit.disabled = !agree.checked; });
+    submit.addEventListener('click', () => {
+      submit.disabled = true;
+      submit.textContent = 'Processing…';
+      setTimeout(() => {
+        submit.textContent = 'Demo — no charge made';
+        setTimeout(close, 900);
+      }, 600);
+    });
+    document.getElementById('pay-close').addEventListener('click', close);
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.classList.contains('open')) close(); });
+    function open(){ ov.classList.add('open'); ov.setAttribute('aria-hidden','false'); submit.textContent='Upgrade to 20×'; submit.disabled=true; agree.checked=false; }
+    function close(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true'); }
+    window.__verba.openPayment = open;
+  })();
 })();

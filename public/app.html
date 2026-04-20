@@ -1344,6 +1344,26 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 @media (max-width:820px){
   .pricing-cards{grid-template-columns:1fr}
 }
+.pay-backdrop{position:fixed;inset:0;background:rgba(15,15,25,.42);display:none;align-items:center;justify-content:center;z-index:340;opacity:0;transition:opacity .16s}
+.pay-backdrop.open{display:flex;opacity:1}
+.pay-shell{width:min(520px,94vw);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 32px 80px -16px rgba(16,24,40,.28);display:flex;flex-direction:column;overflow:hidden;max-height:90vh}
+.pay-head{padding:16px 22px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between}
+.pay-head h3{margin:0;font:700 18px/1 var(--font-display);color:var(--ink)}
+.pay-body{overflow:auto;padding:20px 22px 22px;display:flex;flex-direction:column;gap:14px}
+.pay-tier-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pay-tier{text-align:left;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.pay-tier small{font:500 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pay-tier.on{border-color:var(--lilac-2);box-shadow:0 0 0 2px var(--lilac-soft)}
+.pay-tier div{font:600 13px/1.2 var(--font-display);color:var(--ink)}
+.pay-tier span{font:500 12px/1 var(--font-display);color:var(--muted)}
+.pay-order{border:1px solid var(--line);border-radius:10px;padding:14px}
+.pay-order h4{margin:0 0 10px;font:600 13px/1 var(--font-display);color:var(--ink)}
+.pay-line{display:flex;justify-content:space-between;padding:6px 0;font:500 13px/1.3 var(--font-display);color:var(--ink-2)}
+.pay-line.total{border-top:1px solid var(--line-soft);margin-top:6px;padding-top:10px;font-weight:700;color:var(--ink)}
+.pay-method{border:1px solid var(--line);border-radius:10px;padding:14px}
+.pay-method-h{font:600 13px/1 var(--font-display);color:var(--ink);margin-bottom:10px}
+.pay-method-row{display:flex;align-items:center;gap:8px}
+.pay-terms{display:flex;gap:8px;align-items:flex-start;font:500 12.5px/1.4 var(--font-display);color:var(--muted)}
 </style>
 </head>
 <body class="accent-ink font-calibri nexus-closed hl-yellow" data-cc-id="cc-1">
@@ -2108,6 +2128,42 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       </div>
     </div>
     <div class="pp-foot">Usage limits apply. Prices shown don't include applicable tax.</div>
+  </div>
+</div>
+
+<!-- PAYMENT (mock) -->
+<div class="pay-backdrop" id="pay-overlay" aria-hidden="true">
+  <div class="pay-shell" role="dialog" aria-label="Adjust usage">
+    <div class="pay-head">
+      <h3>Adjust usage</h3>
+      <button class="settings-close" id="pay-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="pay-body">
+      <div class="pay-tier-row">
+        <button class="pay-tier on" data-tier="5x"><small>Current plan</small><div>5× usage · Solo</div><span>$0/mo</span></button>
+        <button class="pay-tier" data-tier="20x"><small>Save 50%</small><div>20× usage · Squad</div><span>$9/mo + tax</span></button>
+      </div>
+      <div class="pay-order">
+        <h4>Order details</h4>
+        <div class="pay-line"><span>Squad plan</span><span>$9.00</span></div>
+        <div class="pay-line"><span>Tax</span><span>$0.63</span></div>
+        <div class="pay-line total"><span>Total due today</span><span>$9.63</span></div>
+      </div>
+      <div class="pay-method">
+        <div class="pay-method-h">Payment method</div>
+        <div class="pay-method-row">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <input id="pay-card" class="sfield-input" placeholder="Card number (demo — nothing is charged)" />
+        </div>
+        <div class="pay-method-row" style="margin-top:8px">
+          <input class="sfield-input" placeholder="MM/YY" style="max-width:120px" />
+          <input class="sfield-input" placeholder="CVC" style="max-width:90px;margin-left:8px" />
+          <input class="sfield-input" placeholder="ZIP" style="max-width:110px;margin-left:8px" />
+        </div>
+      </div>
+      <label class="pay-terms"><input type="checkbox" id="pay-agree"> You agree this is a demo and no card will be charged.</label>
+      <button class="pp-cta primary" id="pay-submit" disabled style="width:100%">Upgrade to 20×</button>
+    </div>
   </div>
 </div>
 
