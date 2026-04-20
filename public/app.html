@@ -1419,6 +1419,21 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   }
   .main{height:auto;min-height:100vh;overflow:visible}
 
+  /* Neutralize desktop icon-rail state on mobile — drawer wins */
+  .shell.sb-collapsed{grid-template-columns:none}
+  .shell.sb-collapsed .sidebar{width:min(280px,84vw)}
+  .shell.sb-collapsed .nav-group-label,
+  .shell.sb-collapsed .brand-name,
+  .shell.sb-collapsed .brand-plan,
+  .shell.sb-collapsed #side-name,
+  .shell.sb-collapsed #side-email,
+  .shell.sb-collapsed .acct-caret,
+  .shell.sb-collapsed .side-search,
+  .shell.sb-collapsed .upgrade-card,
+  .shell.sb-collapsed .nav-item span{display:revert}
+  .shell.sb-collapsed .nav-item{justify-content:flex-start;padding:8px 10px}
+  .shell.sb-collapsed .side-account{justify-content:flex-start;padding:10px 14px;gap:10px}
+
   .sidebar{
     position:fixed;top:0;left:0;bottom:0;
     width:min(280px,84vw);height:100vh;
@@ -2165,6 +2180,26 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               <button class="hl-card" data-val="green"><span class="hl-swatch" style="background:#00FF00"></span><small>Green</small></button>
               <button class="hl-card" data-val="lilac"><span class="hl-swatch" style="background:#C7B7F1"></span><small>Lilac</small></button>
             </div>
+          </div>
+
+          <h4 class="spane-h mt">Card Cutter</h4>
+          <div class="sfield">
+            <label class="sfield-l">Card length</label>
+            <div class="hl-cards" id="cut-length-cards" data-tweak="cutterLength">
+              <button class="hl-card" data-val="short"><small>Short</small></button>
+              <button class="hl-card on" data-val="medium"><small>Medium</small></button>
+              <button class="hl-card" data-val="long"><small>Long</small></button>
+            </div>
+            <div class="sfield-sub">Short: 1–2 paragraphs (~180w). Medium: 2–4 (~320w). Long: 3–6 (~520w).</div>
+          </div>
+          <div class="sfield">
+            <label class="sfield-l">Underline density</label>
+            <div class="hl-cards" id="cut-density-cards" data-tweak="cutterDensity">
+              <button class="hl-card" data-val="minimal"><small>Minimal</small></button>
+              <button class="hl-card on" data-val="standard"><small>Standard</small></button>
+              <button class="hl-card" data-val="heavy"><small>Heavy</small></button>
+            </div>
+            <div class="sfield-sub">Minimal: 20–35% per paragraph. Standard: 25–50%. Heavy: 45–65%.</div>
           </div>
         </section>
 
