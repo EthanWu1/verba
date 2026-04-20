@@ -109,9 +109,25 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .sidebar:hover .sb-toggle{display:flex}
 .sb-toggle:hover{color:var(--ink);border-color:var(--line-2)}
 
-.shell.sb-collapsed{grid-template-columns:0px minmax(0,1fr)}
-.shell.sb-collapsed .sidebar{transform:translateX(-100%);transition:transform .22s cubic-bezier(.2,.9,.3,1.1)}
-.shell:not(.sb-collapsed) .sidebar{transform:translateX(0);transition:transform .22s cubic-bezier(.2,.9,.3,1.1)}
+.shell.sb-collapsed{grid-template-columns:64px minmax(0,1fr)}
+.shell:not(.sb-collapsed) .sidebar{transition:width .18s ease}
+.shell.sb-collapsed .sidebar{width:64px;overflow:hidden;transition:width .18s ease}
+
+/* icon-rail: hide text, center icons */
+.shell.sb-collapsed .nav-group-label,
+.shell.sb-collapsed .brand-name,
+.shell.sb-collapsed .brand-plan,
+.shell.sb-collapsed #side-name,
+.shell.sb-collapsed #side-email,
+.shell.sb-collapsed .acct-caret,
+.shell.sb-collapsed .side-search,
+.shell.sb-collapsed .upgrade-card,
+.shell.sb-collapsed .nav-item span{display:none}
+
+.shell.sb-collapsed .nav-item{justify-content:center;padding:8px 0}
+.shell.sb-collapsed .side-account{justify-content:center;padding:8px 0;gap:0}
+.shell.sb-collapsed .sidebar .brand{justify-content:center}
+.shell.sb-collapsed .ico{margin:0}
 
 .sb-open-fab{
   position:fixed;top:14px;left:14px;z-index:30;
@@ -120,7 +136,7 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
   display:none;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:var(--shadow-sm);
 }
-.shell.sb-collapsed .sb-open-fab{display:flex}
+.shell.sb-collapsed .sb-open-fab{display:none}
 .sb-open-fab:hover{color:var(--ink);border-color:var(--line-2)}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 0}
 .brand-mark{width:52px;height:52px;object-fit:contain;display:block}
