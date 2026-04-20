@@ -1,46 +1,144 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Reset password · Verba</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<title>Forgot password — Verba</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
-body{font:16px/1.5 system-ui,sans-serif;background:#0d0d10;color:#eee;display:grid;place-items:center;min-height:100vh;margin:0}
-.box{background:#17171b;padding:32px;border-radius:12px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)}
-h1{margin:0 0 6px;font-size:22px}
-p{color:#aaa;margin:0 0 18px;font-size:14px}
-label{display:block;font-size:12px;color:#bbb;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
-input{width:100%;padding:12px 14px;background:#0b0b0e;border:1px solid #2a2a33;color:#fff;border-radius:8px;font:inherit;box-sizing:border-box}
-button{width:100%;padding:12px;background:#7c6aff;color:#fff;border:0;border-radius:8px;font-weight:600;margin-top:14px;cursor:pointer}
-.msg{margin-top:14px;color:#7ecb7e;font-size:13px}
-.err{margin-top:14px;color:#e36b6b;font-size:13px}
-a{color:#9e8aff}
+:root{
+  --bg:#FFFFFF; --panel:#F9FAFB; --line:#E5E7EB; --line-2:#D1D5DB;
+  --ink:#000000; --ink-2:#1A1A1A; --muted:#6B7280; --muted-2:#9CA3AF;
+  --hl-yellow:#FFEB3B;
+  --shadow-sm:0 1px 2px rgba(16,24,40,0.04),0 1px 1px rgba(16,24,40,0.03);
+  --shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -2px rgba(0,0,0,0.04);
+  --font-display:'Inter',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font:400 15px/1.5 var(--font-display);color:var(--ink);background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;min-height:100vh;
+}
+a{color:inherit;text-decoration:none}
+.brandbar{display:flex;align-items:center;justify-content:space-between;padding:28px 56px 0}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:48px;height:48px;object-fit:contain;display:block}
+.brand-name{font-weight:600;font-size:15px;letter-spacing:-0.01em}
+.back{font:500 13px/1 var(--font-display);color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.back:hover{color:var(--ink)}
+.back svg{width:12px;height:12px}
+.wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.card{max-width:400px;width:100%}
+.kicker{
+  display:inline-flex;align-items:center;gap:8px;
+  font:500 11px/1 var(--font-mono);color:var(--muted);
+  text-transform:uppercase;letter-spacing:.16em;margin-bottom:18px;
+}
+.kicker .d{width:5px;height:5px;border-radius:50%;background:var(--ink)}
+.headline{
+  font-weight:700;font-size:40px;line-height:1.04;letter-spacing:-0.035em;
+  margin:0;color:var(--ink);
+}
+.headline .mark{background:var(--hl-yellow);padding:0 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.subline{margin:14px 0 26px;color:var(--ink-2);font-size:15px;line-height:1.55}
+form{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font:500 12px/1 var(--font-display);color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em}
+.field input{
+  border:1px solid var(--line-2);border-radius:10px;padding:12px 13px;background:#fff;
+  font:400 14.5px/1 var(--font-display);color:var(--ink);
+  transition:border-color .14s,box-shadow .14s;
+}
+.field input::placeholder{color:var(--muted-2)}
+.field input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+.submit{
+  margin-top:6px;padding:13px 16px;border-radius:10px;background:var(--ink);color:#fff;
+  border:1px solid var(--ink);font:500 14.5px/1 var(--font-display);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .14s,transform .08s,opacity .14s;box-shadow:var(--shadow);
+}
+.submit:hover{background:#1a1a1a}
+.submit:active{transform:translateY(1px)}
+.submit svg{width:13px;height:13px}
+.submit:disabled{opacity:.6;cursor:not-allowed}
+.msg{
+  margin:0;padding:10px 12px;border-radius:8px;font:500 13px/1.4 var(--font-display);
+  background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46;
+}
+.err{
+  margin:0;padding:10px 12px;border-radius:8px;font:500 13px/1.4 var(--font-display);
+  background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;
+}
+.switcher{margin-top:16px;text-align:center;font-size:13.5px;color:var(--muted)}
+.switcher a{color:var(--ink);font-weight:500;text-decoration:underline;text-underline-offset:3px;margin-left:4px}
+.foot{padding:24px 56px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between}
+.foot a{color:var(--muted)} .foot a:hover{color:var(--ink)} .foot .dot{color:var(--muted-2);margin:0 6px}
+@media (max-width:640px){ .brandbar{padding:24px 28px 0} .foot{padding:24px 28px} }
 </style>
 </head>
 <body>
-<form class="box" id="f">
-  <h1>Reset your password</h1>
-  <p>Enter your email and we'll send a reset link.</p>
-  <label>Email</label>
-  <input type="email" required id="email" placeholder="you@school.edu" />
-  <button type="submit">Send reset link</button>
-  <p id="msg" class="msg" style="display:none">Check your inbox for a reset link.</p>
-  <p id="err" class="err" style="display:none"></p>
-  <p style="margin-top:20px"><a href="/signin">Back to sign in</a></p>
-</form>
+  <div class="brandbar">
+    <a class="brand" href="landing.html">
+      <img class="brand-mark" src="assets/logo.png" alt="Verba">
+      <span class="brand-name">Verba</span>
+    </a>
+    <a class="back" href="/signin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Back to sign in
+    </a>
+  </div>
+
+  <main class="wrap">
+    <div class="card">
+      <div class="kicker"><span class="d"></span>Password reset</div>
+      <h1 class="headline">Forgot <span class="mark">password</span>?</h1>
+      <p class="subline">Enter your email. Reset link arrives in your inbox within a minute.</p>
+
+      <form id="f">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" required id="email" placeholder="you@school.edu" autocomplete="email" />
+        </div>
+        <button type="submit" class="submit" id="submit-btn">
+          <span>Send reset link</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+        <p id="msg" class="msg" style="display:none">Check your inbox. If an account exists, a reset link is on the way.</p>
+        <p id="err" class="err" style="display:none"></p>
+      </form>
+
+      <p class="switcher"><span>Remembered it?</span><a href="/signin">Back to sign in →</a></p>
+    </div>
+  </main>
+
+  <div class="foot">
+    <span>© 2026 Verba Labs</span>
+    <span><a href="#">Privacy</a><span class="dot">·</span><a href="#">Terms</a><span class="dot">·</span><a href="#">Status</a></span>
+  </div>
+
 <script src="/api.js"></script>
 <script>
-document.getElementById('f').addEventListener('submit', async (e) => {
+const form = document.getElementById('f');
+const btn = document.getElementById('submit-btn');
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('email').value.trim();
   const msg = document.getElementById('msg'), err = document.getElementById('err');
   msg.style.display = err.style.display = 'none';
+  btn.disabled = true;
   try {
     await window.VerbaAPI.auth.forgot(email);
     msg.style.display = '';
   } catch (ex) {
     err.textContent = ex.message || 'Failed to send';
     err.style.display = '';
+  } finally {
+    btn.disabled = false;
   }
 });
 </script>

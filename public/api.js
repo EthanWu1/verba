@@ -39,6 +39,7 @@
       Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') qs.set(k, String(v)); });
       return jsonFetch('/api/library/cards?' + qs.toString());
     },
+    libraryCard: (id) => jsonFetch(`/api/library/cards/${encodeURIComponent(id)}`),
     libraryAnalytics: () => jsonFetch('/api/library/analytics'),
 
     // --- scrape ---

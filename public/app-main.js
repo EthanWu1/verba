@@ -97,9 +97,11 @@
 
     function positionMenu() {
       const r = row.getBoundingClientRect();
+      const collapsed = document.querySelector('.shell')?.classList.contains('sb-collapsed');
+      const width = collapsed ? 260 : r.width;
       menu.style.left = r.left + 'px';
       menu.style.bottom = (window.innerHeight - r.top + 6) + 'px';
-      menu.style.width = r.width + 'px';
+      menu.style.width = width + 'px';
     }
     function openMenu() {
       const u = window.__verbaUser || {};
@@ -141,10 +143,30 @@
       }
     });
 
-    // ⌘, opens settings; ⌘/ opens shortcuts.
+    // ⌘B bold, ⌘U underline, ⌘⌥H highlight.
     document.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); window.__verba.openSettings('general'); }
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); window.__verba.openShortcuts(); }
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.altKey && (e.key === 'h' || e.key === 'H' || e.code === 'KeyH')) {
+        e.preventDefault();
+        toggleHighlight();
+        return;
+      }
+      if (e.altKey) return;
+      const body = $('#wb-body .body') || $('#wb-body');
+      if (e.key === 'b' || e.key === 'B' || e.code === 'KeyB') {
+        if (!selectionInside(body)) return;
+        e.preventDefault();
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('bold');
+        syncCardFromDom();
+      } else if (e.key === 'u' || e.key === 'U' || e.code === 'KeyU') {
+        if (!selectionInside(body)) return;
+        e.preventDefault();
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('underline');
+        syncCardFromDom();
+      }
     });
   })();
 
@@ -964,7 +986,7 @@
     const list = $('#ev-list'); if (!list) return;
     list.innerHTML = '<div style="padding:24px;color:var(--muted);font-size:13px">Loading library…</div>';
     try {
-      const params = { limit: 200 };
+      const params = { limit: 60 };
       if (state.evSearch) params.q = state.evSearch;
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
@@ -1009,6 +1031,9 @@
           const c = filtered[idx];
           btn.classList.add('busy');
           try {
+            if (!c.body_markdown && !c.body_plain && c.id) {
+              try { const full = await API.libraryCard(c.id); if (full?.card) Object.assign(c, full.card); } catch {}
+            }
             const { blob, filename } = await API.exportDocx(c);
             const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
             API.history.push({ type: 'export', tag: c.tag, filename }).catch(() => {}); toast('Exported ' + filename);
@@ -1043,10 +1068,20 @@
       </div>`;
   }
 
-  function renderEvidenceDetail(card) {
+  async function renderEvidenceDetail(card) {
     state.currentEvidence = card;
     const t = $('#ev-detail-title'); if (t) t.textContent = 'Preview';
     const body = $('#ev-detail-body'); if (!body) return;
+    if (!card.body_html && !card.body_markdown && !card.body_plain && card.id) {
+      body.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px">Loading card…</div>';
+      try {
+        const full = await API.libraryCard(card.id);
+        if (full && full.card) {
+          Object.assign(card, full.card);
+          if (state.currentEvidence !== card) return;
+        }
+      } catch { /* render whatever we have */ }
+    }
     const bodyHtml = card.body_html || markdownCardToHtml(card.body_markdown || card.body_plain || '');
     body.innerHTML = `
       <p style="font-weight:700;font-size:14.5px;margin:0 0 8px">${esc(card.tag || '')}</p>

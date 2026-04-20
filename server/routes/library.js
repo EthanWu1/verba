@@ -4,21 +4,24 @@ const express = require('express');
 const router = express.Router();
 
 const { getLibraryDashboard, searchLibrary } = require('../services/docxImport');
-const { getLibraryCards, getLibraryAnalytics } = require('../services/libraryQuery');
+const { getLibraryCards, getLibraryAnalytics, getCardDetail } = require('../services/libraryQuery');
 
 router.get('/dashboard', (req, res) => {
   const limit = Math.max(1, Math.min(50, Number(req.query.limit) || 12));
+  res.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=300');
   return res.json(getLibraryDashboard(limit));
 });
 
 router.get('/search', (req, res) => {
   const q = String(req.query.q || '');
   const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 50));
+  res.set('Cache-Control', 'private, max-age=30');
   return res.json({ results: searchLibrary(q, limit) });
 });
 
 router.get('/cards', async (req, res) => {
   try {
+    res.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=300');
     return res.json(await getLibraryCards({
       q: String(req.query.q || ''),
       limit: req.query.limit,
@@ -36,7 +39,19 @@ router.get('/cards', async (req, res) => {
   }
 });
 
+router.get('/cards/:id', (req, res) => {
+  try {
+    const card = getCardDetail(req.params.id);
+    if (!card) return res.status(404).json({ error: 'not_found' });
+    res.set('Cache-Control', 'private, max-age=300');
+    return res.json({ card });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/analytics', (req, res) => {
+  res.set('Cache-Control', 'private, max-age=120, stale-while-revalidate=600');
   return res.json(getLibraryAnalytics());
 });
 

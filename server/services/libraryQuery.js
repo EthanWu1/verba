@@ -41,12 +41,12 @@ async function getLibraryCards(filters = {}) {
       items = rows.slice(start, start + limit).map(hydrateRow);
     } catch (err) {
       console.warn('[VECTOR] semanticSearch failed, falling back to keyword:', err.message);
-      const out = db.queryCards({ filters, sort: filters.sort || 'relevance', page, limit });
+      const out = db.queryCards({ filters, sort: filters.sort || 'relevance', page, limit, lite: true });
       total = out.total;
       items = out.rows.map(hydrateRow);
     }
   } else {
-    const out = db.queryCards({ filters, sort: filters.sort || 'relevance', page, limit });
+    const out = db.queryCards({ filters, sort: filters.sort || 'relevance', page, limit, lite: true });
     total = out.total;
     items = out.rows.map(hydrateRow);
   }
@@ -56,12 +56,33 @@ async function getLibraryCards(filters = {}) {
     page,
     limit,
     items,
-    filters: db.facetCounts(null, 20),
+    filters: getCachedFacets(),
     meta: loadMeta(),
   };
 }
 
+const ANALYTICS_TTL_MS = 60 * 1000;
+const FACETS_TTL_MS = 60 * 1000;
+let _analyticsCache = { at: 0, data: null };
+let _facetsCache = { at: 0, data: null };
+
+function invalidateLibraryCaches() {
+  _analyticsCache = { at: 0, data: null };
+  _facetsCache = { at: 0, data: null };
+}
+
+function getCachedFacets() {
+  const now = Date.now();
+  if (_facetsCache.data && now - _facetsCache.at < FACETS_TTL_MS) return _facetsCache.data;
+  const data = db.facetCounts(null, 20);
+  _facetsCache = { at: now, data };
+  return data;
+}
+
 function getLibraryAnalytics() {
+  const now = Date.now();
+  if (_analyticsCache.data && now - _analyticsCache.at < ANALYTICS_TTL_MS) return _analyticsCache.data;
+
   const database = db.getDb();
   const totals = database.prepare(`
     SELECT
@@ -80,7 +101,7 @@ function getLibraryAnalytics() {
     `).all(limit);
   }
 
-  return {
+  const data = {
     totals: {
       cards:       totals.cards || 0,
       canonical:   totals.canonical || 0,
@@ -91,6 +112,8 @@ function getLibraryAnalytics() {
     topTypes:       top('typeLabel', 6),
     topTopics:      top('topicLabel', 6),
   };
+  _analyticsCache = { at: now, data };
+  return data;
 }
 
 async function buildChatContext(query, filters = {}, limit = 8) {
@@ -135,10 +158,17 @@ function inferResolution(card) {
   return deriveResolutionLabel(card);
 }
 
+function getCardDetail(id) {
+  const row = db.getCardById(id);
+  return row ? hydrateRow(row) : null;
+}
+
 module.exports = {
   getLibraryCards,
   getLibraryAnalytics,
   buildChatContext,
   inferResolution,
   getRelevantAnalytics,
+  invalidateLibraryCaches,
+  getCardDetail,
 };
