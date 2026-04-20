@@ -2051,15 +2051,15 @@
       });
       applyT();
       // General: Save button
-      const saveBtn = document.getElementById('general-save-btn');
-      if (saveBtn) {
-        saveBtn.onclick = () => {
+      const genSaveBtn = document.getElementById('general-save-btn');
+      if (genSaveBtn) {
+        genSaveBtn.onclick = () => {
           applyT();
           saveT();
-          const orig = saveBtn.textContent;
-          saveBtn.textContent = 'Saved';
-          saveBtn.disabled = true;
-          setTimeout(() => { saveBtn.textContent = orig; saveBtn.disabled = false; }, 1200);
+          const orig = genSaveBtn.textContent;
+          genSaveBtn.textContent = 'Saved';
+          genSaveBtn.disabled = true;
+          setTimeout(() => { genSaveBtn.textContent = orig; genSaveBtn.disabled = false; }, 1200);
         };
       }
       // Cutter length cards
