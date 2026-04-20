@@ -1545,6 +1545,48 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .cut-tool{flex:0 0 auto}
 
   .cut-saved .bub{font-size:12px;padding:10px 16px}
+
+  /* Library / Cards */
+  .mine-layout > :first-child{position:static;width:100%}
+  .proj-swatches{flex-wrap:wrap}
+  .cards-grid{grid-template-columns:1fr;gap:10px}
+
+  /* Evidence */
+  .ev-item .head{flex-wrap:wrap;gap:4px 6px}
+  .ev-item{padding:10px}
+
+  /* History */
+  .hist-wrap > :first-child{width:100%}
+  .hist-row{
+    display:flex;flex-direction:column;align-items:flex-start;
+    gap:2px;padding:10px 0;border-bottom:1px solid var(--line-soft);
+  }
+
+  /* Contentions */
+  .cont-grid{min-height:auto}
+
+  /* Matrix */
+  .matrix{gap:10px}
+  .matrix > *{min-height:160px}
+
+  /* Settings */
+  .settings-body{min-height:0}
+  .settings-body > :first-child{
+    position:sticky;top:0;background:var(--bg);z-index:2;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    display:flex;flex-wrap:nowrap;gap:4px;padding:6px 0;
+  }
+  .settings-body > :first-child > *{flex:0 0 auto}
+
+  /* Pricing modal */
+  .pp-tier{padding:18px}
+  .pp-price{font-size:32px}
+
+  /* Payment modal tiers */
+  .pay-tier{padding:14px}
+
+  /* Keyboard-shortcut modal — hide on phone */
+  #ks-modal{display:none !important}
 }
 
 @media (max-width:480px){
