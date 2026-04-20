@@ -2,91 +2,77 @@
 
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const path = require('path');
 const { randomUUID } = require('crypto');
+const { getDb } = require('../services/db');
+const requireUser = require('../middleware/requireUser');
 
-const DATA_PATH = path.resolve(__dirname, '..', 'data', 'projects.json');
+router.use(requireUser);
 
-function load() {
-  try { return JSON.parse(fs.readFileSync(DATA_PATH, 'utf8')); } catch { return []; }
+function rowToProject(row) {
+  if (!row) return null;
+  let cards = [];
+  try { cards = JSON.parse(row.cards); } catch {}
+  return { id: row.id, name: row.name, color: row.color, cards, createdAt: row.createdAt, updatedAt: row.updatedAt };
 }
-function save(data) {
-  fs.mkdirSync(path.dirname(DATA_PATH), { recursive: true });
-  fs.writeFileSync(DATA_PATH, JSON.stringify(data, null, 2));
-}
 
-// GET /api/projects
-router.get('/', (_req, res) => {
-  res.json({ items: load() });
+router.get('/', (req, res) => {
+  const rows = getDb().prepare('SELECT * FROM user_projects WHERE userId = ? ORDER BY updatedAt DESC').all(req.user.id);
+  res.json({ items: rows.map(rowToProject) });
 });
 
-// POST /api/projects   { name }
 router.post('/', (req, res) => {
   const name = String(req.body?.name || '').trim();
   if (!name) return res.status(400).json({ error: 'name is required' });
   const color = String(req.body?.color || '#6B7280').slice(0, 9);
-  const project = {
-    id: randomUUID(),
-    name,
-    color,
-    cards: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  const all = load();
-  all.unshift(project);
-  save(all);
-  res.status(201).json({ project });
+  const now = new Date().toISOString();
+  const project = { id: randomUUID(), userId: req.user.id, name, color, cards: '[]', createdAt: now, updatedAt: now };
+  getDb().prepare('INSERT INTO user_projects (id, userId, name, color, cards, createdAt, updatedAt) VALUES (@id, @userId, @name, @color, @cards, @createdAt, @updatedAt)').run(project);
+  res.status(201).json({ project: rowToProject(project) });
 });
 
-// PATCH /api/projects/:id   { name }
+function ownedProject(userId, id) {
+  return getDb().prepare('SELECT * FROM user_projects WHERE id = ? AND userId = ?').get(id, userId);
+}
+
 router.patch('/:id', (req, res) => {
-  const all = load();
-  const p = all.find((x) => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: 'Not found' });
-  if (req.body?.name) p.name = String(req.body.name).trim();
-  if (req.body?.color) p.color = String(req.body.color).slice(0, 9);
-  p.updatedAt = new Date().toISOString();
-  save(all);
-  res.json({ project: p });
+  const row = ownedProject(req.user.id, req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const name = req.body?.name != null ? String(req.body.name).trim() : row.name;
+  const color = req.body?.color != null ? String(req.body.color).slice(0, 9) : row.color;
+  const now = new Date().toISOString();
+  getDb().prepare('UPDATE user_projects SET name = ?, color = ?, updatedAt = ? WHERE id = ?').run(name, color, now, row.id);
+  res.json({ project: rowToProject({ ...row, name, color, updatedAt: now }) });
 });
 
-// DELETE /api/projects/:id
 router.delete('/:id', (req, res) => {
-  const all = load();
-  const next = all.filter((p) => p.id !== req.params.id);
-  if (next.length === all.length) return res.status(404).json({ error: 'Not found' });
-  save(next);
+  const info = getDb().prepare('DELETE FROM user_projects WHERE id = ? AND userId = ?').run(req.params.id, req.user.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'Not found' });
   res.json({ ok: true });
 });
 
-// POST /api/projects/:id/cards   { card }
 router.post('/:id/cards', (req, res) => {
-  const all = load();
-  const p = all.find((x) => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: 'Not found' });
+  const row = ownedProject(req.user.id, req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
   const card = req.body?.card || {};
   if (!card.tag && !card.body_markdown && !card.body_plain) return res.status(400).json({ error: 'card requires tag or body' });
   const entry = { id: card.id || randomUUID(), ...card, addedAt: new Date().toISOString() };
-  p.cards = p.cards || [];
-  p.cards.unshift(entry);
-  p.updatedAt = new Date().toISOString();
-  save(all);
-  res.status(201).json({ project: p, card: entry });
+  let cards = []; try { cards = JSON.parse(row.cards); } catch {}
+  cards.unshift(entry);
+  const now = new Date().toISOString();
+  getDb().prepare('UPDATE user_projects SET cards = ?, updatedAt = ? WHERE id = ?').run(JSON.stringify(cards), now, row.id);
+  res.status(201).json({ project: rowToProject({ ...row, cards: JSON.stringify(cards), updatedAt: now }), card: entry });
 });
 
-// DELETE /api/projects/:id/cards/:cardId
 router.delete('/:id/cards/:cardId', (req, res) => {
-  const all = load();
-  const p = all.find((x) => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: 'Not found' });
-  const before = (p.cards || []).length;
-  p.cards = (p.cards || []).filter((c) => c.id !== req.params.cardId);
-  if (p.cards.length === before) return res.status(404).json({ error: 'card not found' });
-  p.updatedAt = new Date().toISOString();
-  save(all);
-  res.json({ project: p });
+  const row = ownedProject(req.user.id, req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  let cards = []; try { cards = JSON.parse(row.cards); } catch {}
+  const before = cards.length;
+  cards = cards.filter((c) => c.id !== req.params.cardId);
+  if (cards.length === before) return res.status(404).json({ error: 'card not found' });
+  const now = new Date().toISOString();
+  getDb().prepare('UPDATE user_projects SET cards = ?, updatedAt = ? WHERE id = ?').run(JSON.stringify(cards), now, row.id);
+  res.json({ project: rowToProject({ ...row, cards: JSON.stringify(cards), updatedAt: now }) });
 });
 
 module.exports = router;

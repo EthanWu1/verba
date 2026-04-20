@@ -4,6 +4,10 @@ const express = require('express');
 const router = express.Router();
 const { complete } = require('../services/llm');
 const { getRelevantAnalytics, buildChatContext } = require('../services/libraryQuery');
+const requireUser = require('../middleware/requireUser');
+const enforceLimit = require('../middleware/enforceLimit');
+const CHAT_DAILY_LIMIT = Number(process.env.FREE_CHAT_DAILY || 20);
+router.use(requireUser);
 
 const BLOCK_INTENT = /write.*block|block (to|against|on|for)|frontline|extend\b|overview/i;
 
@@ -46,7 +50,7 @@ STYLE:
 - No preamble. No "Here's a block on...". Start with the "AT:" line.
 - No closing summary. No "let me know if...".`;
 
-router.post('/', async (req, res) => {
+router.post('/', enforceLimit('chat', CHAT_DAILY_LIMIT), async (req, res) => {
   const { messages, fileContext } = req.body;
   if (!Array.isArray(messages) || !messages.length) {
     return res.status(400).json({ error: 'messages array required' });

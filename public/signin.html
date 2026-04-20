@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --bg:#FFFFFF;
@@ -280,21 +281,13 @@ form{display:flex;flex-direction:column;gap:14px}
     </div>
 
     <div class="socials">
-      <button class="soc-btn" type="button">
-        <svg class="ic" viewBox="0 0 48 48">
-          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z"/>
-          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-        </svg>
-        Continue with Google
-        <span class="tail">⌘G</span>
-      </button>
+      <div id="gsi-button-wrap" class="soc-btn-wrap"></div>
     </div>
 
     <div class="divider">or with email</div>
 
-    <form onsubmit="event.preventDefault();location.href='app.html'">
+    <form id="auth-form">
+      <p class="err" id="auth-err" style="display:none;color:#c33;font:500 12px/1.3 var(--font-display);margin-top:4px"></p>
       <div class="field" id="name-field" style="display:none">
         <label>Name</label>
         <input type="text" placeholder="Jordan Reyes" autocomplete="name">
@@ -306,7 +299,7 @@ form{display:flex;flex-direction:column;gap:14px}
       <div class="field">
         <div class="field-row">
           <label>Password</label>
-          <a href="#" id="forgot-link">Forgot?</a>
+          <a href="/forgot" id="forgot-link">Forgot?</a>
         </div>
         <input type="password" placeholder="••••••••" autocomplete="current-password">
       </div>
@@ -384,6 +377,7 @@ form{display:flex;flex-direction:column;gap:14px}
   </div>
 </aside>
 
+<script src="/api.js"></script>
 <script>
 (function(){
   const params = new URLSearchParams(location.search);
@@ -431,6 +425,57 @@ form{display:flex;flex-direction:column;gap:14px}
   tabs.forEach(t=>t.addEventListener('click',()=>setMode(t.dataset.mode)));
   switcherLink.addEventListener('click',e=>{e.preventDefault();setMode(switcherLink.dataset.target||'signup')});
   setMode(initMode);
+
+  const form = document.getElementById('auth-form');
+  const errEl = document.getElementById('auth-err');
+  function showErr(msg) { errEl.textContent = msg; errEl.style.display = ''; }
+  function clearErr() { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearErr();
+    const mode = document.querySelector('.mode-tab.on')?.dataset?.mode || 'login';
+    const email = form.querySelector('input[type="email"]').value.trim();
+    const password = form.querySelector('input[type="password"]').value;
+    const nameField = document.getElementById('name-field');
+    const name = nameField && nameField.style.display !== 'none' ? nameField.querySelector('input').value.trim() : null;
+    try {
+      if (mode === 'signup') {
+        await window.VerbaAPI.auth.signup(email, password, name);
+      } else {
+        await window.VerbaAPI.auth.login(email, password);
+      }
+      location.href = '/app';
+    } catch (err) {
+      showErr(err.message || 'Sign-in failed');
+    }
+  });
+
+  async function initGoogle() {
+    try {
+      const me = await window.VerbaAPI.auth.me().catch(() => null);
+      if (me && me.user) { location.href = '/app'; return; }
+    } catch {}
+    const cfgRes = await fetch('/api/auth/config').then(r => r.json()).catch(() => ({}));
+    if (!cfgRes.googleClientId || !window.google || !window.google.accounts) { setTimeout(initGoogle, 300); return; }
+    window.google.accounts.id.initialize({
+      client_id: cfgRes.googleClientId,
+      callback: async (resp) => {
+        try {
+          await window.VerbaAPI.auth.google(resp.credential);
+          location.href = '/app';
+        } catch (err) {
+          showErr(err.message || 'Google sign-in failed');
+        }
+      },
+    });
+    window.google.accounts.id.renderButton(
+      document.getElementById('gsi-button-wrap'),
+      { theme: 'outline', size: 'large', text: 'continue_with', width: 360 }
+    );
+    window.google.accounts.id.prompt();
+  }
+  initGoogle();
 })();
 </script>
 </body>

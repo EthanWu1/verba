@@ -32,10 +32,10 @@ test('pickBestExcerpt prefers the strongest matching passage', () => {
   const excerpt = pickBestExcerpt(
     'framework fairness',
     [
-      'This section is about warming and sea levels.',
-      'Procedural fairness is an internal link because framework determines which impacts count and how debaters compare offense.',
-      'A short sentence about debate.'
-    ].join('\n\n')
+      { text: 'This section is about warming and sea levels.' },
+      { text: 'Procedural fairness is an internal link because framework determines which impacts count and how debaters compare offense.' },
+      { text: 'A short sentence about debate.' },
+    ]
   );
 
   assert.match(excerpt, /procedural fairness/i);

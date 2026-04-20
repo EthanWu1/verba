@@ -14,7 +14,8 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   "terminal": "closed",
   "font": "calibri",
   "highlight": "yellow",
-  "upgradeDismissed": false
+  "upgradeDismissed": false,
+  "sidebarCollapsed": false
 }/*EDITMODE-END*/;
 try{
   const raw = localStorage.getItem('verba.tweaks');
@@ -97,6 +98,30 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
   border-right:1px solid var(--line);
   display:flex;flex-direction:column;padding:18px 14px 14px;gap:16px;min-height:0;
 }
+.sb-toggle{
+  position:absolute;top:14px;right:-12px;z-index:20;
+  width:22px;height:22px;border-radius:50%;
+  background:#fff;border:1px solid var(--line);color:var(--muted);
+  display:none;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:var(--shadow-sm);
+}
+.sidebar{position:relative}
+.sidebar:hover .sb-toggle{display:flex}
+.sb-toggle:hover{color:var(--ink);border-color:var(--line-2)}
+
+.shell.sb-collapsed{grid-template-columns:0px minmax(0,1fr)}
+.shell.sb-collapsed .sidebar{transform:translateX(-100%);transition:transform .22s cubic-bezier(.2,.9,.3,1.1)}
+.shell:not(.sb-collapsed) .sidebar{transform:translateX(0);transition:transform .22s cubic-bezier(.2,.9,.3,1.1)}
+
+.sb-open-fab{
+  position:fixed;top:14px;left:14px;z-index:30;
+  width:34px;height:34px;border-radius:8px;
+  background:#fff;border:1px solid var(--line);color:var(--muted);
+  display:none;align-items:center;justify-content:center;cursor:pointer;
+  box-shadow:var(--shadow-sm);
+}
+.shell.sb-collapsed .sb-open-fab{display:flex}
+.sb-open-fab:hover{color:var(--ink);border-color:var(--line-2)}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 0}
 .brand-mark{width:52px;height:52px;object-fit:contain;display:block}
 .brand-name{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-0.01em;color:var(--ink)}
@@ -1019,6 +1044,8 @@ p.figure-omitted{display:block;text-align:center}
 }
 .assistant-panel.open{transform:translateX(0)}
 .ap-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+.usage-pill{font:11px/1 var(--font-mono);color:var(--muted);background:var(--panel);border:1px solid var(--line-soft);border-radius:999px;padding:5px 10px;white-space:nowrap;opacity:.85}
+.usage-pill.warn{color:#B45309;border-color:#FCD34D;background:#FFFBEB}
 .ap-title{display:flex;align-items:center;gap:10px}
 .ap-dot{width:8px;height:8px;border-radius:50%;background:#10B981;box-shadow:0 0 0 0 rgba(16,185,129,0.55);animation:apDotPulse 2.2s ease-in-out infinite}
 @keyframes apDotPulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.55);transform:scale(1)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0);transform:scale(1.08)}}
@@ -1054,12 +1081,38 @@ p.figure-omitted{display:block;text-align:center}
 .ap-card-chip.saved{background:#dcfce7;border-color:#16a34a;animation:chipPulse .5s ease-out}
 .ap-card-chip.saved .ap-cc-saved{color:#15803d;font-weight:600}
 @keyframes chipPulse{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
-.ap-input-row{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line-soft);background:#fafafa}
-.ap-input-row textarea{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:13px/1.4 var(--font-ui);resize:none;background:#fff}
-.ap-input-row textarea:focus{outline:none;border-color:var(--lilac-2);box-shadow:0 0 0 3px var(--lilac-soft)}
-.ap-send{width:34px;height:34px;align-self:flex-end;border-radius:8px;background:#111;color:#fff;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.ap-send:hover{background:#000}
+.ap-input-row{position:relative;display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px;border-top:1px solid var(--line-soft);background:linear-gradient(180deg,#fafafa,#f4f3f7)}
+.ap-composer{display:flex;align-items:flex-end;gap:6px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 12px;transition:border-color .14s,box-shadow .14s,transform .12s}
+.ap-composer:focus-within{border-color:var(--lilac-2);box-shadow:0 0 0 3px var(--lilac-soft)}
+.ap-input-row textarea{flex:1;padding:8px 2px;border:0;outline:none;background:transparent;font:13.5px/1.5 var(--font-ui);resize:none;color:var(--ink);min-height:22px;max-height:140px}
+.ap-input-row textarea::placeholder{color:var(--muted-2)}
+.ap-send{width:30px;height:30px;flex:none;align-self:flex-end;border-radius:9px;background:linear-gradient(180deg,#1f1b2e,#111);color:#fff;border:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .14s,transform .09s}
+.ap-send:hover{background:linear-gradient(180deg,var(--lilac-ink),#3d2a66)}
 .ap-send:active{transform:scale(.94)}
+.ap-hint{display:flex;gap:10px;align-items:center;padding:2px 6px 0;font:11px/1 var(--font-mono);color:var(--muted)}
+.ap-hint kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:1px 5px;font:10.5px/1 var(--font-mono);color:var(--ink-2)}
+.ap-hint .ap-hint-sp{flex:1}
+
+/* Assistant empty state + suggestion chips */
+.ap-empty{padding:22px 18px 4px;display:flex;flex-direction:column;gap:12px}
+.ap-empty h4{margin:0;font:600 15.5px/1.3 var(--font-display);color:var(--ink);letter-spacing:-0.01em}
+.ap-empty p{margin:0;font:13px/1.5 var(--font-ui);color:var(--muted)}
+.ap-empty p kbd{background:#fff;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 5px;font:10.5px/1.4 var(--font-mono);color:var(--ink-2)}
+.ap-suggestions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ap-sugg{text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 11px;cursor:pointer;font:12.5px/1.35 var(--font-ui);color:var(--ink-2);transition:border-color .14s,background .14s,transform .12s,box-shadow .14s;display:flex;flex-direction:column;gap:2px}
+.ap-sugg:hover{border-color:var(--lilac-2);background:var(--lilac-soft);color:#111;box-shadow:var(--shadow-sm)}
+.ap-sugg:active{transform:scale(.98)}
+.ap-sugg .ap-sugg-h{font-weight:600;color:var(--ink);font-family:var(--font-display);font-size:12.5px}
+.ap-sugg .ap-sugg-s{color:var(--muted);font-size:11.5px}
+
+/* Slash command popover in assistant */
+.ap-slash-pop{position:absolute;left:12px;right:12px;bottom:calc(100% + 2px);z-index:11;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);padding:4px;display:none;max-height:260px;overflow:auto}
+.ap-slash-pop.open{display:block}
+.ap-slash-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;cursor:pointer;font:500 12.5px/1.2 var(--font-ui);color:var(--ink-2)}
+.ap-slash-row:hover,.ap-slash-row.sel{background:var(--lilac-soft);color:#111}
+.ap-slash-row .cmd{font:600 11.5px/1 var(--font-mono);color:#111;background:var(--panel);padding:3px 6px;border-radius:3px}
+.ap-slash-row .desc{font-weight:400;color:var(--muted);font-size:11.5px;margin-left:auto}
+.ap-slash-row:hover .desc,.ap-slash-row.sel .desc{color:var(--ink-2)}
 
 /* Modal animations — generic .modal-backdrop */
 .modal-backdrop{transition:opacity .18s ease}
@@ -1110,6 +1163,40 @@ p.figure-omitted{display:block;text-align:center}
 .side-account .acct-settings:hover{background:var(--panel);color:var(--ink)}
 .side-account .acct-settings svg{width:14px;height:14px}
 
+.side-account{cursor:pointer;user-select:none}
+.side-account:hover{background:var(--panel)}
+.acct-caret{color:var(--muted);flex:0 0 auto;margin-left:6px;transition:transform .14s}
+.side-account[aria-expanded="true"] .acct-caret{transform:rotate(180deg);color:var(--ink)}
+
+.user-menu{
+  position:fixed;z-index:260;min-width:228px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 14px 32px -8px rgba(16,24,40,.18),0 2px 6px rgba(16,24,40,.06);
+  padding:6px;display:none;opacity:0;transform:translateY(6px);
+  transition:opacity .14s ease,transform .14s ease;
+}
+.user-menu.open{display:block;opacity:1;transform:translateY(0)}
+.user-menu-email{
+  padding:8px 10px 6px;font:500 12.5px/1.3 var(--font-display);
+  color:var(--ink-2);border-bottom:1px solid var(--line-soft);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px;
+}
+.user-menu-item{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:6px;
+  font:500 13px/1 var(--font-display);color:var(--ink-2);
+  background:transparent;border:0;text-align:left;cursor:pointer;
+}
+.user-menu-item:hover{background:var(--panel);color:var(--ink)}
+.user-menu-item .user-menu-kbd{
+  margin-left:auto;font:500 10.5px/1 var(--font-mono);
+  color:var(--muted);background:var(--panel);border:1px solid var(--line);
+  border-radius:4px;padding:2px 5px;
+}
+.user-menu-item.danger{color:#B42318}
+.user-menu-item.danger:hover{background:#FEF2F2;color:#912018}
+.user-menu-sep{height:1px;background:var(--line-soft);margin:4px 2px}
+
 /* Uniform my-card layout */
 .mycard{position:relative}
 .mycard .date{position:absolute;top:10px;right:12px;font:11px/1 var(--font-mono);color:var(--muted)}
@@ -1127,9 +1214,192 @@ p.figure-omitted{display:block;text-align:center}
 body.accent-sky{--lilac:#BAE6FD;--lilac-2:#7DD3FC;--lilac-3:#38BDF8;--lilac-ink:#075985;--lilac-soft:#F0F9FF}
 body.accent-peach{--lilac:#FED7AA;--lilac-2:#FDBA74;--lilac-3:#FB923C;--lilac-ink:#9A3412;--lilac-soft:#FFF7ED}
 body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink:#166534;--lilac-soft:#F0FDF4}
+
+/* Fullscreen settings */
+.settings-backdrop{
+  position:fixed;inset:0;background:rgba(15,15,25,.42);
+  display:none;align-items:center;justify-content:center;z-index:300;
+  opacity:0;transition:opacity .16s ease;
+}
+.settings-backdrop.open{display:flex;opacity:1}
+.settings-shell{
+  width:min(1040px,94vw);height:min(720px,90vh);
+  background:#fff;border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 32px 80px -16px rgba(16,24,40,.28),0 4px 12px rgba(16,24,40,.06);
+  display:flex;flex-direction:column;overflow:hidden;
+  transform:translateY(10px) scale(.98);transition:transform .22s cubic-bezier(.2,.9,.3,1.1);
+}
+.settings-backdrop.open .settings-shell{transform:translateY(0) scale(1)}
+.settings-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 22px;border-bottom:1px solid var(--line-soft);
+}
+.settings-head h3{margin:0;font:600 16px/1 var(--font-display);color:var(--ink)}
+.settings-close{
+  width:30px;height:30px;border-radius:6px;display:grid;place-items:center;
+  background:transparent;border:1px solid transparent;color:var(--muted);cursor:pointer;
+}
+.settings-close:hover{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.settings-body{flex:1;display:grid;grid-template-columns:200px 1fr;min-height:0}
+.settings-tabs{
+  padding:16px 10px;border-right:1px solid var(--line-soft);
+  display:flex;flex-direction:column;gap:2px;background:var(--panel);
+}
+.stab{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border:0;background:transparent;border-radius:6px;text-align:left;cursor:pointer;
+  font:500 13px/1 var(--font-display);color:var(--ink-2);
+}
+.stab:hover{background:#fff;box-shadow:var(--shadow-sm)}
+.stab.active{background:#fff;box-shadow:var(--shadow-sm);color:var(--ink)}
+.settings-panes{overflow:auto;padding:26px 32px 36px}
+.spane{display:none}
+.spane.on{display:block}
+.spane-h{margin:0 0 14px;font:600 14px/1 var(--font-display);color:var(--ink);letter-spacing:-0.01em}
+.spane-h.mt{margin-top:28px}
+.sfield{margin-bottom:18px}
+.sfield-l{display:block;font:600 13px/1.2 var(--font-display);color:var(--ink-2);margin-bottom:6px}
+.sfield-hint{font:500 11px/1 var(--font-mono);color:var(--muted);margin-left:6px}
+.sfield-sub{font:500 12px/1.4 var(--font-display);color:var(--muted);margin-top:2px}
+.sfield-row{display:flex;gap:8px}
+.sfield-input{
+  flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:8px;
+  font:500 14px/1.2 var(--font-display);color:var(--ink);background:#fff;
+}
+.sfield-input:focus{border-color:var(--lilac-2);box-shadow:0 0 0 3px var(--lilac-soft);outline:0}
+.sfield-save{
+  padding:9px 14px;background:var(--ink);color:#fff;border:0;border-radius:8px;
+  font:600 13px/1 var(--font-display);cursor:pointer;
+}
+.sfield-save:disabled{background:var(--muted-2);cursor:not-allowed}
+.sfield-err{margin-top:6px;font:500 12px/1.2 var(--font-display);color:#B42318}
+.sfield-static{padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink-2);font:500 13px/1 var(--font-display)}
+.sfield-static.mono{font-family:var(--font-mono);font-size:12px}
+.sfield-row-pair{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--line-soft)}
+.sfield-row-pair:last-child{border-bottom:0}
+.font-cards, .hl-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.font-card, .hl-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  padding:14px 8px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;
+}
+.font-card span{font-size:26px;line-height:1;color:var(--ink)}
+.font-card small, .hl-card small{font:500 11px/1 var(--font-display);color:var(--muted)}
+.font-card.on, .hl-card.on{border-color:var(--lilac-2);box-shadow:0 0 0 2px var(--lilac-soft)}
+.hl-swatch{width:36px;height:36px;border-radius:8px;border:1px solid rgba(0,0,0,.08)}
+.btn-danger{padding:8px 14px;border:1px solid #F3B2AB;background:#fff;color:#B42318;border-radius:8px;font:600 13px/1 var(--font-display);cursor:pointer}
+.btn-danger:hover{background:#FEF2F2}
+.btn-danger:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{padding:8px 14px;border:1px solid var(--line);background:#fff;color:var(--ink-2);border-radius:8px;font:600 13px/1 var(--font-display);cursor:pointer}
+.btn-ghost:hover{background:var(--panel);color:var(--ink)}
+.btn-ghost:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{padding:8px 14px;border:1px solid var(--line-2);background:var(--ink);color:#fff;border-radius:8px;font:600 13px/1 var(--font-display);cursor:pointer}
+.btn-secondary:hover{opacity:.92}
+
+/* Sessions table */
+.sess-table{width:100%;border-collapse:collapse;font:500 13px/1.3 var(--font-display);color:var(--ink-2)}
+.sess-table th{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
+.sess-table td{padding:10px;border-bottom:1px solid var(--line-soft)}
+.sess-table td .badge-current{font:600 10px/1 var(--font-mono);background:var(--lilac-soft);color:var(--ink);padding:3px 6px;border-radius:4px;margin-left:6px}
+.sess-revoke{background:transparent;border:0;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:4px}
+.sess-revoke:hover{background:var(--panel);color:#B42318}
+.sess-empty{padding:24px;text-align:center;color:var(--muted)}
+
+/* Billing plan card */
+.plan-card{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.plan-head{display:flex;align-items:center;gap:14px;padding:18px 20px}
+.plan-head-text{flex:1;min-width:0}
+.plan-tier{font:700 18px/1.1 var(--font-display);color:var(--ink)}
+.plan-sub{font:500 13px/1.3 var(--font-display);color:var(--muted);margin-top:3px}
+.plan-renew{font:500 12px/1.3 var(--font-display);color:var(--muted);margin-top:2px}
+.plan-sep{height:1px;background:var(--line-soft)}
+.plan-section{padding:16px 20px}
+.plan-section-h{font:600 13px/1 var(--font-display);color:var(--ink);margin-bottom:10px}
+.pay-row{display:flex;align-items:center;gap:10px;color:var(--ink-2);font:500 13px/1.3 var(--font-display)}
+.pay-row button{margin-left:auto}
+.invoice-empty{font:500 13px/1.4 var(--font-display);color:var(--muted)}
+.pricing-overlay{
+  position:fixed;inset:0;background:var(--bg);z-index:320;
+  display:none;overflow:auto;
+}
+.pricing-overlay.open{display:block}
+.pricing-back{
+  position:absolute;top:18px;left:20px;
+  width:36px;height:36px;border-radius:8px;
+  background:transparent;border:1px solid transparent;color:var(--muted);
+  display:grid;place-items:center;cursor:pointer;
+}
+.pricing-back:hover{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.pricing-wrap{max-width:980px;margin:0 auto;padding:88px 32px 64px;text-align:center}
+.pricing-title{
+  font:700 38px/1.1 var(--font-display);color:var(--ink);
+  letter-spacing:-0.03em;margin:0 0 24px;
+}
+.pricing-tabs{display:inline-flex;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:32px}
+.pt-pill{padding:8px 16px;font:500 13px/1 var(--font-display);color:var(--muted);background:transparent;border:0;border-radius:7px;cursor:pointer}
+.pt-pill.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+.pt-pill:disabled{cursor:not-allowed;opacity:.6}
+.pricing-cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;text-align:left}
+.pp-card{
+  padding:28px;background:#fff;border:1px solid var(--line);border-radius:14px;
+  display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow-sm);
+}
+.pp-card.feat{border-color:var(--lilac-2);box-shadow:0 0 0 2px var(--lilac-soft),var(--shadow-sm)}
+.pp-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#C7B7F1,#8B7FBF);margin-bottom:6px}
+.pp-billing{display:inline-flex;gap:4px;padding:3px;background:var(--panel);border:1px solid var(--line);border-radius:8px;align-self:flex-end;margin-top:-38px}
+.pp-billing span{padding:6px 12px;border-radius:6px;font:500 11.5px/1 var(--font-display);color:var(--muted);cursor:pointer}
+.pp-billing span.on{background:#fff;color:var(--ink);box-shadow:var(--shadow-sm)}
+.pp-tier{font:700 20px/1 var(--font-display);color:var(--ink);margin-top:6px}
+.pp-desc{font:500 13.5px/1.4 var(--font-display);color:var(--muted);margin-bottom:8px}
+.pp-price{font:700 34px/1 var(--font-display);color:var(--ink);letter-spacing:-0.02em;margin:6px 0}
+.pp-price small{font:500 13px/1 var(--font-display);color:var(--muted);margin-left:6px}
+.pp-cta{
+  margin-top:10px;padding:12px 16px;border-radius:10px;border:1px solid var(--line);
+  background:#fff;color:var(--ink);font:600 14px/1 var(--font-display);cursor:pointer;
+}
+.pp-cta:hover{background:var(--panel)}
+.pp-cta.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pp-cta.primary:hover{opacity:.92}
+.pp-cta:disabled{cursor:not-allowed;opacity:.65}
+.pp-fineprint{font:500 11.5px/1 var(--font-mono);color:var(--muted);text-align:center;margin-top:4px}
+.pp-feats{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pp-feats li{padding-left:22px;position:relative;font:500 13px/1.4 var(--font-display);color:var(--ink-2)}
+.pp-feats li::before{content:"";position:absolute;left:0;top:6px;width:12px;height:8px;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-45deg)}
+.pp-foot{margin-top:32px;font:500 12px/1.5 var(--font-display);color:var(--muted)}
+
+@media (max-width:820px){
+  .pricing-cards{grid-template-columns:1fr}
+}
+.pay-backdrop{position:fixed;inset:0;background:rgba(15,15,25,.42);display:none;align-items:center;justify-content:center;z-index:340;opacity:0;transition:opacity .16s}
+.pay-backdrop.open{display:flex;opacity:1}
+.pay-shell{width:min(520px,94vw);background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 32px 80px -16px rgba(16,24,40,.28);display:flex;flex-direction:column;overflow:hidden;max-height:90vh}
+.pay-head{padding:16px 22px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between}
+.pay-head h3{margin:0;font:700 18px/1 var(--font-display);color:var(--ink)}
+.pay-body{overflow:auto;padding:20px 22px 22px;display:flex;flex-direction:column;gap:14px}
+.pay-tier-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pay-tier{text-align:left;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.pay-tier small{font:500 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pay-tier.on{border-color:var(--lilac-2);box-shadow:0 0 0 2px var(--lilac-soft)}
+.pay-tier div{font:600 13px/1.2 var(--font-display);color:var(--ink)}
+.pay-tier span{font:500 12px/1 var(--font-display);color:var(--muted)}
+.pay-order{border:1px solid var(--line);border-radius:10px;padding:14px}
+.pay-order h4{margin:0 0 10px;font:600 13px/1 var(--font-display);color:var(--ink)}
+.pay-line{display:flex;justify-content:space-between;padding:6px 0;font:500 13px/1.3 var(--font-display);color:var(--ink-2)}
+.pay-line.total{border-top:1px solid var(--line-soft);margin-top:6px;padding-top:10px;font-weight:700;color:var(--ink)}
+.pay-method{border:1px solid var(--line);border-radius:10px;padding:14px}
+.pay-method-h{font:600 13px/1 var(--font-display);color:var(--ink);margin-bottom:10px}
+.pay-method-row{display:flex;align-items:center;gap:8px}
+.pay-terms{display:flex;gap:8px;align-items:flex-start;font:500 12.5px/1.4 var(--font-display);color:var(--muted)}
+.ks-h{font:600 11px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.ks-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft);font:500 13px/1 var(--font-display);color:var(--ink-2)}
+.ks-row:last-child{border-bottom:0}
+.ks-row kbd{margin-left:4px}
 </style>
 </head>
 <body class="accent-ink font-calibri nexus-closed hl-yellow" data-cc-id="cc-1">
+
+<button class="sb-open-fab" id="sb-open-fab" aria-label="Open sidebar" title="Open sidebar (⌘.)">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+</button>
 
 <div class="shell">
 
@@ -1142,6 +1412,9 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         <div class="brand-plan">Free Plan</div>
       </div>
     </div>
+    <button class="sb-toggle" id="sb-toggle" aria-label="Collapse sidebar" title="Collapse (⌘.)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18l-6-6 6-6M15 18l6-6-6-6"/></svg>
+    </button>
 
     <div class="side-search" id="cmd-trigger">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
@@ -1152,9 +1425,9 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     <div>
       <div class="nav-group-label">Workspace</div>
       <nav class="nav">
-        <button class="nav-item active" data-page="home" data-screen-label="01 Card Cutter">
+        <button class="nav-item active" data-page="home" data-screen-label="01 Cutter">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15zM12 20l5-5 5 5-5-15-5 15z"></path></svg>
-          <span>Card Cutter</span>
+          <span>Cutter</span>
         </button>
       </nav>
       <div class="nav-group-label">Library</div>
@@ -1186,14 +1459,36 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <button class="upgrade-btn">Upgrade</button>
     </div>
 
-    <div class="side-account">
-      <div class="avatar">MA</div>
-      <div>
-        <div class="name">Marlborough A</div>
-        <div class="email">ma@verba.app</div>
+    <div class="side-account" id="side-account-row" role="button" tabindex="0" aria-haspopup="menu">
+      <div class="avatar" id="side-avatar">··</div>
+      <div style="min-width:0;flex:1;overflow:hidden">
+        <div class="name" id="side-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+        <div class="email" id="side-email" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
       </div>
-      <button class="acct-settings" id="settings-btn" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"/></svg>
+      <svg class="acct-caret" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+
+    <div class="user-menu" id="user-menu" role="menu" aria-hidden="true">
+      <div class="user-menu-email" id="user-menu-email">—</div>
+      <button class="user-menu-item" data-act="settings" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6 1.65 1.65 0 0010 3.09V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.26.26.43.62.45 1V10a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Settings</span>
+        <kbd class="user-menu-kbd">⌘,</kbd>
+      </button>
+      <div class="user-menu-sep"></div>
+      <button class="user-menu-item" data-act="upgrade" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><path d="M12 3l9 9h-5v9h-8v-9H3z"/></svg>
+        <span>Upgrade plan</span>
+      </button>
+      <button class="user-menu-item" data-act="shortcuts" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
+        <span>Keyboard shortcuts</span>
+        <kbd class="user-menu-kbd">⌘/</kbd>
+      </button>
+      <div class="user-menu-sep"></div>
+      <button class="user-menu-item danger" data-act="logout" role="menuitem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        <span>Log out</span>
       </button>
     </div>
   </aside>
@@ -1202,7 +1497,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   <main class="main">
     <div class="topbar">
       <div class="crumb">
-        <span class="muted">Workspace</span><span class="sep">/</span><span id="crumb-page">Card Cutter</span>
+        <span class="muted">Workspace</span><span class="sep">/</span><span id="crumb-page">Cutter</span>
       </div>
       <button class="btn btn-sm source-reopen" id="source-reopen" style="display:none">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"></path></svg>
@@ -1221,9 +1516,10 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         <div class="page-head" style="margin-bottom:12px">
           <div>
             <p class="eyebrow">Workspace</p>
-            <h1 class="page-title" id="wb-title">Card Cutter</h1>
+            <h1 class="page-title" id="wb-title">Cutter</h1>
             <p class="page-sub">Paste a URL or type an argument. Select text in the generated card to highlight, underline, or bold.</p>
           </div>
+          <div class="usage-pill" id="cutter-usage" hidden></div>
         </div>
 
         <div class="research-bar-wrap">
@@ -1322,7 +1618,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               <div class="pane-head">
                 <div class="pane-title card"><span class="pip"></span><span id="ev-detail-title">Preview</span></div>
                 <div class="pane-actions">
-                  <button class="pane-action-btn" id="ev-open" title="Open in card cutter">
+                  <button class="pane-action-btn" id="ev-open" title="Open in cutter">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 3h6v6"/><path d="M10 14L21 3"/><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/></svg>
                     Open
                   </button>
@@ -1363,7 +1659,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
                 <kbd class="k">/</kbd>
               </div>
               <div class="cards-grid" id="mine-grid">
-                <div style="grid-column:1/-1;padding:32px;color:var(--muted);font-size:13px">No saved cards yet. Cut one in Card Cutter.</div>
+                <div style="grid-column:1/-1;padding:32px;color:var(--muted);font-size:13px">No saved cards yet. Cut one in Cutter.</div>
               </div>
             </div>
           </div>
@@ -1429,32 +1725,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   </div>
 </div>
 
-<!-- SETTINGS MODAL (trigger lives beside nameplate as #settings-btn) -->
-<div class="modal-backdrop" id="settings-modal">
-  <div class="modal" role="dialog" aria-label="Settings" style="width:min(560px,92vw)">
-    <div class="modal-head"><h3>Settings</h3><button class="close" id="settings-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></button></div>
-    <div class="modal-body">
-      <div class="filter-group"><span class="filter-group-label">Highlight color</span>
-        <div class="check-row" data-settings="highlight">
-          <button class="check-pill" data-val="cyan"><span style="width:14px;height:14px;border-radius:4px;background:#00FFFF;border:1px solid rgba(0,0,0,.08)"></span>Cyan</button>
-          <button class="check-pill" data-val="green"><span style="width:14px;height:14px;border-radius:4px;background:#00FF00;border:1px solid rgba(0,0,0,.08)"></span>Green</button>
-          <button class="check-pill on" data-val="yellow"><span style="width:14px;height:14px;border-radius:4px;background:#FFFF00;border:1px solid rgba(0,0,0,.08)"></span>Yellow</button>
-        </div></div>
-      <div class="filter-group"><span class="filter-group-label">Body font</span>
-        <select id="font-select" class="font-select">
-          <option value="calibri">Calibri</option>
-          <option value="inter">Inter</option>
-          <option value="times">Times New Roman</option>
-          <option value="georgia">Georgia</option>
-          <option value="serif">Newsreader (serif)</option>
-          <option value="mono">JetBrains Mono</option>
-          <option value="system">System UI</option>
-        </select></div>
-    </div>
-    <div class="modal-foot"><span style="font:12px/1 var(--font-display);color:var(--muted)">Changes apply live</span><button class="apply" id="settings-done">Done</button></div>
-  </div>
-</div>
-
 <!-- OLD TWEAKS (hidden) -->
 <button class="tweak-toggle hidden" id="tweak-toggle" title="Tweaks" style="display:none">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"></path></svg>
@@ -1495,7 +1765,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <kbd>esc</kbd>
     </div>
     <div class="cmd-list" id="cmd-list">
-      <div class="cmd-item sel" data-go="home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15z"></path></svg>Open Card Cutter<span class="hint">Go</span></div>
+      <div class="cmd-item sel" data-go="home"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20l-5-5-5 5 5-15 5 15z"></path></svg>Open Cutter<span class="hint">Go</span></div>
       <div class="cmd-item" data-go="community"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h12a4 4 0 014 4v12H8a4 4 0 01-4-4V4z"></path></svg>Open Evidence<span class="hint">Go</span></div>
       <div class="cmd-item" data-go="contentions"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M3 12h18M3 18h12"></path></svg>Open Contentions<span class="hint">Go</span></div>
       <div class="cmd-item" data-go="saved"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg>Open My Cards<span class="hint">Go</span></div>
@@ -1538,12 +1808,22 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <span class="ap-dot"></span>
       <div class="ap-heading"><span class="ap-name">Assistant</span><span class="ap-sep">•</span><span class="ap-sub">strategy chat</span></div>
     </div>
+    <div class="usage-pill" id="assistant-usage" hidden style="margin-left:auto;margin-right:8px"></div>
     <button class="ap-close" id="assistant-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
   </div>
   <div class="ap-messages" id="assistant-messages"></div>
   <div class="ap-input-row">
-    <textarea id="assistant-input" placeholder="Ask the assistant… (⌘↵ to send)" rows="2"></textarea>
-    <button id="assistant-send" class="ap-send" title="Send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+    <div class="ap-slash-pop" id="ap-slash-pop"></div>
+    <div class="ap-composer">
+      <textarea id="assistant-input" placeholder="Ask the assistant — type / for commands" rows="1"></textarea>
+      <button id="assistant-send" class="ap-send" title="Send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="ap-hint">
+      <span><kbd>/</kbd> commands</span>
+      <span><kbd>⇧↵</kbd> newline</span>
+      <span class="ap-hint-sp"></span>
+      <span><kbd>↵</kbd> send</span>
+    </div>
   </div>
 </aside>
 
@@ -1692,14 +1972,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   const cardDel=document.getElementById('card-delete');
   if(cardDel){cardDel.addEventListener('click',()=>{if(confirm('Delete this generated card?'))showToast('Card deleted')})}
 
-  // Settings modal
-  const sM=document.getElementById('settings-modal'),sO=document.getElementById('settings-open'),sC=document.getElementById('settings-close'),sD=document.getElementById('settings-done');
-  if(sM){
-    if(sO)sO.addEventListener('click',()=>sM.classList.add('open'));
-    if(sC)sC.addEventListener('click',()=>sM.classList.remove('open'));
-    if(sD)sD.addEventListener('click',()=>sM.classList.remove('open'));
-    sM.addEventListener('click',e=>{if(e.target===sM)sM.classList.remove('open')});
-  }
   document.querySelectorAll('[data-settings]').forEach(g=>{
     g.querySelectorAll('.check-pill').forEach(p=>{
       p.addEventListener('click',()=>{
@@ -1723,5 +1995,239 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
 <script src="api.js"></script>
 <script src="app-main.js"></script>
+
+<!-- SETTINGS (fullscreen tabbed) -->
+<div class="settings-backdrop" id="settings-v2" aria-hidden="true">
+  <div class="settings-shell" role="dialog" aria-label="Settings">
+    <div class="settings-head">
+      <h3>Settings</h3>
+      <button class="settings-close" id="settings-v2-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="settings-body">
+      <nav class="settings-tabs" role="tablist">
+        <button class="stab active" data-tab="general" role="tab">General</button>
+        <button class="stab" data-tab="account" role="tab">Account</button>
+        <button class="stab" data-tab="billing" role="tab">Billing</button>
+      </nav>
+      <div class="settings-panes">
+        <!-- GENERAL -->
+        <section class="spane on" data-pane="general">
+          <h4 class="spane-h">Profile</h4>
+          <div class="sfield">
+            <label class="sfield-l">Full name <span class="sfield-hint" id="name-cooldown-hint"></span></label>
+            <div class="sfield-row">
+              <input class="sfield-input" id="profile-name" maxlength="60" />
+              <button class="sfield-save" id="profile-name-save" disabled>Save</button>
+            </div>
+            <div class="sfield-err" id="profile-name-err" style="display:none"></div>
+          </div>
+          <div class="sfield">
+            <label class="sfield-l">Email</label>
+            <div class="sfield-static" id="profile-email">—</div>
+          </div>
+
+          <h4 class="spane-h mt">Appearance</h4>
+          <div class="sfield">
+            <label class="sfield-l">Body font</label>
+            <div class="font-cards" id="font-cards">
+              <button class="font-card on" data-val="calibri"><span style="font-family:'Calibri','Calibri MS',sans-serif">Aa</span><small>Calibri</small></button>
+              <button class="font-card" data-val="inter"><span style="font-family:'Inter',sans-serif">Aa</span><small>Inter</small></button>
+              <button class="font-card" data-val="times"><span style="font-family:'Times New Roman',serif">Aa</span><small>Times</small></button>
+              <button class="font-card" data-val="georgia"><span style="font-family:Georgia,serif">Aa</span><small>Georgia</small></button>
+              <button class="font-card" data-val="serif"><span style="font-family:'Newsreader',Georgia,serif">Aa</span><small>Newsreader</small></button>
+              <button class="font-card" data-val="mono"><span style="font-family:'JetBrains Mono',ui-monospace,monospace">Aa</span><small>Mono</small></button>
+              <button class="font-card" data-val="system"><span style="font-family:system-ui,sans-serif">Aa</span><small>System</small></button>
+            </div>
+          </div>
+          <div class="sfield">
+            <label class="sfield-l">Highlight color</label>
+            <div class="hl-cards" id="hl-cards">
+              <button class="hl-card on" data-val="yellow"><span class="hl-swatch" style="background:#FFFF00"></span><small>Yellow</small></button>
+              <button class="hl-card" data-val="cyan"><span class="hl-swatch" style="background:#00FFFF"></span><small>Cyan</small></button>
+              <button class="hl-card" data-val="green"><span class="hl-swatch" style="background:#00FF00"></span><small>Green</small></button>
+              <button class="hl-card" data-val="lilac"><span class="hl-swatch" style="background:#C7B7F1"></span><small>Lilac</small></button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACCOUNT -->
+        <section class="spane" data-pane="account">
+          <h4 class="spane-h">Account</h4>
+          <div class="sfield sfield-row-pair">
+            <div>
+              <div class="sfield-l">Log out of all devices</div>
+              <div class="sfield-sub">Ends every active session including this one.</div>
+            </div>
+            <button class="btn-danger" id="logout-all-btn">Log out</button>
+          </div>
+          <div class="sfield sfield-row-pair">
+            <div>
+              <div class="sfield-l">Delete account</div>
+              <div class="sfield-sub">Coming soon. Contact support for now.</div>
+            </div>
+            <button class="btn-ghost" disabled>Delete account</button>
+          </div>
+          <div class="sfield">
+            <div class="sfield-l">Organization ID</div>
+            <div class="sfield-static mono" id="org-id">—</div>
+          </div>
+          <h4 class="spane-h mt">Active sessions</h4>
+          <table class="sess-table" id="sess-table">
+            <thead><tr><th>Device</th><th>Location</th><th>Created</th><th>Last active</th><th></th></tr></thead>
+            <tbody id="sess-tbody"><tr><td colspan="5" class="sess-empty">Loading…</td></tr></tbody>
+          </table>
+        </section>
+
+        <!-- BILLING -->
+        <section class="spane" data-pane="billing">
+          <div class="plan-card">
+            <div class="plan-head">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v6M12 8l-6 4M12 8l6 4M6 12v6M18 12v6M12 14v8"/></svg>
+              <div class="plan-head-text">
+                <div class="plan-tier" id="plan-tier">Free plan</div>
+                <div class="plan-sub" id="plan-sub">Basic usage limits</div>
+                <div class="plan-renew" id="plan-renew"></div>
+              </div>
+              <button class="btn-secondary" id="plan-adjust">Adjust plan</button>
+            </div>
+            <div class="plan-sep"></div>
+            <div class="plan-section">
+              <div class="plan-section-h">Payment</div>
+              <div class="pay-row" id="pay-row">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                <span id="pay-mask">No payment method</span>
+                <button class="btn-ghost" id="pay-update">Update</button>
+              </div>
+            </div>
+            <div class="plan-sep"></div>
+            <div class="plan-section">
+              <div class="plan-section-h">Invoices</div>
+              <div class="invoice-empty" id="invoice-list">No invoices yet.</div>
+            </div>
+            <div class="plan-sep"></div>
+            <div class="plan-section">
+              <div class="plan-section-h">Cancellation</div>
+              <div class="pay-row">
+                <span style="flex:1">Cancel plan</span>
+                <button class="btn-danger" id="plan-cancel" disabled>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING OVERLAY -->
+<div class="pricing-overlay" id="pricing-overlay" aria-hidden="true">
+  <button class="pricing-back" id="pricing-back" aria-label="Back">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </button>
+  <div class="pricing-wrap">
+    <h1 class="pricing-title">Plans that grow with you</h1>
+    <div class="pricing-tabs">
+      <button class="pt-pill on">Individual</button>
+      <button class="pt-pill" disabled>Team and Enterprise</button>
+    </div>
+    <div class="pricing-cards">
+      <div class="pp-card">
+        <div class="pp-mark"></div>
+        <div class="pp-billing"><span class="pp-month on">Monthly</span><span class="pp-yearly">Yearly · Save 17%</span></div>
+        <div class="pp-tier">Solo</div>
+        <div class="pp-desc">Research, cut, and organize.</div>
+        <div class="pp-price">$0<small>/ forever</small></div>
+        <button class="pp-cta" id="pp-solo-cta" disabled>Current plan</button>
+        <ul class="pp-feats">
+          <li>Unlimited cards &amp; projects</li>
+          <li>Cutter + library search</li>
+          <li>50 assistant queries / month</li>
+          <li>.docx import &amp; export</li>
+        </ul>
+      </div>
+      <div class="pp-card feat">
+        <div class="pp-mark"></div>
+        <div class="pp-tier">Squad</div>
+        <div class="pp-desc">Higher limits, priority access.</div>
+        <div class="pp-price">From $9<small>/ debater / mo</small></div>
+        <button class="pp-cta primary" id="pp-squad-cta">Start trial</button>
+        <div class="pp-fineprint">No commitment · Cancel anytime</div>
+        <ul class="pp-feats">
+          <li>Everything in Solo</li>
+          <li>Up to 20× more usage</li>
+          <li>Shared team libraries</li>
+          <li>Round-doc export</li>
+          <li>Priority assistant access</li>
+        </ul>
+      </div>
+    </div>
+    <div class="pp-foot">Usage limits apply. Prices shown don't include applicable tax.</div>
+  </div>
+</div>
+
+<!-- PAYMENT (mock) -->
+<div class="pay-backdrop" id="pay-overlay" aria-hidden="true">
+  <div class="pay-shell" role="dialog" aria-label="Adjust usage">
+    <div class="pay-head">
+      <h3>Adjust usage</h3>
+      <button class="settings-close" id="pay-close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="pay-body">
+      <div class="pay-tier-row">
+        <button class="pay-tier on" data-tier="5x"><small>Current plan</small><div>5× usage · Solo</div><span>$0/mo</span></button>
+        <button class="pay-tier" data-tier="20x"><small>Save 50%</small><div>20× usage · Squad</div><span>$9/mo + tax</span></button>
+      </div>
+      <div class="pay-order">
+        <h4>Order details</h4>
+        <div class="pay-line"><span>Squad plan</span><span>$9.00</span></div>
+        <div class="pay-line"><span>Tax</span><span>$0.63</span></div>
+        <div class="pay-line total"><span>Total due today</span><span>$9.63</span></div>
+      </div>
+      <div class="pay-method">
+        <div class="pay-method-h">Payment method</div>
+        <div class="pay-method-row">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <input id="pay-card" class="sfield-input" placeholder="Card number (demo — nothing is charged)" />
+        </div>
+        <div class="pay-method-row" style="margin-top:8px">
+          <input class="sfield-input" placeholder="MM/YY" style="max-width:120px" />
+          <input class="sfield-input" placeholder="CVC" style="max-width:90px;margin-left:8px" />
+          <input class="sfield-input" placeholder="ZIP" style="max-width:110px;margin-left:8px" />
+        </div>
+      </div>
+      <label class="pay-terms"><input type="checkbox" id="pay-agree"> You agree this is a demo and no card will be charged.</label>
+      <button class="pp-cta primary" id="pay-submit" disabled style="width:100%">Upgrade to 20×</button>
+    </div>
+  </div>
+</div>
+
+<!-- KEYBOARD SHORTCUTS -->
+<div class="modal-backdrop" id="ks-modal">
+  <div class="modal" role="dialog" aria-label="Keyboard shortcuts" style="width:min(480px,92vw)">
+    <div class="modal-head">
+      <h3>Keyboard shortcuts</h3>
+      <button class="close" id="ks-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">
+      <div class="ks-section">
+        <div class="ks-h">General</div>
+        <div class="ks-row"><span>Command palette</span><span><kbd>⌘</kbd><kbd>K</kbd></span></div>
+        <div class="ks-row"><span>Settings</span><span><kbd>⌘</kbd><kbd>,</kbd></span></div>
+        <div class="ks-row"><span>Keyboard shortcuts</span><span><kbd>⌘</kbd><kbd>/</kbd></span></div>
+        <div class="ks-row"><span>Toggle sidebar</span><span><kbd>⌘</kbd><kbd>.</kbd></span></div>
+      </div>
+      <div class="ks-section">
+        <div class="ks-h">Cutter</div>
+        <div class="ks-row"><span>Highlight</span><span><kbd>H</kbd></span></div>
+        <div class="ks-row"><span>Shrink</span><span><kbd>S</kbd></span></div>
+        <div class="ks-row"><span>Warrant</span><span><kbd>W</kbd></span></div>
+        <div class="ks-row"><span>Save card</span><span><kbd>⌘</kbd><kbd>↵</kbd></span></div>
+        <div class="ks-row"><span>Export round doc</span><span><kbd>⇧</kbd><kbd>E</kbd></span></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body></html>

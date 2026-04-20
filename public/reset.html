@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Set new password · Verba</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+body{font:16px/1.5 system-ui,sans-serif;background:#0d0d10;color:#eee;display:grid;place-items:center;min-height:100vh;margin:0}
+.box{background:#17171b;padding:32px;border-radius:12px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+h1{margin:0 0 6px;font-size:22px}
+p{color:#aaa;margin:0 0 18px;font-size:14px}
+label{display:block;font-size:12px;color:#bbb;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+input{width:100%;padding:12px 14px;background:#0b0b0e;border:1px solid #2a2a33;color:#fff;border-radius:8px;font:inherit;box-sizing:border-box;margin-bottom:12px}
+button{width:100%;padding:12px;background:#7c6aff;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer}
+.msg{margin-top:14px;color:#7ecb7e;font-size:13px}
+.err{margin-top:14px;color:#e36b6b;font-size:13px}
+a{color:#9e8aff}
+</style>
+</head>
+<body>
+<form class="box" id="f">
+  <h1>Choose a new password</h1>
+  <p>At least 8 characters.</p>
+  <label>New password</label>
+  <input type="password" required id="pw" minlength="8" placeholder="••••••••" />
+  <button type="submit">Set password</button>
+  <p id="msg" class="msg" style="display:none">Password updated. <a href="/signin">Sign in</a>.</p>
+  <p id="err" class="err" style="display:none"></p>
+</form>
+<script src="/api.js"></script>
+<script>
+const token = new URLSearchParams(location.search).get('token') || '';
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pw = document.getElementById('pw').value;
+  const msg = document.getElementById('msg'), err = document.getElementById('err');
+  msg.style.display = err.style.display = 'none';
+  try {
+    await window.VerbaAPI.auth.reset(token, pw);
+    msg.style.display = '';
+  } catch (ex) {
+    err.textContent = ex.message || 'Reset failed';
+    err.style.display = '';
+  }
+});
+</script>
+</body>
+</html>

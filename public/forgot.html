@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Reset password · Verba</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+body{font:16px/1.5 system-ui,sans-serif;background:#0d0d10;color:#eee;display:grid;place-items:center;min-height:100vh;margin:0}
+.box{background:#17171b;padding:32px;border-radius:12px;max-width:400px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+h1{margin:0 0 6px;font-size:22px}
+p{color:#aaa;margin:0 0 18px;font-size:14px}
+label{display:block;font-size:12px;color:#bbb;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+input{width:100%;padding:12px 14px;background:#0b0b0e;border:1px solid #2a2a33;color:#fff;border-radius:8px;font:inherit;box-sizing:border-box}
+button{width:100%;padding:12px;background:#7c6aff;color:#fff;border:0;border-radius:8px;font-weight:600;margin-top:14px;cursor:pointer}
+.msg{margin-top:14px;color:#7ecb7e;font-size:13px}
+.err{margin-top:14px;color:#e36b6b;font-size:13px}
+a{color:#9e8aff}
+</style>
+</head>
+<body>
+<form class="box" id="f">
+  <h1>Reset your password</h1>
+  <p>Enter your email and we'll send a reset link.</p>
+  <label>Email</label>
+  <input type="email" required id="email" placeholder="you@school.edu" />
+  <button type="submit">Send reset link</button>
+  <p id="msg" class="msg" style="display:none">Check your inbox for a reset link.</p>
+  <p id="err" class="err" style="display:none"></p>
+  <p style="margin-top:20px"><a href="/signin">Back to sign in</a></p>
+</form>
+<script src="/api.js"></script>
+<script>
+document.getElementById('f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('email').value.trim();
+  const msg = document.getElementById('msg'), err = document.getElementById('err');
+  msg.style.display = err.style.display = 'none';
+  try {
+    await window.VerbaAPI.auth.forgot(email);
+    msg.style.display = '';
+  } catch (ex) {
+    err.textContent = ex.message || 'Failed to send';
+    err.style.display = '';
+  }
+});
+</script>
+</body>
+</html>

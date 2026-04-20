@@ -4,13 +4,15 @@
 
   async function jsonFetch(path, opts = {}) {
     const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
-    const res = await fetch(path, { ...opts, headers });
+    const res = await fetch(path, { credentials: 'include', ...opts, headers });
     const txt = await res.text();
     let data;
     try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
     if (!res.ok) {
-      const msg = (data && data.error) || res.statusText || ('HTTP ' + res.status);
-      throw new Error(msg);
+      const err = new Error((data && data.error) || res.statusText || ('HTTP ' + res.status));
+      err.status = res.status;
+      err.body = data;
+      throw err;
     }
     return data;
   }
@@ -72,6 +74,22 @@
       return { blob, filename };
     },
 
+    // --- auth ---
+    auth: {
+      signup: (email, password, name) => jsonFetch('/api/auth/signup', { method: 'POST', body: JSON.stringify({ email, password, name }) }),
+      login:  (email, password)       => jsonFetch('/api/auth/login',  { method: 'POST', body: JSON.stringify({ email, password }) }),
+      logout: ()                      => jsonFetch('/api/auth/logout', { method: 'POST' }),
+      me:     ()                      => jsonFetch('/api/auth/me'),
+      google: (idToken)               => jsonFetch('/api/auth/google', { method: 'POST', body: JSON.stringify({ idToken }) }),
+      usage:  ()                      => jsonFetch('/api/auth/usage'),
+      forgot: (email)                 => jsonFetch('/api/auth/forgot', { method: 'POST', body: JSON.stringify({ email }) }),
+      reset:  (token, password)       => jsonFetch('/api/auth/reset',  { method: 'POST', body: JSON.stringify({ token, password }) }),
+      updateProfile:    (patch)    => jsonFetch('/api/auth/profile', { method: 'PATCH', body: JSON.stringify(patch) }),
+      listSessions:     ()         => jsonFetch('/api/auth/sessions'),
+      revokeSession:    (id)       => jsonFetch('/api/auth/sessions/' + encodeURIComponent(id), { method: 'DELETE' }),
+      revokeAllSessions:()         => jsonFetch('/api/auth/sessions', { method: 'DELETE' }),
+    },
+
     // --- contentions ---
     contentions: (topic) => jsonFetch('/api/contentions' + (topic ? `?topic=${encodeURIComponent(topic)}` : '')),
     createContention: (payload) => jsonFetch('/api/contentions', { method: 'POST', body: JSON.stringify(payload) }),
@@ -85,41 +103,19 @@
     addProjectCard: (id, card) => jsonFetch('/api/projects/' + encodeURIComponent(id) + '/cards', { method: 'POST', body: JSON.stringify({ card }) }),
     removeProjectCard: (id, cardId) => jsonFetch('/api/projects/' + encodeURIComponent(id) + '/cards/' + encodeURIComponent(cardId), { method: 'DELETE' }),
 
-    // --- history (localStorage-backed) ---
     history: {
-      get() { try { return JSON.parse(localStorage.getItem('verba.history') || '[]'); } catch { return []; } },
-      push(entry) {
-        const all = this.get();
-        all.unshift({ ...entry, at: new Date().toISOString() });
-        localStorage.setItem('verba.history', JSON.stringify(all.slice(0, 400)));
-      },
-      clear() { localStorage.removeItem('verba.history'); },
+      async get() { try { return (await jsonFetch('/api/history')).items || []; } catch { return []; } },
+      async push(entry) { return jsonFetch('/api/history', { method: 'POST', body: JSON.stringify({ entry }) }); },
+      async clear() { return jsonFetch('/api/history', { method: 'DELETE' }); },
     },
 
-    // --- my-cards (localStorage-backed saved cards) ---
     mine: {
-      get() { try { return JSON.parse(localStorage.getItem('verba.mycards') || '[]'); } catch { return []; } },
-      fingerprint(c) {
-        const t = (c.tag || '').trim().toLowerCase();
-        const ci = (c.cite || c.shortCite || '').trim().toLowerCase();
-        const b = String(c.body_plain || c.body_markdown || '').slice(0, 200).trim().toLowerCase();
-        return t + '|' + ci + '|' + b;
+      async get() { try { return (await jsonFetch('/api/mine')).items || []; } catch { return []; } },
+      async save(card) {
+        const res = await jsonFetch('/api/mine', { method: 'POST', body: JSON.stringify({ card }) });
+        return { card: res.card, duplicate: !!res.duplicate };
       },
-      save(card) {
-        const all = this.get();
-        const fp = this.fingerprint(card);
-        const existing = all.find((c) => this.fingerprint(c) === fp);
-        if (existing) return { card: existing, duplicate: true };
-        const id = card.id || ('c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
-        const next = { id, ...card, savedAt: new Date().toISOString() };
-        all.unshift(next);
-        localStorage.setItem('verba.mycards', JSON.stringify(all.slice(0, 1000)));
-        return { card: next, duplicate: false };
-      },
-      remove(id) {
-        const all = this.get().filter((c) => c.id !== id);
-        localStorage.setItem('verba.mycards', JSON.stringify(all));
-      },
+      async remove(id) { return jsonFetch('/api/mine/' + encodeURIComponent(id), { method: 'DELETE' }); },
     },
   };
 
