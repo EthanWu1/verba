@@ -77,7 +77,16 @@ form{display:flex;flex-direction:column;gap:14px}
 }
 .foot{padding:24px 56px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between}
 .foot a{color:var(--muted)} .foot a:hover{color:var(--ink)} .foot .dot{color:var(--muted-2);margin:0 6px}
-@media (max-width:640px){ .brandbar{padding:24px 28px 0} .foot{padding:24px 28px} }
+@media (max-width:640px){
+  .brandbar{padding:20px 18px 0}
+  .foot{padding:20px 18px;flex-wrap:wrap;gap:8px}
+  .wrap{padding:24px 18px}
+  .card{max-width:100%}
+  .headline{font-size:clamp(28px,8vw,36px)}
+  .subline{font-size:14.5px;margin:12px 0 20px}
+  .field input{font-size:16px}
+  .submit{padding:14px 16px}
+}
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
 </head>
