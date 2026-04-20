@@ -1855,4 +1855,161 @@
      ────────────────────────────────────────── */
   refreshNavCounts();
   API.health?.().then((h) => console.log('[Verba] backend ok:', h?.model)).catch(() => console.warn('[Verba] backend unreachable'));
+
+  /* --- Settings v2 controller --- */
+  (function initSettingsV2() {
+    const back = document.getElementById('settings-v2');
+    if (!back) return;
+    const closeBtn = document.getElementById('settings-v2-close');
+    const tabs = back.querySelectorAll('.stab');
+    const panes = back.querySelectorAll('.spane');
+
+    function open(tab) {
+      back.classList.add('open');
+      back.setAttribute('aria-hidden', 'false');
+      activate(tab || 'general');
+      hydrateGeneral();
+      if (tab === 'account' || !tab) hydrateAccount();
+      if (tab === 'billing') hydrateBilling();
+    }
+    function close() {
+      back.classList.remove('open');
+      back.setAttribute('aria-hidden', 'true');
+    }
+    function activate(name) {
+      tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+      panes.forEach(p => p.classList.toggle('on', p.dataset.pane === name));
+      if (name === 'account') hydrateAccount();
+      if (name === 'billing') hydrateBilling();
+    }
+
+    closeBtn.addEventListener('click', close);
+    back.addEventListener('click', (e) => { if (e.target === back) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && back.classList.contains('open')) close(); });
+    tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
+
+    // General: profile name + font cards + highlight cards
+    function hydrateGeneral() {
+      const u = window.__verbaUser || {};
+      const nameInput = document.getElementById('profile-name');
+      const emailEl = document.getElementById('profile-email');
+      const saveBtn = document.getElementById('profile-name-save');
+      const hint = document.getElementById('name-cooldown-hint');
+      const err = document.getElementById('profile-name-err');
+      if (nameInput) nameInput.value = u.name || '';
+      if (emailEl) emailEl.textContent = u.email || '—';
+      err.style.display = 'none';
+      saveBtn.disabled = true;
+      const last = u.nameUpdatedAt ? new Date(u.nameUpdatedAt).getTime() : 0;
+      const nextAllowed = last + 24 * 60 * 60 * 1000;
+      if (last && Date.now() < nextAllowed) {
+        const hrs = Math.ceil((nextAllowed - Date.now()) / 3600000);
+        hint.textContent = `Can change again in ~${hrs}h`;
+        nameInput.disabled = true;
+      } else {
+        hint.textContent = '';
+        nameInput.disabled = false;
+      }
+      nameInput.oninput = () => { saveBtn.disabled = !nameInput.value.trim() || nameInput.value.trim() === (u.name || ''); };
+      saveBtn.onclick = async () => {
+        err.style.display = 'none';
+        saveBtn.disabled = true;
+        try {
+          const res = await API.auth.updateProfile({ name: nameInput.value.trim() });
+          window.__verbaUser = res.user;
+          paintAccount(res.user);
+          hydrateGeneral();
+        } catch (e) {
+          err.textContent = e.body?.error || e.message || 'Failed to save';
+          err.style.display = 'block';
+          saveBtn.disabled = false;
+        }
+      };
+
+      // Font cards
+      document.querySelectorAll('#font-cards .font-card').forEach(card => {
+        card.classList.toggle('on', card.dataset.val === (TWEAKS.font || 'calibri'));
+        card.onclick = () => {
+          TWEAKS.font = card.dataset.val;
+          applyTweaks(TWEAKS);
+          persistTweaks();
+          document.querySelectorAll('#font-cards .font-card').forEach(x => x.classList.toggle('on', x === card));
+        };
+      });
+      // Highlight cards
+      document.querySelectorAll('#hl-cards .hl-card').forEach(card => {
+        card.classList.toggle('on', card.dataset.val === (TWEAKS.highlight || 'yellow'));
+        card.onclick = () => {
+          TWEAKS.highlight = card.dataset.val;
+          applyTweaks(TWEAKS);
+          persistTweaks();
+          document.querySelectorAll('#hl-cards .hl-card').forEach(x => x.classList.toggle('on', x === card));
+        };
+      });
+    }
+
+    // Account: sessions + log out all
+    async function hydrateAccount() {
+      document.getElementById('org-id').textContent = (window.__verbaUser && window.__verbaUser.id) || '—';
+      const body = document.getElementById('sess-tbody');
+      body.innerHTML = '<tr><td colspan="5" class="sess-empty">Loading…</td></tr>';
+      try {
+        const { sessions } = await API.auth.listSessions();
+        if (!sessions.length) {
+          body.innerHTML = '<tr><td colspan="5" class="sess-empty">No sessions</td></tr>';
+          return;
+        }
+        body.innerHTML = sessions.map(s => {
+          const ua = parseUA(s.userAgent);
+          const loc = s.ip || '—';
+          return `<tr>
+            <td>${esc(ua)}${s.current ? '<span class="badge-current">Current</span>' : ''}</td>
+            <td>${esc(loc)}</td>
+            <td>${fmtDate(s.createdAt)}</td>
+            <td>${fmtDate(s.lastSeenAt)}</td>
+            <td>${s.current ? '' : `<button class="sess-revoke" data-id="${esc(s.id)}" title="Revoke">Revoke</button>`}</td>
+          </tr>`;
+        }).join('');
+        body.querySelectorAll('.sess-revoke').forEach(btn => btn.onclick = async () => {
+          btn.disabled = true;
+          try { await API.auth.revokeSession(btn.dataset.id); hydrateAccount(); }
+          catch { btn.disabled = false; }
+        });
+      } catch {
+        body.innerHTML = '<tr><td colspan="5" class="sess-empty">Failed to load</td></tr>';
+      }
+    }
+    document.getElementById('logout-all-btn').onclick = async () => {
+      if (!confirm('Log out of every device? You will need to sign in again.')) return;
+      try { await API.auth.revokeAllSessions(); } catch {}
+      location.href = '/signin';
+    };
+
+    function hydrateBilling() {
+      const u = window.__verbaUser || {};
+      const tier = (u.tier || 'free').toLowerCase();
+      document.getElementById('plan-tier').textContent = tier === 'pro' ? 'Pro plan' : 'Free plan';
+      document.getElementById('plan-sub').textContent = tier === 'pro' ? 'Higher limits and priority access' : 'Basic usage limits';
+      document.getElementById('plan-renew').textContent = tier === 'pro' ? 'Renews on the 1st of each month' : '';
+      document.getElementById('plan-adjust').onclick = () => window.__verba.openPricing();
+      document.getElementById('pay-update').onclick = () => window.__verba.openPayment();
+    }
+
+    function parseUA(ua) {
+      if (!ua) return 'Unknown device';
+      const s = ua.toLowerCase();
+      const browser = s.includes('chrome') ? 'Chrome' : s.includes('safari') ? 'Safari' : s.includes('firefox') ? 'Firefox' : 'Browser';
+      const os = s.includes('windows') ? 'Windows' : s.includes('mac os') ? 'Mac' : s.includes('android') ? 'Android' : s.includes('iphone') ? 'iOS' : 'Unknown';
+      return `${browser} (${os})`;
+    }
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) +
+             ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+    window.__verba.openSettings = open;
+  })();
 })();
