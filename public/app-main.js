@@ -6,6 +6,12 @@
   if (!API) { console.error('VerbaAPI missing'); return; }
   window.__verba = window.__verba || {};
 
+  const HL_COLORS = { yellow: '#FFFF00', cyan: '#00FFFF', green: '#00FF00', lilac: '#C7B7F1' };
+  function currentHlColor() {
+    const t = (typeof TWEAKS !== 'undefined' && TWEAKS) ? TWEAKS : (window.TWEAKS || {});
+    return HL_COLORS[t.highlight] || '#FFFF00';
+  }
+
   function computeInitials(name, email) {
     const n = String(name || '').trim();
     if (n) {
@@ -245,7 +251,7 @@
       // Stray bold (**text**) — render as bold instead of leaking literal asterisks
       p = p.replace(/\*\*([\s\S]+?)\*\*/g, '<b>$1</b>');
       // Highlight
-      p = p.replace(/==([\s\S]*?)==/g, '<span class="fmt-highlight"><mark style="background:#FFFF00;padding:0 1px">$1</mark></span>');
+      p = p.replace(/==([\s\S]*?)==/g, '<span class="fmt-highlight"><mark>$1</mark></span>');
       // Cleanup: remove any orphan ** that survived
       p = p.replace(/\*\*/g, '');
       p = p.replace(/\[FIGURE OMITTED\]/g, '<span class="figure-omitted">[FIGURE OMITTED]</span>');
@@ -714,7 +720,7 @@
       return;
     }
     document.execCommand('styleWithCSS', false, true);
-    document.execCommand('hiliteColor', false, '#FFFF00');
+    document.execCommand('hiliteColor', false, currentHlColor());
   }
 
   (function initCutter() {
@@ -748,7 +754,7 @@
           parent.removeChild(existing);
         }
       } else {
-        document.execCommand('hiliteColor', false, '#FFFF00');
+        document.execCommand('hiliteColor', false, currentHlColor());
       }
       syncCardFromDom();
       const sel = window.getSelection();
@@ -2050,7 +2056,6 @@
 
     // Account: sessions + log out all
     async function hydrateAccount() {
-      document.getElementById('org-id').textContent = (window.__verbaUser && window.__verbaUser.id) || '—';
       const body = document.getElementById('sess-tbody');
       body.innerHTML = '<tr><td colspan="5" class="sess-empty">Loading…</td></tr>';
       try {
@@ -2118,13 +2123,32 @@
     const ov = document.getElementById('pricing-overlay');
     if (!ov) return;
     const back = document.getElementById('pricing-back');
+    let cycle = 'monthly';
+    const priceEl = document.getElementById('pp-squad-price');
+    const toggle = document.getElementById('pp-billing-toggle');
+    function renderPrice(){
+      if (!priceEl) return;
+      priceEl.innerHTML = cycle === 'yearly'
+        ? '$90<small>/ yr</small>'
+        : '$9<small>/ mo</small>';
+    }
+    if (toggle) {
+      toggle.querySelectorAll('[data-cycle]').forEach(el => {
+        el.addEventListener('click', () => {
+          cycle = el.dataset.cycle;
+          toggle.querySelectorAll('[data-cycle]').forEach(x => x.classList.toggle('on', x === el));
+          renderPrice();
+        });
+      });
+    }
+    renderPrice();
     function open() { ov.classList.add('open'); ov.setAttribute('aria-hidden','false'); }
     function close(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true'); }
     back.addEventListener('click', close);
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.classList.contains('open')) close(); });
     document.getElementById('pp-squad-cta').addEventListener('click', () => {
       close();
-      window.__verba.openPayment();
+      window.__verba.openPayment(cycle);
     });
     window.__verba.openPricing = open;
   })();
@@ -2136,8 +2160,41 @@
     const agree = document.getElementById('pay-agree');
     const submit = document.getElementById('pay-submit');
     const tiers = ov.querySelectorAll('.pay-tier');
+    const cycles = ov.querySelectorAll('.pay-cycle');
+    const cycleRow = document.getElementById('pay-cycle-row');
+    const planName = document.getElementById('pay-plan-name');
+    const planAmt = document.getElementById('pay-plan-amount');
+    const taxEl = document.getElementById('pay-tax');
+    const totalEl = document.getElementById('pay-total');
+    let tier = 'squad';
+    let cycle = 'monthly';
+    function render(){
+      if (cycleRow) cycleRow.style.display = tier === 'squad' ? '' : 'none';
+      if (tier === 'solo') {
+        planName.textContent = 'Solo · Free';
+        planAmt.textContent = '$0.00';
+        taxEl.textContent = '$0.00';
+        totalEl.textContent = '$0.00';
+        submit.textContent = 'Stay on Solo';
+        return;
+      }
+      const base = cycle === 'yearly' ? 90 : 9;
+      const tax = +(base * 0.07).toFixed(2);
+      planName.textContent = 'Squad · ' + (cycle === 'yearly' ? 'Yearly' : 'Monthly');
+      planAmt.textContent = '$' + base.toFixed(2);
+      taxEl.textContent = '$' + tax.toFixed(2);
+      totalEl.textContent = '$' + (base + tax).toFixed(2);
+      submit.textContent = 'Upgrade to Squad';
+    }
     tiers.forEach(t => t.addEventListener('click', () => {
       tiers.forEach(x => x.classList.toggle('on', x === t));
+      tier = t.dataset.tier || 'squad';
+      render();
+    }));
+    cycles.forEach(c => c.addEventListener('click', () => {
+      cycles.forEach(x => x.classList.toggle('on', x === c));
+      cycle = c.dataset.cycle || 'monthly';
+      render();
     }));
     agree.addEventListener('change', () => { submit.disabled = !agree.checked; });
     submit.addEventListener('click', () => {
@@ -2151,7 +2208,19 @@
     document.getElementById('pay-close').addEventListener('click', close);
     ov.addEventListener('click', e => { if (e.target === ov) close(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && ov.classList.contains('open')) close(); });
-    function open(){ ov.classList.add('open'); ov.setAttribute('aria-hidden','false'); submit.textContent='Upgrade to 20×'; submit.disabled=true; agree.checked=false; }
+    function open(preCycle){
+      if (preCycle === 'monthly' || preCycle === 'yearly') {
+        cycle = preCycle;
+        cycles.forEach(x => x.classList.toggle('on', x.dataset.cycle === cycle));
+      }
+      tier = 'squad';
+      tiers.forEach(x => x.classList.toggle('on', x.dataset.tier === 'squad'));
+      render();
+      ov.classList.add('open');
+      ov.setAttribute('aria-hidden','false');
+      submit.disabled = true;
+      agree.checked = false;
+    }
     function close(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true'); }
     window.__verba.openPayment = open;
   })();

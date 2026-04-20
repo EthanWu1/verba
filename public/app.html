@@ -112,9 +112,9 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .sb-toggle:hover{color:var(--ink);border-color:var(--line-2);background:#fff}
 .shell.sb-collapsed .sb-toggle svg{transform:rotate(180deg)}
 
-.shell.sb-collapsed{grid-template-columns:64px minmax(0,1fr)}
-.sidebar{transition:width .18s ease}
-.shell.sb-collapsed .sidebar{width:64px}
+.shell.sb-collapsed{grid-template-columns:76px minmax(0,1fr)}
+.sidebar{transition:width .22s cubic-bezier(.4,0,.2,1)}
+.shell.sb-collapsed .sidebar{width:76px}
 
 /* icon-rail: hide text, center icons */
 .shell.sb-collapsed .nav-group-label,
@@ -127,11 +127,18 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .shell.sb-collapsed .upgrade-card,
 .shell.sb-collapsed .nav-item span{display:none}
 
-.shell.sb-collapsed .nav-item{justify-content:center;padding:8px 0}
-.shell.sb-collapsed .side-account{justify-content:center;padding:8px 0;gap:0}
-.shell.sb-collapsed .avatar{flex:0 0 auto}
-.shell.sb-collapsed .sidebar .brand{justify-content:center}
-.shell.sb-collapsed .ico{margin:0}
+.shell.sb-collapsed .nav-item{justify-content:center;padding:12px 0;border-radius:10px;transition:background .18s ease,transform .18s ease}
+.shell.sb-collapsed .nav-item:hover{transform:scale(1.08)}
+.shell.sb-collapsed .side-account{justify-content:center;padding:10px 0;gap:0}
+.shell.sb-collapsed .avatar{flex:0 0 auto;width:36px;height:36px;transition:width .22s ease,height .22s ease}
+.shell.sb-collapsed .sidebar .brand{justify-content:center;padding:6px 0}
+.shell.sb-collapsed .brand-mark{width:44px;height:44px;transition:width .22s ease,height .22s ease}
+.brand-mark{transition:width .22s ease,height .22s ease}
+.avatar{transition:width .22s ease,height .22s ease}
+.nav-item .ico{transition:width .2s ease,height .2s ease}
+.shell.sb-collapsed .ico{margin:0;width:24px;height:24px}
+.shell.sb-collapsed .nav-item svg{width:24px;height:24px}
+.nav-item svg{transition:width .2s ease,height .2s ease}
 
 .sb-open-fab{display:none}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 0}
@@ -420,9 +427,15 @@ body.highlight-mode #wb-body .body{caret-color:#eab308}
 .pane-body.doc{font-family:var(--font-ui);font-size:14.5px;line-height:1.7;color:#000}
 .pane-body.doc p{margin:0 0 12px}
 .pane-body.doc .hl{background:#FFFF00;padding:0 1px;border-radius:2px;mix-blend-mode:multiply}
-body.hl-cyan .pane-body.doc .hl, body.hl-cyan .warrant.hl{background:#00FFFF}
-body.hl-green .pane-body.doc .hl, body.hl-green .warrant.hl{background:#00FF00}
-body.hl-yellow .pane-body.doc .hl, body.hl-yellow .warrant.hl{background:#FFFF00}
+body{ --hl-color:#FFFF00; }
+body.hl-yellow{ --hl-color:#FFFF00; }
+body.hl-cyan{   --hl-color:#00FFFF; }
+body.hl-green{  --hl-color:#00FF00; }
+body.hl-lilac{  --hl-color:#C7B7F1; }
+body.hl-cyan  .pane-body.doc .hl, body.hl-cyan  .warrant.hl{background:var(--hl-color)}
+body.hl-green .pane-body.doc .hl, body.hl-green .warrant.hl{background:var(--hl-color)}
+body.hl-yellow .pane-body.doc .hl, body.hl-yellow .warrant.hl{background:var(--hl-color)}
+body.hl-lilac .pane-body.doc .hl, body.hl-lilac .warrant.hl{background:var(--hl-color)}
 /* Preserve highlight color under selection — translucent grey overlay keeps hue visible */
 .pane-body.doc .hl::selection,
 .pane-body.doc .hl *::selection,
@@ -989,7 +1002,8 @@ body.nexus-closed .nexus-closed-rail{display:flex}
 [contenteditable][data-placeholder]:empty::before{content:attr(data-placeholder);color:var(--muted);pointer-events:none}
 #wb-body [data-field="body"]:empty::before,
 #wb-body [data-field="body"] p:only-child:empty::before{content:attr(data-placeholder);color:var(--muted)}
-#wb-body .fmt-highlight mark,.ev-body-render .fmt-highlight mark,.mycard .preview .fmt-highlight mark{background:#FFFF00;padding:0 1px}
+#wb-body .fmt-highlight mark,.ev-body-render .fmt-highlight mark,.mycard .preview .fmt-highlight mark{background:var(--hl-color,#FFFF00);padding:0 1px}
+#wb-body mark,.ev-body-render mark,.mycard .preview mark{background:var(--hl-color,#FFFF00);padding:0 1px}
 .figure-omitted{color:var(--muted,#6B7280);font-style:italic;font-size:0.85em;user-select:none;border:1px dashed var(--muted,#6B7280);padding:2px 6px;display:inline-block;border-radius:4px;margin:4px 0}
 p.figure-omitted{display:block;text-align:center}
 .ghost-caret{display:inline-block;width:2px;background:#111;margin-left:1px;animation:caretBlink .9s steps(2) infinite;vertical-align:text-bottom;height:1em}
@@ -998,9 +1012,9 @@ p.figure-omitted{display:block;text-align:center}
 #wb-body .fmt-verbatimize,.ev-body-render .fmt-verbatimize{font-size:11pt;font-weight:700;text-decoration:underline}
 #wb-body .fmt-underline,.ev-body-render .fmt-underline{font-size:10.5pt;text-decoration:underline}
 .ev-body-render p{margin:0 0 8px}
-.ev-body-render mark{background:#FFFF00;padding:0 1px}
+.ev-body-render mark{background:var(--hl-color,#FFFF00);padding:0 1px}
 .ev-body-render u{text-decoration:underline}
-.mycard .preview mark{background:#FFFF00;padding:0 1px}
+.mycard .preview mark{background:var(--hl-color,#FFFF00);padding:0 1px}
 
 /* Pane action buttons (Open / Add to) in top-right of preview pane */
 .pane-action-btn{
@@ -1404,6 +1418,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .pay-tier.on{border-color:var(--lilac-2);box-shadow:0 0 0 2px var(--lilac-soft)}
 .pay-tier div{font:600 13px/1.2 var(--font-display);color:var(--ink)}
 .pay-tier span{font:500 12px/1 var(--font-display);color:var(--muted)}
+.pay-cycle-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.pay-cycle{text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.pay-cycle.on{border-color:var(--lilac-2);box-shadow:0 0 0 2px var(--lilac-soft)}
+.pay-cycle div{font:600 13px/1.2 var(--font-display);color:var(--ink)}
+.pay-cycle span{font:500 12px/1 var(--font-display);color:var(--muted)}
 .pay-order{border:1px solid var(--line);border-radius:10px;padding:14px}
 .pay-order h4{margin:0 0 10px;font:600 13px/1 var(--font-display);color:var(--ink)}
 .pay-line{display:flex;justify-content:space-between;padding:6px 0;font:500 13px/1.3 var(--font-display);color:var(--ink-2)}
@@ -2296,15 +2315,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
             </div>
             <div class="sfield-sub">Short: 1–2 paragraphs (~180w). Medium: 2–4 (~320w). Long: 3–6 (~520w).</div>
           </div>
-          <div class="sfield">
-            <label class="sfield-l">Underline density</label>
-            <div class="hl-cards" id="cut-density-cards" data-tweak="cutterDensity">
-              <button class="hl-card" data-val="minimal"><small>Minimal</small></button>
-              <button class="hl-card on" data-val="standard"><small>Standard</small></button>
-              <button class="hl-card" data-val="heavy"><small>Heavy</small></button>
-            </div>
-            <div class="sfield-sub">Minimal: 20–35% per paragraph. Standard: 25–50%. Heavy: 45–65%.</div>
-          </div>
         </section>
 
         <!-- ACCOUNT -->
@@ -2323,10 +2333,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               <div class="sfield-sub">Coming soon. Contact support for now.</div>
             </div>
             <button class="btn-ghost" disabled>Delete account</button>
-          </div>
-          <div class="sfield">
-            <div class="sfield-l">Organization ID</div>
-            <div class="sfield-static mono" id="org-id">—</div>
           </div>
           <h4 class="spane-h mt">Active sessions</h4>
           <table class="sess-table" id="sess-table">
@@ -2383,36 +2389,32 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   </button>
   <div class="pricing-wrap">
     <h1 class="pricing-title">Plans that grow with you</h1>
-    <div class="pricing-tabs">
-      <button class="pt-pill on">Individual</button>
-      <button class="pt-pill" disabled>Team and Enterprise</button>
-    </div>
     <div class="pricing-cards">
       <div class="pp-card">
         <div class="pp-mark"></div>
-        <div class="pp-billing"><span class="pp-month on">Monthly</span><span class="pp-yearly">Yearly · Save 17%</span></div>
         <div class="pp-tier">Solo</div>
         <div class="pp-desc">Research, cut, and organize.</div>
         <div class="pp-price">$0<small>/ forever</small></div>
         <button class="pp-cta" id="pp-solo-cta" disabled>Current plan</button>
         <ul class="pp-feats">
-          <li>Unlimited cards &amp; projects</li>
-          <li>Cutter + library search</li>
-          <li>50 assistant queries / month</li>
+          <li>Unlimited saved cards &amp; projects</li>
+          <li>5 cut cards / month</li>
+          <li>10 assistant queries / month</li>
           <li>.docx import &amp; export</li>
         </ul>
       </div>
       <div class="pp-card feat">
         <div class="pp-mark"></div>
+        <div class="pp-billing" id="pp-billing-toggle"><span class="pp-month on" data-cycle="monthly">Monthly</span><span class="pp-yearly" data-cycle="yearly">Yearly · Save 17%</span></div>
         <div class="pp-tier">Squad</div>
-        <div class="pp-desc">Higher limits, priority access.</div>
-        <div class="pp-price">From $9<small>/ debater / mo</small></div>
+        <div class="pp-desc">20× more usage, priority access.</div>
+        <div class="pp-price" id="pp-squad-price">$9<small>/ mo</small></div>
         <button class="pp-cta primary" id="pp-squad-cta">Start trial</button>
         <div class="pp-fineprint">No commitment · Cancel anytime</div>
         <ul class="pp-feats">
           <li>Everything in Solo</li>
-          <li>Up to 20× more usage</li>
-          <li>Shared team libraries</li>
+          <li>100 cut cards / month</li>
+          <li>200 assistant queries / month</li>
           <li>Round-doc export</li>
           <li>Priority assistant access</li>
         </ul>
@@ -2431,14 +2433,18 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     </div>
     <div class="pay-body">
       <div class="pay-tier-row">
-        <button class="pay-tier on" data-tier="5x"><small>Current plan</small><div>5× usage · Solo</div><span>$0/mo</span></button>
-        <button class="pay-tier" data-tier="20x"><small>Save 50%</small><div>20× usage · Squad</div><span>$9/mo + tax</span></button>
+        <button class="pay-tier on" data-tier="solo"><small>Current plan</small><div>Solo · Free</div><span>5 cuts · 10 queries / mo</span></button>
+        <button class="pay-tier" data-tier="squad"><small>20× more usage</small><div>Squad</div><span>100 cuts · 200 queries / mo</span></button>
+      </div>
+      <div class="pay-cycle-row" id="pay-cycle-row">
+        <button class="pay-cycle on" data-cycle="monthly"><div>Monthly</div><span>$9 / mo</span></button>
+        <button class="pay-cycle" data-cycle="yearly"><div>Yearly</div><span>$90 / yr · Save 17%</span></button>
       </div>
       <div class="pay-order">
         <h4>Order details</h4>
-        <div class="pay-line"><span>Squad plan</span><span>$9.00</span></div>
-        <div class="pay-line"><span>Tax</span><span>$0.63</span></div>
-        <div class="pay-line total"><span>Total due today</span><span>$9.63</span></div>
+        <div class="pay-line"><span id="pay-plan-name">Squad · Monthly</span><span id="pay-plan-amount">$9.00</span></div>
+        <div class="pay-line"><span>Tax</span><span id="pay-tax">$0.63</span></div>
+        <div class="pay-line total"><span>Total due today</span><span id="pay-total">$9.63</span></div>
       </div>
       <div class="pay-method">
         <div class="pay-method-h">Payment method</div>
@@ -2453,7 +2459,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         </div>
       </div>
       <label class="pay-terms"><input type="checkbox" id="pay-agree"> You agree this is a demo and no card will be charged.</label>
-      <button class="pp-cta primary" id="pay-submit" disabled style="width:100%">Upgrade to 20×</button>
+      <button class="pp-cta primary" id="pay-submit" disabled style="width:100%">Upgrade to Squad</button>
     </div>
   </div>
 </div>
