@@ -2014,26 +2014,48 @@
         }
       };
 
+      const applyT = () => {
+        try { if (typeof window.applyTweaks === 'function') window.applyTweaks(TWEAKS); } catch(_) {}
+      };
+      const saveT = () => {
+        try { if (typeof persistTweaks === 'function') persistTweaks(); }
+        catch(_) { try { localStorage.setItem('verba.tweaks', JSON.stringify(TWEAKS)); } catch(_) {} }
+      };
       // Font cards
+      TWEAKS.font = TWEAKS.font || 'calibri';
       document.querySelectorAll('#font-cards .font-card').forEach(card => {
-        card.classList.toggle('on', card.dataset.val === (TWEAKS.font || 'calibri'));
+        card.classList.toggle('on', card.dataset.val === TWEAKS.font);
         card.onclick = () => {
           TWEAKS.font = card.dataset.val;
-          applyTweaks(TWEAKS);
-          persistTweaks();
+          applyT();
+          saveT();
           document.querySelectorAll('#font-cards .font-card').forEach(x => x.classList.toggle('on', x === card));
         };
       });
       // Highlight cards
+      TWEAKS.highlight = TWEAKS.highlight || 'yellow';
       document.querySelectorAll('#hl-cards .hl-card').forEach(card => {
-        card.classList.toggle('on', card.dataset.val === (TWEAKS.highlight || 'yellow'));
+        card.classList.toggle('on', card.dataset.val === TWEAKS.highlight);
         card.onclick = () => {
           TWEAKS.highlight = card.dataset.val;
-          applyTweaks(TWEAKS);
-          persistTweaks();
+          applyT();
+          saveT();
           document.querySelectorAll('#hl-cards .hl-card').forEach(x => x.classList.toggle('on', x === card));
         };
       });
+      applyT();
+      // General: Save button
+      const saveBtn = document.getElementById('general-save-btn');
+      if (saveBtn) {
+        saveBtn.onclick = () => {
+          applyT();
+          saveT();
+          const orig = saveBtn.textContent;
+          saveBtn.textContent = 'Saved';
+          saveBtn.disabled = true;
+          setTimeout(() => { saveBtn.textContent = orig; saveBtn.disabled = false; }, 1200);
+        };
+      }
       // Cutter length cards
       document.querySelectorAll('#cut-length-cards .hl-card').forEach(card => {
         card.classList.toggle('on', card.dataset.val === (TWEAKS.cutterLength || 'medium'));
@@ -2171,20 +2193,20 @@
     function render(){
       if (cycleRow) cycleRow.style.display = tier === 'squad' ? '' : 'none';
       if (tier === 'solo') {
-        planName.textContent = 'Solo · Free';
+        planName.textContent = 'FREE plan';
         planAmt.textContent = '$0.00';
         taxEl.textContent = '$0.00';
         totalEl.textContent = '$0.00';
-        submit.textContent = 'Stay on Solo';
+        submit.textContent = 'Stay on FREE';
         return;
       }
       const base = cycle === 'yearly' ? 90 : 9;
       const tax = +(base * 0.07).toFixed(2);
-      planName.textContent = 'Squad · ' + (cycle === 'yearly' ? 'Yearly' : 'Monthly');
+      planName.textContent = 'PRO · ' + (cycle === 'yearly' ? 'Yearly' : 'Monthly');
       planAmt.textContent = '$' + base.toFixed(2);
       taxEl.textContent = '$' + tax.toFixed(2);
       totalEl.textContent = '$' + (base + tax).toFixed(2);
-      submit.textContent = 'Upgrade to Squad';
+      submit.textContent = 'Upgrade to PRO';
     }
     tiers.forEach(t => t.addEventListener('click', () => {
       tiers.forEach(x => x.classList.toggle('on', x === t));

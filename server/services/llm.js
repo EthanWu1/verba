@@ -130,7 +130,7 @@ async function complete({ messages, temperature = 0.3, maxTokens = 2048, forceMo
             'HTTP-Referer':  'http://localhost:3000',
             'X-Title':       'Verbatim AI Card Cutter',
           },
-          timeout: 25000,
+          timeout: 120000,
         }
       );
 
@@ -226,7 +226,7 @@ async function completeStream({ messages, temperature = 0.3, maxTokens = 2048, f
             'HTTP-Referer':  'http://localhost:3000',
             'X-Title':       'Verbatim AI Card Cutter',
           },
-          timeout: 30000,
+          timeout: 120000,
           responseType: 'stream',
         }
       );

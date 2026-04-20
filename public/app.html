@@ -112,8 +112,9 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .sb-toggle:hover{color:var(--ink);border-color:var(--line-2);background:#fff}
 .shell.sb-collapsed .sb-toggle svg{transform:rotate(180deg)}
 
+.shell{transition:grid-template-columns .24s ease}
 .shell.sb-collapsed{grid-template-columns:76px minmax(0,1fr)}
-.sidebar{transition:width .22s cubic-bezier(.4,0,.2,1)}
+.sidebar{transition:width .24s ease}
 .shell.sb-collapsed .sidebar{width:76px}
 
 /* icon-rail: hide text, center icons */
@@ -127,18 +128,13 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .shell.sb-collapsed .upgrade-card,
 .shell.sb-collapsed .nav-item span{display:none}
 
-.shell.sb-collapsed .nav-item{justify-content:center;padding:12px 0;border-radius:10px;transition:background .18s ease,transform .18s ease}
-.shell.sb-collapsed .nav-item:hover{transform:scale(1.08)}
+.shell.sb-collapsed .nav-item{justify-content:center;padding:10px 0;border-radius:8px}
 .shell.sb-collapsed .side-account{justify-content:center;padding:10px 0;gap:0}
-.shell.sb-collapsed .avatar{flex:0 0 auto;width:36px;height:36px;transition:width .22s ease,height .22s ease}
+.shell.sb-collapsed .avatar{flex:0 0 auto;width:34px;height:34px}
 .shell.sb-collapsed .sidebar .brand{justify-content:center;padding:6px 0}
-.shell.sb-collapsed .brand-mark{width:44px;height:44px;transition:width .22s ease,height .22s ease}
-.brand-mark{transition:width .22s ease,height .22s ease}
-.avatar{transition:width .22s ease,height .22s ease}
-.nav-item .ico{transition:width .2s ease,height .2s ease}
-.shell.sb-collapsed .ico{margin:0;width:24px;height:24px}
-.shell.sb-collapsed .nav-item svg{width:24px;height:24px}
-.nav-item svg{transition:width .2s ease,height .2s ease}
+.shell.sb-collapsed .brand-mark{width:64px;height:64px}
+.shell.sb-collapsed .ico{margin:0;width:20px;height:20px}
+.shell.sb-collapsed .nav-item svg{width:20px;height:20px}
 
 .sb-open-fab{display:none}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 0}
@@ -2156,6 +2152,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     });
   }
   applyTweaks(TWEAKS);
+  window.applyTweaks = applyTweaks;
   document.querySelectorAll('.tweak-opts').forEach(g=>{
     g.querySelectorAll('.tweak-opt').forEach(o=>{
       o.addEventListener('click',()=>{
@@ -2313,7 +2310,15 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               <button class="hl-card on" data-val="medium"><small>Medium</small></button>
               <button class="hl-card" data-val="long"><small>Long</small></button>
             </div>
-            <div class="sfield-sub">Short: 1–2 paragraphs (~180w). Medium: 2–4 (~320w). Long: 3–6 (~520w).</div>
+            <div class="sfield-sub">Short: 2–3 paragraphs (~280w). Medium: 3–5 (~480w). Long: 5–8 (~760w).</div>
+          </div>
+
+          <div class="sfield sfield-row-pair" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px">
+            <div>
+              <div class="sfield-l">Save preferences</div>
+              <div class="sfield-sub">Changes auto-apply. Click save to confirm.</div>
+            </div>
+            <button class="btn-primary" id="general-save-btn">Save</button>
           </div>
         </section>
 
@@ -2391,8 +2396,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     <h1 class="pricing-title">Plans that grow with you</h1>
     <div class="pricing-cards">
       <div class="pp-card">
-        <div class="pp-mark"></div>
-        <div class="pp-tier">Solo</div>
+        <div class="pp-tier">FREE</div>
         <div class="pp-desc">Research, cut, and organize.</div>
         <div class="pp-price">$0<small>/ forever</small></div>
         <button class="pp-cta" id="pp-solo-cta" disabled>Current plan</button>
@@ -2404,15 +2408,14 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         </ul>
       </div>
       <div class="pp-card feat">
-        <div class="pp-mark"></div>
         <div class="pp-billing" id="pp-billing-toggle"><span class="pp-month on" data-cycle="monthly">Monthly</span><span class="pp-yearly" data-cycle="yearly">Yearly · Save 17%</span></div>
-        <div class="pp-tier">Squad</div>
+        <div class="pp-tier">PRO</div>
         <div class="pp-desc">20× more usage, priority access.</div>
         <div class="pp-price" id="pp-squad-price">$9<small>/ mo</small></div>
         <button class="pp-cta primary" id="pp-squad-cta">Start trial</button>
         <div class="pp-fineprint">No commitment · Cancel anytime</div>
         <ul class="pp-feats">
-          <li>Everything in Solo</li>
+          <li>Everything in FREE</li>
           <li>100 cut cards / month</li>
           <li>200 assistant queries / month</li>
           <li>Round-doc export</li>
@@ -2433,8 +2436,8 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     </div>
     <div class="pay-body">
       <div class="pay-tier-row">
-        <button class="pay-tier on" data-tier="solo"><small>Current plan</small><div>Solo · Free</div><span>5 cuts · 10 queries / mo</span></button>
-        <button class="pay-tier" data-tier="squad"><small>20× more usage</small><div>Squad</div><span>100 cuts · 200 queries / mo</span></button>
+        <button class="pay-tier on" data-tier="solo"><small>Current plan</small><div>FREE</div><span>5 cuts · 10 queries / mo</span></button>
+        <button class="pay-tier" data-tier="squad"><small>20× more usage</small><div>PRO</div><span>100 cuts · 200 queries / mo</span></button>
       </div>
       <div class="pay-cycle-row" id="pay-cycle-row">
         <button class="pay-cycle on" data-cycle="monthly"><div>Monthly</div><span>$9 / mo</span></button>

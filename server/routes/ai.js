@@ -15,9 +15,9 @@ const { complete, completeStream, parseJSON, smartTruncate, getTokenStats, MODEL
 const { SYSTEM_PROMPT, buildSystemPrompt, buildCutPrompt, buildEditPrompt, LENGTH_PRESETS, DENSITY_PRESETS } = require('../prompts/cardCutter');
 
 const LENGTH_BUDGETS = {
-  short:  { input: 4500, output: 1700 },
-  medium: { input: 6000, output: 2400 },
-  long:   { input: 10000, output: 3600 },
+  short:  { input: 6000,  output: 2600 },
+  medium: { input: 9000,  output: 3800 },
+  long:   { input: 14000, output: 5600 },
 };
 function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'standard'; }
 function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'medium'; }

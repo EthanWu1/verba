@@ -7,9 +7,9 @@ const DENSITY_PRESETS = {
 };
 
 const LENGTH_PRESETS = {
-  short:  { paragraphRule: '1–2 complete source paragraphs', maxWords: 180 },
-  medium: { paragraphRule: '2–4 complete source paragraphs', maxWords: 320 },
-  long:   { paragraphRule: '3–6 complete source paragraphs', maxWords: 520 },
+  short:  { paragraphRule: '2–3 complete source paragraphs', maxWords: 280 },
+  medium: { paragraphRule: '3–5 complete source paragraphs', maxWords: 480 },
+  long:   { paragraphRule: '5–8 complete source paragraphs', maxWords: 760 },
 };
 
 function buildSystemPrompt({ density = 'standard', length = 'medium' } = {}) {
