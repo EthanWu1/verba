@@ -1519,6 +1519,32 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
   .usage-pill{white-space:normal}
   .ap-card-chip .ap-cc-tag{max-width:100%;white-space:normal;overflow:visible;text-overflow:unset}
+
+  /* Cutter */
+  .research-bar-wrap{padding:8px 0}
+  .research-bar{
+    flex-wrap:wrap;gap:8px;padding:10px;border-radius:10px;
+  }
+  .research-bar input,.research-bar textarea{
+    width:100%;min-width:0;font-size:16px;
+  }
+  .research-bar button{flex:1 1 auto}
+
+  .source-pane,.cut-pane{min-width:0;width:100%}
+  .source-pane{max-height:50vh;overflow:auto}
+  .cut-pane{min-height:auto}
+
+  .cut-toolbar{
+    position:sticky;bottom:0;left:0;right:0;transform:none;
+    width:100%;border-radius:0;border-left:0;border-right:0;
+    padding:8px 10px;gap:6px;
+    padding-bottom:calc(8px + var(--safe-b));
+    overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;
+    z-index:20;
+  }
+  .cut-tool{flex:0 0 auto}
+
+  .cut-saved .bub{font-size:12px;padding:10px 16px}
 }
 
 @media (max-width:480px){
