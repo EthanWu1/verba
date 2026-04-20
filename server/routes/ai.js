@@ -9,7 +9,7 @@ const express = require('express');
 const router = express.Router();
 const requireUser = require('../middleware/requireUser');
 const enforceLimit = require('../middleware/enforceLimit');
-const CUT_DAILY_LIMIT = Number(process.env.FREE_CUTCARD_DAILY || 10);
+const CUT_DAILY_LIMIT = Number(process.env.FREE_CUTCARD_DAILY || 5);
 
 const { complete, completeStream, parseJSON, smartTruncate, getTokenStats, MODEL_CHAIN } = require('../services/llm');
 const { SYSTEM_PROMPT, buildCutPrompt, buildEditPrompt } = require('../prompts/cardCutter');

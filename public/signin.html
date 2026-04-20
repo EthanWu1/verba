@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
@@ -53,7 +53,10 @@ a{color:inherit;text-decoration:none}
 .back:hover{color:var(--ink)}
 .back svg{width:12px;height:12px}
 
-.form-wrap{margin:auto 0;padding:36px 0;max-width:420px;width:100%;align-self:center}
+.form-wrap{margin:auto 0;padding:36px 0;max-width:400px;width:100%;align-self:center}
+#gsi-button-wrap{width:100%;display:flex;justify-content:center}
+#gsi-button-wrap > div{width:100% !important}
+#gsi-button-wrap iframe{width:100% !important;min-width:100% !important}
 
 .kicker{
   display:inline-flex;align-items:center;gap:8px;
@@ -287,7 +290,7 @@ form{display:flex;flex-direction:column;gap:14px}
     <div class="divider">or with email</div>
 
     <form id="auth-form">
-      <p class="err" id="auth-err" style="display:none;color:#c33;font:500 12px/1.3 var(--font-display);margin-top:4px"></p>
+      <p class="err" id="auth-err" style="display:none;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font:500 13px/1.4 var(--font-display);margin:0"></p>
       <div class="field" id="name-field" style="display:none">
         <label>Name</label>
         <input type="text" placeholder="Jordan Reyes" autocomplete="name">
@@ -431,6 +434,7 @@ form{display:flex;flex-direction:column;gap:14px}
   function showErr(msg) { errEl.textContent = msg; errEl.style.display = ''; }
   function clearErr() { errEl.style.display = 'none'; errEl.textContent = ''; }
 
+  const submitBtn = document.getElementById('submit-btn');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearErr();
@@ -439,6 +443,9 @@ form{display:flex;flex-direction:column;gap:14px}
     const password = form.querySelector('input[type="password"]').value;
     const nameField = document.getElementById('name-field');
     const name = nameField && nameField.style.display !== 'none' ? nameField.querySelector('input').value.trim() : null;
+    if (!email || !password) { showErr('Email and password required.'); return; }
+    if (mode === 'signup' && password.length < 8) { showErr('Password must be at least 8 characters.'); return; }
+    submitBtn.disabled = true; submitBtn.style.opacity = '0.6';
     try {
       if (mode === 'signup') {
         await window.VerbaAPI.auth.signup(email, password, name);
@@ -447,35 +454,40 @@ form{display:flex;flex-direction:column;gap:14px}
       }
       location.href = '/app';
     } catch (err) {
-      showErr(err.message || 'Sign-in failed');
+      console.error('[auth]', err);
+      showErr(err.message || 'Sign-in failed. Check server is running.');
+    } finally {
+      submitBtn.disabled = false; submitBtn.style.opacity = '';
     }
   });
 
-  async function initGoogle() {
-    try {
-      const me = await window.VerbaAPI.auth.me().catch(() => null);
-      if (me && me.user) { location.href = '/app'; return; }
-    } catch {}
-    const cfgRes = await fetch('/api/auth/config').then(r => r.json()).catch(() => ({}));
-    if (!cfgRes.googleClientId || !window.google || !window.google.accounts) { setTimeout(initGoogle, 300); return; }
-    window.google.accounts.id.initialize({
-      client_id: cfgRes.googleClientId,
-      callback: async (resp) => {
-        try {
-          await window.VerbaAPI.auth.google(resp.credential);
-          location.href = '/app';
-        } catch (err) {
-          showErr(err.message || 'Google sign-in failed');
-        }
-      },
-    });
-    window.google.accounts.id.renderButton(
-      document.getElementById('gsi-button-wrap'),
-      { theme: 'outline', size: 'large', text: 'continue_with', width: 360 }
-    );
-    window.google.accounts.id.prompt();
-  }
-  initGoogle();
+  (async function bootstrap() {
+    const [me, cfg] = await Promise.all([
+      window.VerbaAPI.auth.me().catch(() => null),
+      fetch('/api/auth/config').then(r => r.json()).catch(() => ({})),
+    ]);
+    if (me && me.user) { location.href = '/app'; return; }
+    if (!cfg.googleClientId) return;
+    let tries = 0;
+    (function waitGIS() {
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        window.google.accounts.id.initialize({
+          client_id: cfg.googleClientId,
+          callback: async (resp) => {
+            try { await window.VerbaAPI.auth.google(resp.credential); location.href = '/app'; }
+            catch (err) { showErr(err.message || 'Google sign-in failed'); }
+          },
+        });
+        window.google.accounts.id.renderButton(
+          document.getElementById('gsi-button-wrap'),
+          { theme: 'outline', size: 'large', text: 'continue_with', width: 400 }
+        );
+        window.google.accounts.id.prompt();
+        return;
+      }
+      if (++tries < 40) setTimeout(waitGIS, 150);
+    })();
+  })();
 })();
 </script>
 </body>

@@ -12,7 +12,7 @@ function enforceLimit(kind, limit) {
         kind,
         limit: verdict.limit,
         remaining: 0,
-        resetAt: new Date(new Date().setUTCHours(24, 0, 0, 0)).toISOString(),
+        resetAt: limits.nextResetAt(),
       });
     }
     res.on('finish', () => {

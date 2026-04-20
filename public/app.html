@@ -100,18 +100,21 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 }
 .sb-toggle{
   position:absolute;top:14px;right:-12px;z-index:20;
-  width:22px;height:22px;border-radius:50%;
+  width:24px;height:24px;border-radius:50%;
   background:#fff;border:1px solid var(--line);color:var(--muted);
-  display:none;align-items:center;justify-content:center;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:var(--shadow-sm);
+  opacity:0;pointer-events:none;
+  transition:opacity .14s ease,color .14s,border-color .14s,transform .18s ease;
 }
 .sidebar{position:relative}
-.sidebar:hover .sb-toggle{display:flex}
-.sb-toggle:hover{color:var(--ink);border-color:var(--line-2)}
+.sidebar:hover .sb-toggle,.shell.sb-collapsed .sb-toggle{opacity:1;pointer-events:auto}
+.sb-toggle:hover{color:var(--ink);border-color:var(--line-2);background:#fff}
+.shell.sb-collapsed .sb-toggle svg{transform:rotate(180deg)}
 
 .shell.sb-collapsed{grid-template-columns:64px minmax(0,1fr)}
-.shell:not(.sb-collapsed) .sidebar{transition:width .18s ease}
-.shell.sb-collapsed .sidebar{width:64px;overflow:hidden;transition:width .18s ease}
+.sidebar{transition:width .18s ease}
+.shell.sb-collapsed .sidebar{width:64px}
 
 /* icon-rail: hide text, center icons */
 .shell.sb-collapsed .nav-group-label,
@@ -130,15 +133,7 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .shell.sb-collapsed .sidebar .brand{justify-content:center}
 .shell.sb-collapsed .ico{margin:0}
 
-.sb-open-fab{
-  position:fixed;top:14px;left:14px;z-index:30;
-  width:34px;height:34px;border-radius:8px;
-  background:#fff;border:1px solid var(--line);color:var(--muted);
-  display:none;align-items:center;justify-content:center;cursor:pointer;
-  box-shadow:var(--shadow-sm);
-}
-.shell.sb-collapsed .sb-open-fab{display:none}
-.sb-open-fab:hover{color:var(--ink);border-color:var(--line-2)}
+.sb-open-fab{display:none}
 .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 0}
 .brand-mark{width:52px;height:52px;object-fit:contain;display:block}
 .brand-name{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-0.01em;color:var(--ink)}
@@ -1234,24 +1229,25 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
 /* Fullscreen settings */
 .settings-backdrop{
-  position:fixed;inset:0;background:rgba(15,15,25,.42);
+  position:fixed;inset:0;background:rgba(15,15,25,.42);backdrop-filter:blur(3px);
   display:none;align-items:center;justify-content:center;z-index:300;
-  opacity:0;transition:opacity .16s ease;
+  opacity:0;transition:opacity .18s ease;
 }
 .settings-backdrop.open{display:flex;opacity:1}
 .settings-shell{
   width:min(1040px,94vw);height:min(720px,90vh);
-  background:#fff;border:1px solid var(--line);border-radius:14px;
-  box-shadow:0 32px 80px -16px rgba(16,24,40,.28),0 4px 12px rgba(16,24,40,.06);
+  background:#fff;border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 40px 96px -20px rgba(16,24,40,.32),0 4px 12px rgba(16,24,40,.06);
   display:flex;flex-direction:column;overflow:hidden;
-  transform:translateY(10px) scale(.98);transition:transform .22s cubic-bezier(.2,.9,.3,1.1);
+  transform:translateY(14px) scale(.97);transition:transform .24s cubic-bezier(.2,.9,.3,1.1);
 }
 .settings-backdrop.open .settings-shell{transform:translateY(0) scale(1)}
 .settings-head{
   display:flex;align-items:center;justify-content:space-between;
-  padding:16px 22px;border-bottom:1px solid var(--line-soft);
+  padding:18px 24px;border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(180deg,#fff,var(--panel));
 }
-.settings-head h3{margin:0;font:600 16px/1 var(--font-display);color:var(--ink)}
+.settings-head h3{margin:0;font:700 17px/1 var(--font-display);color:var(--ink);letter-spacing:-0.01em}
 .settings-close{
   width:30px;height:30px;border-radius:6px;display:grid;place-items:center;
   background:transparent;border:1px solid transparent;color:var(--muted);cursor:pointer;
@@ -1336,9 +1332,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .invoice-empty{font:500 13px/1.4 var(--font-display);color:var(--muted)}
 .pricing-overlay{
   position:fixed;inset:0;background:var(--bg);z-index:320;
-  display:none;overflow:auto;
+  display:none;overflow:auto;opacity:0;transition:opacity .2s ease;
 }
-.pricing-overlay.open{display:block}
+.pricing-overlay.open{display:block;opacity:1}
+.pricing-overlay .pricing-wrap{transform:translateY(12px);opacity:0;transition:transform .32s cubic-bezier(.2,.9,.3,1.1) .04s,opacity .24s ease .04s}
+.pricing-overlay.open .pricing-wrap{transform:translateY(0);opacity:1}
 .pricing-back{
   position:absolute;top:18px;left:20px;
   width:36px;height:36px;border-radius:8px;
@@ -2228,13 +2226,13 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <div class="ks-section">
         <div class="ks-h">General</div>
         <div class="ks-row"><span>Command palette</span><span><kbd>⌘</kbd><kbd>K</kbd></span></div>
-        <div class="ks-row"><span>Settings</span><span><kbd>⌘</kbd><kbd>,</kbd></span></div>
-        <div class="ks-row"><span>Keyboard shortcuts</span><span><kbd>⌘</kbd><kbd>/</kbd></span></div>
         <div class="ks-row"><span>Toggle sidebar</span><span><kbd>⌘</kbd><kbd>.</kbd></span></div>
       </div>
       <div class="ks-section">
         <div class="ks-h">Cutter</div>
-        <div class="ks-row"><span>Highlight</span><span><kbd>H</kbd></span></div>
+        <div class="ks-row"><span>Highlight</span><span><kbd>⌘</kbd><kbd>⌥</kbd><kbd>H</kbd></span></div>
+        <div class="ks-row"><span>Bold</span><span><kbd>⌘</kbd><kbd>B</kbd></span></div>
+        <div class="ks-row"><span>Underline</span><span><kbd>⌘</kbd><kbd>U</kbd></span></div>
         <div class="ks-row"><span>Shrink</span><span><kbd>S</kbd></span></div>
         <div class="ks-row"><span>Warrant</span><span><kbd>W</kbd></span></div>
         <div class="ks-row"><span>Save card</span><span><kbd>⌘</kbd><kbd>↵</kbd></span></div>

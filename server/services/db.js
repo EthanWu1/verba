@@ -199,6 +199,37 @@ function _runMigrations(db) {
   `);
   if (needBackfill) _backfillDerivedLabels(db);
   if (needHighlightBackfill) _backfillHasHighlight(db);
+  _setupCardsFts(db);
+}
+
+function _setupCardsFts(db) {
+  const exists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cards_fts'").get();
+  if (exists) return;
+  console.log('[db] creating cards_fts FTS5 index...');
+  const t0 = Date.now();
+  db.exec(`
+    CREATE VIRTUAL TABLE cards_fts USING fts5(
+      tag, shortCite, cite, body_plain,
+      content='cards', content_rowid='rowid',
+      tokenize='unicode61 remove_diacritics 2'
+    );
+    CREATE TRIGGER cards_fts_ai AFTER INSERT ON cards BEGIN
+      INSERT INTO cards_fts(rowid, tag, shortCite, cite, body_plain)
+      VALUES (new.rowid, new.tag, new.shortCite, new.cite, new.body_plain);
+    END;
+    CREATE TRIGGER cards_fts_ad AFTER DELETE ON cards BEGIN
+      INSERT INTO cards_fts(cards_fts, rowid, tag, shortCite, cite, body_plain)
+      VALUES ('delete', old.rowid, old.tag, old.shortCite, old.cite, old.body_plain);
+    END;
+    CREATE TRIGGER cards_fts_au AFTER UPDATE ON cards BEGIN
+      INSERT INTO cards_fts(cards_fts, rowid, tag, shortCite, cite, body_plain)
+      VALUES ('delete', old.rowid, old.tag, old.shortCite, old.cite, old.body_plain);
+      INSERT INTO cards_fts(rowid, tag, shortCite, cite, body_plain)
+      VALUES (new.rowid, new.tag, new.shortCite, new.cite, new.body_plain);
+    END;
+  `);
+  db.exec(`INSERT INTO cards_fts(cards_fts) VALUES('rebuild')`);
+  console.log(`[db] cards_fts built in ${Date.now() - t0}ms`);
 }
 
 function _backfillHasHighlight(db) {
@@ -403,33 +434,41 @@ function getExistingFingerprints() {
 // SQL-backed query + facets (pagination, filters)
 // ---------------------------------------------------------------------------
 
-function _buildWhere(filters) {
-  const where = ['hasHighlight = 1'];
+function _buildWhere(filters, { tablePrefix = '' } = {}) {
+  const p = tablePrefix ? `${tablePrefix}.` : '';
+  const where = [`${p}hasHighlight = 1`];
   const params = [];
-  if (filters.scope === 'my')     { where.push('scope = ?'); params.push('my'); }
-  if (filters.scope === 'public') { where.push('scope = ?'); params.push('public'); }
+  if (filters.scope === 'my')     { where.push(`${p}scope = ?`); params.push('my'); }
+  if (filters.scope === 'public') { where.push(`${p}scope = ?`); params.push('public'); }
   if (filters.type) {
-    where.push('LOWER(typeLabel) = ?');
+    where.push(`LOWER(${p}typeLabel) = ?`);
     params.push(String(filters.type).toLowerCase());
   }
   if (filters.topic) {
-    where.push('topicLabel = ?'); params.push(filters.topic);
+    where.push(`${p}topicLabel = ?`); params.push(filters.topic);
   }
   if (filters.resolution) {
-    where.push('resolutionLabel = ?'); params.push(filters.resolution);
+    where.push(`${p}resolutionLabel = ?`); params.push(filters.resolution);
   }
   if (filters.source) {
-    where.push('sourceLabel = ?'); params.push(filters.source);
+    where.push(`${p}sourceLabel = ?`); params.push(filters.source);
   }
-  if (filters.canonical === 'true')  where.push('isCanonical = 1');
-  if (filters.canonical === 'false') where.push('isCanonical = 0');
-  if (filters.q) {
-    const q = `%${String(filters.q).replace(/[%_]/g, '\\$&')}%`;
-    where.push(`(tag LIKE ? ESCAPE '\\' OR shortCite LIKE ? ESCAPE '\\' OR cite LIKE ? ESCAPE '\\')`);
-    params.push(q, q, q);
-  }
+  if (filters.canonical === 'true')  where.push(`${p}isCanonical = 1`);
+  if (filters.canonical === 'false') where.push(`${p}isCanonical = 0`);
   return { sql: `WHERE ${where.join(' AND ')}`, params };
 }
+
+function _buildFtsMatch(q) {
+  const tokens = String(q || '').toLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+  const filtered = tokens.filter(t => t.length >= 2);
+  if (!filtered.length) return null;
+  return filtered.map(t => `"${t.replace(/"/g, '""')}"*`).join(' ');
+}
+
+const LIST_COLS = `id, zipPath, sourceEntry, sourceFileName, division, school, squad,
+  tag, cite, shortCite, warrantDensity, foundAt, importedAt, topicBucket,
+  argumentTypes, argumentTags, sourceKind, isCanonical, canonicalGroupKey,
+  variantCount, typeLabel, topicLabel, sourceLabel, scope, resolutionLabel, hasHighlight`;
 
 function _orderBy(sort) {
   switch (sort) {
@@ -443,21 +482,50 @@ function _orderBy(sort) {
   }
 }
 
-function queryCards({ filters = {}, sort = 'relevance', page = 1, limit = 40 }) {
+function queryCards({ filters = {}, sort = 'relevance', page = 1, limit = 40, lite = false }) {
   const db = getDb();
-  const { sql: whereSql, params } = _buildWhere(filters);
-  let orderSql = _orderBy(sort);
-  const orderParams = [];
-  if (filters.q) {
-    const q = `%${String(filters.q).replace(/[%_]/g, '\\$&')}%`;
-    const tagRank = `(CASE WHEN tag LIKE ? ESCAPE '\\' THEN 0 WHEN shortCite LIKE ? ESCAPE '\\' THEN 1 ELSE 2 END)`;
-    orderSql = orderSql.replace('ORDER BY ', `ORDER BY ${tagRank}, `);
-    orderParams.push(q, q);
+  const cols = lite ? LIST_COLS : '*';
+  const ftsMatch = filters.q ? _buildFtsMatch(filters.q) : null;
+
+  if (ftsMatch) {
+    const { sql: whereBase, params } = _buildWhere(filters, { tablePrefix: 'c' });
+    const whereSql = `${whereBase} AND cards_fts MATCH ?`;
+    const orderSql = _orderByWithRank(sort);
+    const prefixed = (lite ? LIST_COLS : '*')
+      .split(',').map(s => s.trim())
+      .map(s => s === '*' ? 'c.*' : `c.${s}`)
+      .join(', ');
+    const totalSql = `SELECT COUNT(*) AS n FROM cards c JOIN cards_fts ON cards_fts.rowid = c.rowid ${whereSql}`;
+    const selSql = `SELECT ${prefixed} FROM cards c JOIN cards_fts ON cards_fts.rowid = c.rowid ${whereSql} ${orderSql} LIMIT ? OFFSET ?`;
+    const total = db.prepare(totalSql).get(...params, ftsMatch).n;
+    const rows = db.prepare(selSql).all(...params, ftsMatch, limit, (page - 1) * limit);
+    return { total, rows: rows.map(_parseCard) };
   }
+
+  const { sql: whereSql, params } = _buildWhere(filters);
+  const orderSql = _orderBy(sort);
   const total = db.prepare(`SELECT COUNT(*) AS n FROM cards ${whereSql}`).get(...params).n;
-  const rows = db.prepare(`SELECT * FROM cards ${whereSql} ${orderSql} LIMIT ? OFFSET ?`)
-                 .all(...params, ...orderParams, limit, (page - 1) * limit);
+  const rows = db.prepare(`SELECT ${cols} FROM cards ${whereSql} ${orderSql} LIMIT ? OFFSET ?`)
+                 .all(...params, limit, (page - 1) * limit);
   return { total, rows: rows.map(_parseCard) };
+}
+
+function _orderByWithRank(sort) {
+  switch (sort) {
+    case 'recent':   return 'ORDER BY c.hasHighlight DESC, c.importedAt DESC';
+    case 'density':  return 'ORDER BY c.hasHighlight DESC, c.warrantDensity DESC';
+    case 'variants': return 'ORDER BY c.hasHighlight DESC, c.variantCount DESC';
+    case 'cite':     return 'ORDER BY c.hasHighlight DESC, COALESCE(c.shortCite, c.cite) ASC';
+    case 'school':   return 'ORDER BY c.hasHighlight DESC, c.school ASC';
+    case 'tag':      return 'ORDER BY c.hasHighlight DESC, c.tag ASC';
+    default:         return 'ORDER BY c.hasHighlight DESC, c.isCanonical DESC, bm25(cards_fts) ASC';
+  }
+}
+
+function getCardById(id) {
+  if (!id) return null;
+  const row = getDb().prepare('SELECT * FROM cards WHERE id = ?').get(String(id));
+  return _parseCard(row);
 }
 
 function queryCardsByIds(ids, filters = {}) {
@@ -575,6 +643,7 @@ module.exports = {
   refreshDerivedLabels,
   queryCards,
   queryCardsByIds,
+  getCardById,
   facetCounts,
   upsertAnalytic,
   searchAnalytics,

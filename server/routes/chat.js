@@ -6,7 +6,7 @@ const { complete } = require('../services/llm');
 const { getRelevantAnalytics, buildChatContext } = require('../services/libraryQuery');
 const requireUser = require('../middleware/requireUser');
 const enforceLimit = require('../middleware/enforceLimit');
-const CHAT_DAILY_LIMIT = Number(process.env.FREE_CHAT_DAILY || 20);
+const CHAT_DAILY_LIMIT = Number(process.env.FREE_CHAT_DAILY || 10);
 router.use(requireUser);
 
 const BLOCK_INTENT = /write.*block|block (to|against|on|for)|frontline|extend\b|overview/i;

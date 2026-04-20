@@ -398,7 +398,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
       <span class="brand-plan">for debate</span>
     </div>
     <nav class="nav-links">
-      <a href="#cutter">Card cutter</a>
+      <a href="#cutter">Cutter</a>
       <a href="#library">Evidence library</a>
       <a href="#assistant">Assistant</a>
       <a href="#pricing">Pricing</a>
@@ -433,12 +433,12 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
         <span class="right"><span class="live">live demo</span></span>
       </div>
       <div class="cut-body">
-        <div class="key-hud" id="keyHud"><kbd id="hudKey">H</kbd><span id="hudLbl">Highlight</span></div>
+        <div class="key-hud" id="keyHud"><kbd id="hudKey">⌘⌥H</kbd><span id="hudLbl">Highlight</span></div>
         <h3 class="card-tag" id="cardTag"><span class="cp-empty">Cutting live — watch this.</span></h3>
         <div class="card-cite" id="cardCite">From <b>Climate Policy Quarterly</b> · Hannah Ritchie · Oct 2024</div>
         <div class="art-body" id="artBody"></div>
         <div class="cut-toolbar">
-          <div class="cut-tool" data-i="0"><kbd>H</kbd>Highlight</div>
+          <div class="cut-tool" data-i="0"><kbd>⌘⌥H</kbd>Highlight</div>
           <div class="cut-tool" data-i="1"><kbd>S</kbd>Shrink</div>
           <div class="cut-tool" data-i="2"><kbd>W</kbd>Warrant</div>
           <div class="cut-tool" data-i="3"><kbd>⌘↵</kbd>Save</div>
@@ -471,7 +471,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
           </li>
           <li>
             <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></span>
-            <span><b>Every claim traced to a cite.</b> No hallucinated warrants. Every sentence links to a card — one click opens the card cutter.</span>
+            <span><b>Every claim traced to a cite.</b> No hallucinated warrants. Every sentence links to a card — one click opens the cutter.</span>
           </li>
           <li>
             <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16"/></svg></span>
@@ -624,7 +624,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
         <p class="pt-desc">For individual debaters.</p>
         <ul class="pt-feats">
           <li>Unlimited cards &amp; projects</li>
-          <li>Card cutter + library search</li>
+          <li>Cutter + library search</li>
           <li>50 assistant queries / month</li>
           <li>.docx import &amp; export</li>
         </ul>
@@ -780,8 +780,8 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
     cutSaved.classList.remove('on');
     await wait(600);
 
-    // H — highlight
-    setTool(0);await showHud('H','Highlight');
+    // ⌘⌥H — highlight
+    setTool(0);await showHud('⌘⌥H','Highlight');
     renderArticle(1);
     await typeInto(cardTag, TAG, 20);
     await wait(400);

@@ -1,21 +1,26 @@
 'use strict';
 const { getDb } = require('./db');
 
-function todayUtc() { return new Date().toISOString().slice(0, 10); }
+function periodUtc() { return new Date().toISOString().slice(0, 7); }
 
-function getCount(userId, kind, day = todayUtc()) {
-  const row = getDb().prepare('SELECT count FROM usage_counters WHERE userId = ? AND kind = ? AND day = ?').get(userId, kind, day);
+function nextResetAt() {
+  const n = new Date();
+  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth() + 1, 1, 0, 0, 0)).toISOString();
+}
+
+function getCount(userId, kind, period = periodUtc()) {
+  const row = getDb().prepare('SELECT count FROM usage_counters WHERE userId = ? AND kind = ? AND day = ?').get(userId, kind, period);
   return row ? row.count : 0;
 }
 
-function hit(userId, kind, day = todayUtc()) {
+function hit(userId, kind, period = periodUtc()) {
   const db = getDb();
-  const existing = db.prepare('SELECT count FROM usage_counters WHERE userId = ? AND kind = ? AND day = ?').get(userId, kind, day);
+  const existing = db.prepare('SELECT count FROM usage_counters WHERE userId = ? AND kind = ? AND day = ?').get(userId, kind, period);
   if (existing) {
-    db.prepare('UPDATE usage_counters SET count = count + 1 WHERE userId = ? AND kind = ? AND day = ?').run(userId, kind, day);
+    db.prepare('UPDATE usage_counters SET count = count + 1 WHERE userId = ? AND kind = ? AND day = ?').run(userId, kind, period);
     return existing.count + 1;
   }
-  db.prepare('INSERT INTO usage_counters (userId, kind, day, count) VALUES (?, ?, ?, 1)').run(userId, kind, day);
+  db.prepare('INSERT INTO usage_counters (userId, kind, day, count) VALUES (?, ?, ?, 1)').run(userId, kind, period);
   return 1;
 }
 
@@ -26,4 +31,4 @@ function checkAndBudget(userId, kind, limit, user = null) {
   return { allowed: used < limit, remaining, used, limit };
 }
 
-module.exports = { getCount, hit, checkAndBudget };
+module.exports = { getCount, hit, checkAndBudget, nextResetAt };
