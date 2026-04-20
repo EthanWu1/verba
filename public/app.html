@@ -1599,6 +1599,15 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   /* Global search surface — remove on mobile */
   .side-search,#cmd-trigger,#cmd-overlay{display:none !important}
   .topbar .kbd,.kbd-hint,kbd{display:none}
+
+  /* Overflow safety net */
+  img,video,canvas,svg:not([width]){max-width:100%;height:auto}
+  pre,code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;max-width:100%}
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  .content *{max-width:100%}
+  .content .modal *,.content .modal-body *{max-width:none}
+  /* Prevent fixed right-edge overlap */
+  [style*="position:fixed"][style*="right:"]{right:max(8px,var(--safe-r,0px)) !important}
 }
 
 @media (max-width:480px){
