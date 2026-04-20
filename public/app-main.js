@@ -2115,3 +2115,31 @@
     });
   })();
 })();
+
+// Mobile drawer toggle
+(function(){
+  var shell = document.querySelector('.shell');
+  var openBtn = document.getElementById('sb-open-fab');
+  if (!shell || !openBtn) return;
+
+  function close(){ shell.classList.remove('sb-open'); }
+
+  openBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    shell.classList.toggle('sb-open');
+  });
+
+  document.addEventListener('click', function(e){
+    if (!shell.classList.contains('sb-open')) return;
+    var sidebar = shell.querySelector('.sidebar');
+    if (sidebar && !sidebar.contains(e.target) && e.target !== openBtn) close();
+  });
+
+  shell.querySelectorAll('.sidebar .nav-item').forEach(function(el){
+    el.addEventListener('click', close);
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') close();
+  });
+})();
