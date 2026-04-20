@@ -54,7 +54,7 @@ async function verifyPassword(user, password) {
 }
 
 function createSession(userId, meta = {}) {
-  const id = _newId('sess');
+  const id = crypto.randomBytes(32).toString('hex');
   const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   getDb().prepare(
