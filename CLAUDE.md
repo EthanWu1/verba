@@ -64,6 +64,10 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
+## Mobile parity
+
+When editing `public/*.html` or `public/assets/*.css`, review and update the `@media (max-width:768px)` block in the same file (or `public/assets/mobile.css` for shared primitives). Every desktop change needs a matching mobile rule if it affects layout, sizing, or interaction. See `docs/mobile-contract.md` for the full checklist.
+
 ## graphify
 
 This project has a graphify knowledge graph at graphify-out/.
