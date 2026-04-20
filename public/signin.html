@@ -255,6 +255,26 @@ form{display:flex;flex-direction:column;gap:14px}
   .right{display:none}
   .left{padding:24px 28px 32px}
 }
+@media (max-width:768px){
+  body{grid-template-columns:1fr;min-height:100vh}
+  .left{padding:20px 20px 28px}
+  .right{display:none}
+  .form-wrap{max-width:100%;padding:20px 0}
+  .headline{font-size:clamp(32px,8.5vw,42px);line-height:1.05}
+  .subline{font-size:14.5px;margin-top:12px}
+  .mode-tabs{margin-top:18px;width:100%}
+  .mode-tab{flex:1 1 50%;text-align:center;padding:10px 12px}
+  .socials{margin-top:16px}
+  .soc-btn{padding:13px 14px}
+  .divider{margin:16px 0 14px}
+  form{gap:12px}
+  .field input{padding:13px 13px;font-size:16px}
+  .field-row{flex-wrap:wrap;gap:6px}
+  .submit{padding:14px 16px}
+  .brandbar{padding:0;margin-bottom:14px}
+  .brand-mark{width:40px;height:40px}
+  .foot{margin-top:24px;padding-top:18px;flex-wrap:wrap;gap:8px 14px;font-size:11px}
+}
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
 </head>
