@@ -2055,4 +2055,13 @@
     function close(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true'); }
     window.__verba.openPayment = open;
   })();
+
+  (function initShortcuts() {
+    const m = document.getElementById('ks-modal');
+    if (!m) return;
+    document.getElementById('ks-close').onclick = () => m.classList.remove('open');
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && m.classList.contains('open')) m.classList.remove('open'); });
+    window.__verba.openShortcuts = () => m.classList.add('open');
+  })();
 })();

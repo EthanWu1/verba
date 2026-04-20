@@ -1364,6 +1364,10 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .pay-method-h{font:600 13px/1 var(--font-display);color:var(--ink);margin-bottom:10px}
 .pay-method-row{display:flex;align-items:center;gap:8px}
 .pay-terms{display:flex;gap:8px;align-items:flex-start;font:500 12.5px/1.4 var(--font-display);color:var(--muted)}
+.ks-h{font:600 11px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.ks-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft);font:500 13px/1 var(--font-display);color:var(--ink-2)}
+.ks-row:last-child{border-bottom:0}
+.ks-row kbd{margin-left:4px}
 </style>
 </head>
 <body class="accent-ink font-calibri nexus-closed hl-yellow" data-cc-id="cc-1">
@@ -2163,6 +2167,33 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       </div>
       <label class="pay-terms"><input type="checkbox" id="pay-agree"> You agree this is a demo and no card will be charged.</label>
       <button class="pp-cta primary" id="pay-submit" disabled style="width:100%">Upgrade to 20×</button>
+    </div>
+  </div>
+</div>
+
+<!-- KEYBOARD SHORTCUTS -->
+<div class="modal-backdrop" id="ks-modal">
+  <div class="modal" role="dialog" aria-label="Keyboard shortcuts" style="width:min(480px,92vw)">
+    <div class="modal-head">
+      <h3>Keyboard shortcuts</h3>
+      <button class="close" id="ks-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">
+      <div class="ks-section">
+        <div class="ks-h">General</div>
+        <div class="ks-row"><span>Command palette</span><span><kbd>⌘</kbd><kbd>K</kbd></span></div>
+        <div class="ks-row"><span>Settings</span><span><kbd>⌘</kbd><kbd>,</kbd></span></div>
+        <div class="ks-row"><span>Keyboard shortcuts</span><span><kbd>⌘</kbd><kbd>/</kbd></span></div>
+        <div class="ks-row"><span>Toggle sidebar</span><span><kbd>⌘</kbd><kbd>.</kbd></span></div>
+      </div>
+      <div class="ks-section">
+        <div class="ks-h">Cutter</div>
+        <div class="ks-row"><span>Highlight</span><span><kbd>H</kbd></span></div>
+        <div class="ks-row"><span>Shrink</span><span><kbd>S</kbd></span></div>
+        <div class="ks-row"><span>Warrant</span><span><kbd>W</kbd></span></div>
+        <div class="ks-row"><span>Save card</span><span><kbd>⌘</kbd><kbd>↵</kbd></span></div>
+        <div class="ks-row"><span>Export round doc</span><span><kbd>⇧</kbd><kbd>E</kbd></span></div>
+      </div>
     </div>
   </div>
 </div>
