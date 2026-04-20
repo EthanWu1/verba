@@ -36,14 +36,24 @@ router.post('/', async (req, res) => {
   }
 
   const citeStr = String(cite || '').replace(/^\[[^\]]*\]\s*/, '').trim();
-  const citeMatch = citeStr.match(/([A-Za-z][A-Za-z'\-]+)\s+'?(\d{2,4})\b/);
+  const STOP = new Set(['et','al','the','and','dr','mr','mrs','ms','prof','von','van','de','del','la']);
+  let lastName = '';
+  for (const tok of citeStr.split(/[\s,.;:()\[\]]+/)) {
+    const m = tok.match(/^([A-Za-z][A-Za-z'\-]{1,})$/);
+    if (!m) continue;
+    if (STOP.has(m[1].toLowerCase())) continue;
+    lastName = m[1];
+    break;
+  }
+  const yearMatch = citeStr.match(/\b(?:19|20)(\d{2})\b/) || citeStr.match(/'?(\d{2})\b/);
   let outFile;
   if (filename) {
     outFile = filename;
-  } else if (citeMatch) {
-    const lastName = citeMatch[1].replace(/[^a-zA-Z0-9\-]/g, '');
-    const yy = citeMatch[2].length >= 4 ? citeMatch[2].slice(-2) : citeMatch[2];
-    outFile = `${lastName} ${yy}.docx`;
+  } else if (lastName && yearMatch) {
+    const yy = yearMatch[1];
+    outFile = `${lastName.replace(/[^a-zA-Z0-9\-]/g, '')} ${yy}.docx`;
+  } else if (lastName) {
+    outFile = `${lastName.replace(/[^a-zA-Z0-9\-]/g, '')}.docx`;
   } else {
     const d = new Date();
     const mm = String(d.getMonth() + 1).padStart(2, '0');

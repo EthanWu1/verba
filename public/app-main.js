@@ -2201,15 +2201,27 @@
   (function initSidebarCollapse() {
     const shell = document.querySelector('.shell');
     const toggle = document.getElementById('sb-toggle');
-    const fab = document.getElementById('sb-open-fab');
     if (!shell) return;
-    function apply() { shell.classList.toggle('sb-collapsed', !!TWEAKS.sidebarCollapsed); }
-    function flip() { TWEAKS.sidebarCollapsed = !TWEAKS.sidebarCollapsed; persistTweaks(); apply(); }
+    const T = (typeof TWEAKS !== 'undefined' && TWEAKS) ? TWEAKS : (window.TWEAKS = window.TWEAKS || {});
+    const save = (typeof persistTweaks === 'function') ? persistTweaks : () => {
+      try { localStorage.setItem('verba.tweaks', JSON.stringify(T)); } catch {}
+    };
+    function apply() { shell.classList.toggle('sb-collapsed', !!T.sidebarCollapsed); }
+    function flip(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      T.sidebarCollapsed = !T.sidebarCollapsed;
+      save();
+      apply();
+    }
     apply();
-    toggle && toggle.addEventListener('click', flip);
+    if (toggle) {
+      toggle.addEventListener('click', flip);
+      toggle.addEventListener('pointerdown', (e) => e.stopPropagation());
+    }
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key === '.') { e.preventDefault(); flip(); }
     });
+    window.__verba.toggleSidebar = flip;
   })();
 })();
 

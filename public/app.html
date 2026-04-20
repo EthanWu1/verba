@@ -104,11 +104,11 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
   background:#fff;border:1px solid var(--line);color:var(--muted);
   display:flex;align-items:center;justify-content:center;cursor:pointer;
   box-shadow:var(--shadow-sm);
-  opacity:0;pointer-events:none;
+  opacity:.55;pointer-events:auto;
   transition:opacity .14s ease,color .14s,border-color .14s,transform .18s ease;
 }
 .sidebar{position:relative}
-.sidebar:hover .sb-toggle,.shell.sb-collapsed .sb-toggle{opacity:1;pointer-events:auto}
+.sidebar:hover .sb-toggle,.shell.sb-collapsed .sb-toggle,.sb-toggle:hover,.sb-toggle:focus{opacity:1}
 .sb-toggle:hover{color:var(--ink);border-color:var(--line-2);background:#fff}
 .shell.sb-collapsed .sb-toggle svg{transform:rotate(180deg)}
 

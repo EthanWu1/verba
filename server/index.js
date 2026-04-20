@@ -87,29 +87,36 @@ app.get('*', (req, res) => {
 });
 
 /* ── Start ── */
-app.listen(PORT, () => {
-  console.log('');
-  console.log('╔════════════════════════════════════════╗');
-  console.log('║   Verbatim AI — Card Cutter v2.0       ║');
-  console.log(`║   Running at http://localhost:${PORT}      ║`);
-  console.log(`║   Model: ${(process.env.MODEL || 'llama-3.3-70b').padEnd(30)}║`);
-  console.log('╚════════════════════════════════════════╝');
-  console.log('');
+// Warm DB BEFORE listen so first request isn't blocked on migrations/FTS rebuild.
+(function warmAndStart() {
+  const tBoot = Date.now();
+  try {
+    const db = require('./services/db');
+    const { getLibraryAnalytics } = require('./services/libraryQuery');
+    console.log('[warm] opening DB...');
+    const t1 = Date.now();
+    db.getDb();
+    console.log(`[warm] DB open (${Date.now() - t1}ms)`);
+    const t2 = Date.now();
+    db.facetCounts(null, 20);
+    console.log(`[warm] facet cache (${Date.now() - t2}ms)`);
+    const t3 = Date.now();
+    getLibraryAnalytics();
+    console.log(`[warm] analytics cache (${Date.now() - t3}ms)`);
+    console.log(`[warm] total ${Date.now() - tBoot}ms, ${db.countCards()} cards`);
+  } catch (err) {
+    console.error('[warm] boot warmup FAILED:', err.stack || err.message);
+  }
 
-  // Warm DB + facet/analytics caches on boot (non-blocking)
-  setImmediate(() => {
-    try {
-      const t0 = Date.now();
-      const db = require('./services/db');
-      const { getLibraryAnalytics } = require('./services/libraryQuery');
-      db.getDb();
-      db.facetCounts(null, 20);
-      getLibraryAnalytics();
-      console.log(`[warm] DB + facets ready (${Date.now() - t0}ms, ${db.countCards()} cards)`);
-    } catch (err) {
-      console.warn('[warm] boot warmup failed:', err.message);
-    }
+  app.listen(PORT, () => {
+    console.log('');
+    console.log('╔════════════════════════════════════════╗');
+    console.log('║   Verbatim AI — Card Cutter v2.0       ║');
+    console.log(`║   Running at http://localhost:${PORT}      ║`);
+    console.log(`║   Model: ${(process.env.MODEL || 'llama-3.3-70b').padEnd(30)}║`);
+    console.log('╚════════════════════════════════════════╝');
+    console.log('');
   });
-});
+})();
 
 module.exports = app;
