@@ -4,6 +4,7 @@
   'use strict';
   const API = window.VerbaAPI;
   if (!API) { console.error('VerbaAPI missing'); return; }
+  window.__verba = window.__verba || {};
 
   function computeInitials(name, email) {
     const n = String(name || '').trim();
@@ -702,7 +703,7 @@
     function setHighlightMode(on) {
       highlightMode = on;
       document.body.classList.toggle('highlight-mode', on);
-      $$('.pane-fmt-tools .tool-btn[data-fmt="highlight"], .pane-foot .tool-btn[data-fmt="highlight"]').forEach(b => b.classList.toggle('active', on));
+      $$('.pane-fmt-tools .tool-btn[data-fmt="highlight"], .pane-foot .tool-btn[data-fmt="highlight"], .pane-foot-tools .tool-btn[data-fmt="highlight"]').forEach(b => b.classList.toggle('active', on));
     }
 
     function applyHighlightToSelection() {
@@ -2129,7 +2130,6 @@
     function flip() { TWEAKS.sidebarCollapsed = !TWEAKS.sidebarCollapsed; persistTweaks(); apply(); }
     apply();
     toggle && toggle.addEventListener('click', flip);
-    fab && fab.addEventListener('click', flip);
     document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key === '.') { e.preventDefault(); flip(); }
     });

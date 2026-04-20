@@ -323,6 +323,13 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .phase-log .phase-err{color:#991b1b}
 .phase-log .phase-run{color:#1d4ed8}
 .pane-fmt-tools{display:inline-flex;gap:4px;align-items:center;margin-left:10px;padding:2px 4px;border-left:1px solid var(--line)}
+.pane-foot-tools{flex:0 0 auto;display:flex;gap:6px;align-items:center;justify-content:flex-start;padding:8px 14px;border-top:1px solid var(--line-soft);background:#fafafa;position:sticky;bottom:0}
+.pane-foot-tools .tool-btn.icon-only{display:inline-grid;place-items:center;width:32px;height:28px;padding:0;border-radius:6px;background:#fff;border:1px solid var(--line);color:var(--ink);cursor:pointer}
+.pane-foot-tools .tool-btn.icon-only:hover{background:#f4f4f5}
+.pane-foot-tools .tool-btn.icon-only svg{width:14px;height:14px;stroke-width:1.8}
+.pane-foot-tools .tool-btn.icon-only.active{background:#fef08a;border-color:#eab308;color:#713f12}
+#card-pane{display:flex;flex-direction:column;min-height:0}
+#card-pane #wb-body{flex:1 1 auto;min-height:0;max-height:calc(100vh - 320px);overflow-y:auto}
 .pane-fmt-tools .tool-btn{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;padding:4px 7px;border-radius:6px;background:#fff;border:1px solid var(--line);color:var(--ink);cursor:pointer}
 .pane-fmt-tools .tool-btn:hover{background:#f4f4f5}
 .pane-fmt-tools .tool-btn svg{width:12px;height:12px;stroke-width:1.8}
@@ -932,7 +939,8 @@ body.nexus-closed .nexus-closed-rail{display:flex}
   display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;
   color:var(--ink-2);font-size:13.5px;cursor:pointer;font-family:var(--font-display);
 }
-.cmd-item:hover, .cmd-item.sel{background:var(--lilac-soft);color:var(--lilac-ink)}
+.cmd-item:hover, .cmd-item.sel{background:var(--lilac-soft);color:var(--ink)}
+.cmd-item:hover .hint, .cmd-item.sel .hint{color:var(--ink-2)}
 .cmd-item .ico{color:var(--muted);width:14px;height:14px;stroke-width:1.6}
 .cmd-item .hint{margin-left:auto;font-size:11px;color:var(--muted)}
 .cmd-foot{padding:8px 14px;border-top:1px solid var(--line);display:flex;gap:14px;font-size:11px;color:var(--muted)}
@@ -1419,21 +1427,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   }
   .main{height:auto;min-height:100vh;overflow:visible}
 
-  /* Neutralize desktop icon-rail state on mobile — drawer wins */
-  .shell.sb-collapsed{grid-template-columns:none}
-  .shell.sb-collapsed .sidebar{width:min(280px,84vw)}
-  .shell.sb-collapsed .nav-group-label,
-  .shell.sb-collapsed .brand-name,
-  .shell.sb-collapsed .brand-plan,
-  .shell.sb-collapsed #side-name,
-  .shell.sb-collapsed #side-email,
-  .shell.sb-collapsed .acct-caret,
-  .shell.sb-collapsed .side-search,
-  .shell.sb-collapsed .upgrade-card,
-  .shell.sb-collapsed .nav-item span{display:revert}
-  .shell.sb-collapsed .nav-item{justify-content:flex-start;padding:8px 10px}
-  .shell.sb-collapsed .side-account{justify-content:flex-start;padding:10px 14px;gap:10px}
-
   .sidebar{
     position:fixed;top:0;left:0;bottom:0;
     width:min(280px,84vw);height:100vh;
@@ -1672,7 +1665,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <button class="user-menu-item" data-act="settings" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6 1.65 1.65 0 0010 3.09V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9c.26.26.43.62.45 1V10a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         <span>Settings</span>
-        <kbd class="user-menu-kbd">⌘,</kbd>
       </button>
       <div class="user-menu-sep"></div>
       <button class="user-menu-item" data-act="upgrade" role="menuitem">
@@ -1682,7 +1674,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <button class="user-menu-item" data-act="shortcuts" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" width="15" height="15"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
         <span>Keyboard shortcuts</span>
-        <kbd class="user-menu-kbd">⌘/</kbd>
       </button>
       <div class="user-menu-sep"></div>
       <button class="user-menu-item danger" data-act="logout" role="menuitem">
@@ -1762,11 +1753,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
           <div class="pane" id="card-pane">
             <div class="pane-head">
               <div class="pane-title card"><span class="pip"></span>Preview</div>
-              <div class="pane-fmt-tools">
-                <button class="tool-btn" data-fmt="highlight" title="Highlight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>Highlight</button>
-                <button class="tool-btn" data-fmt="underline" title="Underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg>Underline</button>
-                <button class="tool-btn" data-fmt="bold" title="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg>Bold</button>
-              </div>
               <div class="pane-actions">
                 <button class="pane-action-btn primary" id="wb-addto" title="Add to project">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
@@ -1787,6 +1773,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
                 <div class="meta" contenteditable="true" data-field="cite" data-placeholder="Cite will appear here"></div>
               </div>
               <div class="body" contenteditable="true" data-field="body" data-placeholder="Body will appear here after a cut. You can edit inline, then Copy or Add to a project."><p><br></p></div>
+            </div>
+            <div class="pane-foot-tools" id="wb-foot-tools">
+              <button class="tool-btn icon-only" data-fmt="highlight" title="Highlight" aria-label="Highlight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button>
+              <button class="tool-btn icon-only" data-fmt="underline" title="Underline" aria-label="Underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
+              <button class="tool-btn icon-only" data-fmt="bold" title="Bold" aria-label="Bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button>
             </div>
           </div>
         </div>
