@@ -97,9 +97,11 @@
 
     function positionMenu() {
       const r = row.getBoundingClientRect();
+      const collapsed = document.querySelector('.shell')?.classList.contains('sb-collapsed');
+      const width = collapsed ? 260 : r.width;
       menu.style.left = r.left + 'px';
       menu.style.bottom = (window.innerHeight - r.top + 6) + 'px';
-      menu.style.width = r.width + 'px';
+      menu.style.width = width + 'px';
     }
     function openMenu() {
       const u = window.__verbaUser || {};
@@ -141,10 +143,14 @@
       }
     });
 
-    // ⌘, opens settings; ⌘/ opens shortcuts.
+    // ⌘, opens settings; ⌘/ opens shortcuts; ⌘⌥H toggles highlight.
     document.addEventListener('keydown', (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); window.__verba.openSettings('general'); }
       if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); window.__verba.openShortcuts(); }
+      if ((e.metaKey || e.ctrlKey) && e.altKey && (e.key === 'h' || e.key === 'H' || e.code === 'KeyH')) {
+        e.preventDefault();
+        toggleHighlight();
+      }
     });
   })();
 
