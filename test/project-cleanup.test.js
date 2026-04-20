@@ -26,9 +26,9 @@ test('instant research helpers still load from server/services', () => {
     pickBestExcerpt(
       'framework fairness',
       [
-        'Climate passage.',
-        'Procedural fairness matters because framework controls which offense counts.',
-      ].join('\n\n')
+        { text: 'Climate passage about warming impacts and sea levels rising in coastal regions with long-term consequences for debate.' },
+        { text: 'Procedural fairness matters because framework controls which offense counts and how debaters compare impacts under the resolution.' },
+      ]
     ),
     /framework controls/i
   );
