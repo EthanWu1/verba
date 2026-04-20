@@ -386,6 +386,35 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   .lib-item{grid-template-columns:1fr;gap:8px}
   .lib-meta{text-align:left}
 }
+@media (max-width:768px){
+  .wrap{padding:0 20px}
+  .hero{padding:40px 0 24px}
+  .hero h1{font-size:clamp(34px,9vw,46px);line-height:1.04;letter-spacing:-0.025em}
+  .hero-sub{font-size:15.5px;margin-top:16px;max-width:100%}
+  .hero-ctas{margin-top:22px;gap:8px}
+  .hero-ctas > *{flex:1 1 auto;min-width:0;text-align:center}
+  .hero-meta{gap:10px 14px;margin-top:18px;font-size:12px}
+  section{padding:60px 0}
+  .sec-title{font-size:clamp(28px,7.5vw,40px);line-height:1.06}
+  .sec-sub{font-size:15px;margin-top:14px}
+  .cut-body{padding:24px 18px 80px;min-height:auto;max-width:100%}
+  .cta-band h3{font-size:clamp(28px,8vw,40px);max-width:100%}
+  .cta-band .wrap{flex-direction:column;align-items:flex-start;gap:18px}
+  .foot,.brandbar{padding-left:20px;padding-right:20px}
+  .cut-toolbar{
+    position:static;transform:none;margin-top:16px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+    justify-content:flex-start;flex-wrap:nowrap;
+    width:100%;max-width:100%;
+  }
+  .cut-tool{flex:0 0 auto}
+  .key-hud{display:none}
+}
+@media (max-width:480px){
+  .wrap{padding:0 16px}
+  .hero{padding:28px 0 18px}
+  .hero-ctas > *{flex:1 1 100%}
+}
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
 </head>
