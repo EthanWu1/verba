@@ -1580,6 +1580,10 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
   /* Keyboard-shortcut modal — hide on phone */
   #ks-modal{display:none !important}
+
+  /* Global search surface — remove on mobile */
+  .side-search,#cmd-trigger,#cmd-overlay{display:none !important}
+  .topbar .kbd,.kbd-hint,kbd{display:none}
 }
 
 @media (max-width:480px){
@@ -2052,8 +2056,9 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   const cmdItems=()=>[...document.querySelectorAll('.cmd-item:not([hidden])')];
   document.getElementById('cmd-trigger').addEventListener('click',()=>{cmdO.classList.add('open');setTimeout(()=>cmdI.focus(),20)});
   cmdO.addEventListener('click',e=>{if(e.target===cmdO)cmdO.classList.remove('open')});
+  const _isMobile=()=>window.matchMedia('(max-width:768px)').matches;
   document.addEventListener('keydown',e=>{
-    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();cmdO.classList.toggle('open');if(cmdO.classList.contains('open'))setTimeout(()=>cmdI.focus(),20)}
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){if(_isMobile())return;e.preventDefault();cmdO.classList.toggle('open');if(cmdO.classList.contains('open'))setTimeout(()=>cmdI.focus(),20)}
     if(e.key==='Escape'&&cmdO.classList.contains('open'))cmdO.classList.remove('open');
     if(cmdO.classList.contains('open')){
       const items=cmdItems();let i=items.findIndex(x=>x.classList.contains('sel'));
