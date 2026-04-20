@@ -39,9 +39,15 @@
   (async () => {
     try {
       const who = await API.auth.me();
-      window.__verbaUser = who.user;
+      const u = who && who.user;
+      if (!u || !u.email) {
+        try { await API.auth.logout(); } catch {}
+        location.href = '/signin';
+        return;
+      }
+      window.__verbaUser = u;
       window.__verba = window.__verba || {};
-      paintAccount(who.user);
+      paintAccount(u);
     } catch {
       location.href = '/signin';
     }

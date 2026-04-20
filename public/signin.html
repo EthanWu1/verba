@@ -487,13 +487,18 @@ form{display:flex;flex-direction:column;gap:14px}
       window.VerbaAPI.auth.me().catch(() => null),
       fetch('/api/auth/config').then(r => r.json()).catch(() => ({})),
     ]);
-    if (me && me.user) { location.href = '/app'; return; }
+    if (me && me.user && me.user.email) { location.href = '/app'; return; }
+    if (me && me.user && !me.user.email) {
+      try { await window.VerbaAPI.auth.logout(); } catch {}
+    }
     if (!cfg.googleClientId) return;
     let tries = 0;
     (function waitGIS() {
       if (window.google && window.google.accounts && window.google.accounts.id) {
         window.google.accounts.id.initialize({
           client_id: cfg.googleClientId,
+          auto_select: false,
+          cancel_on_tap_outside: true,
           callback: async (resp) => {
             try { await window.VerbaAPI.auth.google(resp.credential); location.href = '/app'; }
             catch (err) { showErr(err.message || 'Google sign-in failed'); }
@@ -503,7 +508,6 @@ form{display:flex;flex-direction:column;gap:14px}
           document.getElementById('gsi-button-wrap'),
           { theme: 'outline', size: 'large', text: 'continue_with', width: 400 }
         );
-        window.google.accounts.id.prompt();
         return;
       }
       if (++tries < 40) setTimeout(waitGIS, 150);
