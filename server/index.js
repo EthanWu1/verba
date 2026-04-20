@@ -69,6 +69,19 @@ app.get('/api/health', (req, res) => {
 
 /* ── Serve static frontend ── */
 const PUBLIC = path.join(__dirname, '..', 'public');
+
+// Auth gate for the editor. No session → bounce to signin.
+const { validateSession } = require('./services/auth');
+function requireAuthPage(req, res, next) {
+  const sid = req.cookies && req.cookies['verba.sid'];
+  const ctx = validateSession(sid);
+  if (!ctx) return res.redirect('/signin');
+  next();
+}
+app.get(['/app.html', '/app', '/app/*'], requireAuthPage, (_req, res) => {
+  res.sendFile(path.join(PUBLIC, 'app.html'));
+});
+
 app.use(express.static(PUBLIC, { index: false }));
 
 // Landing is the default home page
@@ -78,7 +91,6 @@ app.get('/signup', (_req, res) => res.sendFile(path.join(PUBLIC, 'signin.html'))
 app.get('/login',  (_req, res) => res.sendFile(path.join(PUBLIC, 'signin.html')));
 app.get('/forgot', (_req, res) => res.sendFile(path.join(PUBLIC, 'forgot.html')));
 app.get('/reset',  (_req, res) => res.sendFile(path.join(PUBLIC, 'reset.html')));
-app.get(['/app', '/app/*'], (_req, res) => res.sendFile(path.join(PUBLIC, 'app.html')));
 
 // SPA-ish fallback — anything else that isn't an API call goes to landing.
 app.get('*', (req, res) => {
