@@ -283,50 +283,26 @@ section.edge{border-top:1px solid var(--line)}
 .asst-demo-head .t{font-size:13px;color:var(--ink);font-weight:600}
 .asst-demo-head .sub{font-size:11.5px;color:var(--muted);margin-left:auto;font-family:var(--font-mono)}
 
-.asst-body{padding:16px;display:flex;flex-direction:column;gap:12px;min-height:480px}
-.msg{display:flex;gap:10px;align-items:flex-start}
-.msg .av{flex:none;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font:700 11px/1 var(--font-display)}
-.msg.you .av{background:var(--panel);color:var(--ink-2);border:1px solid var(--line)}
-.msg.bot .av{background:var(--ink);color:#fff}
-.msg .bubble{flex:1;font-size:13.5px;line-height:1.55;color:var(--ink-2);padding-top:3px}
-.msg.you .bubble{color:var(--ink);font-weight:500}
-.msg .bubble .cite-pill{
-  display:inline-flex;gap:6px;align-items:center;
-  background:var(--panel);border:1px solid var(--line);border-radius:6px;
-  padding:3px 8px;font-size:11.5px;color:var(--ink-2);margin:2px 4px 2px 0;
-  font-family:var(--font-display);font-weight:500;
-}
-.msg .bubble .cite-pill .idx{font-family:var(--font-mono);color:var(--muted);font-size:10.5px}
-.msg .bubble .src-row{margin-top:8px;display:flex;flex-direction:column;gap:6px}
-.msg .bubble .src-card{
-  border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;
-  display:flex;gap:10px;align-items:flex-start;
-}
-.msg .bubble .src-card .idx{
-  flex:none;width:20px;height:20px;border-radius:5px;background:var(--ink);color:#fff;
-  display:grid;place-items:center;font:600 10.5px/1 var(--font-mono);margin-top:1px;
-}
-.msg .bubble .src-card .tag{font-weight:600;font-size:12.5px;color:var(--ink);line-height:1.35}
-.msg .bubble .src-card .cite{font-size:11px;color:var(--muted);margin-top:2px}
+.asst-body{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-height:480px}
+.ap-msg{font:13px/1.55 var(--font-ui);max-width:100%;color:var(--ink)}
+.ap-msg.user{align-self:flex-end;padding:7px 11px;border-radius:12px;background:#111;color:#fff;max-width:85%}
+.ap-msg.bot{align-self:stretch;background:transparent;color:var(--ink);border:0;padding:2px 0;white-space:pre-wrap}
+.ap-msg.bot .ap-bot-label{display:inline-block;font:600 10px/1 var(--font-mono);color:var(--muted);letter-spacing:.14em;padding:3px 7px;border:1px solid var(--line);border-radius:4px;background:#fafafa;margin-bottom:8px}
+.ap-msg.bot .ap-bot-label::before{content:'> ';color:#10B981;font-weight:700}
+.ap-msg.bot p{margin:0 0 10px}
+.ap-msg.bot p:last-child{margin-bottom:0}
+.ap-card-chip{display:flex;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;margin:4px 0;cursor:pointer;transition:background .2s;align-items:center;font:12.5px/1.35 var(--font-display)}
+.ap-card-chip .ap-cc-tag{font-weight:600;color:var(--ink);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-card-chip .ap-cc-author{color:var(--muted);font:500 11.5px/1.2 var(--font-mono)}
 .typing{display:inline-flex;gap:3px;padding:6px 0}
 .typing span{width:6px;height:6px;border-radius:50%;background:var(--muted-2);animation:typing 1.2s infinite ease-in-out}
 .typing span:nth-child(2){animation-delay:.15s}
 .typing span:nth-child(3){animation-delay:.3s}
 @keyframes typing{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
-
-.asst-input{
-  display:flex;align-items:center;gap:8px;padding:10px 14px;
-  border-top:1px solid var(--line);background:var(--panel);
-}
-.asst-input .slash{
-  font:600 10.5px/1 var(--font-mono);color:var(--ink);background:#fff;
-  padding:4px 6px;border:1px solid var(--line);border-radius:4px;
-}
+.asst-input{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--line);background:var(--panel)}
+.asst-input .slash{font:600 10.5px/1 var(--font-mono);color:var(--ink);background:#fff;padding:4px 6px;border:1px solid var(--line);border-radius:4px}
 .asst-input .ph{flex:1;color:var(--muted-2);font-size:13px}
-.asst-input .send{
-  width:28px;height:28px;border-radius:6px;background:var(--ink);color:#fff;
-  display:grid;place-items:center;
-}
+.asst-input .send{width:28px;height:28px;border-radius:6px;background:var(--ink);color:#fff;display:grid;place-items:center}
 .asst-input .send svg{width:12px;height:12px}
 
 /* ── TRAINING CALLOUT ────────────────────────────── */
@@ -911,57 +887,27 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   // ────────────────────────────────────────────────────────────
   const asstBody = document.getElementById('asstBody');
   const SCRIPT = [
-    {role:'you',text:'Best neg on solar deployment now?'},
+    {role:'user',text:'Best neg on solar deployment now?'},
     {role:'bot',typing:true,delay:900},
-    {role:'bot',html:`
-      <div>Pulled from <b>100k+ cards</b> plus your library. Top two:</div>
-      <div class="src-row">
-        <div class="src-card"><span class="idx">1</span>
-          <div><div class="tag">Grid-scale solar outpaces demand — curtailment collapses returns</div>
-          <div class="cite">Helveg · Nature Energy · 11/24 · cited 14×</div></div>
-        </div>
-        <div class="src-card"><span class="idx">2</span>
-          <div><div class="tag">Transmission bottlenecks delay deployment 7 years on average</div>
-          <div class="cite">Aneja · NBER Working Paper · 6/24 · cited 9×</div></div>
-        </div>
-      </div>
-      <div style="margin-top:8px;color:var(--muted);font-size:12.5px">Helveg has the cleaner warrant. Want a block?</div>
-    `},
-    {role:'you',text:'Yes — 2AR, aff extension.'},
+    {role:'bot',html:`<span class="ap-bot-label">Verba</span><p>Pulled from <b>100k+ cards</b> plus your library. Top two:</p><div class="ap-card-chip"><span class="ap-cc-tag">Grid-scale solar outpaces demand — curtailment collapses returns</span><span class="ap-cc-author">Helveg · Nature Energy · 11/24</span></div><div class="ap-card-chip"><span class="ap-cc-tag">Transmission bottlenecks delay deployment 7 years on average</span><span class="ap-cc-author">Aneja · NBER · 6/24</span></div><p style="color:var(--muted);font-size:12.5px;margin-top:4px">Helveg has the cleaner warrant. Want a block?</p>`},
+    {role:'user',text:'Yes — 2AR, aff extension.'},
     {role:'bot',typing:true,delay:800},
-    {role:'bot',html:`
-      <div>Built. Three-card block, ordered by priority:</div>
-      <div class="src-row">
-        <div class="src-card"><span class="idx">1</span>
-          <div><div class="tag">Ritchie — cheapest path to GDP is now cleanest</div>
-          <div class="cite">Climate Policy Quarterly · 10/24</div></div>
-        </div>
-        <div class="src-card"><span class="idx">2</span>
-          <div><div class="tag">Helveg — curtailment only at >70% penetration</div>
-          <div class="cite">Nature Energy · 11/24</div></div>
-        </div>
-        <div class="src-card"><span class="idx">3</span>
-          <div><div class="tag">Aneja — transmission reform resolves bottleneck</div>
-          <div class="cite">NBER · 6/24</div></div>
-        </div>
-      </div>
-      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-        <span class="cite-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add to scratchpad</span>
-        <span class="cite-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12l4-4h12a2 2 0 0 0 2-2z"/></svg>Open in editor</span>
-        <span class="cite-pill"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export .docx</span>
-      </div>
-    `},
+    {role:'bot',html:`<span class="ap-bot-label">Verba</span><p>Built. Three-card block, ordered by priority:</p><div class="ap-card-chip"><span class="ap-cc-tag">Ritchie — cheapest path to GDP is now cleanest</span><span class="ap-cc-author">Climate Policy Quarterly · 10/24</span></div><div class="ap-card-chip"><span class="ap-cc-tag">Helveg — curtailment only at &gt;70% penetration</span><span class="ap-cc-author">Nature Energy · 11/24</span></div><div class="ap-card-chip"><span class="ap-cc-tag">Aneja — transmission reform resolves bottleneck</span><span class="ap-cc-author">NBER · 6/24</span></div>`},
   ];
 
   function addMsg(role, inner){
     const wrap = document.createElement('div');
-    wrap.className = 'msg ' + role;
-    wrap.innerHTML = `<div class="av">${role==='you'?'You':'V'}</div><div class="bubble">${inner}</div>`;
+    wrap.className = 'ap-msg ' + role;
+    wrap.innerHTML = inner;
     asstBody.appendChild(wrap);
     return wrap;
   }
   function addTyping(){
-    return addMsg('bot','<div class="typing"><span></span><span></span><span></span></div>');
+    const wrap = document.createElement('div');
+    wrap.className = 'ap-msg bot';
+    wrap.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    asstBody.appendChild(wrap);
+    return wrap;
   }
   async function typeText(el,text,speed){
     el.textContent='';
@@ -974,12 +920,12 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
         const t = addTyping();
         await wait(step.delay||700);
         t.remove();
-      } else if(step.role==='you'){
-        const m = addMsg('you','');
-        await typeText(m.querySelector('.bubble'),step.text,18);
+      } else if(step.role==='user'){
+        const m = addMsg('user','');
+        await typeText(m,step.text,18);
         await wait(350);
       } else {
-        const m = addMsg('bot',step.html||step.text);
+        addMsg('bot',step.html||step.text);
         await wait(600);
       }
     }
