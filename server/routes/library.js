@@ -12,11 +12,19 @@ router.get('/dashboard', (req, res) => {
   return res.json(getLibraryDashboard(limit));
 });
 
-router.get('/search', (req, res) => {
-  const q = String(req.query.q || '');
-  const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 50));
-  res.set('Cache-Control', 'private, max-age=30');
-  return res.json({ results: searchLibrary(q, limit) });
+router.get('/search', async (req, res) => {
+  try {
+    const q = String(req.query.q || '');
+    const limit = Math.max(1, Math.min(200, Number(req.query.limit) || 50));
+    res.set('Cache-Control', 'private, max-age=30');
+    const data = await searchLibrary(q, limit);
+    // Normalize: getLibraryCards returns {items,total}; older callers want
+    // results array at top level.
+    const results = Array.isArray(data) ? data : (data.items || data.results || []);
+    return res.json({ results });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 router.get('/cards', async (req, res) => {

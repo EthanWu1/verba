@@ -1328,7 +1328,7 @@
     state.evShown = 50;
     if (!q) { state.evSearchResults = null; renderEvidence(); return; }
     try {
-      const data = await API.librarySearch(q, 200);
+      const data = await API.libraryCards({ q, limit: 200, sort: 'relevance' });
       if (myTok !== evSearchTok) return;
       state.evSearchResults = data.items || data.results || [];
     } catch {

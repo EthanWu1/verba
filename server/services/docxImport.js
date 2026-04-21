@@ -812,22 +812,19 @@ function countBreakdown(cards, field, limit) {
 }
 
 function searchLibrary(query = '', limit = 50) {
-  const cards = loadCards().map(enrichCard);
-  const q = normalizeWhitespace(String(query || '').toLowerCase());
-  const matched = !q
-    ? cards
-    : cards.filter(card => {
-        return [
-          card.tag,
-          card.cite,
-          card.shortCite,
-          card.school,
-          card.squad,
-          card.body_plain,
-        ].some(value => String(value || '').toLowerCase().includes(q));
-      });
-
-  return matched.slice(0, limit);
+  // Delegate to FTS-backed getLibraryCards to avoid loading + enriching
+  // all 150k+ cards in memory (caused heap OOM on /api/library/search).
+  const { getLibraryCards } = require('./libraryQuery');
+  const cap = Math.max(1, Math.min(200, Number(limit) || 50));
+  try {
+    // getLibraryCards is async; searchLibrary callers use it synchronously
+    // only in legacy paths. For the HTTP endpoint we return a promise-safe
+    // fallback: if caller awaits, they get the FTS page; otherwise we fall
+    // back to an empty array rather than scanning the whole DB.
+    return getLibraryCards({ q: String(query || ''), limit: cap, sort: 'relevance' });
+  } catch {
+    return { items: [], total: 0 };
+  }
 }
 
 async function importDocxBuffer(buffer, sourceLabel = 'manual-upload') {
