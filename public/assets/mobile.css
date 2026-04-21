@@ -41,3 +41,20 @@ img,svg,video,canvas{max-width:100%;height:auto}
 
 /* Long unbroken strings (URLs, tokens) wrap instead of overflowing */
 .cut-body,.card,.modal,.pay-shell,.form-wrap{overflow-wrap:anywhere}
+
+/* Card cutter toolbar — shrink icon buttons on phones.
+   Base desktop sizes are 32x28 with 14px svg; mobile.css's universal
+   `button{font-size:16px}` + `svg{max-width:100%}` can blow these up.
+   Pin them tight so the toolbar doesn't dominate the viewport. */
+@media (max-width:768px){
+  .pane-foot-tools{gap:4px;padding:4px 8px}
+  .pane-foot-tools .tool-btn.icon-only{
+    width:28px !important;height:28px !important;
+    min-width:28px !important;min-height:28px !important;
+    padding:0 !important;font-size:0 !important;
+  }
+  .pane-foot-tools .tool-btn.icon-only svg{
+    width:12px !important;height:12px !important;
+    max-width:12px !important;
+  }
+}
