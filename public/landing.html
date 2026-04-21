@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <title>Verba — Cut cards, faster.</title>
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/logo.png">
+<link rel="shortcut icon" type="image/png" href="/assets/logo.png">
+<link rel="apple-touch-icon" href="/assets/logo.png">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,7 +81,23 @@ a{color:inherit;text-decoration:none}
 .btn svg{width:12px;height:12px}
 
 /* ── HERO ───────────────────────────────────────────── */
+.reveal-sec{padding:140px 0 120px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff}
+.reveal-eye{font:500 12px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.18em;margin:0 0 28px}
+.reveal-text{font-weight:700;font-size:clamp(28px,4.4vw,54px);line-height:1.18;letter-spacing:-0.025em;color:var(--ink);margin:0;max-width:22ch}
+.reveal-text .w{opacity:.14;transition:opacity .5s ease;display:inline-block;margin-right:.22em}
+.reveal-text .w.on{opacity:1}
+@media (max-width:640px){.reveal-sec{padding:80px 0 72px}.reveal-text{font-size:clamp(24px,6vw,34px)}}
 .hero{padding:80px 0 48px;position:relative;overflow:hidden}
+.hero::before{
+  content:"";position:absolute;inset:-10% -10% -10% -10%;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.055) 1px, transparent 1px);
+  background-size:48px 48px;
+  -webkit-mask-image:radial-gradient(ellipse 60% 60% at 50% 40%, #000 20%, transparent 78%);
+          mask-image:radial-gradient(ellipse 60% 60% at 50% 40%, #000 20%, transparent 78%);
+}
+.hero > .wrap{position:relative;z-index:1}
 .eyebrow{
   display:inline-flex;gap:8px;align-items:center;
   font:500 11px/1 var(--font-display);color:var(--muted);
@@ -132,8 +151,8 @@ a{color:inherit;text-decoration:none}
 .art-body p{margin:0 0 14px}
 .art-body .seg{transition:background-color .45s,color .45s,font-weight .45s,text-decoration-color .45s,font-size .45s}
 .seg.hl{background:var(--hl-yellow);padding:0 1px;border-radius:1px}
-.seg.warr{font-weight:700;text-decoration:underline;text-decoration-color:var(--ink);text-decoration-thickness:1.5px;text-underline-offset:3px}
-.seg.shrink{font-size:11.5px;color:var(--muted-2)}
+.seg.ul{text-decoration:underline;text-decoration-color:var(--ink);text-decoration-thickness:1.5px;text-underline-offset:3px}
+.seg.bo{font-weight:700}
 
 .cursor{display:inline-block;width:2px;height:1em;background:var(--ink);vertical-align:text-bottom;margin:0 1px;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
@@ -444,7 +463,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   <div class="wrap">
     <span class="eyebrow"><span class="d"></span>New · Evidence assistant 2.0</span>
     <h1>Cut cards. Find warrants.<br><span class="accent">Win rounds.</span></h1>
-    <p class="hero-sub">Verba is a keyboard-first evidence tool for competitive debate. Paste an article, press <kbd style="font:500 11px/1 var(--font-mono);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:2px 6px">H</kbd> <kbd style="font:500 11px/1 var(--font-mono);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:2px 6px">S</kbd> <kbd style="font:500 11px/1 var(--font-mono);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:2px 6px">W</kbd>, and save a round-ready card in under a minute. An assistant trained on your cards helps you find the right warrant in every round.</p>
+    <p class="hero-sub">Verba is an evidence tool for competitive debate. Paste a URL or drop a PDF, select the sentences that matter, and ship a Verbatim-ready card in under a minute. An assistant trained on your cards helps you find the right warrant in every round.</p>
     <div class="hero-ctas">
       <a class="btn btn-primary btn-lg" href="signin.html?mode=signup">Start for free <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
     </div>
@@ -462,19 +481,27 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
         <span class="right"><span class="live">live demo</span></span>
       </div>
       <div class="cut-body">
-        <div class="key-hud" id="keyHud"><kbd id="hudKey">⌘⌥H</kbd><span id="hudLbl">Highlight</span></div>
+        <div class="key-hud" id="keyHud"><span id="hudLbl">Highlight</span></div>
         <h3 class="card-tag" id="cardTag"><span class="cp-empty">Cutting live — watch this.</span></h3>
         <div class="card-cite" id="cardCite">From <b>Climate Policy Quarterly</b> · Hannah Ritchie · Oct 2024</div>
         <div class="art-body" id="artBody"></div>
         <div class="cut-toolbar">
-          <div class="cut-tool" data-i="0"><kbd>⌘⌥H</kbd>Highlight</div>
-          <div class="cut-tool" data-i="1"><kbd>S</kbd>Shrink</div>
-          <div class="cut-tool" data-i="2"><kbd>W</kbd>Warrant</div>
-          <div class="cut-tool" data-i="3"><kbd>⌘↵</kbd>Save</div>
+          <div class="cut-tool" data-i="0">Highlight</div>
+          <div class="cut-tool" data-i="1">Underline</div>
+          <div class="cut-tool" data-i="2">Bold</div>
+          <div class="cut-tool" data-i="3">Save</div>
         </div>
         <div class="cut-saved" id="cutSaved"><div class="bub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="5 12 10 17 20 7"/></svg>Saved to library · cited 0×</div></div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- TEXT REVEAL -->
+<section class="reveal-sec">
+  <div class="wrap">
+    <p class="reveal-eye">Built for rounds</p>
+    <p class="reveal-text" id="revealText">Rounds are won on evidence, not vibes. Verba cuts cards in seconds, keeps your library searchable by warrant, and puts every citation one paste away. You bring the judgment. We handle the paperwork.</p>
   </div>
 </section>
 
@@ -625,7 +652,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
       <div class="cell">
         <div class="num">01 — Cut</div>
         <h3>Read and cut in the same pane.</h3>
-        <p>Paste a URL. Read the article. Select, press H / S / W. The card writes itself in Verbatim-compatible formatting.</p>
+        <p>Paste a URL or attach a PDF. Read the article. Select and highlight, underline, or bold — Verba writes the cite, tag, and body in Verbatim-compatible formatting.</p>
       </div>
       <div class="cell">
         <div class="num">02 — Store</div>
@@ -735,7 +762,6 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   const cardTag = document.getElementById('cardTag');
   const cutSaved = document.getElementById('cutSaved');
   const keyHud = document.getElementById('keyHud');
-  const hudKey = document.getElementById('hudKey');
   const hudLbl = document.getElementById('hudLbl');
   const tools = document.querySelectorAll('.cut-tool');
 
@@ -743,18 +769,18 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   const ARTICLE = [
     [
       {t:'For more than three decades — since ',k:'plain'},
-      {t:'the signing of the UNFCCC in Rio in 1992, setting a voluntary framework,',k:'shrink'},
+      {t:'the signing of the UNFCCC in Rio in 1992, setting a voluntary framework,',k:'ul'},
       {t:' ',k:'plain'},
       {t:'climate negotiations have treated decarbonization as a political cost to be distributed',k:'hl'},
       {t:' rather than an economic benefit to be competed for.',k:'plain'},
     ],
     [
       {t:'That assumption broke in 2023. ',k:'plain'},
-      {t:'When installed solar capacity passes coal — which the IEA now forecasts for 2026 — the cheapest path to GDP growth in every major economy is also the cleanest',k:'hl+warr'},
+      {t:'When installed solar capacity passes coal — which the IEA now forecasts for 2026 — the cheapest path to GDP growth in every major economy is also the cleanest',k:'hl+bo'},
       {t:'. ',k:'plain'},
-      {t:'India added 18 GW of solar in 2023 alone, below $0.02/kWh unsubsidized,',k:'shrink'},
+      {t:'India added 18 GW of solar in 2023 alone, below $0.02/kWh unsubsidized,',k:'ul'},
       {t:' ',k:'plain'},
-      {t:'undercutting new thermal by a factor of three',k:'warr'},
+      {t:'undercutting new thermal by a factor of three',k:'bo'},
       {t:'.',k:'plain'},
     ],
     [
@@ -772,17 +798,17 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
         const span = document.createElement('span');
         span.className = 'seg';
         span.textContent = seg.t;
-        if(stage >= 1 && (seg.k === 'hl' || seg.k === 'hl+warr')) span.classList.add('hl');
-        if(stage >= 2 && seg.k === 'shrink') span.classList.add('shrink');
-        if(stage >= 3 && (seg.k === 'warr' || seg.k === 'hl+warr')) span.classList.add('warr');
+        if(stage >= 1 && (seg.k === 'hl' || seg.k === 'hl+bo')) span.classList.add('hl');
+        if(stage >= 2 && seg.k === 'ul') span.classList.add('ul');
+        if(stage >= 3 && (seg.k === 'bo' || seg.k === 'hl+bo')) span.classList.add('bo');
         p.appendChild(span);
       });
       artBody.appendChild(p);
     });
   }
   function setTool(n){tools.forEach((s,i)=>{s.classList.toggle('on',i===n);s.classList.toggle('done',i<n && n>=0)});}
-  function showHud(key,lbl){
-    hudKey.textContent = key;hudLbl.textContent = lbl;
+  function showHud(lbl){
+    hudLbl.textContent = lbl;
     keyHud.classList.add('on');
     return new Promise(r=>setTimeout(()=>{keyHud.classList.remove('on');r();},850));
   }
@@ -808,24 +834,24 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
     cutSaved.classList.remove('on');
     await wait(600);
 
-    // ⌘⌥H — highlight
-    setTool(0);await showHud('⌘⌥H','Highlight');
+    // Highlight
+    setTool(0);await showHud('Highlighting');
     renderArticle(1);
     await typeInto(cardTag, TAG, 20);
     await wait(400);
 
-    // S — shrink
-    setTool(1);await showHud('S','Shrink context');
+    // Underline
+    setTool(1);await showHud('Underlining');
     renderArticle(2);
     await wait(550);
 
-    // W — warrant
-    setTool(2);await showHud('W','Mark warrant');
+    // Bold
+    setTool(2);await showHud('Bolding');
     renderArticle(3);
     await wait(600);
 
-    // ⌘↵ — save
-    setTool(3);await showHud('⌘↵','Save to library');
+    // Save
+    setTool(3);await showHud('Saving to library');
     await wait(200);
     cutSaved.classList.add('on');
     await wait(1100);
@@ -972,6 +998,30 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
       q.scrollIntoView({behavior:'smooth',block:'center'});
     }
   });
+})();
+
+/* TEXT REVEAL on scroll */
+(function(){
+  const el = document.getElementById('revealText');
+  if(!el) return;
+  const words = el.textContent.trim().split(/\s+/);
+  el.innerHTML = words.map(w => `<span class="w">${w}</span>`).join(' ');
+  const spans = el.querySelectorAll('.w');
+  function tick(){
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight || 800;
+    // progress: 0 when top of el at bottom of viewport, 1 when bottom of el at top of viewport
+    const start = vh * 0.9;
+    const end   = vh * 0.15;
+    const p = Math.max(0, Math.min(1, (start - rect.top) / (start - end + (rect.height * 0.3))));
+    const n = Math.floor(p * spans.length);
+    for (let i = 0; i < spans.length; i++) spans[i].classList.toggle('on', i < n);
+  }
+  let raf = 0;
+  function onScroll(){ if (raf) return; raf = requestAnimationFrame(() => { raf = 0; tick(); }); }
+  window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', onScroll);
+  tick();
 })();
 </script>
 </body>

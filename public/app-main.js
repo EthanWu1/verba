@@ -576,25 +576,39 @@
   async function runCutterFromInput() {
     const input = $('#zone-input');
     const val = (input?.value || '').trim();
-    if (!val) { toast('Paste a URL or type an argument'); return; }
+    const attached = window.__verbaAttachedFile || null;
+    if (!val && !attached) { toast('Paste a URL, type an argument, or attach a file'); return; }
     const isUrl = /^https?:\/\//i.test(val);
     let argument = val;
     if (isUrl) {
       const asked = await askArgument(val);
       if (asked === null) return;
       argument = asked || 'Extract the strongest claim this article supports';
+    } else if (attached && !val) {
+      const asked = await askArgument(attached.filename);
+      if (asked === null) return;
+      argument = asked || 'Extract the strongest claim this file supports';
     }
     if (input) input.value = '';
 
-    const job = createJob(val);
+    const jobLabel = attached ? attached.filename : val;
+    const job = createJob(jobLabel);
     activateJob(job);
-    pushPhase(job, { type: 'mode', mode: job.mode, query: val, url: val });
+    pushPhase(job, { type: 'mode', mode: attached ? 'file' : job.mode, query: val, url: val });
 
     const params = new URLSearchParams();
-    if (isUrl) { params.set('url', val); params.set('argument', argument); }
-    else       { params.set('query', val); params.set('argument', argument); }
+    if (attached) {
+      params.set('fileToken', attached.token);
+      params.set('argument', argument);
+    } else if (isUrl) {
+      params.set('url', val); params.set('argument', argument);
+    } else {
+      params.set('query', val); params.set('argument', argument);
+    }
     params.set('density', TWEAKS.cutterDensity || 'standard');
     params.set('length', TWEAKS.cutterLength || 'medium');
+    // Clear the attachment once submitted (token consumed)
+    if (attached) { window.__verbaAttachedFile = null; renderAttachTray(); }
 
     const es = new EventSource('/api/research-source-stream?' + params.toString());
     job.es = es;
@@ -770,6 +784,45 @@
     if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') runCutterFromInput(); });
     if (btn) btn.addEventListener('click', runCutterFromInput);
 
+    function renderAttachTray() {
+      const tray = $('#attach-tray');
+      if (!tray) return;
+      const a = window.__verbaAttachedFile;
+      if (!a) { tray.innerHTML = ''; tray.hidden = true; return; }
+      tray.hidden = false;
+      const icon = `<span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></span>`;
+      const kb = a.chars ? `${Math.max(1, Math.round(a.chars/1000))}k chars` : (a.uploading ? 'Uploading…' : '');
+      tray.innerHTML = `<div class="attach-chip ${a.uploading ? 'loading' : ''}">${icon}<span class="meta"><span class="name">${escHtml(a.filename || 'file')}</span>${kb ? `<span class="sub">${kb}</span>` : ''}</span><button class="rm" id="attach-remove" title="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>`;
+      const rm = document.getElementById('attach-remove');
+      if (rm) rm.onclick = () => { window.__verbaAttachedFile = null; renderAttachTray(); };
+    }
+    function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // File attach
+    const attachBtn = $('#attach-btn'), attachFile = $('#attach-file');
+    if (attachBtn && attachFile) {
+      attachBtn.addEventListener('click', () => attachFile.click());
+      attachFile.addEventListener('change', async (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        window.__verbaAttachedFile = { uploading: true, filename: f.name, chars: 0 };
+        renderAttachTray();
+        try {
+          const fd = new FormData();
+          fd.append('file', f);
+          const res = await fetch('/api/scrape/file', { method: 'POST', body: fd, credentials: 'same-origin' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Upload failed');
+          window.__verbaAttachedFile = { token: data.token, filename: data.filename, chars: data.chars, preview: data.preview };
+        } catch (err) {
+          toast(err.message || 'Upload failed');
+          window.__verbaAttachedFile = null;
+        }
+        attachFile.value = '';
+        renderAttachTray();
+      });
+    }
+
     // Seed state from static demo DOM
     syncCardFromDom();
     const wbBody = $('#wb-body');
@@ -876,7 +929,7 @@
         } else {
           await navigator.clipboard.writeText(plain);
         }
-        toast('Copied with formatting ✓');
+        const b = $('#wb-copy'); if (b) { b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'), 1400); }
       } catch (err) { console.error(err); toast('Copy blocked'); }
     });
 
@@ -1261,7 +1314,7 @@
           'text/plain': new Blob([plain], { type: 'text/plain' }),
         })]);
       } else await navigator.clipboard.writeText(plain);
-      toast('Copied ✓');
+      const b = $('#ev-copy'); if (b) { b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'), 1400); }
     } catch (err) { toast('Copy blocked'); }
   });
 
