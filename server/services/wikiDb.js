@@ -28,7 +28,20 @@ function rebuildTeamsFts() {
 
 function searchTeams(q, limit = 100) {
   const db = getDb();
-  if (!q) {
+  if (!q || !q.trim()) {
+    return db.prepare(`SELECT * FROM wiki_teams ORDER BY fullName LIMIT ?`).all(limit);
+  }
+  const tokens = String(q).replace(/["']/g, '').split(/\s+/).filter(Boolean);
+  if (!tokens.length) {
+    return db.prepare(`SELECT * FROM wiki_teams ORDER BY fullName LIMIT ?`).all(limit);
+  }
+  // Build safe FTS5 query: quote each token, append * to the last for prefix match.
+  const fts = tokens.map((t, i) => {
+    const safe = t.replace(/[^A-Za-z0-9_-]/g, '');
+    if (!safe) return null;
+    return i === tokens.length - 1 ? `"${safe}"*` : `"${safe}"`;
+  }).filter(Boolean).join(' ');
+  if (!fts) {
     return db.prepare(`SELECT * FROM wiki_teams ORDER BY fullName LIMIT ?`).all(limit);
   }
   return db.prepare(`
@@ -36,7 +49,7 @@ function searchTeams(q, limit = 100) {
     JOIN wiki_teams_fts f ON t.rowid = f.rowid
     WHERE wiki_teams_fts MATCH ?
     ORDER BY rank LIMIT ?
-  `).all(q + '*', limit);
+  `).all(fts, limit);
 }
 
 function getTeam(id) {
