@@ -1816,41 +1816,37 @@
       { cmd: '/explain', arg: '<what>',  desc: 'Explain a card or argument' },
     ];
 
-    function runCommand(name, arg) {
-      arg = (arg || '').trim();
+    function expandCommandLocal(name, rawArg) {
+      const arg = String(rawArg || '').trim();
       switch (name) {
-        case '/clear':
-          convo.length = 0; lastChatCards.clear(); msgs.innerHTML = ''; renderEmpty(); return;
-        case '/find': {
-          const s = $('#mine-search');
-          if (s) { s.value = arg; s.dispatchEvent(new Event('input')); }
-          try { go('library', 'mine'); } catch {}
-          toast(arg ? `Searching cards: "${arg}"` : 'Opened My Cards'); return;
-        }
-        case '/block': {
-          if (!arg) { input.value = '/block '; autosize(); input.focus(); return; }
-          input.value = `Write a block on: ${arg}. Use cards only if they actually help; otherwise give analytics, warrants, and framing. Choose the number of cards based on what's useful — not a fixed count.`;
-          autosize(); doSend(); return;
-        }
-        case '/explain': {
-          if (!arg) { input.value = '/explain '; autosize(); input.focus(); return; }
-          input.value = `Explain: ${arg}. State warrants, impact, and a response to the most likely answer.`;
-          autosize(); doSend(); return;
-        }
+        case '/clear': return { action: 'clear' };
+        case '/find':  return { action: 'find', arg };
+        case '/block':
+          if (!arg) return { action: 'prefill', prefill: '/block ' };
+          return {
+            action: 'send',
+            display: `/block ${arg}`,
+            send: `Write a block on: ${arg}. Use cards only if they actually help; otherwise give analytics, warrants, and framing. Choose the number of cards based on what's useful — not a fixed count.`,
+          };
+        case '/explain':
+          if (!arg) return { action: 'prefill', prefill: '/explain ' };
+          return {
+            action: 'send',
+            display: `/explain ${arg}`,
+            send: `Explain: ${arg}. State warrants, impact, and a response to the most likely answer.`,
+          };
+        default: return null;
       }
     }
 
-    function handleSlashSubmit() {
+    function handleSlashIntent() {
       const v = (input.value || '').trim();
-      if (!v.startsWith('/')) return false;
+      if (!v.startsWith('/')) return null;
       const sp = v.indexOf(' ');
       const name = (sp === -1 ? v : v.slice(0, sp)).toLowerCase();
       const arg  = sp === -1 ? '' : v.slice(sp + 1);
-      if (!COMMANDS.some(c => c.cmd === name)) return false;
-      input.value = ''; autosize();
-      slashPop?.classList.remove('open');
-      runCommand(name, arg);
-      return true;
+      if (!COMMANDS.some(c => c.cmd === name)) return null;
+      return expandCommandLocal(name, arg);
     }
 
     let slashSel = 0;
@@ -1912,19 +1908,45 @@
         </div>`;
       msgs.querySelectorAll('.ap-sugg').forEach(b => b.addEventListener('click', () => {
         input.value = b.dataset.s; autosize();
-        if (b.dataset.s.startsWith('/')) handleSlashSubmit();
-        else doSend();
+        doSend();
       }));
     }
     renderEmpty();
 
-    async function doSend() {
-      const text = (input.value || '').trim();
-      if (!text) return;
-      if (text.startsWith('/') && handleSlashSubmit()) return;
+    async function doSend(opts) {
+      let display, send;
+      if (opts && opts.send) {
+        display = opts.display || opts.send;
+        send = opts.send;
+      } else {
+        const text = (input.value || '').trim();
+        if (!text) return;
+        if (text.startsWith('/')) {
+          const intent = handleSlashIntent();
+          if (intent) {
+            input.value = ''; autosize();
+            slashPop?.classList.remove('open');
+            if (intent.action === 'clear') { convo.length = 0; lastChatCards.clear(); msgs.innerHTML = ''; renderEmpty(); return; }
+            if (intent.action === 'find') {
+              const s = $('#mine-search');
+              if (s) { s.value = intent.arg; s.dispatchEvent(new Event('input')); }
+              try { go('library', 'mine'); } catch {}
+              toast(intent.arg ? `Searching cards: "${intent.arg}"` : 'Opened My Cards');
+              return;
+            }
+            if (intent.action === 'prefill') { input.value = intent.prefill; autosize(); input.focus(); return; }
+            if (intent.action === 'send') { display = intent.display; send = intent.send; }
+          } else {
+            display = text; send = text;
+          }
+        } else {
+          display = text; send = text;
+        }
+      }
+      if (!send) return;
       input.value = ''; autosize();
-      convo.push({ role: 'user', content: text });
-      appendUser(text);
+      convo.push({ role: 'user', content: send });
+      appendUser(display);
       const thinking = showThinking();
       try {
         const r = await API.chat({ messages: convo });
