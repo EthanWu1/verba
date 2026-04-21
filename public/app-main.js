@@ -727,9 +727,35 @@
     parent.removeChild(el);
   }
 
+  function snapSelectionToWords() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+    const snap = window.VerbaWordSnap && window.VerbaWordSnap.snapToWordBoundaries;
+    if (!snap) return;
+    try {
+      const r = sel.getRangeAt(0);
+      if (r.startContainer.nodeType === 3) {
+        const txt = r.startContainer.nodeValue || '';
+        if (txt.length) {
+          const s = snap(txt, r.startOffset, txt.length).start;
+          r.setStart(r.startContainer, Math.min(s, txt.length));
+        }
+      }
+      if (r.endContainer.nodeType === 3) {
+        const txt = r.endContainer.nodeValue || '';
+        if (txt.length) {
+          const e = snap(txt, 0, r.endOffset).end;
+          r.setEnd(r.endContainer, Math.min(e, txt.length));
+        }
+      }
+      if (!r.collapsed) { sel.removeAllRanges(); sel.addRange(r); }
+    } catch (_) {}
+  }
+
   function toggleHighlight() {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { toast('Select text first'); return; }
+    snapSelectionToWords();
     const hit = selectionOverlapsHighlight(sel);
     if (hit) {
       unwrapElement(hit);
@@ -760,6 +786,7 @@
     function applyHighlightToSelection() {
       const body = $('#wb-body .body') || $('#wb-body');
       if (!selectionInside(body)) return;
+      snapSelectionToWords();
       document.execCommand('styleWithCSS', false, true);
       const existing = selectionOverlapsHighlight(window.getSelection());
       if (existing) {
@@ -811,23 +838,35 @@
       applyHighlightToSelection();
     });
 
+    // Double-click word toggles highlight (browser auto-selects word on dblclick)
+    document.addEventListener('dblclick', (e) => {
+      const body = $('#wb-body .body') || $('#wb-body');
+      if (!body || !body.contains(e.target)) return;
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+      const hit = selectionOverlapsHighlight(sel);
+      if (hit) {
+        const parent = hit.parentNode;
+        while (hit.firstChild) parent.insertBefore(hit.firstChild, hit);
+        parent.removeChild(hit);
+        syncCardFromDom();
+        sel.removeAllRanges();
+      } else {
+        applyHighlightToSelection();
+      }
+    });
+
     // Copy button — preserve formatting
     $('#wb-copy')?.addEventListener('click', async () => {
       syncCardFromDom();
       const c = state.currentCard; if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
-      const plain = `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
       const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
-      const { lastYY, rest } = splitCiteForCopy(c.cite || '');
-      const citeHtml = lastYY || rest
-        ? `<p style="margin:0 0 10px;font-family:Calibri,Arial,sans-serif;color:#000;font-style:normal">`
-          + (lastYY ? `<span style="font-size:13pt;font-weight:700;font-style:normal;color:#000">${esc(lastYY)}</span>` : '')
-          + (rest ? `<span style="font-size:11pt;font-weight:400;font-style:normal;color:#000">${esc(rest)}</span>` : '')
-          + `</p>`
-        : '';
-      const html = `<div style="font-family:Calibri,Arial,sans-serif;color:#000;font-style:normal">` +
-        `<p style="font-weight:700;font-size:14pt;margin:0 0 4px;color:#000;font-style:normal">${esc(c.tag || '')}</p>` +
-        citeHtml +
-        `<div style="font-size:11pt;line-height:1.4;color:#000;font-style:normal">${bodyHtml}</div></div>`;
+      const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
+      const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+      const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
+      const html = buildHtml
+        ? buildHtml({ ...c, body_html: bodyHtml })
+        : `<div style="font-family:Calibri,Arial,sans-serif;color:#000"><p style="font-weight:700">${esc(c.tag || '')}</p><p>${esc(c.cite || '')}</p>${bodyHtml}</div>`;
       try {
         if (window.ClipboardItem && navigator.clipboard?.write) {
           await navigator.clipboard.write([new ClipboardItem({
@@ -971,7 +1010,7 @@
         <span class="ct">${(p.cards || []).length}</span>
       </button>`).join('');
     pop.innerHTML = `
-      <div class="pop-head">Add to project</div>
+      <div class="pop-head">Add</div>
       ${rows}
       <div class="addto-new-input">
         <input id="addto-new-name" placeholder="New project name" maxlength="40">
@@ -1090,18 +1129,31 @@
     list.querySelectorAll('.ev-item').forEach((el, idx) => {
       el.addEventListener('click', async (e) => {
         const btn = e.target.closest('button[data-act]');
-        if (btn && btn.dataset.act === 'export-ev') {
+        if (btn && btn.dataset.act === 'copy-ev') {
           e.stopPropagation();
           const c = shown[idx];
           btn.classList.add('busy');
           try {
-            if (!c.body_markdown && !c.body_plain && c.id) {
+            if (!c.body_markdown && !c.body_plain && !c.body_html && c.id) {
               try { const full = await API.libraryCard(c.id); if (full?.card) Object.assign(c, full.card); } catch {}
             }
-            const { blob, filename } = await API.exportDocx(c);
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
-            API.history.push({ type: 'export', tag: c.tag, filename }).catch(() => {}); toast('Exported ' + filename);
-          } catch (err) { toast('Export failed: ' + err.message); }
+            const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
+            const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
+            const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+            const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
+            const html = buildHtml
+              ? buildHtml({ ...c, body_html: bodyHtml })
+              : `<div style="font-family:Calibri,Arial,sans-serif;color:#000"><p style="font-weight:700">${esc(c.tag || '')}</p><p>${esc(c.cite || '')}</p>${bodyHtml}</div>`;
+            if (window.ClipboardItem && navigator.clipboard?.write) {
+              await navigator.clipboard.write([new ClipboardItem({
+                'text/html': new Blob([html], { type: 'text/html' }),
+                'text/plain': new Blob([plain], { type: 'text/plain' }),
+              })]);
+            } else {
+              await navigator.clipboard.writeText(plain);
+            }
+            toast('Copied ✓');
+          } catch (err) { toast('Copy failed: ' + err.message); }
           finally { btn.classList.remove('busy'); }
           return;
         }
@@ -1148,7 +1200,7 @@
     const date = c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '';
     return `
       <div class="ev-item ${active ? 'active' : ''}" data-card-id="${esc(c.id || '')}" style="position:relative">
-        <button class="ev-export-btn" data-act="export-ev" title="Export" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:5px;background:#fff;border:1px solid var(--line);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg></button>
+        <button class="ev-export-btn" data-act="copy-ev" title="Copy" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:5px;background:#fff;border:1px solid var(--line);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
         <div class="tag">${esc(c.tag || '(untagged)')}</div>
         <div class="cite">${esc(c.shortCite || c.cite || '')}</div>
         <div class="head" style="margin-top:6px">
@@ -1197,9 +1249,11 @@
   });
   $('#ev-copy')?.addEventListener('click', async () => {
     const c = state.currentEvidence; if (!c) { toast('No card selected'); return; }
-    const plain = `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
     const bodyHtml = c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || '');
-    const html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#111"><p><b>${esc(c.tag || '')}</b></p><p><i>${esc(c.cite || '')}</i></p>${bodyHtml}</div>`;
+    const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
+    const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+    const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
+    const html = buildHtml ? buildHtml({ ...c, body_html: bodyHtml }) : `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#111"><p><b>${esc(c.tag || '')}</b></p><p><i>${esc(c.cite || '')}</i></p>${bodyHtml}</div>`;
     try {
       if (window.ClipboardItem && navigator.clipboard?.write) {
         await navigator.clipboard.write([new ClipboardItem({
@@ -2125,6 +2179,15 @@
         try { if (typeof persistTweaks === 'function') persistTweaks(); }
         catch(_) { try { localStorage.setItem('verba.tweaks', JSON.stringify(TWEAKS)); } catch(_) {} }
       };
+      const _isDirty = (window.VerbaIsDirty && window.VerbaIsDirty.isDirty) || ((a,b)=>JSON.stringify(a)!==JSON.stringify(b));
+      let _savedSnap = JSON.parse(JSON.stringify(TWEAKS || {}));
+      const genSaveBtn = document.getElementById('general-save-btn');
+      const refreshDirty = () => {
+        if (!genSaveBtn) return;
+        const dirty = _isDirty(TWEAKS, _savedSnap);
+        genSaveBtn.disabled = !dirty;
+        genSaveBtn.textContent = dirty ? 'Save' : 'Saved';
+      };
       // Font cards
       TWEAKS.font = TWEAKS.font || 'calibri';
       document.querySelectorAll('#font-cards .font-card').forEach(card => {
@@ -2132,8 +2195,8 @@
         card.onclick = () => {
           TWEAKS.font = card.dataset.val;
           applyT();
-          saveT();
           document.querySelectorAll('#font-cards .font-card').forEach(x => x.classList.toggle('on', x === card));
+          refreshDirty();
         };
       });
       // Highlight cards
@@ -2143,21 +2206,19 @@
         card.onclick = () => {
           TWEAKS.highlight = card.dataset.val;
           applyT();
-          saveT();
           document.querySelectorAll('#hl-cards .hl-card').forEach(x => x.classList.toggle('on', x === card));
+          refreshDirty();
         };
       });
       applyT();
+      refreshDirty();
       // General: Save button
-      const genSaveBtn = document.getElementById('general-save-btn');
       if (genSaveBtn) {
         genSaveBtn.onclick = () => {
           applyT();
           saveT();
-          const orig = genSaveBtn.textContent;
-          genSaveBtn.textContent = 'Saved';
-          genSaveBtn.disabled = true;
-          setTimeout(() => { genSaveBtn.textContent = orig; genSaveBtn.disabled = false; }, 1200);
+          _savedSnap = JSON.parse(JSON.stringify(TWEAKS || {}));
+          refreshDirty();
         };
       }
       // Cutter length cards
