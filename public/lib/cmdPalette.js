@@ -42,8 +42,8 @@
   .cmdp-backdrop.open + .cmdp-wrap{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
   .cmdp-label{font:500 11px/1 Inter,system-ui;color:#6b7280;margin:0 0 6px 2px;letter-spacing:.02em}
   .cmdp-input-wrap{position:relative}
-  .cmdp-input{width:100%;height:40px;padding:0 36px 0 14px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:#fff;color:#111;font:500 14px Inter,system-ui;outline:none;box-shadow:0 8px 28px rgba(20,18,30,.12),0 1px 0 rgba(255,255,255,.6) inset;transition:border-color .15s}
-  .cmdp-input:focus{border-color:rgba(99,102,241,.55);box-shadow:0 0 0 3px rgba(99,102,241,.14),0 8px 28px rgba(20,18,30,.14)}
+  .cmdp-input{width:100%;height:40px;padding:0 36px 0 14px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#111;font:500 14px Inter,system-ui;outline:none;box-shadow:0 8px 28px rgba(20,18,30,.12),0 1px 0 rgba(255,255,255,.6) inset;transition:border-color .15s,box-shadow .15s}
+  .cmdp-input:focus{border-color:rgba(0,0,0,.35);box-shadow:0 0 0 3px rgba(0,0,0,.08),0 8px 28px rgba(20,18,30,.14)}
   .cmdp-ico{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#9ca3af;pointer-events:none}
   .cmdp-ico svg{width:16px;height:16px;display:block}
   .cmdp-ico .s1,.cmdp-ico .s2{position:absolute;inset:0;transition:transform .2s ease,opacity .2s ease}
@@ -90,7 +90,6 @@
     root.innerHTML = `
       <div class="cmdp-backdrop" id="cmdp-backdrop"></div>
       <div class="cmdp-wrap" id="cmdp-wrap" role="dialog" aria-modal="true" aria-label="Command palette">
-        <div class="cmdp-label">Search Commands</div>
         <div class="cmdp-input-wrap">
           <input id="cmdp-input" class="cmdp-input" type="text" placeholder="What's up?" autocomplete="off" />
           <div id="cmdp-ico" class="cmdp-ico"><span class="s1">${SVG.search}</span><span class="s2">${SVG.send}</span></div>

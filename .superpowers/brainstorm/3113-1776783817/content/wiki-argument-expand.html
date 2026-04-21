@@ -1,0 +1,84 @@
+<h2>Argument Detail — How does it open?</h2>
+<p class="subtitle">User clicks "Util AC" in the team's argument list</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Accordion (expand inline)</h3>
+      <p>Click row → it expands to show full card text right below. Multiple can be open at once. No panel shift.</p>
+      <div class="mockup" style="margin-top:10px">
+        <div class="mockup-header">Right panel — Argument list</div>
+        <div class="mockup-body" style="padding:10px;min-height:180px">
+          <div style="border:2px solid #4a6cf7;border-radius:6px;margin-bottom:6px;overflow:hidden">
+            <div style="padding:8px 10px;display:flex;align-items:center;background:#f0f4ff">
+              <span style="font-weight:700;font-size:12px;flex:1">Util AC</span>
+              <span style="font-size:10px;color:#888;margin-right:12px">Aff · Read 14×</span>
+              <span style="font-size:10px;color:#4a6cf7">Ask ↗</span>
+              <span style="font-size:10px;color:#888;margin-left:8px">⬇</span>
+              <span style="font-size:12px;margin-left:8px">▲</span>
+            </div>
+            <div style="padding:10px;border-top:1px solid #d8e4ff;background:#fff;font-size:10px;color:#333;line-height:1.6;max-height:100px;overflow:hidden">
+              <strong>Contention 1: Framework</strong><br>
+              Bentham '89: "It is the greatest happiness of the greatest number that is the measure of right and wrong." The utilitarian calculus demands we weigh aggregate welfare above all deontological constraints...
+              <br><br><strong>Contention 2: Empirics</strong><br>
+              Singer '11: Consequentialist policy has historically produced better outcomes...
+            </div>
+          </div>
+          <div style="border:1px solid #e0e0e0;border-radius:6px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center">
+            <span style="font-weight:700;font-size:12px;flex:1">Deont NC</span>
+            <span style="font-size:10px;color:#888;margin-right:12px">Neg · Read 11×</span>
+            <span style="font-size:10px;color:#4a6cf7">Ask ↗</span>
+            <span style="font-size:10px;color:#888;margin-left:8px">⬇</span>
+            <span style="font-size:12px;margin-left:8px">▼</span>
+          </div>
+          <div style="border:1px solid #e0e0e0;border-radius:6px;padding:8px 10px;display:flex;align-items:center">
+            <span style="font-weight:700;font-size:12px;flex:1">Kant AC</span>
+            <span style="font-size:10px;color:#888;margin-right:12px">Aff · Read 7×</span>
+            <span style="font-size:10px;color:#4a6cf7">Ask ↗</span>
+            <span style="font-size:10px;color:#888;margin-left:8px">⬇</span>
+            <span style="font-size:12px;margin-left:8px">▼</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Third panel (argument viewer)</h3>
+      <p>Click row → a third panel slides in on the far right showing full argument text, cards, citations. Team list compresses. More space for reading.</p>
+      <div class="mockup" style="margin-top:10px">
+        <div class="mockup-header">Wiki — Three panels</div>
+        <div class="mockup-body" style="display:flex;gap:0;padding:0;min-height:180px">
+          <div style="width:160px;border-right:1px solid #e0e0e0;padding:8px;flex-shrink:0">
+            <div style="font-size:10px;color:#aaa;margin-bottom:6px">TEAMS</div>
+            <div style="background:#f0f4ff;padding:5px 7px;border-radius:4px;font-size:11px;font-weight:600;border-left:3px solid #4a6cf7;margin-bottom:3px">Memorial EW</div>
+            <div style="padding:5px 7px;font-size:11px;color:#777;margin-bottom:3px">Greenhill HM</div>
+            <div style="padding:5px 7px;font-size:11px;color:#777">H-W KS</div>
+          </div>
+          <div style="width:160px;border-right:1px solid #e0e0e0;padding:8px;flex-shrink:0">
+            <div style="font-size:10px;color:#aaa;margin-bottom:6px">ARGUMENTS</div>
+            <div style="background:#fff8e1;padding:5px 7px;border-radius:4px;font-size:11px;font-weight:600;border-left:3px solid #f59e0b;margin-bottom:3px">Util AC <span style="color:#aaa;font-weight:400">14×</span></div>
+            <div style="padding:5px 7px;font-size:11px;color:#777;margin-bottom:3px">Deont NC <span style="color:#aaa">11×</span></div>
+            <div style="padding:5px 7px;font-size:11px;color:#777">Kant AC <span style="color:#aaa">7×</span></div>
+          </div>
+          <div style="flex:1;padding:10px;background:#fafafa">
+            <div style="font-size:12px;font-weight:700;margin-bottom:2px">Util AC <span style="font-size:10px;font-weight:400;color:#888">Aff · 14×</span></div>
+            <div style="font-size:10px;color:#444;line-height:1.6;margin-bottom:8px">
+              <strong>Contention 1: Framework</strong><br>
+              Bentham '89: "It is the greatest happiness of the greatest number..."<br><br>
+              <strong>Contention 2: Empirics</strong><br>
+              Singer '11: "Consequentialist policy has historically..."
+            </div>
+            <div style="display:flex;gap:6px">
+              <span style="font-size:10px;background:#4a6cf7;color:#fff;padding:3px 8px;border-radius:4px">Ask ↗</span>
+              <span style="font-size:10px;background:#eee;color:#333;padding:3px 8px;border-radius:4px">⬇ .docx</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1186,12 +1186,40 @@
     return /general\s*ld/.test(hay);
   }
 
+  function normalizeTagKey(tag) {
+    return String(tag || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function dedupeByTag(arr) {
+    const seen = new Map();
+    const out = [];
+    for (const c of arr) {
+      const key = normalizeTagKey(c.tag);
+      if (!key) { out.push(c); continue; }
+      if (!seen.has(key)) { seen.set(key, { card: c, idx: out.length }); out.push(c); }
+      else {
+        const entry = seen.get(key);
+        const prev = entry.card;
+        const better = (c.isCanonical && !prev.isCanonical) ||
+          (!c.isCanonical && !prev.isCanonical && (c.highlightWordCount || 0) > (prev.highlightWordCount || 0));
+        if (better) { out[entry.idx] = c; entry.card = c; }
+      }
+    }
+    return out;
+  }
+
+  function shortCiteDisplay(c) {
+    if (c.shortCite) return c.shortCite;
+    const s = String(c.cite || '');
+    const b = s.indexOf('[');
+    return (b > 0 ? s.slice(0, b) : s).trim();
+  }
+
   function renderEvidence() {
     const list = $('#ev-list'); if (!list) return;
     const searching = !!(state.evSearch && Array.isArray(state.evSearchResults));
     const sourceArr = searching ? state.evSearchResults : state.evidenceCards;
-    // Server already filters by minHighlight; just drop generic buckets in browse mode.
-    const baseArr = searching ? sourceArr : sourceArr.filter((c) => !isGeneralLd(c));
+    const baseArr = dedupeByTag(sourceArr.filter(c => !isGeneralLd(c)));
     const filtered = searching ? baseArr : filterEvidenceClient(baseArr, state.evSearch);
     state.evFiltered = filtered;
     $('#ev-count').textContent = String(filtered.length);
@@ -1284,7 +1312,7 @@
       <div class="ev-item ${active ? 'active' : ''}" data-card-id="${esc(c.id || '')}" style="position:relative">
         <button class="ev-export-btn" data-act="copy-ev" title="Copy" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:5px;background:#fff;border:1px solid var(--line);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
         <div class="tag">${esc(c.tag || '(untagged)')}</div>
-        <div class="cite">${esc(c.shortCite || c.cite || '')}</div>
+        <div class="cite">${esc(shortCiteDisplay(c))}</div>
         <div class="head" style="margin-top:6px">
           <div class="badges" style="display:flex;gap:4px">
             ${catLabel ? `<span class="badge cat cat-${cat}">${esc(catLabel)}</span>` : ''}
@@ -2354,13 +2382,7 @@
       };
       const _isDirty = (window.VerbaIsDirty && window.VerbaIsDirty.isDirty) || ((a,b)=>JSON.stringify(a)!==JSON.stringify(b));
       let _savedSnap = JSON.parse(JSON.stringify(TWEAKS || {}));
-      const genSaveBtn = document.getElementById('general-save-btn');
-      const refreshDirty = () => {
-        if (!genSaveBtn) return;
-        const dirty = _isDirty(TWEAKS, _savedSnap);
-        genSaveBtn.disabled = !dirty;
-        genSaveBtn.textContent = dirty ? 'Save' : 'Saved';
-      };
+      const refreshDirty = () => {};
       // Font cards
       TWEAKS.font = TWEAKS.font || 'calibri';
       document.querySelectorAll('#font-cards .font-card').forEach(card => {
@@ -2385,24 +2407,12 @@
       });
       applyT();
       refreshDirty();
-      // General: Save button
-      if (genSaveBtn) {
-        genSaveBtn.onclick = () => {
-          applyT();
-          saveT();
-          _savedSnap = JSON.parse(JSON.stringify(TWEAKS || {}));
-          refreshDirty();
-        };
+      // Cutter length select
+      const cutLenSel = document.getElementById('cut-length-select');
+      if (cutLenSel) {
+        cutLenSel.value = TWEAKS.cutterLength || 'medium';
+        cutLenSel.onchange = () => { TWEAKS.cutterLength = cutLenSel.value; persistTweaks(); };
       }
-      // Cutter length cards
-      document.querySelectorAll('#cut-length-cards .hl-card').forEach(card => {
-        card.classList.toggle('on', card.dataset.val === (TWEAKS.cutterLength || 'medium'));
-        card.onclick = () => {
-          TWEAKS.cutterLength = card.dataset.val;
-          persistTweaks();
-          document.querySelectorAll('#cut-length-cards .hl-card').forEach(x => x.classList.toggle('on', x === card));
-        };
-      });
       // Cutter density cards
       document.querySelectorAll('#cut-density-cards .hl-card').forEach(card => {
         card.classList.toggle('on', card.dataset.val === (TWEAKS.cutterDensity || 'standard'));
