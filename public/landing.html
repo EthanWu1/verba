@@ -91,18 +91,13 @@ a{color:inherit;text-decoration:none}
 .rs-num{font-weight:700;font-size:clamp(28px,3.2vw,40px);letter-spacing:-0.03em;color:var(--ink);font-family:var(--font-display,inherit);line-height:1}
 .rs-lbl{font:500 11px/1.3 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
 @media (max-width:640px){.reveal-sec{padding:80px 0 72px}.reveal-text{font-size:clamp(24px,6vw,34px)}.reveal-stats{grid-template-columns:repeat(2,1fr);gap:20px;margin-top:40px;padding-top:24px}.rs-num{font-size:24px}}
-.hero{padding:80px 0 48px;position:relative;overflow:hidden}
-.hero-grid,.hero-grid-active,.hero-blobs{position:absolute;inset:0;z-index:0;pointer-events:none}
-.hero-grid{opacity:.35;color:#D1D5DB;-webkit-mask-image:radial-gradient(ellipse 70% 65% at 50% 40%, #000 30%, transparent 82%);mask-image:radial-gradient(ellipse 70% 65% at 50% 40%, #000 30%, transparent 82%)}
-.hero-grid-active{opacity:.9;color:#4B5563;-webkit-mask-image:radial-gradient(260px circle at var(--mx,-9999px) var(--my,-9999px), #000, transparent);mask-image:radial-gradient(260px circle at var(--mx,-9999px) var(--my,-9999px), #000, transparent);transition:opacity .2s}
-.hero-grid svg,.hero-grid-active svg{width:100%;height:100%;display:block}
-.hero-blobs{overflow:hidden}
-.hero-blob{position:absolute;border-radius:50%;filter:blur(120px)}
-.hero-blob.b1{right:-20%;top:-20%;width:40%;height:40%;background:rgba(249,115,22,.32)}
-.hero-blob.b2{right:10%;top:-10%;width:20%;height:20%;background:rgba(0,0,0,.08);filter:blur(100px)}
-.hero-blob.b3{left:-10%;bottom:-20%;width:40%;height:40%;background:rgba(59,130,246,.28)}
-@media (hover:none){.hero-grid-active{display:none}}
+.hero{padding:80px 0 48px;position:relative}
 .hero > .wrap{position:relative;z-index:1}
+#page-grid,#page-grid-active{position:fixed;inset:0;z-index:0;pointer-events:none}
+#page-grid{opacity:.045;color:#6B7280}
+#page-grid svg,#page-grid-active svg{width:100%;height:100%;display:block}
+#page-grid-active{opacity:.55;color:#6B7280;-webkit-mask-image:radial-gradient(200px circle at var(--mx,-9999px) var(--my,-9999px),#000,transparent);mask-image:radial-gradient(200px circle at var(--mx,-9999px) var(--my,-9999px),#000,transparent)}
+@media (hover:none){#page-grid-active{display:none}}
 .eyebrow{
   display:inline-flex;gap:8px;align-items:center;
   font:500 11px/1 var(--font-display);color:var(--muted);
@@ -234,7 +229,7 @@ section.edge{border-top:1px solid var(--line)}
 
 .lib-list{max-height:460px;overflow:auto}
 .lib-item{
-  display:grid;grid-template-columns:72px 1fr 120px;gap:14px;align-items:start;
+  display:grid;grid-template-columns:72px 1fr;gap:14px;align-items:start;
   padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;
   transition:background .14s;
 }
@@ -480,18 +475,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   </div>
 </header>
 
-<section class="hero" id="hero">
-  <div class="hero-grid" aria-hidden="true">
-    <svg><defs><pattern id="heroGridBase" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#heroGridBase)"/></svg>
-  </div>
-  <div class="hero-grid-active" aria-hidden="true">
-    <svg><defs><pattern id="heroGridActive" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(#heroGridActive)"/></svg>
-  </div>
-  <div class="hero-blobs" aria-hidden="true">
-    <span class="hero-blob b1"></span>
-    <span class="hero-blob b2"></span>
-    <span class="hero-blob b3"></span>
-  </div>
+<section class="hero">
   <div class="wrap">
     <span class="eyebrow"><span class="d"></span>New · Evidence assistant 2.0</span>
     <h1>Cut cards. Find warrants.<br><span class="accent">Win rounds.</span></h1>
@@ -517,13 +501,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
         <h3 class="card-tag" id="cardTag"><span class="cp-empty">Cutting live — watch this.</span></h3>
         <div class="card-cite" id="cardCite">From <b>Climate Policy Quarterly</b> · Hannah Ritchie · Oct 2024</div>
         <div class="art-body" id="artBody"></div>
-        <div class="cut-toolbar">
-          <div class="cut-tool" data-i="0">Highlight</div>
-          <div class="cut-tool" data-i="1">Underline</div>
-          <div class="cut-tool" data-i="2">Bold</div>
-          <div class="cut-tool" data-i="3">Save</div>
-        </div>
-        <div class="cut-saved" id="cutSaved"><div class="bub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="5 12 10 17 20 7"/></svg>Saved to library · cited 0×</div></div>
+        <div class="cut-saved" id="cutSaved"><div class="bub"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="5 12 10 17 20 7"/></svg>Saved to library</div></div>
       </div>
     </div>
   </div>
@@ -561,15 +539,16 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
           </li>
           <li>
             <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-            <span><b>Slash commands for the grunt work.</b> <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/find</code>, <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/compare</code>, <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/answer</code>, <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/block</code>.</span>
+            <span><b>Slash commands for the grunt work.</b>
+  <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/find</code> searches your library,
+  <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/compare</code> contrasts two cards,
+  <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/answer</code> drafts a response to an argument,
+  <code style="font-family:var(--font-mono);font-size:12px;background:var(--panel);padding:1px 4px;border-radius:3px">/block</code> assembles a full block.
+</span>
           </li>
           <li>
             <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></span>
             <span><b>Every claim traced to a cite.</b> No hallucinated warrants. Every sentence links to a card — one click opens the cutter.</span>
-          </li>
-          <li>
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16"/></svg></span>
-            <span><b>Scratchpad + pinned cites.</b> Drop cards into the thread, pin the ones you need for the 2AR, export the whole block with one keystroke.</span>
           </li>
         </ul>
       </div>
@@ -625,56 +604,32 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
           <input id="libQ" placeholder='Search 1,284 cards — try "sanctions", "deterrence", "cap"'>
           <kbd>/</kbd>
         </div>
-        <div class="lib-chips" id="libChips">
-          <button class="lib-chip on" data-f="all">All<span class="ct">1,284</span></button>
-          <button class="lib-chip" data-f="policy">Policy<span class="ct">812</span></button>
-          <button class="lib-chip" data-f="k">K<span class="ct">164</span></button>
-          <button class="lib-chip" data-f="phil">Phil<span class="ct">168</span></button>
-          <button class="lib-chip" data-f="theory">Theory<span class="ct">72</span></button>
-          <button class="lib-chip" data-f="tricks">Tricks<span class="ct">68</span></button>
-        </div>
       </div>
       <div class="lib-list" id="libList">
         <div class="lib-item" data-f="policy" data-kw="mahbubani sanctions exit ramp iran deterrence pressure">
           <div class="lib-badges"><span class="badge policy">POLICY</span><span class="badge topic">Iran</span></div>
-          <div class="lib-main"><p class="tag">Pressure without an exit ramp produces the behavior it claims to deter</p><p class="cite">Mahbubani · Foreign Affairs · 3/24</p></div>
-          <div class="lib-meta"><b>0.91</b>cited 12×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Pressure without an exit ramp produces the behavior it claims to deter</p></div>        </div>
         <div class="lib-item" data-f="policy" data-kw="parsi backchannel iran diplomacy quincy">
           <div class="lib-badges"><span class="badge policy">POLICY</span><span class="badge topic">Iran</span></div>
-          <div class="lib-main"><p class="tag">Back-channel talks are live — a deal is possible now</p><p class="cite">Parsi · Quincy Institute · 2/24</p></div>
-          <div class="lib-meta"><b>0.78</b>cited 8×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Back-channel talks are live — a deal is possible now</p></div>        </div>
         <div class="lib-item" data-f="k" data-kw="ali dollar system sanctions abstraction cap capital nlr">
           <div class="lib-badges"><span class="badge k">K</span><span class="badge topic">Cap</span></div>
-          <div class="lib-main"><p class="tag">Abstraction of sanctions masks the material violence of the dollar system</p><p class="cite">Ali · New Left Review · 1/24</p></div>
-          <div class="lib-meta"><b>0.64</b>cited 5×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Abstraction of sanctions masks the material violence of the dollar system</p></div>        </div>
         <div class="lib-item" data-f="policy" data-kw="zarate flexibility da curtailment crisis response sanctions economy">
           <div class="lib-badges"><span class="badge policy">POLICY</span><span class="badge topic">Econ</span></div>
-          <div class="lib-main"><p class="tag">Flexibility DA — curtailment collapses crisis response</p><p class="cite">Zarate · CSIS · 10/23</p></div>
-          <div class="lib-meta"><b>0.69</b>cited 6×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Flexibility DA — curtailment collapses crisis response</p></div>        </div>
         <div class="lib-item" data-f="policy" data-kw="glaser taiwan china deterrence strait inadvertent war">
           <div class="lib-badges"><span class="badge policy">POLICY</span><span class="badge topic">China</span></div>
-          <div class="lib-main"><p class="tag">Taiwan Strait — de-escalation now avoids inadvertent war</p><p class="cite">Glaser · International Security · 1/24</p></div>
-          <div class="lib-meta"><b>0.82</b>cited 9×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Taiwan Strait — de-escalation now avoids inadvertent war</p></div>        </div>
         <div class="lib-item" data-f="phil" data-kw="kant deontology ethics means ends">
           <div class="lib-badges"><span class="badge phil">PHIL</span><span class="badge topic">Deont</span></div>
-          <div class="lib-main"><p class="tag">Treating persons as means collapses the basis for any obligation</p><p class="cite">Korsgaard · Sources of Normativity · reprint</p></div>
-          <div class="lib-meta"><b>0.74</b>cited 4×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Treating persons as means collapses the basis for any obligation</p></div>        </div>
         <div class="lib-item" data-f="k" data-kw="campbell writing security threat construction insecurity">
           <div class="lib-badges"><span class="badge k">K</span><span class="badge topic">Security</span></div>
-          <div class="lib-main"><p class="tag">Threat construction produces the insecurity it purports to resolve</p><p class="cite">Campbell · Writing Security · reprint</p></div>
-          <div class="lib-meta"><b>0.58</b>cited 3×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Threat construction produces the insecurity it purports to resolve</p></div>        </div>
         <div class="lib-item" data-f="theory" data-kw="subsets topicality theory affirm instances">
           <div class="lib-badges"><span class="badge theory">THEORY</span><span class="badge topic">Topicality</span></div>
-          <div class="lib-main"><p class="tag">Subsets — affirmative must defend all instances, not just one</p><p class="cite">[T] Subsets Masterfile · 2024</p></div>
-          <div class="lib-meta"><b>0.46</b>cited 2×</div>
-        </div>
+          <div class="lib-main"><p class="tag">Subsets — affirmative must defend all instances, not just one</p></div>        </div>
         <div class="lib-empty" id="libEmpty">No cards match — try another query.</div>
       </div>
     </div>
@@ -799,32 +754,47 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
 <script>
 (function(){
   // ────────────────────────────────────────────────────────────
-  // HERO INFINITE GRID — scroll + cursor reveal
+  // FULL-PAGE INFINITE GRID — scroll + cursor reveal
   // ────────────────────────────────────────────────────────────
-  const hero = document.getElementById('hero');
-  if(hero){
-    const patBase = document.getElementById('heroGridBase');
-    const patAct  = document.getElementById('heroGridActive');
-    const actLayer = hero.querySelector('.hero-grid-active');
-    let off = 0;
-    const SPEED = 0.35; // px per frame
-    function loop(){
-      off = (off + SPEED) % 40;
-      if(patBase){ patBase.setAttribute('x', off); patBase.setAttribute('y', off); }
-      if(patAct){  patAct.setAttribute('x', off);  patAct.setAttribute('y', off); }
-      requestAnimationFrame(loop);
+  (function(){
+    const base = document.createElement('div'); base.id='page-grid';
+    const act  = document.createElement('div'); act.id='page-grid-active';
+    const SVG_NS='http://www.w3.org/2000/svg';
+    function makeSvg(patId){
+      const svg=document.createElementNS(SVG_NS,'svg');
+      const defs=document.createElementNS(SVG_NS,'defs');
+      const pat=document.createElementNS(SVG_NS,'pattern');
+      pat.setAttribute('id',patId); pat.setAttribute('width','40'); pat.setAttribute('height','40');
+      pat.setAttribute('patternUnits','userSpaceOnUse');
+      const path=document.createElementNS(SVG_NS,'path');
+      path.setAttribute('d','M 40 0 L 0 0 0 40'); path.setAttribute('fill','none');
+      path.setAttribute('stroke','currentColor'); path.setAttribute('stroke-width','1');
+      pat.appendChild(path); defs.appendChild(pat); svg.appendChild(defs);
+      const rect=document.createElementNS(SVG_NS,'rect');
+      rect.setAttribute('width','100%'); rect.setAttribute('height','100%');
+      rect.setAttribute('fill','url(#'+patId+')'); svg.appendChild(rect);
+      return {svg,pat};
     }
-    requestAnimationFrame(loop);
-    hero.addEventListener('mousemove', e=>{
-      const r = hero.getBoundingClientRect();
-      actLayer.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-      actLayer.style.setProperty('--my', (e.clientY - r.top)  + 'px');
+    const {svg:svgB,pat:patB}=makeSvg('pgBase');
+    const {svg:svgA,pat:patA}=makeSvg('pgActive');
+    base.appendChild(svgB); act.appendChild(svgA);
+    document.body.prepend(act); document.body.prepend(base);
+    let off=0;
+    (function loop(){
+      off=(off+0.15)%40;
+      patB.setAttribute('x',off); patB.setAttribute('y',off);
+      patA.setAttribute('x',off); patA.setAttribute('y',off);
+      requestAnimationFrame(loop);
+    })();
+    document.addEventListener('mousemove',e=>{
+      act.style.setProperty('--mx',e.clientX+'px');
+      act.style.setProperty('--my',e.clientY+'px');
     });
-    hero.addEventListener('mouseleave', ()=>{
-      actLayer.style.setProperty('--mx','-9999px');
-      actLayer.style.setProperty('--my','-9999px');
+    document.addEventListener('mouseleave',()=>{
+      act.style.setProperty('--mx','-9999px');
+      act.style.setProperty('--my','-9999px');
     });
-  }
+  })();
 
   // ────────────────────────────────────────────────────────────
   // CARD CUTTER ANIMATION — single workspace, loops
@@ -834,8 +804,6 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   const cutSaved = document.getElementById('cutSaved');
   const keyHud = document.getElementById('keyHud');
   const hudLbl = document.getElementById('hudLbl');
-  const tools = document.querySelectorAll('.cut-tool');
-
   // Climate policy article — new source
   const ARTICLE = [
     [
@@ -877,7 +845,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
       artBody.appendChild(p);
     });
   }
-  function setTool(n){tools.forEach((s,i)=>{s.classList.toggle('on',i===n);s.classList.toggle('done',i<n && n>=0)});}
+  function setTool(n){/* toolbar removed */}
   function showHud(lbl){
     hudLbl.textContent = lbl;
     keyHud.classList.add('on');
@@ -1027,19 +995,15 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   // ────────────────────────────────────────────────────────────
   // LIBRARY FILTER + SEARCH
   // ────────────────────────────────────────────────────────────
-  const chips = document.querySelectorAll('#libChips .lib-chip');
   const q = document.getElementById('libQ');
   const rows = document.querySelectorAll('#libList .lib-item');
   const empty = document.getElementById('libEmpty');
-  let activeFilter='all';
   function applyLib(){
     const term = q.value.trim().toLowerCase();
     let shown=0;
     rows.forEach(r=>{
-      const matchF = activeFilter==='all' || r.dataset.f===activeFilter;
       const hay = (r.dataset.kw + ' ' + r.textContent).toLowerCase();
-      const matchQ = !term || hay.includes(term);
-      const ok = matchF && matchQ;
+      const ok = !term || hay.includes(term);
       r.classList.toggle('hidden', !ok);
       if(ok) shown++;
       const tagEl = r.querySelector('.lib-main .tag');
@@ -1056,11 +1020,6 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
     });
     empty.classList.toggle('on', shown===0);
   }
-  chips.forEach(c=>c.addEventListener('click',()=>{
-    chips.forEach(x=>x.classList.toggle('on',x===c));
-    activeFilter = c.dataset.f;
-    applyLib();
-  }));
   q.addEventListener('input', applyLib);
   document.addEventListener('keydown', e=>{
     if(e.key==='/' && document.activeElement!==q){
