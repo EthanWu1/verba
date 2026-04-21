@@ -1376,9 +1376,10 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 }
 .sfield-input:focus{border-color:var(--lilac-2);box-shadow:0 0 0 3px var(--lilac-soft);outline:0}
 .sfield-save{
-  padding:9px 14px;background:var(--ink);color:#fff;border:0;border-radius:8px;
-  font:600 13px/1 var(--font-display);cursor:pointer;
+  padding:7px 12px;background:var(--ink);color:#fff;border:1px solid transparent;border-radius:6px;
+  font:500 13px/1 var(--font-display);cursor:pointer;transition:background .14s;
 }
+.sfield-save:hover{background:var(--lilac-2)}
 .sfield-save:disabled{background:var(--muted-2);cursor:not-allowed}
 .sfield-err{margin-top:6px;font:500 12px/1.2 var(--font-display);color:#B42318}
 .sfield-static{padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink-2);font:500 13px/1 var(--font-display)}
