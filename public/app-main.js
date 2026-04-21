@@ -1854,6 +1854,18 @@
 
     function open() { panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); setTimeout(() => input?.focus(), 200); }
     function close() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
+
+    window.openAssistantWithContext = function(contextText) {
+      open();
+      setTimeout(() => {
+        const input = document.getElementById('assistant-input');
+        if (input) {
+          input.value = contextText;
+          input.dispatchEvent(new Event('input'));
+        }
+      }, 250);
+    };
+
     btn.addEventListener('click', () => panel.classList.contains('open') ? close() : open());
     closeBtn?.addEventListener('click', close);
 
