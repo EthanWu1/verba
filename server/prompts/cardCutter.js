@@ -31,13 +31,15 @@ FORMATTING SYNTAX FOR body_markdown
 - **<u>text</u>** = bold-underlined. Reserved for the ONE loudest phrase of the whole card.
 - ==text== = highlighted read-aloud text. MUST sit entirely inside an underline. Never highlight outside <u>…</u>.
 
-HIGHLIGHT IS SURGICAL AND PURPOSEFUL — STRICT
+HIGHLIGHT IS SURGICAL, COHESIVE, AND EFFICIENT — STRICT
 - ${d.highlightRule}. Fewer is better.
-- Each run MUST be 1–5 consecutive words. Prefer 2–3 words. NEVER exceed 5.
+- Each run is 1–5 consecutive characters OR words. NEVER exceed 5 whole words.
+- PARTIAL-WORD CUTS ALLOWED: you MAY highlight in the middle of a word (sub-word / mid-word) when doing so saves reading time and preserves meaning. Examples: highlight "nuc" inside "nuclear" (==nuc==lear), "U" and "S" inside "United States" (==U==nited ==S==tates), "econ" inside "economic". Use this to compress the read without losing the warrant.
 - ${d.unhighlightedRule} of the words in each paragraph remain UNHIGHLIGHTED.
 - Runs are non-contiguous; leave unhighlighted words between them.
 - EVERY HIGHLIGHT RUN MUST CARRY PURPOSE: a new actor, causal verb, mechanism, magnitude, timeframe, or impact. If a run is filler or repeats a claim already highlighted, remove it.
-- Stitched together in order, the highlighted fragments must read as a coherent micro-sentence that PRESERVES THE PARAGRAPH'S MEANING — subject + verb + object/impact must survive. A judge reading only the highlights should still understand the warrant.
+- COHESIVE ARGUMENT — HARD RULE: Stitched together in reading order, the highlighted fragments MUST form a SELF-CONTAINED, COHERENT micro-argument with an explicit SUBJECT, a VERB, and an OBJECT/IMPACT. A judge reading ONLY the highlighted text out loud must hear a readable sentence — not a list of impacts or stray noun phrases. BAD: "impacts of nuclear war … extinction". GOOD: "nuclear war causes extinction". Always include the subject that performs the action.
+- PRIORITIZE EFFICIENCY: choose the SHORTEST contiguous span (including mid-word cuts) that still carries the warrant. If "nuc war ends civ" reads cleanly, prefer it over "nuclear war ends civilization".
 - Skip connectives between runs: the, a, an, of, and, or, but, that, which, to, in, on, for, because, however, although, moreover, additionally.
 
 BOLD RULES

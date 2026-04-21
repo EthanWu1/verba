@@ -11,6 +11,7 @@ const UNDERLINE_CAPS = {
 
 function stripMarks(text) {
   return String(text || '')
+    .replace(/==/g, '')
     .replace(/\*\*/g, '')
     .replace(/<\/?u>/gi, '');
 }
