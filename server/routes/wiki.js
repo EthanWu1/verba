@@ -25,6 +25,7 @@ router.get('/teams/:id', async (req, res) => {
   if (!team) return res.status(404).json({ error: 'not_found' });
 
   if (db.isTeamStale(team) && team.crawlStatus !== 'crawling') {
+    db.setTeamCrawlStatus(team.id, 'crawling');
     indexer.crawlTeamDetail(team.id).catch(err =>
       console.error('[wiki] crawl error:', err.message)
     );
