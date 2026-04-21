@@ -428,6 +428,7 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
 }
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
+<style id="body-hide">body.auth-check{visibility:hidden}</style>
 </head>
 <body>
 
@@ -1041,15 +1042,20 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
 </script>
 <script src="api.js"></script>
 <script>
+document.body.classList.add('auth-check');
 (async () => {
   try {
     const API = window.VerbaAPI;
-    if (!API) return;
+    if (!API) { document.body.classList.remove('auth-check'); return; }
     const who = await API.auth.me();
     if (who && who.user && who.user.email) {
       window.location.replace('/app');
+    } else {
+      document.body.classList.remove('auth-check');
     }
-  } catch (_) {}
+  } catch (_) {
+    document.body.classList.remove('auth-check');
+  }
 })();
 </script>
 </body>
