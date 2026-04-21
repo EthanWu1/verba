@@ -56,9 +56,14 @@
   const $  = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const toast = (msg) => {
+  const toast = (msg, opts) => {
+    if (window.VerbaAlert && window.VerbaAlert.push) {
+      if (typeof msg === 'object' && msg) return window.VerbaAlert.push(msg);
+      return window.VerbaAlert.push(Object.assign({ description: String(msg || '') }, opts || {}));
+    }
     const t = document.getElementById('toast'); if (!t) return;
-    t.textContent = msg; t.classList.add('show');
+    t.textContent = typeof msg === 'string' ? msg : (msg && msg.description) || '';
+    t.classList.add('show');
     clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2000);
   };
 
@@ -611,7 +616,7 @@
         job.status = 'error';
         job.label = 'Timed out';
         updateChipLabel(job);
-        toast('Cutter timed out — try again');
+        toast({ variant: 'destructive', title: 'Cutter timed out', description: 'Try again', duration: 4000 });
         try { es.close(); } catch {}
       }
     }, 100000);
@@ -628,7 +633,7 @@
         job.lowConfidence = s.lowConfidence;
         const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
         if (activeJob === job) renderSourceInPane(article);
-        if (s.lowConfidence) toast('Low-confidence match — review source carefully');
+        if (s.lowConfidence) toast({ variant: 'warning', title: 'Low-confidence match', description: 'Review source carefully', duration: 4000 });
       } catch {}
     });
     es.addEventListener('card_delta', (e) => {
@@ -655,9 +660,9 @@
         API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
         try { window.__refreshUsage?.(); } catch {}
         if (c.fidelity && c.fidelity.ok === false) {
-          toast(`Fidelity: ${c.fidelity.missing.length} paraphrased span(s) — review`);
+          toast({ variant: 'warning', title: 'Fidelity warning', description: `${c.fidelity.missing.length} paraphrased span(s) — review`, duration: 5000 });
         } else {
-          toast('Card cut ✓');
+          toast({ variant: 'success', title: 'Card cut', description: card.tag || card.cite || 'Ready in editor', duration: 3200 });
         }
       } catch {}
     });
@@ -671,7 +676,7 @@
           job.label = d.error.slice(0, 56);
           updateChipLabel(job);
           finishProgress(false);
-          toast('Cut failed: ' + d.error);
+          toast({ variant: 'destructive', title: 'Cut failed', description: d.error, duration: 5000 });
         }
       } catch {}
     });
@@ -1738,6 +1743,18 @@
     function close() { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
     btn.addEventListener('click', () => panel.classList.contains('open') ? close() : open());
     closeBtn?.addEventListener('click', close);
+
+    /* Click outside panel closes it. Use mousedown so selections/drags are safe,
+       and pointer-down-on-trigger is handled by the button's own toggle above. */
+    document.addEventListener('mousedown', (e) => {
+      if (!panel.classList.contains('open')) return;
+      if (panel.contains(e.target)) return;
+      if (btn.contains(e.target)) return;
+      close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && panel.classList.contains('open')) close();
+    });
 
     // Auto-grow textarea
     function autosize() {
