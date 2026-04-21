@@ -291,17 +291,10 @@
     return { lastYY: m[1].trim(), rest: m[2] || '' };
   }
 
-  /* Inject inline styles on mark/b/u/span tags so Word honors them on paste. */
-  function inlineStyleBody(html) {
-    let out = String(html || '');
-    out = out.replace(/<mark(\s[^>]*)?>/gi, '<span style="background-color:#ffff00;color:#000;font-style:normal">');
-    out = out.replace(/<\/mark>/gi, '</span>');
-    out = out.replace(/<u(\s[^>]*)?>/gi, '<span style="text-decoration:underline;color:#000;font-style:normal">');
-    out = out.replace(/<\/u>/gi, '</span>');
-    out = out.replace(/<(b|strong)(\s[^>]*)?>/gi, '<span style="font-weight:700;color:#000;font-style:normal">');
-    out = out.replace(/<\/(b|strong)>/gi, '</span>');
-    return out;
-  }
+  /* Inject inline styles so Word honors nested mark/b/u on paste. Uses token
+     walker from lib/inlineStyleBody.js that merges active formats into one span. */
+  const inlineStyleBody = (window.VerbaInlineStyle && window.VerbaInlineStyle.inlineStyleBody)
+    || ((html) => String(html || ''));
 
   /* Pull partial tag/cite/body from streaming JSON (may be mid-string). */
   function extractPartialCard(acc) {
