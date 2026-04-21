@@ -1785,6 +1785,19 @@
       'picking warrants…',
       'checking library for backfile…',
       'drafting block…',
+      'weighing turn vs. non-unique…',
+      'pulling impact calc…',
+      'checking link chain…',
+      'scanning 2NR-viable cards…',
+      'testing uniqueness…',
+      'lining up author quals…',
+      'matching stance to tag…',
+      'comparing warrants side-by-side…',
+      'tightening the underline…',
+      'hunting counterinterps…',
+      'stress-testing the perm…',
+      'checking solvency deficit…',
+      'ranking offense…',
     ];
     function showThinking() {
       const el = document.createElement('div');
@@ -1793,19 +1806,27 @@
       msgs.appendChild(el);
       msgs.scrollTop = msgs.scrollHeight;
       const line = el.querySelector('.ap-think-line');
-      let i = 0;
-      line.textContent = THINK_LINES[0];
-      const iv = setInterval(() => {
-        i = (i + 1) % THINK_LINES.length;
-        line.classList.add('fade-out');
-        setTimeout(() => {
-          line.textContent = THINK_LINES[i];
-          line.classList.remove('fade-out');
-          line.classList.add('fade-in');
-          setTimeout(() => line.classList.remove('fade-in'), 360);
-        }, 320);
-      }, 1800);
-      return { el, stop: () => { clearInterval(iv); el.remove(); } };
+      let last = -1;
+      function pick() {
+        let i; do { i = Math.floor(Math.random() * THINK_LINES.length); } while (i === last && THINK_LINES.length > 1);
+        last = i; return THINK_LINES[i];
+      }
+      let iv;
+      function schedule() {
+        iv = setTimeout(() => {
+          line.classList.add('fade-out');
+          setTimeout(() => {
+            line.textContent = pick();
+            line.classList.remove('fade-out');
+            line.classList.add('fade-in');
+            setTimeout(() => line.classList.remove('fade-in'), 360);
+            schedule();
+          }, 320);
+        }, 1600 + Math.random() * 900);
+      }
+      line.textContent = pick();
+      schedule();
+      return { el, stop: () => { clearTimeout(iv); el.remove(); } };
     }
 
     /* ── Slash commands + suggestions ── */
