@@ -3,9 +3,9 @@
 const MAX_RUN_WORDS = 5;
 
 const HIGHLIGHT_CAPS = {
-  minimal:  0.30,
-  standard: 0.40,
-  heavy:    0.50,
+  minimal:  0.20,
+  standard: 0.25,
+  heavy:    0.30,
 };
 
 const UNDERLINE_CAPS = {

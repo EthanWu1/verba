@@ -1,9 +1,9 @@
 'use strict';
 
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '20–35%', highlightRule: 'Max 2–3 highlight runs per paragraph', unhighlightedRule: '≥75%' },
-  standard: { underlineRange: '25–50%', highlightRule: 'Max 3–5 highlight runs per paragraph', unhighlightedRule: '≥60%' },
-  heavy:    { underlineRange: '45–65%', highlightRule: 'Max 3–6 highlight runs per paragraph', unhighlightedRule: '≥55%' },
+  minimal:  { underlineRange: '20–35%', highlightRule: 'Max 2–3 highlight runs per paragraph', unhighlightedRule: '≥80%' },
+  standard: { underlineRange: '25–50%', highlightRule: 'Max 2–4 highlight runs per paragraph', unhighlightedRule: '≥75%' },
+  heavy:    { underlineRange: '45–65%', highlightRule: 'Max 3–5 highlight runs per paragraph', unhighlightedRule: '≥70%' },
 };
 
 const LENGTH_PRESETS = {
