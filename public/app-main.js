@@ -589,17 +589,30 @@
     const val = (input?.value || '').trim();
     const attached = window.__verbaAttachedFile || null;
     if (!val && !attached) { toast('Paste a URL, type an argument, or attach a file'); return; }
-    const isUrl = /^https?:\/\//i.test(val);
-    let argument = val;
-    if (isUrl) {
-      const asked = await askArgument(val);
-      if (asked === null) return;
-      argument = asked || 'Extract the strongest claim this article supports';
-    } else if (attached && !val) {
-      const asked = await askArgument(attached.filename);
-      if (asked === null) return;
-      argument = asked || 'Extract the strongest claim this file supports';
+
+    // URL: scrape only — do not run a research job
+    if (/^https?:\/\//i.test(val)) {
+      if (input) input.value = '';
+      toast('Loading source…');
+      try {
+        const data = await window.API.scrape(val);
+        renderSourceInPane({ ...data, paragraphs: [] });
+      } catch (err) {
+        toast({ variant: 'destructive', title: 'Scrape failed', description: err.message || String(err), duration: 4000 });
+      }
+      return;
     }
+
+    // Attached file: content already scraped on upload — render preview, clear attachment
+    if (attached && !val) {
+      if (input) input.value = '';
+      renderSourceInPane({ source: attached.filename, bodyText: attached.preview || '', paragraphs: [] });
+      window.__verbaAttachedFile = null;
+      renderAttachTray();
+      return;
+    }
+
+    let argument = val;
     if (input) input.value = '';
 
     const jobLabel = attached ? attached.filename : val;
@@ -611,8 +624,6 @@
     if (attached) {
       params.set('fileToken', attached.token);
       params.set('argument', argument);
-    } else if (isUrl) {
-      params.set('url', val); params.set('argument', argument);
     } else {
       params.set('query', val); params.set('argument', argument);
     }
