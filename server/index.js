@@ -150,6 +150,20 @@ app.get('*', (req, res) => {
     console.log(`║   Model: ${(process.env.MODEL || 'llama-3.3-70b').padEnd(30)}║`);
     console.log('╚════════════════════════════════════════╝');
     console.log('');
+
+    // Auto-seed wiki team index if empty
+    try {
+      const { countTeams } = require('./services/wikiDb');
+      const { seedTeamIndex } = require('./services/wikiIndexer');
+      if (process.env.OPENCASELIST_USER && countTeams() === 0) {
+        console.log('[wiki] No teams indexed — seeding from opencaselist...');
+        seedTeamIndex()
+          .then(r => console.log(`[wiki] Seeded ${r.inserted} teams`))
+          .catch(err => console.error('[wiki] Seed failed:', err.message));
+      }
+    } catch (err) {
+      console.error('[wiki] Auto-seed init failed:', err.message);
+    }
   });
 })();
 
