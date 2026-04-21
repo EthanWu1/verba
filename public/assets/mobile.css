@@ -58,3 +58,7 @@ img,svg,video,canvas{max-width:100%;height:auto}
     max-width:12px !important;
   }
 }
+
+/* My Cards: no hover on mobile — always show copy btn, hide date */
+.mycard .mc-copy-btn{opacity:1}
+.mycard .date{opacity:0}

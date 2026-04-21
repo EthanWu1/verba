@@ -882,14 +882,9 @@ body.nexus-full .nexus-closed-rail{display:none}
   display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow-sm);
 }
 .mycard:hover{border-color:var(--line-2);box-shadow:var(--shadow);transform:translateY(-1px)}
-.mycard .export-btn{
-  position:absolute;top:10px;right:10px;
-  width:26px;height:26px;border-radius:5px;display:grid;place-items:center;
-  color:var(--ink);background:#fff;border:1px solid var(--line);
-  transition:all .14s;opacity:.92;cursor:pointer;z-index:2;
-}
-.mycard:hover .export-btn{opacity:1}
-.mycard .date{transition:opacity .14s;margin-right:58px}
+.mycard .export-btn{display:none !important}
+.mycard:hover .export-btn{display:none !important}
+.mycard .date{transition:opacity .18s ease;margin-right:0}
 .export-btn.busy,.ev-export-btn.busy{pointer-events:none;opacity:.7 !important}
 .export-btn.busy svg,.ev-export-btn.busy svg{animation:spin 0.8s linear infinite}
 .ev-export-btn{transition:background .14s, color .14s, border-color .14s, transform .14s}
@@ -898,11 +893,12 @@ body.nexus-full .nexus-closed-rail{display:none}
 .ev-export-btn.copied svg,.export-btn.copied svg{animation:copyPop .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes copyPop{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 .mycard .mc-copy-btn{
-  position:absolute;top:10px;right:42px;
-  width:26px;height:26px;border-radius:5px;display:grid;place-items:center;
-  color:var(--ink);background:#fff;border:1px solid var(--line);
-  transition:all .14s;opacity:.92;cursor:pointer;z-index:2;
+  position:absolute;top:8px;right:10px;
+  width:22px;height:22px;border-radius:5px;display:grid;place-items:center;
+  color:var(--muted);background:transparent;border:none;
+  opacity:0;transition:opacity .18s ease;cursor:pointer;z-index:2;
 }
+.mycard .mc-copy-btn svg{width:13px;height:13px;stroke-width:1.7;color:var(--ink)}
 .mycard:hover .mc-copy-btn{opacity:1}
 .mycard .mc-copy-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2);transform:scale(1.06)}
 .mycard .mc-copy-btn.busy{pointer-events:none;opacity:.7!important}
@@ -911,7 +907,7 @@ body.nexus-full .nexus-closed-rail{display:none}
 .mycard .mc-copy-btn.copied svg{animation:copyPop .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .mycard .export-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2)}
-.mycard .head{display:flex;align-items:center;gap:6px;padding-right:32px}
+.mycard .head{display:flex;align-items:center;gap:6px;padding-right:28px}
 .mycard .tag{font-size:14.5px;font-weight:600;color:var(--ink);font-family:var(--font-display);letter-spacing:-0.01em;line-height:1.4}
 .mycard .cite{font-size:11.5px;color:var(--muted);font-family:var(--font-display)}
 .mycard .preview{
@@ -1307,7 +1303,8 @@ p.figure-omitted{display:block;text-align:center}
 
 /* Uniform my-card layout */
 .mycard{position:relative}
-.mycard .date{position:absolute;top:10px;right:12px;font:11px/1 var(--font-mono);color:var(--muted)}
+.mycard .date{position:absolute;top:10px;right:12px;font:11px/1 var(--font-mono);color:var(--muted);transition:opacity .18s ease}
+.mycard:hover .date{opacity:0}
 .mycard .preview{
   max-height:4.4em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
   text-overflow:ellipsis;
