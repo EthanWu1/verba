@@ -1854,13 +1854,19 @@
     }
 
     let slashSel = 0;
+    function shouldKeepSlashOpenLocal(v, cmds) {
+      if (!v.startsWith('/')) return false;
+      if (!cmds || !cmds.length) return false;
+      if (v.includes(' ')) return false;
+      if (cmds.length === 1 && cmds[0] === v) return false;
+      return true;
+    }
     function refreshSlashPop() {
       if (!slashPop) return;
       const v = input.value || '';
-      if (!v.startsWith('/')) { slashPop.classList.remove('open'); return; }
-      const first = v.slice(1).split(' ')[0].toLowerCase();
-      const matches = COMMANDS.filter(c => c.cmd.slice(1).startsWith(first));
-      if (!matches.length) { slashPop.classList.remove('open'); return; }
+      const first = v.startsWith('/') ? v.slice(1).split(' ')[0].toLowerCase() : '';
+      const matches = v.startsWith('/') ? COMMANDS.filter(c => c.cmd.slice(1).startsWith(first)) : [];
+      if (!shouldKeepSlashOpenLocal(v, matches.map(m => m.cmd))) { slashPop.classList.remove('open'); return; }
       slashSel = Math.min(slashSel, matches.length - 1);
       slashPop.innerHTML = matches.map((c, i) =>
         `<div class="ap-slash-row${i === slashSel ? ' sel' : ''}" data-i="${i}">
