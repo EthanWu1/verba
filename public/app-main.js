@@ -232,7 +232,17 @@
   /* ──────────────────────────────────────────
      CARD CUTTER (home)
      ────────────────────────────────────────── */
-  const state = { currentSource: null, currentCard: null, evidenceCards: [], activeType: 'all', evSearch: '' };
+  const state = { currentSource: null, currentCard: null, evidenceCards: [], activeType: 'all', evSearch: '', evShown: 50, evFiltered: [], evPage: 1, evSeed: 0, evLoading: false, evDone: false };
+
+  function filterEvidenceClient(cards, q) {
+    const needle = String(q || '').trim().toLowerCase();
+    if (!needle) return cards.slice();
+    return cards.filter((c) => {
+      const hay = [c.tag, c.cite, c.shortCite, c.body_plain, c.body_markdown, c.topic, c.topicLabel]
+        .filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(needle);
+    });
+  }
 
   /* Convert AI output markdown-ish markers to real HTML spans.
      Input markers:
@@ -1060,19 +1070,26 @@
 
   function renderEvidence() {
     const list = $('#ev-list'); if (!list) return;
-    const filtered = state.evidenceCards.filter((c) => !isGeneralLd(c));
-    $('#ev-count').textContent = String(state.evidenceTotal ?? filtered.length);
+    const nonLd = state.evidenceCards.filter((c) => !isGeneralLd(c));
+    const filtered = filterEvidenceClient(nonLd, state.evSearch);
+    state.evFiltered = filtered;
+    $('#ev-count').textContent = String(filtered.length);
     if (!filtered.length) {
-      list.innerHTML = '<div style="padding:24px;color:var(--muted);font-size:13px">No cards match.</div>';
+      list.innerHTML = state.evSearch
+        ? `<div style="padding:24px;color:var(--muted);font-size:13px">No cards match "${esc(state.evSearch)}".</div>`
+        : '<div style="padding:24px;color:var(--muted);font-size:13px">No cards in library yet.</div>';
       return;
     }
-    list.innerHTML = filtered.map((c, i) => evItemHTML(c, i === 0)).join('');
+    const shown = filtered.slice(0, state.evShown || 50);
+    const needSentinel = !state.evDone && state.evidenceCards.length > 0 && !state.evSearch;
+    list.innerHTML = shown.map((c, i) => evItemHTML(c, i === 0)).join('')
+      + (needSentinel ? `<div id="ev-sentinel" style="height:40px"></div>` : '');
     list.querySelectorAll('.ev-item').forEach((el, idx) => {
       el.addEventListener('click', async (e) => {
         const btn = e.target.closest('button[data-act]');
         if (btn && btn.dataset.act === 'export-ev') {
           e.stopPropagation();
-          const c = filtered[idx];
+          const c = shown[idx];
           btn.classList.add('busy');
           try {
             if (!c.body_markdown && !c.body_plain && c.id) {
@@ -1087,9 +1104,22 @@
         }
         list.querySelectorAll('.ev-item').forEach((e2) => e2.classList.remove('active'));
         el.classList.add('active');
-        renderEvidenceDetail(filtered[idx]);
+        renderEvidenceDetail(shown[idx]);
       });
     });
+    maybeInstallEvIntersectionObserver();
+  }
+
+  async function loadMoreEvidence() { /* defined in Task 2 */ }
+
+  function maybeInstallEvIntersectionObserver() {
+    const sentinel = document.getElementById('ev-sentinel');
+    if (!sentinel) return;
+    if (state.evObserver) state.evObserver.disconnect();
+    state.evObserver = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) loadMoreEvidence();
+    }, { root: $('#ev-list'), rootMargin: '200px' });
+    state.evObserver.observe(sentinel);
   }
 
   function evItemHTML(c, active) {
@@ -1164,8 +1194,8 @@
 
   $('#ev-search')?.addEventListener('input', (e) => {
     state.evSearch = e.target.value.trim();
-    clearTimeout(loadEvidence._t);
-    loadEvidence._t = setTimeout(loadEvidence, 250);
+    state.evShown = 50;
+    renderEvidence();
   });
 
   /* My Cards + Projects rail */
