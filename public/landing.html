@@ -1039,5 +1039,18 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   buttons.forEach(function(b){ b.addEventListener('click', function(){ setPlan(b.dataset.plan); }); });
 })();
 </script>
+<script src="api.js"></script>
+<script>
+(async () => {
+  try {
+    const API = window.VerbaAPI;
+    if (!API) return;
+    const who = await API.auth.me();
+    if (who && who.user && who.user.email) {
+      window.location.replace('/app');
+    }
+  } catch (_) {}
+})();
+</script>
 </body>
 </html>
