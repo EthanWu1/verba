@@ -1,11 +1,12 @@
 'use strict';
 
-const express    = require('express');
-const router     = express.Router();
-const db         = require('../services/wikiDb');
-const indexer    = require('../services/wikiIndexer');
-const { getDb }  = require('../services/db');
+const express      = require('express');
+const router       = express.Router();
+const db           = require('../services/wikiDb');
+const indexer      = require('../services/wikiIndexer');
+const { getDb }    = require('../services/db');
 const { buildDocx, buildProjectDocx } = require('../services/docxBuilder');
+const requireUser  = require('../middleware/requireUser');
 
 function _safeFilename(s) {
   return String(s || 'download').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'download';
@@ -34,7 +35,7 @@ router.get('/teams/:id', async (req, res) => {
 });
 
 // GET /api/wiki/teams/:id/refresh  — force re-crawl
-router.get('/teams/:id/refresh', async (req, res) => {
+router.get('/teams/:id/refresh', requireUser, async (req, res) => {
   const team = db.getTeam(req.params.id);
   if (!team) return res.status(404).json({ error: 'not_found' });
   db.setTeamCrawlStatus(team.id, 'pending');
@@ -93,7 +94,7 @@ router.get('/arguments/:id/export', async (req, res) => {
 });
 
 // POST /api/wiki/reindex  — re-crawl full team index
-router.post('/reindex', async (req, res) => {
+router.post('/reindex', requireUser, async (req, res) => {
   res.json({ ok: true, message: 'Reindexing started' });
   indexer.seedTeamIndex().catch(err =>
     console.error('[wiki] reindex error:', err.message)
