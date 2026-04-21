@@ -1249,8 +1249,8 @@ p.figure-omitted{display:block;text-align:center}
 .acct-caret{color:var(--muted);flex:0 0 auto;margin-left:6px;transition:transform .14s}
 .side-account[aria-expanded="true"] .acct-caret{transform:rotate(180deg);color:var(--ink)}
 
-@keyframes um-sweep-down{from{clip-path:inset(0 0 100% 0 round 12px)}to{clip-path:inset(0 0 0 0 round 12px)}}
-@keyframes um-sweep-out{from{clip-path:inset(0 0 0 0 round 12px);opacity:1}to{clip-path:inset(0 0 100% 0 round 12px);opacity:0}}
+@keyframes um-sweep-down{from{clip-path:inset(100% 0 0 0 round 12px)}to{clip-path:inset(0 0 0 0 round 12px)}}
+@keyframes um-sweep-out{from{clip-path:inset(0 0 0 0 round 12px);opacity:1}to{clip-path:inset(100% 0 0 0 round 12px);opacity:0}}
 @keyframes um-item-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .user-menu{
   position:fixed;z-index:260;min-width:240px;
@@ -1258,8 +1258,8 @@ p.figure-omitted{display:block;text-align:center}
   border:1px solid rgba(16,24,40,.08);border-radius:12px;
   box-shadow:0 8px 32px rgba(16,24,40,.14),0 2px 8px rgba(16,24,40,.06);
   padding:6px;display:none;opacity:0;
-  transform-origin:top center;
-  clip-path:inset(0 0 100% 0 round 12px);
+  transform-origin:bottom center;
+  clip-path:inset(100% 0 0 0 round 12px);
   overflow:hidden;
 }
 .user-menu.open{display:block;opacity:1;animation:um-sweep-down 400ms cubic-bezier(.1,.8,.2,1) forwards}
