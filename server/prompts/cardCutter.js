@@ -38,13 +38,22 @@ HIGHLIGHT IS SURGICAL, COHESIVE, AND EFFICIENT — STRICT
 - ${d.unhighlightedRule} of the words in each paragraph remain UNHIGHLIGHTED.
 - Runs are non-contiguous; leave unhighlighted words between them.
 - EVERY HIGHLIGHT RUN MUST CARRY PURPOSE: a new actor, causal verb, mechanism, magnitude, timeframe, or impact. If a run is filler or repeats a claim already highlighted, remove it.
-- COHESIVE ARGUMENT — HARD RULE: Stitched together in reading order, the highlighted fragments MUST form a SELF-CONTAINED, COHERENT micro-argument with an explicit SUBJECT, a VERB, and an OBJECT/IMPACT. A judge reading ONLY the highlighted text out loud must hear a readable sentence — not a list of impacts or stray noun phrases. Always include the subject that performs the action.
-- VERB-REQUIRED CHECK: after you draft the highlights, read them aloud in order. If you do NOT hear a finite verb (causes, leads to, triggers, ends, collapses, prevents, undermines, etc.) connecting the subject to the impact, REJECT the draft and re-cut with an explicit verb. Bulleted noun phrases are a FAIL.
+- COHESIVE ARGUMENT — HARD RULE (this is the #1 quality gate): Stitched together in reading order, the highlighted fragments MUST form a SELF-CONTAINED, READABLE micro-argument with an explicit SUBJECT, a VERB, and an OBJECT/IMPACT. A judge reading ONLY the highlighted text out loud must hear a grammatical sentence — not a list of impacts, not a grab-bag of noun phrases. The subject that performs the action MUST be inside the highlight. "Impacts of nuclear war" is NOT a subject — "nuclear war" is.
+- VERB-REQUIRED CHECK: after you draft the highlights, read them aloud in order as one continuous sentence. If you do NOT hear a finite verb (causes, leads to, triggers, ends, collapses, prevents, undermines, spreads, accelerates, blocks, guarantees, etc.) connecting the subject to the impact, REJECT the draft and re-cut with an explicit verb. Noun-phrase chains are a FAIL.
   - BAD (bulleted impacts, no verb): "impacts of nuclear war … extinction … no recovery"
-  - GOOD (subject + verb + object): "nuclear war causes extinction … ends civilization"
+  - GOOD (subject + verb + object): "nuc war causes extinction … ends civ"
   - BAD: "economic collapse … global recession … unemployment"
-  - GOOD: "tariffs trigger economic collapse … spread global recession"
-- PRIORITIZE EFFICIENCY: choose the SHORTEST contiguous span (including mid-word cuts) that still carries the warrant. If "nuc war ends civ" reads cleanly, prefer it over "nuclear war ends civilization".
+  - GOOD: "tariffs trigger econ collapse … spread global recession"
+  - BAD (dangling noun phrase): "arms control risks … accidental exchange … hypersonics"
+  - GOOD: "arms control fails … accidental exchange grows … hypersonics shrink decision windows"
+- SUBJECT-LED: every highlight sequence inside ONE paragraph should READ like its own sentence. If the paragraph has a new actor, introduce the actor with the first highlight in that paragraph.
+- PRIORITIZE EFFICIENCY — AGGRESSIVE: choose the SHORTEST span (including mid-word cuts) that still carries the warrant. Mid-word cuts are ENCOURAGED, not just allowed:
+  - "nuclear" → highlight "nuc" (3 letters) if that alone carries it: ==nuc==lear
+  - "United States" → highlight "U" and "S": ==U==nited ==S==tates
+  - "economic" → ==econ==omic
+  - "civilization" → ==civ==ilization
+  - "international" → ==int==ernational
+  If "nuc war ends civ" reads cleanly, prefer it over "nuclear war ends civilization". Fewer characters = faster spread = cleaner judge read.
 - Skip connectives between runs: the, a, an, of, and, or, but, that, which, to, in, on, for, because, however, although, moreover, additionally.
 
 BOLD RULES

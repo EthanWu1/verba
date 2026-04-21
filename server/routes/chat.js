@@ -76,8 +76,16 @@ router.post('/', enforceLimit('chat', CHAT_DAILY_LIMIT), async (req, res) => {
 
     let contextCards = [];
     try {
-      const ctx = await buildChatContext(lastUserMsg, {}, 8);
-      contextCards = Array.isArray(ctx && ctx.cards) ? ctx.cards : [];
+      const ctx = await buildChatContext(lastUserMsg, {}, 24);
+      const all = Array.isArray(ctx && ctx.cards) ? ctx.cards : [];
+      // Only surface cards that actually have highlights/underlines — unhighlighted cards read poorly.
+      const hasMarkup = (c) => {
+        if (c.hasHighlight === 1 || c.hasHighlight === true) return true;
+        const body = String(c.body_markdown || c.body_html || '');
+        return /<u[>\s]|==|\*\*/.test(body);
+      };
+      const highlighted = all.filter(hasMarkup);
+      contextCards = (highlighted.length ? highlighted : all).slice(0, 8);
     } catch (e) {
       contextCards = [];
     }

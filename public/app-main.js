@@ -1141,6 +1141,8 @@
       state.evidenceTotal = data.total || 0;
       renderEvidence();
       if (state.evidenceCards[0]) renderEvidenceDetail(state.evidenceCards[0]);
+      // Preload page 2 immediately for snappier scroll
+      setTimeout(() => loadMoreEvidence(), 400);
     } catch (err) {
       list.innerHTML = `<div style="padding:24px;color:#c33;font-size:13px">Error: ${esc(err.message)}</div>`;
     }
@@ -1163,13 +1165,10 @@
 
   function renderEvidence() {
     const list = $('#ev-list'); if (!list) return;
-    const sourceArr = state.evSearch && Array.isArray(state.evSearchResults)
-      ? state.evSearchResults
-      : state.evidenceCards;
-    const nonLd = sourceArr.filter((c) => !isGeneralLd(c));
-    const filtered = state.evSearch && Array.isArray(state.evSearchResults)
-      ? nonLd
-      : filterEvidenceClient(nonLd, state.evSearch);
+    const searching = !!(state.evSearch && Array.isArray(state.evSearchResults));
+    const sourceArr = searching ? state.evSearchResults : state.evidenceCards;
+    const baseArr = searching ? sourceArr : sourceArr.filter((c) => !isGeneralLd(c));
+    const filtered = searching ? baseArr : filterEvidenceClient(baseArr, state.evSearch);
     state.evFiltered = filtered;
     $('#ev-count').textContent = String(filtered.length);
     if (!filtered.length) {
@@ -1245,7 +1244,7 @@
     if (state.evObserver) state.evObserver.disconnect();
     state.evObserver = new IntersectionObserver((entries) => {
       if (entries.some(e => e.isIntersecting)) loadMoreEvidence();
-    }, { root: $('#ev-list'), rootMargin: '200px' });
+    }, { root: $('#ev-list'), rootMargin: '1200px' });
     state.evObserver.observe(sentinel);
   }
 
@@ -1936,6 +1935,27 @@
       'stress-testing the perm…',
       'checking solvency deficit…',
       'ranking offense…',
+      'sharpening tag lines…',
+      'pruning filler warrants…',
+      'spotchecking author credentials…',
+      'cross-applying framework…',
+      'looking for terminal impact…',
+      'weighing magnitude vs. probability…',
+      'flipping the aff into a turn…',
+      'reading the underviews…',
+      'checking theory voters…',
+      'calibrating brevity…',
+      'double-checking cite dates…',
+      'listening for the warrant…',
+      'pulling out the spike…',
+      'running perm tests…',
+      'counting link chains…',
+      'refining the overview…',
+      'stacking offense vs. defense…',
+      'looking for missing links…',
+      'lining up impact turns…',
+      'choosing between cards…',
+      'sizing up the strat…',
     ];
     function showThinking() {
       const el = document.createElement('div');
@@ -1981,18 +2001,18 @@
         case '/clear': return { action: 'clear' };
         case '/find':  return { action: 'find', arg };
         case '/block':
-          if (!arg) return { action: 'prefill', prefill: '/block ' };
+          if (!arg) return null;
           return {
             action: 'send',
             display: `/block ${arg}`,
-            send: `Write a block on: ${arg}. Use cards only if they actually help; otherwise give analytics, warrants, and framing. Choose the number of cards based on what's useful — not a fixed count.`,
+            send: `${arg}\n\n[HIDDEN: write a block on this. Use cards only if they help; otherwise analytics, warrants, framing. Pick card count by usefulness, not a fixed number.]`,
           };
         case '/explain':
-          if (!arg) return { action: 'prefill', prefill: '/explain ' };
+          if (!arg) return null;
           return {
             action: 'send',
             display: `/explain ${arg}`,
-            send: `Explain: ${arg}. State warrants, impact, and a response to the most likely answer.`,
+            send: `${arg}\n\n[HIDDEN: explain this. State warrants, impact, and a response to the most likely answer.]`,
           };
         default: return null;
       }
@@ -2136,7 +2156,11 @@
         if (e.key === 'ArrowUp')   { e.preventDefault(); slashSel = (slashSel - 1 + m.length) % m.length; refreshSlashHighlight(); return; }
         if (e.key === 'Tab')       { e.preventDefault(); selectSlash(slashSel); return; }
         if (e.key === 'Escape')    { e.preventDefault(); slashPop.classList.remove('open'); return; }
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); selectSlash(slashSel); return; }
+        if (e.key === 'Enter' && !e.shiftKey) {
+          // Enter sends current text as-is — never rewrite the input.
+          slashPop.classList.remove('open');
+          // Fall through to normal Enter/send path.
+        }
       }
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
     });
