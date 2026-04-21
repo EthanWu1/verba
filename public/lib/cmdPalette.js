@@ -19,19 +19,19 @@
   };
 
   const ACTIONS = [
-    { id:'cut',     label:'Cut a card',       icon:SVG.plane,    color:'#6366f1', description:'start cutter', short:'Ctrl+K', end:'Cutter',
+    { id:'cut',     label:'Cut a card',       icon:SVG.plane,    description:'start cutter', short:'', end:'Cutter',
       run: () => { document.querySelector('[data-page="home"]')?.click(); setTimeout(() => document.querySelector('.research-bar input,.research-bar textarea')?.focus(), 120); } },
-    { id:'mine',    label:'My Library',       icon:SVG.bars,     color:'#f97316', description:'saved cards',  short:'',    end:'Library',
+    { id:'mine',    label:'My Library',       icon:SVG.bars,     description:'saved cards',  short:'', end:'Library',
       run: () => document.querySelector('[data-page="library"][data-lib-go="mine"]')?.click() },
-    { id:'evd',     label:'Evidence Sets',    icon:SVG.video,    color:'#a855f7', description:'grouped cards', short:'',   end:'Library',
+    { id:'evd',     label:'Evidence Sets',    icon:SVG.video,    description:'grouped cards', short:'', end:'Library',
       run: () => document.querySelector('[data-page="library"][data-lib-go="evidence"]')?.click() },
-    { id:'hist',    label:'Cut History',      icon:SVG.audio,    color:'#22c55e', description:'recent',        short:'',   end:'Library',
+    { id:'hist',    label:'Cut History',      icon:SVG.audio,    description:'recent',        short:'', end:'Library',
       run: () => document.querySelector('[data-page="library"][data-lib-go="history"]')?.click() },
-    { id:'upload',  label:'Upload PDF or TXT',icon:SVG.upload,   color:'#3b82f6', description:'attach file',   short:'',   end:'Action',
+    { id:'upload',  label:'Upload PDF or TXT',icon:SVG.upload,   description:'attach file',   short:'', end:'Action',
       run: () => { document.querySelector('[data-page="home"]')?.click(); setTimeout(() => document.getElementById('attach-btn')?.click(), 120); } },
-    { id:'sett',    label:'Settings',         icon:SVG.settings, color:'#64748b', description:'preferences',   short:'',   end:'Page',
+    { id:'sett',    label:'Settings',         icon:SVG.settings, description:'preferences',   short:'', end:'Page',
       run: () => document.querySelector('[data-page="settings"]')?.click() },
-    { id:'out',     label:'Log out',          icon:SVG.logout,   color:'#ef4444', description:'end session',   short:'',   end:'Account',
+    { id:'out',     label:'Log out',          icon:SVG.logout,   description:'end session',   short:'', end:'Account',
       run: () => document.querySelector('[data-act="logout"]')?.click() },
   ];
 
@@ -65,8 +65,9 @@
   .cmdp-panel.show .cmdp-item:nth-child(7){transition-delay:.24s}
   .cmdp-item:hover,.cmdp-item.active{background:#f3f4f6}
   .cmdp-left{display:flex;align-items:center;gap:10px;min-width:0}
-  .cmdp-item-ico{width:16px;height:16px;flex:0 0 16px}
+  .cmdp-item-ico{width:16px;height:16px;flex:0 0 16px;color:#6b7280}
   .cmdp-item-ico svg{width:16px;height:16px;display:block}
+  .cmdp-item.active .cmdp-item-ico,.cmdp-item:hover .cmdp-item-ico{color:#111827}
   .cmdp-item-label{font:600 13px Inter,system-ui;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cmdp-item-desc{font:400 12px Inter,system-ui;color:#9ca3af}
   .cmdp-right{display:flex;align-items:center;gap:10px;flex:0 0 auto}
@@ -126,7 +127,7 @@
         list.innerHTML = filtered.map((a, i) => `
           <li class="cmdp-item${i === activeIdx ? ' active' : ''}" data-id="${a.id}" data-i="${i}">
             <div class="cmdp-left">
-              <span class="cmdp-item-ico" style="color:${a.color}">${a.icon}</span>
+              <span class="cmdp-item-ico">${a.icon}</span>
               <span class="cmdp-item-label">${a.label}</span>
               <span class="cmdp-item-desc">${a.description || ''}</span>
             </div>
