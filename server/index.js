@@ -24,6 +24,7 @@ const projectsRoutes    = require('./routes/projects');
 const authRoutes        = require('./routes/auth');
 const mineRoutes        = require('./routes/mine');
 const historyRoutes     = require('./routes/history');
+const wikiRoutes        = require('./routes/wiki');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -56,6 +57,7 @@ app.use('/api/projects',      projectsRoutes);
 app.use('/api/auth',          authRoutes);
 app.use('/api/mine',          mineRoutes);
 app.use('/api/history',       historyRoutes);
+app.use('/api/wiki',          wikiRoutes);
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {
