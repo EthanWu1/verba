@@ -6,10 +6,9 @@ const { complete } = require('../services/llm');
 const { getRelevantAnalytics, buildChatContext } = require('../services/libraryQuery');
 const requireUser = require('../middleware/requireUser');
 const enforceLimit = require('../middleware/enforceLimit');
+const { pickChatMaxTokens, SHORT_BRIEF, BLOCK_INTENT } = require('../prompts/chatBrevity');
 const CHAT_DAILY_LIMIT = Number(process.env.FREE_CHAT_DAILY || 10);
 router.use(requireUser);
-
-const BLOCK_INTENT = /write.*block|block (to|against|on|for)|frontline|extend\b|overview/i;
 
 const SYSTEM_PROMPT = `You are a circuit LD debate coach. Direct claims only. No greetings, filler, hedging, or offers to tailor further.
 
@@ -48,7 +47,9 @@ The UI renders these as chips the user can click to save. Never quote card body 
 STYLE:
 - Short sentences. Warrant > claim > impact in that order when laying out a response.
 - No preamble. No "Here's a block on...". Start with the "AT:" line.
-- No closing summary. No "let me know if...".`;
+- No closing summary. No "let me know if...".
+
+${SHORT_BRIEF}`;
 
 router.post('/', enforceLimit('chat', CHAT_DAILY_LIMIT), async (req, res) => {
   const { messages, fileContext } = req.body;
@@ -100,7 +101,7 @@ router.post('/', enforceLimit('chat', CHAT_DAILY_LIMIT), async (req, res) => {
         ...messages.slice(-20),
       ],
       temperature: 0.4,
-      maxTokens: 1500,
+      maxTokens: pickChatMaxTokens(lastUserMsg),
       forceModel: process.env.CHAT_MODEL || 'anthropic/claude-opus-4-7',
     });
     const cardsPayload = contextCards.map(c => ({
