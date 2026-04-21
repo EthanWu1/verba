@@ -78,24 +78,44 @@ function requireAuthPage(req, res, next) {
   if (!ctx) return res.redirect('/signin');
   next();
 }
+// Always send fresh HTML — browser never uses stale cache for document navigation.
+function sendHtmlNoCache(res, file) {
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.sendFile(path.join(PUBLIC, file));
+}
+
 app.get(['/app.html', '/app', '/app/*'], requireAuthPage, (_req, res) => {
-  res.sendFile(path.join(PUBLIC, 'app.html'));
+  sendHtmlNoCache(res, 'app.html');
 });
 
-app.use(express.static(PUBLIC, { index: false }));
+app.use(express.static(PUBLIC, {
+  index: false,
+  setHeaders(res, filePath) {
+    // HTML never cached; JS/CSS revalidate every request; assets long cache.
+    if (filePath.endsWith('.html')) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+      res.set('Cache-Control', 'no-cache, must-revalidate');
+    } else {
+      res.set('Cache-Control', 'public, max-age=86400');
+    }
+  },
+}));
 
 // Landing is the default home page
-app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC, 'landing.html')));
-app.get('/signin', (_req, res) => res.sendFile(path.join(PUBLIC, 'signin.html')));
-app.get('/signup', (_req, res) => res.sendFile(path.join(PUBLIC, 'signin.html')));
-app.get('/login',  (_req, res) => res.sendFile(path.join(PUBLIC, 'signin.html')));
-app.get('/forgot', (_req, res) => res.sendFile(path.join(PUBLIC, 'forgot.html')));
-app.get('/reset',  (_req, res) => res.sendFile(path.join(PUBLIC, 'reset.html')));
+app.get('/', (_req, res) => sendHtmlNoCache(res, 'landing.html'));
+app.get('/signin', (_req, res) => sendHtmlNoCache(res, 'signin.html'));
+app.get('/signup', (_req, res) => sendHtmlNoCache(res, 'signin.html'));
+app.get('/login',  (_req, res) => sendHtmlNoCache(res, 'signin.html'));
+app.get('/forgot', (_req, res) => sendHtmlNoCache(res, 'forgot.html'));
+app.get('/reset',  (_req, res) => sendHtmlNoCache(res, 'reset.html'));
 
 // SPA-ish fallback — anything else that isn't an API call goes to landing.
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Not found' });
-  res.sendFile(path.join(PUBLIC, 'landing.html'));
+  sendHtmlNoCache(res, 'landing.html');
 });
 
 /* ── Start ── */

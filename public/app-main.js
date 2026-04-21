@@ -1134,7 +1134,7 @@
     state.evDone = false;
     state.evSeed = state.evSeed || (Math.floor(Math.random() * 1e9) + 1);
     try {
-      const params = { limit: 50, page: 1, sort: 'random', seed: state.evSeed };
+      const params = { limit: 50, page: 1, sort: 'random', seed: state.evSeed, minHighlight: 5 };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       state.evidenceCards = data.items || data.results || [];
@@ -1167,6 +1167,7 @@
     const list = $('#ev-list'); if (!list) return;
     const searching = !!(state.evSearch && Array.isArray(state.evSearchResults));
     const sourceArr = searching ? state.evSearchResults : state.evidenceCards;
+    // Server already filters by minHighlight; just drop generic buckets in browse mode.
     const baseArr = searching ? sourceArr : sourceArr.filter((c) => !isGeneralLd(c));
     const filtered = searching ? baseArr : filterEvidenceClient(baseArr, state.evSearch);
     state.evFiltered = filtered;
@@ -1207,8 +1208,11 @@
             } else {
               await navigator.clipboard.writeText(plain);
             }
-            toast('Copied ✓');
-          } catch (err) { toast('Copy failed: ' + err.message); }
+            btn.classList.remove('busy');
+            btn.classList.add('copied');
+            setTimeout(() => btn.classList.remove('copied'), 1400);
+            toast({ title: 'Copied', description: 'Card copied to clipboard', variant: 'success', duration: 1800 });
+          } catch (err) { toast({ title: 'Copy failed', description: err.message, variant: 'destructive' }); }
           finally { btn.classList.remove('busy'); }
           return;
         }
@@ -1225,7 +1229,7 @@
     state.evLoading = true;
     try {
       const next = state.evPage + 1;
-      const params = { limit: 50, page: next, sort: 'random', seed: state.evSeed };
+      const params = { limit: 50, page: next, sort: 'random', seed: state.evSeed, minHighlight: 5 };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       const have = new Set(state.evidenceCards.map(c => c.id));
@@ -1317,7 +1321,8 @@
         })]);
       } else await navigator.clipboard.writeText(plain);
       const b = $('#ev-copy'); if (b) { b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'), 1400); }
-    } catch (err) { toast('Copy blocked'); }
+      toast({ title: 'Copied', description: 'Card copied to clipboard', variant: 'success', duration: 1800 });
+    } catch (err) { toast({ title: 'Copy blocked', description: err.message || 'Clipboard permission denied', variant: 'destructive' }); }
   });
 
   let evSearchTok = 0;
@@ -1600,6 +1605,7 @@
       return `
         <div class="mycard" data-mid="${esc(c.id)}" draggable="true">
           <span class="date">${esc(formatRelDate(c.savedAt))}</span>
+          <button class="mc-copy-btn" data-act="copy-mine" title="Copy"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
           <button class="export-btn" data-act="export-mine" title="Export"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 21h14"/></svg></button>
           <div class="head">
             <div class="badges" style="display:flex;gap:4px">
@@ -1644,9 +1650,44 @@
       try {
         const { blob, filename } = await API.exportDocx(item);
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
-        API.history.push({ type: 'export', tag: item.tag, filename }).catch(() => {}); toast('Exported ' + filename);
-      } catch (err) { toast('Export failed: ' + err.message); }
+        API.history.push({ type: 'export', tag: item.tag, filename }).catch(() => {});
+        toast({ title: 'Exported', description: filename, variant: 'success', duration: 2200 });
+      } catch (err) { toast({ title: 'Export failed', description: err.message, variant: 'destructive' }); }
       finally { btn?.classList.remove('busy'); }
+      return;
+    }
+    if (act === 'copy-mine') {
+      const btn = e.target.closest('button.mc-copy-btn');
+      btn?.classList.add('busy');
+      try {
+        const full = !item.body_markdown && !item.body_plain && !item.body_html && item.id
+          ? await API.libraryCard(item.id).catch(() => null)
+          : null;
+        const c = full?.card ? Object.assign({}, item, full.card) : item;
+        const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
+        const buildHtml  = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml)  || null;
+        const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+        const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
+        const html  = buildHtml
+          ? buildHtml({ ...c, body_html: bodyHtml })
+          : `<div style="font-family:Calibri,Arial,sans-serif;color:#000"><p style="font-weight:700">${esc(c.tag || '')}</p><p>${esc(c.cite || '')}</p>${bodyHtml}</div>`;
+        if (window.ClipboardItem && navigator.clipboard?.write) {
+          await navigator.clipboard.write([new ClipboardItem({
+            'text/html':  new Blob([html],  { type: 'text/html' }),
+            'text/plain': new Blob([plain], { type: 'text/plain' }),
+          })]);
+        } else {
+          await navigator.clipboard.writeText(plain);
+        }
+        btn?.classList.remove('busy');
+        btn?.classList.add('copied');
+        setTimeout(() => btn?.classList.remove('copied'), 1400);
+        toast({ title: 'Copied', description: 'Card copied to clipboard', variant: 'success', duration: 1800 });
+      } catch (err) {
+        toast({ title: 'Copy failed', description: err.message, variant: 'destructive' });
+      } finally {
+        btn?.classList.remove('busy');
+      }
       return;
     }
     if (!act) { renderCardInPane(item); go('home'); }

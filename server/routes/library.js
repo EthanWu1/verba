@@ -42,6 +42,7 @@ router.get('/cards', async (req, res) => {
       source: String(req.query.source || ''),
       scope: String(req.query.scope || ''),
       canonical: req.query.canonical != null ? String(req.query.canonical) : '',
+      minHighlight: req.query.minHighlight != null ? Number(req.query.minHighlight) : 0,
     }));
   } catch (err) {
     return res.status(500).json({ error: err.message });

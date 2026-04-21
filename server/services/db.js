@@ -187,6 +187,9 @@ function _runMigrations(db) {
   // v5: hasHighlight flag for prioritizing cut cards
   const needHighlightBackfill = !cols2.includes('hasHighlight');
   if (needHighlightBackfill) db.exec("ALTER TABLE cards ADD COLUMN hasHighlight INTEGER NOT NULL DEFAULT 0");
+  // v6: highlightWordCount — number of words inside <u>...</u> or ==...== spans.
+  const needWordCountBackfill = !cols2.includes('highlightWordCount');
+  if (needWordCountBackfill) db.exec("ALTER TABLE cards ADD COLUMN highlightWordCount INTEGER NOT NULL DEFAULT 0");
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_cards_typeLabel       ON cards(typeLabel);
     CREATE INDEX IF NOT EXISTS idx_cards_topicLabel      ON cards(topicLabel);
@@ -196,6 +199,7 @@ function _runMigrations(db) {
     CREATE INDEX IF NOT EXISTS idx_cards_importedAt      ON cards(importedAt);
     CREATE INDEX IF NOT EXISTS idx_cards_warrantDensity  ON cards(warrantDensity);
     CREATE INDEX IF NOT EXISTS idx_cards_hasHighlight    ON cards(hasHighlight);
+    CREATE INDEX IF NOT EXISTS idx_cards_highlightWordCount ON cards(highlightWordCount);
 
     -- Partial indexes on hasHighlight=1 rows for facet hot path (48k of 157k rows).
     -- facetCounts filters WHERE hasHighlight=1 AND col IS NOT NULL AND col != ''
@@ -216,6 +220,7 @@ function _runMigrations(db) {
   `);
   if (needBackfill) _backfillDerivedLabels(db);
   if (needHighlightBackfill) _backfillHasHighlight(db);
+  if (needWordCountBackfill) _backfillHighlightWordCount(db);
   _setupCardsFts(db);
 }
 
@@ -259,6 +264,39 @@ function _backfillHasHighlight(db) {
   console.log(`[db] hasHighlight set on ${info.changes} rows in ${Date.now() - t0}ms`);
 }
 
+function _countHighlightWords(bodyMarkdown) {
+  const src = String(bodyMarkdown || '');
+  if (!src) return 0;
+  const re = /<u>([\s\S]*?)<\/u>|==([\s\S]*?)==/g;
+  let total = 0;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const inner = (m[1] || m[2] || '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/[*_=]/g, ' ')
+      .replace(/\u00B6/g, ' ');
+    const words = inner.split(/\s+/).filter(Boolean);
+    total += words.length;
+  }
+  return total;
+}
+
+function _backfillHighlightWordCount(db) {
+  console.log('[db] backfilling highlightWordCount...');
+  const t0 = Date.now();
+  const selectStmt = db.prepare('SELECT rowid, body_markdown FROM cards');
+  const updateStmt = db.prepare('UPDATE cards SET highlightWordCount = ? WHERE rowid = ?');
+  let processed = 0;
+  const tx = db.transaction(() => {
+    for (const row of selectStmt.iterate()) {
+      updateStmt.run(_countHighlightWords(row.body_markdown), row.rowid);
+      processed++;
+    }
+  });
+  tx();
+  console.log(`[db] highlightWordCount set on ${processed} rows in ${Date.now() - t0}ms`);
+}
+
 function _backfillDerivedLabels(db) {
   console.log('[db] backfilling derived labels...');
   const rows = db.prepare('SELECT id, argumentTypes, argumentTags, sourceKind, division, zipPath, topicBucket FROM cards').all();
@@ -299,13 +337,13 @@ const INSERT_CARD = `
      tag, cite, shortCite, body_markdown, body_plain, warrantDensity,
      contentFingerprint, foundAt, importedAt, topicBucket, argumentTypes, argumentTags,
      sourceKind, isCanonical, canonicalGroupKey, variantCount,
-     typeLabel, topicLabel, sourceLabel, scope, resolutionLabel, hasHighlight)
+     typeLabel, topicLabel, sourceLabel, scope, resolutionLabel, hasHighlight, highlightWordCount)
   VALUES
     (@id, @zipPath, @sourceEntry, @sourceFileName, @division, @school, @squad,
      @tag, @cite, @shortCite, @body_markdown, @body_plain, @warrantDensity,
      @contentFingerprint, @foundAt, @importedAt, @topicBucket, @argumentTypes, @argumentTags,
      @sourceKind, @isCanonical, @canonicalGroupKey, @variantCount,
-     @typeLabel, @topicLabel, @sourceLabel, @scope, @resolutionLabel, @hasHighlight)
+     @typeLabel, @topicLabel, @sourceLabel, @scope, @resolutionLabel, @hasHighlight, @highlightWordCount)
 `;
 
 function upsertCards(cards) {
@@ -348,6 +386,7 @@ function upsertCards(cards) {
         scope: labels.scope,
         resolutionLabel: labels.resolutionLabel,
         hasHighlight: /(==|<u>|\*\*)/.test(card.body_markdown || '') ? 1 : 0,
+        highlightWordCount: _countHighlightWords(card.body_markdown || ''),
       });
     }
   });
@@ -455,6 +494,10 @@ function _buildWhere(filters, { tablePrefix = '' } = {}) {
   const p = tablePrefix ? `${tablePrefix}.` : '';
   const where = [`${p}hasHighlight = 1`];
   const params = [];
+  if (Number(filters.minHighlight) > 0) {
+    where.push(`${p}highlightWordCount >= ?`);
+    params.push(Number(filters.minHighlight));
+  }
   if (filters.scope === 'my')     { where.push(`${p}scope = ?`); params.push('my'); }
   if (filters.scope === 'public') { where.push(`${p}scope = ?`); params.push('public'); }
   if (filters.type) {
@@ -485,7 +528,7 @@ function _buildFtsMatch(q) {
 const LIST_COLS = `id, zipPath, sourceEntry, sourceFileName, division, school, squad,
   tag, cite, shortCite, warrantDensity, foundAt, importedAt, topicBucket,
   argumentTypes, argumentTags, sourceKind, isCanonical, canonicalGroupKey,
-  variantCount, typeLabel, topicLabel, sourceLabel, scope, resolutionLabel, hasHighlight`;
+  variantCount, typeLabel, topicLabel, sourceLabel, scope, resolutionLabel, hasHighlight, highlightWordCount`;
 
 function _seedSortClause(seed, prefix = '') {
   const s = Math.max(1, Math.abs(Number(seed) || 1)) | 0;
