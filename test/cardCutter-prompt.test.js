@@ -16,3 +16,11 @@ test('prompt still enforces PARAGRAPH INTEGRITY', () => {
 test('prompt emphasizes efficiency / shorter spans', () => {
   assert.match(SYSTEM_PROMPT, /EFFICIENCY|shortest/i);
 });
+test('prompt contains BAD bulleted-noun-phrase vs GOOD subject+verb example', () => {
+  assert.match(SYSTEM_PROMPT, /BAD\b[\s\S]*GOOD\b/);
+  assert.match(SYSTEM_PROMPT, /nuclear war/i);
+  assert.match(SYSTEM_PROMPT, /causes|leads to|triggers/i);
+});
+test('prompt demands verb or reject', () => {
+  assert.match(SYSTEM_PROMPT, /REJECT|re-?cut|explicit verb/i);
+});

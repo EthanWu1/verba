@@ -16,8 +16,8 @@ const { SYSTEM_PROMPT, buildSystemPrompt, buildCutPrompt, buildEditPrompt, LENGT
 
 const LENGTH_BUDGETS = {
   short:  { input: 6000,  output: 2600 },
-  medium: { input: 9000,  output: 3800 },
-  long:   { input: 14000, output: 5600 },
+  medium: { input: 9000,  output: 4500 },
+  long:   { input: 16000, output: 8000 },
 };
 function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'heavy'; }
 function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'long'; }
@@ -515,6 +515,9 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
         },
       });
       try {
+        // NO onToken on retry — first-pass card already rendered as ghost.
+        // Streaming retry deltas overwrites the DOM and looks like "cuts, deletes, recuts".
+        // Retry runs silently; only the final `card` event replaces the ghost.
         const cut2 = await Promise.race([
           completeStream({
             messages: [
@@ -524,7 +527,6 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
             temperature: 0.1,
             maxTokens: budget.output,
             forceModel: CARD_CUT_MODEL,
-            onToken: (_delta, acc) => { send('card_delta', { acc }); },
           }),
           new Promise((_, rej) => setTimeout(() => rej(new Error('LLM cut timeout 10s')), 10000)),
         ]);
