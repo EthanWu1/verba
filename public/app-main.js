@@ -156,9 +156,12 @@
       row.setAttribute('aria-expanded', 'true');
     }
     function closeMenu() {
+      if (!menu.classList.contains('open')) return;
       menu.classList.remove('open');
+      menu.classList.add('closing');
       menu.setAttribute('aria-hidden', 'true');
       row.setAttribute('aria-expanded', 'false');
+      setTimeout(() => menu.classList.remove('closing'), 260);
     }
     row.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1136,13 +1139,19 @@
     try {
       const params = { limit: 50, page: 1, sort: 'random', seed: state.evSeed, minHighlight: 5 };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
-      const data = await API.libraryCards(params);
+      let data = await API.libraryCards(params);
+      // Fallback: if server filter yields nothing (e.g. backfill hasn't run), drop minHighlight.
+      if (!(data.items || data.results || []).length) {
+        delete params.minHighlight;
+        state.evSkipMinHighlight = true;
+        data = await API.libraryCards(params);
+      }
       state.evidenceCards = data.items || data.results || [];
       state.evidenceTotal = data.total || 0;
+      if (!state.evidenceCards.length) state.evDone = true;
       renderEvidence();
       if (state.evidenceCards[0]) renderEvidenceDetail(state.evidenceCards[0]);
-      // Preload page 2 immediately for snappier scroll
-      setTimeout(() => loadMoreEvidence(), 400);
+      if (!state.evDone) setTimeout(() => loadMoreEvidence(), 400);
     } catch (err) {
       list.innerHTML = `<div style="padding:24px;color:#c33;font-size:13px">Error: ${esc(err.message)}</div>`;
     }
@@ -1229,7 +1238,8 @@
     state.evLoading = true;
     try {
       const next = state.evPage + 1;
-      const params = { limit: 50, page: next, sort: 'random', seed: state.evSeed, minHighlight: 5 };
+      const params = { limit: 50, page: next, sort: 'random', seed: state.evSeed };
+      if (!state.evSkipMinHighlight) params.minHighlight = 5;
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       const have = new Set(state.evidenceCards.map(c => c.id));

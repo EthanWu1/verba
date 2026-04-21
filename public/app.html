@@ -883,11 +883,10 @@ body.nexus-full .nexus-closed-rail{display:none}
   position:absolute;top:10px;right:10px;
   width:26px;height:26px;border-radius:5px;display:grid;place-items:center;
   color:var(--ink);background:#fff;border:1px solid var(--line);
-  transition:all .14s;opacity:0;cursor:pointer;z-index:2;
+  transition:all .14s;opacity:.92;cursor:pointer;z-index:2;
 }
 .mycard:hover .export-btn{opacity:1}
-.mycard .date{transition:opacity .14s}
-.mycard:hover .date{opacity:0}
+.mycard .date{transition:opacity .14s;margin-right:58px}
 .export-btn.busy,.ev-export-btn.busy{pointer-events:none;opacity:.7 !important}
 .export-btn.busy svg,.ev-export-btn.busy svg{animation:spin 0.8s linear infinite}
 .ev-export-btn{transition:background .14s, color .14s, border-color .14s, transform .14s}
@@ -899,7 +898,7 @@ body.nexus-full .nexus-closed-rail{display:none}
   position:absolute;top:10px;right:42px;
   width:26px;height:26px;border-radius:5px;display:grid;place-items:center;
   color:var(--ink);background:#fff;border:1px solid var(--line);
-  transition:all .14s;opacity:0;cursor:pointer;z-index:2;
+  transition:all .14s;opacity:.92;cursor:pointer;z-index:2;
 }
 .mycard:hover .mc-copy-btn{opacity:1}
 .mycard .mc-copy-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2);transform:scale(1.06)}
@@ -1251,24 +1250,37 @@ p.figure-omitted{display:block;text-align:center}
 .acct-caret{color:var(--muted);flex:0 0 auto;margin-left:6px;transition:transform .14s}
 .side-account[aria-expanded="true"] .acct-caret{transform:rotate(180deg);color:var(--ink)}
 
+@keyframes um-sweep-down{from{clip-path:inset(0 0 100% 0 round 12px)}to{clip-path:inset(0 0 0 0 round 12px)}}
+@keyframes um-sweep-out{from{clip-path:inset(0 0 0 0 round 12px);opacity:1}to{clip-path:inset(0 0 100% 0 round 12px);opacity:0}}
+@keyframes um-item-in{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .user-menu{
   position:fixed;z-index:260;min-width:240px;
-  background:#fff;border:1px solid rgba(16,24,40,.08);border-radius:12px;
-  box-shadow:0 16px 40px -12px rgba(16,24,40,.22),0 2px 8px rgba(16,24,40,.06);
+  background:rgba(255,255,255,.92);backdrop-filter:saturate(1.3) blur(14px);-webkit-backdrop-filter:saturate(1.3) blur(14px);
+  border:1px solid rgba(16,24,40,.08);border-radius:12px;
+  box-shadow:0 8px 32px rgba(16,24,40,.14),0 2px 8px rgba(16,24,40,.06);
   padding:6px;display:none;opacity:0;
-  transform-origin:top center;transform:translateY(-4px) scale(.98);
+  transform-origin:top center;
   clip-path:inset(0 0 100% 0 round 12px);
-  transition:opacity .18s cubic-bezier(.2,.8,.2,1),transform .22s cubic-bezier(.2,.8,.2,1),clip-path .28s cubic-bezier(.2,.8,.2,1);
+  overflow:hidden;
 }
-.user-menu.open{display:block;opacity:1;transform:translateY(0) scale(1);clip-path:inset(0 0 0 0 round 12px)}
-.user-menu-item{opacity:0;transform:translateY(-4px);transition:opacity .2s ease,transform .2s ease,background .12s}
-.user-menu.open .user-menu-item{opacity:1;transform:translateY(0)}
-.user-menu.open .user-menu-item:nth-child(2){transition-delay:.04s}
-.user-menu.open .user-menu-item:nth-child(3){transition-delay:.08s}
-.user-menu.open .user-menu-item:nth-child(4){transition-delay:.12s}
-.user-menu.open .user-menu-item:nth-child(5){transition-delay:.16s}
-.user-menu.open .user-menu-item:nth-child(6){transition-delay:.20s}
-.user-menu.open .user-menu-item:nth-child(7){transition-delay:.24s}
+.user-menu.open{display:block;opacity:1;animation:um-sweep-down 400ms cubic-bezier(.1,.8,.2,1) forwards}
+.user-menu.closing{display:block;animation:um-sweep-out 260ms cubic-bezier(.4,0,1,1) forwards;pointer-events:none}
+.user-menu-item,.user-menu-email,.user-menu-sep{opacity:0}
+.user-menu-item{transition:background .12s,color .12s}
+.user-menu.open .user-menu-email,
+.user-menu.open .user-menu-item,
+.user-menu.open .user-menu-sep{animation:um-item-in 350ms cubic-bezier(.1,.8,.2,1) forwards}
+.user-menu.open > *:nth-child(1){animation-delay:40ms}
+.user-menu.open > *:nth-child(2){animation-delay:70ms}
+.user-menu.open > *:nth-child(3){animation-delay:100ms}
+.user-menu.open > *:nth-child(4){animation-delay:130ms}
+.user-menu.open > *:nth-child(5){animation-delay:160ms}
+.user-menu.open > *:nth-child(6){animation-delay:190ms}
+.user-menu.open > *:nth-child(7){animation-delay:220ms}
+.user-menu.open > *:nth-child(8){animation-delay:250ms}
+.user-menu-item{position:relative;overflow:hidden}
+.user-menu-item::after{content:"";position:absolute;inset:0;background:currentColor;opacity:0;border-radius:inherit;transition:opacity .3s;pointer-events:none}
+.user-menu-item:active::after{opacity:.12;transition:opacity .08s}
 .user-menu-email{
   padding:8px 10px 6px;font:500 12.5px/1.3 var(--font-display);
   color:var(--ink-2);border-bottom:1px solid var(--line-soft);
@@ -1714,14 +1726,14 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         <div class="brand-plan">Free Plan</div>
       </div>
     </div>
-    <button class="sb-toggle" id="sb-toggle" aria-label="Collapse sidebar" title="Collapse (⌘.)">
+    <button class="sb-toggle" id="sb-toggle" aria-label="Collapse sidebar" title="Collapse (Ctrl+.)">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18l-6-6 6-6M15 18l6-6-6-6"/></svg>
     </button>
 
     <div class="side-search" id="cmd-trigger">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
       <span>Quick find</span>
-      <kbd class="s-k">⌘K</kbd>
+      <kbd class="s-k">Ctrl+K</kbd>
     </div>
 
     <div>
@@ -2494,31 +2506,24 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     </div>
     <div class="modal-body" style="padding:20px 24px;display:flex;flex-direction:column;gap:18px">
       <div class="ks-section">
-        <div class="ks-h">General</div>
-        <div class="ks-row"><span>Command palette</span><span><kbd>⌘</kbd><kbd>K</kbd></span></div>
-        <div class="ks-row"><span>Toggle sidebar</span><span><kbd>⌘</kbd><kbd>.</kbd></span></div>
-      </div>
-      <div class="ks-section">
-        <div class="ks-h">Cutter</div>
-        <div class="ks-row"><span>Highlight</span><span><kbd>⌘</kbd><kbd>⌥</kbd><kbd>H</kbd></span></div>
-        <div class="ks-row"><span>Bold</span><span><kbd>⌘</kbd><kbd>B</kbd></span></div>
-        <div class="ks-row"><span>Underline</span><span><kbd>⌘</kbd><kbd>U</kbd></span></div>
-        <div class="ks-row"><span>Shrink</span><span><kbd>S</kbd></span></div>
-        <div class="ks-row"><span>Warrant</span><span><kbd>W</kbd></span></div>
-        <div class="ks-row"><span>Save card</span><span><kbd>⌘</kbd><kbd>↵</kbd></span></div>
-        <div class="ks-row"><span>Export round doc</span><span><kbd>⇧</kbd><kbd>E</kbd></span></div>
+        <div class="ks-h">Shortcuts</div>
+        <div class="ks-row"><span>Search</span><span><kbd>Ctrl</kbd><kbd>K</kbd></span></div>
+        <div class="ks-row"><span>Collapse sidebar</span><span><kbd>Ctrl</kbd><kbd>.</kbd></span></div>
+        <div class="ks-row"><span>Highlight</span><span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>H</kbd></span></div>
+        <div class="ks-row"><span>Underline</span><span><kbd>Ctrl</kbd><kbd>U</kbd></span></div>
+        <div class="ks-row"><span>Control (save card)</span><span><kbd>Ctrl</kbd><kbd>Enter</kbd></span></div>
       </div>
     </div>
   </div>
 </div>
 
-<script src="api.js?v=20260422a"></script>
-<script src="lib/isDirty.js?v=20260422a"></script>
-<script src="lib/inlineStyleBody.js?v=20260422a"></script>
-<script src="lib/alertToast.js?v=20260422a"></script>
-<script src="lib/copyExport.js?v=20260422a"></script>
-<script src="lib/wordSnap.js?v=20260422a"></script>
-<script src="lib/cmdPalette.js?v=20260422a" defer></script>
-<script src="app-main.search.js?v=20260422a"></script>
-<script src="app-main.js?v=20260422a"></script>
+<script src="api.js?v=20260422b"></script>
+<script src="lib/isDirty.js?v=20260422b"></script>
+<script src="lib/inlineStyleBody.js?v=20260422b"></script>
+<script src="lib/alertToast.js?v=20260422b"></script>
+<script src="lib/copyExport.js?v=20260422b"></script>
+<script src="lib/wordSnap.js?v=20260422b"></script>
+<script src="lib/cmdPalette.js?v=20260422b" defer></script>
+<script src="app-main.search.js?v=20260422b"></script>
+<script src="app-main.js?v=20260422b"></script>
 </body></html>
