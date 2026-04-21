@@ -1163,8 +1163,13 @@
 
   function renderEvidence() {
     const list = $('#ev-list'); if (!list) return;
-    const nonLd = state.evidenceCards.filter((c) => !isGeneralLd(c));
-    const filtered = filterEvidenceClient(nonLd, state.evSearch);
+    const sourceArr = state.evSearch && Array.isArray(state.evSearchResults)
+      ? state.evSearchResults
+      : state.evidenceCards;
+    const nonLd = sourceArr.filter((c) => !isGeneralLd(c));
+    const filtered = state.evSearch && Array.isArray(state.evSearchResults)
+      ? nonLd
+      : filterEvidenceClient(nonLd, state.evSearch);
     state.evFiltered = filtered;
     $('#ev-count').textContent = String(filtered.length);
     if (!filtered.length) {
@@ -1316,10 +1321,26 @@
     } catch (err) { toast('Copy blocked'); }
   });
 
-  $('#ev-search')?.addEventListener('input', (e) => {
-    state.evSearch = e.target.value.trim();
+  let evSearchTok = 0;
+  async function runEvidenceSearch(q) {
+    const myTok = ++evSearchTok;
+    state.evSearch = q;
     state.evShown = 50;
+    if (!q) { state.evSearchResults = null; renderEvidence(); return; }
+    try {
+      const data = await API.librarySearch(q, 200);
+      if (myTok !== evSearchTok) return;
+      state.evSearchResults = data.items || data.results || [];
+    } catch {
+      if (myTok !== evSearchTok) return;
+      state.evSearchResults = [];
+    }
     renderEvidence();
+  }
+  $('#ev-search')?.addEventListener('input', (e) => {
+    const q = e.target.value.trim();
+    clearTimeout(runEvidenceSearch._t);
+    runEvidenceSearch._t = setTimeout(() => runEvidenceSearch(q), 180);
   });
 
   /* My Cards + Projects rail */

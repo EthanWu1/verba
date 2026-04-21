@@ -19,30 +19,22 @@
   .va-alert .va-close:hover{opacity:1;background:rgba(0,0,0,.06)}
   .va-alert .va-close svg{width:14px;height:14px}
 
-  .va-alert[data-variant=success]{background:#f0fdf4;border-color:#bbf7d0;color:#111}
-  .va-alert[data-variant=success] .va-icon{color:#16a34a}
-  .va-alert[data-variant=destructive]{background:#fef2f2;border-color:#fecaca;color:#111}
-  .va-alert[data-variant=destructive] .va-icon{color:#dc2626}
-  .va-alert[data-variant=warning]{background:#fefce8;border-color:#fde68a;color:#111}
-  .va-alert[data-variant=warning] .va-icon{color:#ca8a04}
-  .va-alert[data-variant=info]{background:#f5f3ff;border-color:#ddd6fe;color:#111}
-  .va-alert[data-variant=info] .va-icon{color:#7c3aed}
-  .va-alert[data-variant=secondary]{background:#f4f4f5;border-color:#e4e4e7;color:#111}
-  .va-alert[data-variant=secondary] .va-icon{color:#52525b}
+  .va-alert[data-variant=success]{background:#dcfce7;border-color:#86efac;color:#000}
+  .va-alert[data-variant=success] .va-icon{color:#000}
+  .va-alert[data-variant=success] .va-desc{color:#000}
+  .va-alert[data-variant=destructive]{background:#fee2e2;border-color:#fca5a5;color:#000}
+  .va-alert[data-variant=destructive] .va-icon{color:#000}
+  .va-alert[data-variant=destructive] .va-desc{color:#000}
+  .va-alert[data-variant=warning]{background:#fef3c7;border-color:#fcd34d;color:#000}
+  .va-alert[data-variant=warning] .va-icon{color:#000}
+  .va-alert[data-variant=warning] .va-desc{color:#000}
+  .va-alert[data-variant=info]{background:#ede9fe;border-color:#c4b5fd;color:#000}
+  .va-alert[data-variant=info] .va-icon{color:#000}
+  .va-alert[data-variant=info] .va-desc{color:#000}
+  .va-alert[data-variant=secondary]{background:#f4f4f5;border-color:#e4e4e7;color:#000}
+  .va-alert[data-variant=secondary] .va-icon{color:#000}
+  .va-alert[data-variant=secondary] .va-desc{color:#000}
 
-  @media (prefers-color-scheme:dark){
-    .va-alert{background:#18181b;color:#fafafa;border-color:#27272a;box-shadow:0 4px 16px rgba(0,0,0,.4)}
-    .va-alert .va-desc{color:rgba(250,250,250,.7)}
-    .va-alert .va-close:hover{background:rgba(255,255,255,.08)}
-    .va-alert[data-variant=success]{background:#052e1a;border-color:#14532d}
-    .va-alert[data-variant=success] .va-icon{color:#4ade80}
-    .va-alert[data-variant=destructive]{background:#2d0a0a;border-color:#7f1d1d}
-    .va-alert[data-variant=destructive] .va-icon{color:#f87171}
-    .va-alert[data-variant=warning]{background:#2a1f05;border-color:#78350f}
-    .va-alert[data-variant=warning] .va-icon{color:#facc15}
-    .va-alert[data-variant=info]{background:#1e1b4b;border-color:#4c1d95}
-    .va-alert[data-variant=info] .va-icon{color:#a78bfa}
-  }
 
   @media (max-width:768px){
     #__verba-alert-stack{top:10px;right:10px;left:10px;max-width:none}
