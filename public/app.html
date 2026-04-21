@@ -317,6 +317,9 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .stage-chip.stage-running{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
 .stage-chip.stage-running::before{content:'';width:8px;height:8px;border-radius:50%;background:#3b82f6;animation:pulse 1.2s infinite}
 .stage-chip.active{box-shadow:0 0 0 2px rgba(59,130,246,.45);transform:translateY(-1px)}
+.stage-chip .chip-x{display:none;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.08);color:inherit;font-size:10px;line-height:1;margin-left:2px;cursor:pointer;flex:0 0 auto;border:none;padding:0}
+.stage-chip:hover .chip-x{display:inline-flex}
+.stage-chip .chip-x:hover{background:rgba(0,0,0,.18)}
 .cutter-progress{margin-top:8px;width:100%;font-family:var(--font-mono);font-size:11px;color:#000}
 .cutter-progress-label{margin-bottom:4px;letter-spacing:0.02em;opacity:.7}
 .cutter-progress-track{height:2px;background:#eee;border-radius:1px;overflow:hidden;width:100%}

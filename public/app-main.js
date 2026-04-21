@@ -459,6 +459,16 @@
     trimChipOverflow();
     chip.addEventListener('click', () => activateJob(job));
     updateChipLabel(job);
+    const xBtn = document.createElement('button');
+    xBtn.className = 'chip-x';
+    xBtn.innerHTML = '&times;';
+    xBtn.title = 'Dismiss';
+    xBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      chip.classList.add('dismissing');
+      setTimeout(() => chip.remove(), 200);
+    });
+    chip.appendChild(xBtn);
     return job;
   }
 
