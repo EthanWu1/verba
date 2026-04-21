@@ -1,7 +1,12 @@
 'use strict';
 
 const MAX_RUN_WORDS = 5;
-const MAX_HIGHLIGHT_RATIO = 0.40;
+
+const HIGHLIGHT_CAPS = {
+  minimal:  0.30,
+  standard: 0.40,
+  heavy:    0.50,
+};
 
 const UNDERLINE_CAPS = {
   minimal:  0.40,
@@ -79,8 +84,9 @@ function buildSourceParagraphIndex(sourceText) {
 }
 
 function validateCut(bodyMarkdown, sourceText = '', opts = {}) {
-  const density = opts.density || 'standard';
-  const underlineCap = UNDERLINE_CAPS[density] ?? UNDERLINE_CAPS.standard;
+  const density = opts.density || 'heavy';
+  const underlineCap = UNDERLINE_CAPS[density] ?? UNDERLINE_CAPS.heavy;
+  const highlightCap = HIGHLIGHT_CAPS[density] ?? HIGHLIGHT_CAPS.heavy;
   const paragraphs = splitParagraphs(bodyMarkdown);
   const issues = [];
   const sourceParas = sourceText ? buildSourceParagraphIndex(sourceText) : [];
@@ -95,9 +101,9 @@ function validateCut(bodyMarkdown, sourceText = '', opts = {}) {
     const highlightedWords = runs.reduce((sum, r) => sum + wordCount(r), 0);
     const ratio = highlightedWords / totalWords;
 
-    if (ratio > MAX_HIGHLIGHT_RATIO) {
+    if (ratio > highlightCap) {
       issues.push(
-        `Paragraph ${i + 1}: ${Math.round(ratio * 100)}% highlighted (max ${Math.round(MAX_HIGHLIGHT_RATIO * 100)}%). Shrink highlight runs to 1–5 words each; leave ≥60% of words unhighlighted.`
+        `Paragraph ${i + 1}: ${Math.round(ratio * 100)}% highlighted (max ${Math.round(highlightCap * 100)}% for "${density}"). Shrink highlight runs to 1–5 words each; leave ≥${100 - Math.round(highlightCap * 100)}% of words unhighlighted.`
       );
     }
 

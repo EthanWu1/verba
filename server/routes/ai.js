@@ -19,8 +19,8 @@ const LENGTH_BUDGETS = {
   medium: { input: 9000,  output: 3800 },
   long:   { input: 14000, output: 5600 },
 };
-function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'standard'; }
-function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'medium'; }
+function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'heavy'; }
+function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'long'; }
 const { validateCut } = require('../services/cutValidator');
 const { buildChatContext } = require('../services/libraryQuery');
 const { buildCite, validateCiteMatchesMeta } = require('../services/autocite');
@@ -29,6 +29,7 @@ const {
   buildInstantLibraryBullets,
 } = require('../services/instantResearch');
 const { reachable } = require('../services/urlCheck');
+const fileCache = require('../services/fileCache');
 const { saveCutCardForUser } = require('../services/autoSaveCard');
 
 const CARD_CUT_MODEL = process.env.CARD_CUT_MODEL || 'anthropic/claude-sonnet-4.6';
@@ -335,14 +336,15 @@ router.post('/chat-library-summary', async (req, res) => {
 router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), async (req, res) => {
   const query = String(req.query.query || '');
   const url = String(req.query.url || '');
+  const fileToken = String(req.query.fileToken || '');
   const argument = String(req.query.argument || query || '');
   const density = normalizeDensity(req.query.density);
   const length = normalizeLength(req.query.length);
   const budget = LENGTH_BUDGETS[length];
   const systemPrompt = buildSystemPrompt({ density, length });
 
-  if (!query.trim() && !url.trim()) {
-    return res.status(400).json({ error: 'A query or URL is required.' });
+  if (!query.trim() && !url.trim() && !fileToken.trim()) {
+    return res.status(400).json({ error: 'A query, URL, or file is required.' });
   }
 
   res.writeHead(200, {
@@ -393,7 +395,35 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
 
   try {
     const onPhase = (p) => send('phase', p);
-    const result = await findBestResearchSource({ query, url, onPhase });
+    let result;
+    if (fileToken) {
+      const cached = fileCache.get(fileToken);
+      if (!cached) {
+        send('error', { error: 'Uploaded file expired or not found. Re-upload and try again.' });
+        return finish();
+      }
+      onPhase({ type: 'file_loaded', filename: cached.filename, chars: cached.bodyText.length });
+      const paragraphs = cached.bodyText.split(/\n\n+/).filter(p => p.trim().length > 0);
+      result = {
+        mode: 'file',
+        article: {
+          title: cached.title,
+          author: '',
+          date: '',
+          source: 'Uploaded file',
+          url: '',
+          isPdf: /\.pdf$/i.test(cached.filename || ''),
+          bodyText: cached.bodyText,
+          paragraphs,
+        },
+        excerpt: cached.bodyText.slice(0, 2000),
+        window: { text: cached.bodyText },
+        candidates: [],
+        lowConfidence: false,
+      };
+    } else {
+      result = await findBestResearchSource({ query, url, onPhase });
+    }
 
     let cite = '';
     let citeData = null;

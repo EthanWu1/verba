@@ -12,9 +12,9 @@ const LENGTH_PRESETS = {
   long:   { paragraphRule: '5–8 complete source paragraphs', maxWords: 760 },
 };
 
-function buildSystemPrompt({ density = 'standard', length = 'medium' } = {}) {
-  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.standard;
-  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.medium;
+function buildSystemPrompt({ density = 'heavy', length = 'long' } = {}) {
+  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
+  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
   return `You are a specialized LD debate evidence card cutter trained on the Verbatim Paperless Debate system.
 
 CORE RULES — NON-NEGOTIABLE
@@ -112,14 +112,14 @@ function stripBoilerplateSections(text) {
   return kept.join('\n\n');
 }
 
-function buildCutPrompt({ argument = '', bodyText = '', meta = {}, cite = '', critique = '', density = 'standard', length = 'medium' }) {
+function buildCutPrompt({ argument = '', bodyText = '', meta = {}, cite = '', critique = '', density = 'heavy', length = 'long' }) {
   const intentLine = argument
     ? `DEBATER INTENT: "${argument}"`
     : 'DEBATER INTENT: general research';
   bodyText = stripBoilerplateSections(stripAbstractPrelude(bodyText));
 
-  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.standard;
-  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.medium;
+  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
+  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
 
   const citeLine = cite ? `PREFERRED CITE FORMAT: "${cite}"` : '';
   const metaLines = [
@@ -140,13 +140,13 @@ function buildCutPrompt({ argument = '', bodyText = '', meta = {}, cite = '', cr
   ].filter(Boolean).join('\n\n');
 }
 
-function buildEditPrompt({ instruction = '', argument = '', card = {}, sourceText = '', cite = '', density = 'standard', length = 'medium' }) {
+function buildEditPrompt({ instruction = '', argument = '', card = {}, sourceText = '', cite = '', density = 'heavy', length = 'long' }) {
   const sourceSection = sourceText
     ? `ORIGINAL SOURCE TEXT:\n---\n${sourceText}\n---`
     : 'ORIGINAL SOURCE TEXT: unavailable';
 
-  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.standard;
-  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.medium;
+  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
+  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
 
   return [
     `REVISION REQUEST: "${instruction}"`,

@@ -6,10 +6,19 @@
 'use strict';
 
 const express = require('express');
+const multer  = require('multer');
+const path    = require('path');
+const pdfParse = require('pdf-parse');
 const router  = express.Router();
 
 const { scrapeUrl } = require('../services/scraper');
 const { buildCite } = require('../services/autocite');
+const fileCache    = require('../services/fileCache');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
+});
 
 /* ════════════════════════════════════════
    POST /api/scrape
@@ -52,6 +61,56 @@ router.post('/', async (req, res) => {
     bodyText: scraped.bodyText,
     cite,
     citeData,
+  });
+});
+
+/* ════════════════════════════════════════
+   POST /api/scrape/file  — multipart upload
+   Field: file (PDF or TXT). Returns { token, filename, title, cite, chars, preview }.
+   Token usable for 10 min via ?fileToken= on research-source-stream.
+   ════════════════════════════════════════ */
+router.post('/file', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+  const { originalname, mimetype, buffer } = req.file;
+  const ext = (path.extname(originalname) || '').toLowerCase();
+
+  let bodyText = '';
+  try {
+    if (ext === '.pdf' || mimetype === 'application/pdf') {
+      const parsed = await pdfParse(buffer);
+      bodyText = String(parsed.text || '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    } else if (ext === '.txt' || mimetype === 'text/plain') {
+      bodyText = buffer.toString('utf8').trim();
+    } else {
+      return res.status(415).json({ error: 'Only PDF or TXT are supported right now.' });
+    }
+  } catch (err) {
+    console.error('[scrape/file] parse error:', err.message);
+    return res.status(422).json({ error: 'Could not read that file.' });
+  }
+
+  if (!bodyText || bodyText.length < 50) {
+    return res.status(422).json({ error: 'No readable text found in file.' });
+  }
+
+  const title = path.basename(originalname, ext);
+  const year2 = new Date().getFullYear().toString().slice(-2);
+  const cite = `[Uploaded file] ${title} ${year2}`;
+
+  const token = fileCache.put({
+    filename: originalname,
+    title,
+    cite,
+    bodyText,
+  });
+
+  return res.json({
+    token,
+    filename: originalname,
+    title,
+    cite,
+    chars: bodyText.length,
+    preview: bodyText.slice(0, 300),
   });
 });
 
