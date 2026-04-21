@@ -553,16 +553,20 @@ function getCardById(id) {
   return _parseCard(row);
 }
 
-function queryCardsByIds(ids, filters = {}) {
+function queryCardsByIds(ids, filters = {}, opts = {}) {
   if (!ids || !ids.length) return [];
   const db = getDb();
+  // Hard cap — prevents OOM when semantic ranker returns too many ids.
+  const MAX_IDS = Math.max(1, Math.min(500, Number(opts.maxIds) || 500));
+  const idList = ids.slice(0, MAX_IDS);
   const { sql: whereSql, params } = _buildWhere(filters);
-  const placeholders = ids.map(() => '?').join(',');
+  const placeholders = idList.map(() => '?').join(',');
   const combined = whereSql
     ? `${whereSql} AND id IN (${placeholders})`
     : `WHERE id IN (${placeholders})`;
-  return db.prepare(`SELECT * FROM cards ${combined}`)
-           .all(...params, ...ids)
+  const cols = opts.lite ? LIST_COLS : '*';
+  return db.prepare(`SELECT ${cols} FROM cards ${combined}`)
+           .all(...params, ...idList)
            .map(_parseCard);
 }
 

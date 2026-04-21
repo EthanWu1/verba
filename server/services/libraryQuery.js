@@ -30,11 +30,11 @@ async function getLibraryCards(filters = {}) {
   const wantSemantic = filters.q && filters.sort === 'semantic' && isConfigured();
   if (wantSemantic) {
     try {
-      const ranked  = await semanticSearch(filters.q, 500);
+      const ranked  = await semanticSearch(filters.q, 200);
       const idOrder = new Map(ranked.map((r, i) => [String(r.id), i]));
       const ids     = ranked.map(r => String(r.id));
       const nonQ    = { ...filters, q: undefined };
-      const rows    = db.queryCardsByIds(ids, nonQ);
+      const rows    = db.queryCardsByIds(ids, nonQ, { lite: true, maxIds: 200 });
       rows.sort((a, b) => (idOrder.get(String(a.id)) ?? 9999) - (idOrder.get(String(b.id)) ?? 9999));
       total = rows.length;
       const start = (page - 1) * limit;
@@ -123,7 +123,7 @@ async function buildChatContext(query, filters = {}, limit = 8) {
       const ranked  = await semanticSearch(query, 50);
       const idOrder = new Map(ranked.map((r, i) => [String(r.id), i]));
       const ids     = ranked.map(r => String(r.id));
-      const rows    = db.queryCardsByIds(ids, filters);
+      const rows    = db.queryCardsByIds(ids, filters, { maxIds: 50 });
       rows.sort((a, b) => (idOrder.get(String(a.id)) ?? 9999) - (idOrder.get(String(b.id)) ?? 9999));
       items = rows.slice(0, limit).map(hydrateRow);
     } catch {
