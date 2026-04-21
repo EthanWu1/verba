@@ -1039,9 +1039,12 @@
   async function loadEvidence() {
     const list = $('#ev-list'); if (!list) return;
     list.innerHTML = '<div style="padding:24px;color:var(--muted);font-size:13px">Loading library…</div>';
+    state.evPage = 1;
+    state.evShown = 50;
+    state.evDone = false;
+    state.evSeed = state.evSeed || (Math.floor(Math.random() * 1e9) + 1);
     try {
-      const params = { limit: 60 };
-      if (state.evSearch) params.q = state.evSearch;
+      const params = { limit: 50, page: 1, sort: 'random', seed: state.evSeed };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       state.evidenceCards = data.items || data.results || [];
@@ -1110,7 +1113,23 @@
     maybeInstallEvIntersectionObserver();
   }
 
-  async function loadMoreEvidence() { /* defined in Task 2 */ }
+  async function loadMoreEvidence() {
+    if (state.evLoading || state.evDone || state.evSearch) return;
+    state.evLoading = true;
+    try {
+      const next = state.evPage + 1;
+      const params = { limit: 50, page: next, sort: 'random', seed: state.evSeed };
+      if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
+      const data = await API.libraryCards(params);
+      const have = new Set(state.evidenceCards.map(c => c.id));
+      const fresh = (data.items || []).filter(c => !have.has(c.id));
+      if (!fresh.length) { state.evDone = true; renderEvidence(); return; }
+      state.evidenceCards.push(...fresh);
+      state.evPage = next;
+      state.evShown += fresh.length;
+      renderEvidence();
+    } finally { state.evLoading = false; }
+  }
 
   function maybeInstallEvIntersectionObserver() {
     const sentinel = document.getElementById('ev-sentinel');

@@ -487,7 +487,13 @@ const LIST_COLS = `id, zipPath, sourceEntry, sourceFileName, division, school, s
   argumentTypes, argumentTags, sourceKind, isCanonical, canonicalGroupKey,
   variantCount, typeLabel, topicLabel, sourceLabel, scope, resolutionLabel, hasHighlight`;
 
-function _orderBy(sort) {
+function _seedSortClause(seed, prefix = '') {
+  const s = Math.max(1, Math.abs(Number(seed) || 1)) | 0;
+  const col = prefix ? `${prefix}rowid` : 'rowid';
+  return `ORDER BY ((${col} * ${s} + ${(s * 2654435761) >>> 0}) % 2147483647) ASC`;
+}
+
+function _orderBy(sort, seed) {
   switch (sort) {
     case 'recent':   return 'ORDER BY hasHighlight DESC, importedAt DESC';
     case 'density':  return 'ORDER BY hasHighlight DESC, warrantDensity DESC';
@@ -495,6 +501,7 @@ function _orderBy(sort) {
     case 'cite':     return 'ORDER BY hasHighlight DESC, COALESCE(shortCite, cite) ASC';
     case 'school':   return 'ORDER BY hasHighlight DESC, school ASC';
     case 'tag':      return 'ORDER BY hasHighlight DESC, tag ASC';
+    case 'random':   return _seedSortClause(seed);
     default:         return 'ORDER BY hasHighlight DESC, isCanonical DESC, variantCount DESC, importedAt DESC';
   }
 }
@@ -507,7 +514,7 @@ function queryCards({ filters = {}, sort = 'relevance', page = 1, limit = 40, li
   if (ftsMatch) {
     const { sql: whereBase, params } = _buildWhere(filters, { tablePrefix: 'c' });
     const whereSql = `${whereBase} AND cards_fts MATCH ?`;
-    const orderSql = _orderByWithRank(sort);
+    const orderSql = _orderByWithRank(sort, filters.randomSeed);
     const prefixed = (lite ? LIST_COLS : '*')
       .split(',').map(s => s.trim())
       .map(s => s === '*' ? 'c.*' : `c.${s}`)
@@ -520,14 +527,14 @@ function queryCards({ filters = {}, sort = 'relevance', page = 1, limit = 40, li
   }
 
   const { sql: whereSql, params } = _buildWhere(filters);
-  const orderSql = _orderBy(sort);
+  const orderSql = _orderBy(sort, filters.randomSeed);
   const total = db.prepare(`SELECT COUNT(*) AS n FROM cards ${whereSql}`).get(...params).n;
   const rows = db.prepare(`SELECT ${cols} FROM cards ${whereSql} ${orderSql} LIMIT ? OFFSET ?`)
                  .all(...params, limit, (page - 1) * limit);
   return { total, rows: rows.map(_parseCard) };
 }
 
-function _orderByWithRank(sort) {
+function _orderByWithRank(sort, seed) {
   switch (sort) {
     case 'recent':   return 'ORDER BY c.hasHighlight DESC, c.importedAt DESC';
     case 'density':  return 'ORDER BY c.hasHighlight DESC, c.warrantDensity DESC';
@@ -535,6 +542,7 @@ function _orderByWithRank(sort) {
     case 'cite':     return 'ORDER BY c.hasHighlight DESC, COALESCE(c.shortCite, c.cite) ASC';
     case 'school':   return 'ORDER BY c.hasHighlight DESC, c.school ASC';
     case 'tag':      return 'ORDER BY c.hasHighlight DESC, c.tag ASC';
+    case 'random':   return _seedSortClause(seed, 'c.');
     default:         return 'ORDER BY c.hasHighlight DESC, c.isCanonical DESC, bm25(cards_fts) ASC';
   }
 }

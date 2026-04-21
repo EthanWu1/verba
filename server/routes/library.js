@@ -27,6 +27,7 @@ router.get('/cards', async (req, res) => {
       limit: req.query.limit,
       page: req.query.page,
       sort: String(req.query.sort || 'relevance'),
+      randomSeed: Number(req.query.seed) || 0,
       resolution: String(req.query.resolution || ''),
       type: String(req.query.type || ''),
       topic: String(req.query.topic || ''),
