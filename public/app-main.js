@@ -1156,17 +1156,10 @@
     state.evPage = 1;
     state.evShown = 50;
     state.evDone = false;
-    state.evSeed = state.evSeed || (Math.floor(Math.random() * 1e9) + 1);
     try {
-      const params = { limit: 50, page: 1, sort: 'random', seed: state.evSeed, minHighlight: 5 };
+      const params = { limit: 50, page: 1, sort: 'relevance' };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
-      let data = await API.libraryCards(params);
-      // Fallback: if server filter yields nothing (e.g. backfill hasn't run), drop minHighlight.
-      if (!(data.items || data.results || []).length) {
-        delete params.minHighlight;
-        state.evSkipMinHighlight = true;
-        data = await API.libraryCards(params);
-      }
+      const data = await API.libraryCards(params);
       state.evidenceCards = data.items || data.results || [];
       state.evidenceTotal = data.total || 0;
       if (!state.evidenceCards.length) state.evDone = true;
@@ -1259,8 +1252,7 @@
     state.evLoading = true;
     try {
       const next = state.evPage + 1;
-      const params = { limit: 50, page: next, sort: 'random', seed: state.evSeed };
-      if (!state.evSkipMinHighlight) params.minHighlight = 5;
+      const params = { limit: 50, page: next, sort: 'relevance' };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       const have = new Set(state.evidenceCards.map(c => c.id));
@@ -1366,8 +1358,9 @@
       const data = await API.libraryCards({ q, limit: 200, sort: 'relevance' });
       if (myTok !== evSearchTok) return;
       state.evSearchResults = data.items || data.results || [];
-    } catch {
+    } catch (err) {
       if (myTok !== evSearchTok) return;
+      console.error('[library search error]', err);
       state.evSearchResults = [];
     }
     renderEvidence();

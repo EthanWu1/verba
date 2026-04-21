@@ -226,32 +226,47 @@ function _runMigrations(db) {
 
 function _setupCardsFts(db) {
   const exists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cards_fts'").get();
-  if (exists) return;
-  console.log('[db] creating cards_fts FTS5 index...');
-  const t0 = Date.now();
-  db.exec(`
-    CREATE VIRTUAL TABLE cards_fts USING fts5(
-      tag, shortCite, cite, body_plain,
-      content='cards', content_rowid='rowid',
-      tokenize='unicode61 remove_diacritics 2'
-    );
-    CREATE TRIGGER cards_fts_ai AFTER INSERT ON cards BEGIN
-      INSERT INTO cards_fts(rowid, tag, shortCite, cite, body_plain)
-      VALUES (new.rowid, new.tag, new.shortCite, new.cite, new.body_plain);
-    END;
-    CREATE TRIGGER cards_fts_ad AFTER DELETE ON cards BEGIN
-      INSERT INTO cards_fts(cards_fts, rowid, tag, shortCite, cite, body_plain)
-      VALUES ('delete', old.rowid, old.tag, old.shortCite, old.cite, old.body_plain);
-    END;
-    CREATE TRIGGER cards_fts_au AFTER UPDATE ON cards BEGIN
-      INSERT INTO cards_fts(cards_fts, rowid, tag, shortCite, cite, body_plain)
-      VALUES ('delete', old.rowid, old.tag, old.shortCite, old.cite, old.body_plain);
-      INSERT INTO cards_fts(rowid, tag, shortCite, cite, body_plain)
-      VALUES (new.rowid, new.tag, new.shortCite, new.cite, new.body_plain);
-    END;
-  `);
-  db.exec(`INSERT INTO cards_fts(cards_fts) VALUES('rebuild')`);
-  console.log(`[db] cards_fts built in ${Date.now() - t0}ms`);
+  if (!exists) {
+    console.log('[db] creating cards_fts FTS5 index...');
+    const t0 = Date.now();
+    db.exec(`
+      CREATE VIRTUAL TABLE cards_fts USING fts5(
+        tag, shortCite, cite, body_plain,
+        content='cards', content_rowid='rowid',
+        tokenize='unicode61 remove_diacritics 2'
+      );
+      CREATE TRIGGER cards_fts_ai AFTER INSERT ON cards BEGIN
+        INSERT INTO cards_fts(rowid, tag, shortCite, cite, body_plain)
+        VALUES (new.rowid, new.tag, new.shortCite, new.cite, new.body_plain);
+      END;
+      CREATE TRIGGER cards_fts_ad AFTER DELETE ON cards BEGIN
+        INSERT INTO cards_fts(cards_fts, rowid, tag, shortCite, cite, body_plain)
+        VALUES ('delete', old.rowid, old.tag, old.shortCite, old.cite, old.body_plain);
+      END;
+      CREATE TRIGGER cards_fts_au AFTER UPDATE ON cards BEGIN
+        INSERT INTO cards_fts(cards_fts, rowid, tag, shortCite, cite, body_plain)
+        VALUES ('delete', old.rowid, old.tag, old.shortCite, old.cite, old.body_plain);
+        INSERT INTO cards_fts(rowid, tag, shortCite, cite, body_plain)
+        VALUES (new.rowid, new.tag, new.shortCite, new.cite, new.body_plain);
+      END;
+    `);
+    db.exec(`INSERT INTO cards_fts(cards_fts) VALUES('rebuild')`);
+    console.log(`[db] cards_fts built in ${Date.now() - t0}ms`);
+    return;
+  }
+  // Repair: FTS exists but may be empty if the initial rebuild ran on an empty DB
+  // and cards were bulk-imported before triggers fired correctly.
+  try {
+    const docCount = db.prepare("SELECT COUNT(*) as n FROM cards_fts_docsize").get().n;
+    if (docCount === 0 && db.prepare("SELECT 1 FROM cards LIMIT 1").get()) {
+      console.log('[db] FTS index empty, rebuilding from cards table...');
+      const t0 = Date.now();
+      db.exec(`INSERT INTO cards_fts(cards_fts) VALUES('rebuild')`);
+      console.log(`[db] FTS rebuilt in ${Date.now() - t0}ms`);
+    }
+  } catch (e) {
+    console.warn('[db] FTS health check skipped:', e.message);
+  }
 }
 
 function _backfillHasHighlight(db) {
