@@ -163,6 +163,52 @@ function _initSchema(db) {
 
   try { db.exec('ALTER TABLE users ADD COLUMN nameUpdatedAt TEXT'); }
   catch (e) { /* already exists */ }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS wiki_teams (
+      id          TEXT PRIMARY KEY,
+      school      TEXT NOT NULL,
+      code        TEXT NOT NULL,
+      fullName    TEXT NOT NULL,
+      event       TEXT,
+      pageUrl     TEXT NOT NULL,
+      lastCrawled TEXT,
+      crawlStatus TEXT NOT NULL DEFAULT 'pending'
+    );
+    CREATE INDEX IF NOT EXISTS idx_wiki_teams_code   ON wiki_teams(code);
+    CREATE INDEX IF NOT EXISTS idx_wiki_teams_school ON wiki_teams(school);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS wiki_teams_fts USING fts5(
+      fullName, school, code,
+      content='wiki_teams', content_rowid='rowid'
+    );
+
+    CREATE TABLE IF NOT EXISTS wiki_arguments (
+      id          TEXT PRIMARY KEY,
+      teamId      TEXT NOT NULL REFERENCES wiki_teams(id) ON DELETE CASCADE,
+      name        TEXT NOT NULL,
+      side        TEXT NOT NULL,
+      readCount   INTEGER NOT NULL DEFAULT 0,
+      fullText    TEXT NOT NULL,
+      lastUpdated TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_wiki_args_team ON wiki_arguments(teamId);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS wiki_arguments_fts USING fts5(
+      name, fullText,
+      content='wiki_arguments', content_rowid='rowid'
+    );
+
+    CREATE TABLE IF NOT EXISTS wiki_round_reports (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      teamId     TEXT NOT NULL REFERENCES wiki_teams(id) ON DELETE CASCADE,
+      argumentId TEXT REFERENCES wiki_arguments(id) ON DELETE CASCADE,
+      tournament TEXT,
+      round      TEXT,
+      opponent   TEXT,
+      side       TEXT
+    );
+  `);
 }
 
 function _runMigrations(db) {
