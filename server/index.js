@@ -26,6 +26,7 @@ const mineRoutes        = require('./routes/mine');
 const historyRoutes     = require('./routes/history');
 const wikiRoutes        = require('./routes/wiki');
 const tocRoutes         = require('./routes/toc');
+const rankingsRoutes    = require('./routes/rankings');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +61,7 @@ app.use('/api/mine',          mineRoutes);
 app.use('/api/history',       historyRoutes);
 app.use('/api/wiki',          wikiRoutes);
 app.use('/api/toc',           tocRoutes);
+app.use('/api/rankings',      rankingsRoutes);
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {
