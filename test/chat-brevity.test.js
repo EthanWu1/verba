@@ -10,11 +10,11 @@ test('block intent → long token budget', () => {
 });
 
 test('plain question → short budget', () => {
-  assert.equal(pickChatMaxTokens('what is uniqueness?'), 450);
-  assert.equal(pickChatMaxTokens('explain warrants'), 450);
+  assert.equal(pickChatMaxTokens('what is uniqueness?'), 220);
+  assert.equal(pickChatMaxTokens('explain warrants'), 220);
 });
 
-test('SHORT_BRIEF instructs ≤4 sentences', () => {
-  assert.match(SHORT_BRIEF, /4/);
+test('SHORT_BRIEF instructs 1–2 sentences', () => {
+  assert.match(SHORT_BRIEF, /1[–-]2/);
   assert.match(SHORT_BRIEF, /sentence/i);
 });

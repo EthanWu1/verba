@@ -299,9 +299,8 @@
     return { lastYY: m[1].trim(), rest: m[2] || '' };
   }
 
-  /* Inject inline styles so Word honors nested mark/b/u on paste. Uses token
-     walker from lib/inlineStyleBody.js that merges active formats into one span. */
-  const inlineStyleBody = (window.VerbaInlineStyle && window.VerbaInlineStyle.inlineStyleBody)
+  /* Inject inline styles so Word honors nested mark/b/u on paste. */
+  const inlineStyleBody = (window.VerbaClipboard && window.VerbaClipboard.flattenInlineStyles)
     || ((html) => String(html || ''));
 
   /* Pull partial tag/cite/body from streaming JSON (may be mid-string). */
@@ -721,6 +720,18 @@
     }
   }
 
+  function normalizeUnderlineTags(root) {
+    if (!root || !root.querySelectorAll) return;
+    const us = root.querySelectorAll('u');
+    for (const u of us) {
+      const existing = u.getAttribute('style') || '';
+      if (!/text-decoration\s*:\s*underline/i.test(existing)) {
+        const sep = existing && !existing.trim().endsWith(';') ? ';' : '';
+        u.setAttribute('style', existing + sep + 'text-decoration:underline');
+      }
+    }
+  }
+
   function selectionInside(el) {
     const sel = window.getSelection(); if (!sel || sel.rangeCount === 0) return false;
     return el.contains(sel.anchorNode) && el.contains(sel.focusNode);
@@ -848,7 +859,10 @@
     // Seed state from static demo DOM
     syncCardFromDom();
     const wbBody = $('#wb-body');
-    if (wbBody) wbBody.addEventListener('input', syncCardFromDom);
+    if (wbBody) wbBody.addEventListener('input', (evt) => {
+      syncCardFromDom();
+      normalizeUnderlineTags(evt.currentTarget);
+    });
 
     // Formatting toolbar — Underline/Bold native toggle, Highlight latched mode
     let highlightMode = false;
@@ -934,14 +948,16 @@
     // Copy button — preserve formatting
     $('#wb-copy')?.addEventListener('click', async () => {
       syncCardFromDom();
-      const c = state.currentCard; if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
-      const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
-      const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
-      const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
-      const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
-      const html = buildHtml
-        ? buildHtml({ ...c, body_html: bodyHtml })
-        : `<div style="font-family:Calibri,Arial,sans-serif;color:#000"><p style="font-weight:700">${esc(c.tag || '')}</p><p>${esc(c.cite || '')}</p>${bodyHtml}</div>`;
+      const c = state.currentCard;
+      if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
+      const VC = window.VerbaClipboard;
+      if (!VC) { toast('Clipboard module missing'); return; }
+      const card = {
+        ...c,
+        body_html: c.body_html || (c.body_markdown && typeof markdownCardToHtml === 'function' ? markdownCardToHtml(c.body_markdown) : c.body_html)
+      };
+      const html = VC.buildCopyHtml(card);
+      const plain = VC.buildCopyPlain(card);
       try {
         if (window.ClipboardItem && navigator.clipboard?.write) {
           await navigator.clipboard.write([new ClipboardItem({
@@ -951,8 +967,35 @@
         } else {
           await navigator.clipboard.writeText(plain);
         }
-        const b = $('#wb-copy'); if (b) { b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'), 1400); }
-      } catch (err) { console.error(err); toast('Copy blocked'); }
+        const b = $('#wb-copy');
+        if (b) { b.classList.add('copied'); setTimeout(() => b.classList.remove('copied'), 1400); }
+      } catch (err) {
+        console.error(err);
+        toast('Copy blocked');
+      }
+    });
+
+    // Native Ctrl+C / Cmd+C — route through same serializer as copy button
+    document.addEventListener('copy', (e) => {
+      const VC = window.VerbaClipboard;
+      if (!VC) return;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const node = container.nodeType === 1 ? container : container.parentElement;
+      if (!node || !node.closest) return;
+      // Widen guard to catch cross-region selections (e.g. cite-block through wb-body) where
+      // commonAncestorContainer resolves to a parent wrapper rather than the content elements.
+      // Mixed-context selections route through card-body branch (flattenInlineStyles); cite prefix
+      // splitting is intentionally skipped for cross-block selections.
+      const cardScope = node.closest('#workbench, .wb-body, .card-preview, .cite-block, [data-field="body"], [data-field="tag"], [data-field="cite"], [contenteditable="true"], .pane, .pane-body, .card, .doc, .ev-body-render, .card-body');
+      if (!cardScope) return;
+      const { html, plain } = VC.serializeSelectionHtml(range);
+      if (!html) return;
+      e.clipboardData.setData('text/html', html);
+      e.clipboardData.setData('text/plain', plain);
+      e.preventDefault();
     });
 
     // Add to… button — popover
@@ -1262,8 +1305,8 @@
               try { const full = await API.libraryCard(c.id); if (full?.card) Object.assign(c, full.card); } catch {}
             }
             const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
-            const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
-            const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+            const buildHtml = (window.VerbaClipboard && window.VerbaClipboard.buildCopyHtml) || null;
+            const buildPlain = (window.VerbaClipboard && window.VerbaClipboard.buildCopyPlain) || null;
             const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
             const html = buildHtml
               ? buildHtml({ ...c, body_html: bodyHtml })
@@ -1377,8 +1420,8 @@
   $('#ev-copy')?.addEventListener('click', async () => {
     const c = state.currentEvidence; if (!c) { toast('No card selected'); return; }
     const bodyHtml = c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || '');
-    const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
-    const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+    const buildHtml = (window.VerbaClipboard && window.VerbaClipboard.buildCopyHtml) || null;
+    const buildPlain = (window.VerbaClipboard && window.VerbaClipboard.buildCopyPlain) || null;
     const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
     const html = buildHtml ? buildHtml({ ...c, body_html: bodyHtml }) : `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#111"><p><b>${esc(c.tag || '')}</b></p><p><i>${esc(c.cite || '')}</i></p>${bodyHtml}</div>`;
     try {
@@ -1759,8 +1802,8 @@
           : null;
         const c = full?.card ? Object.assign({}, item, full.card) : item;
         const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
-        const buildHtml  = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml)  || null;
-        const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+        const buildHtml  = (window.VerbaClipboard && window.VerbaClipboard.buildCopyHtml)  || null;
+        const buildPlain = (window.VerbaClipboard && window.VerbaClipboard.buildCopyPlain) || null;
         const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
         const html  = buildHtml
           ? buildHtml({ ...c, body_html: bodyHtml })

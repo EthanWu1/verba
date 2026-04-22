@@ -1,0 +1,271 @@
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.VerbaClipboard = factory();
+}(typeof self !== 'undefined' ? self : this, function () {
+  function extractAuthorYearPrefix(cite) {
+    if (!cite) return null;
+    const m = String(cite).match(
+      /^([A-Z][A-Za-z'‘’\-]+(?:\s+(?:[A-Z][A-Za-z'‘’\-]+|and|&|et\s+al\.?))*\s+['‘’]?\d{2,4})/
+    );
+    return m ? m[1] : null;
+  }
+  function splitCite(cite) {
+    const s = String(cite == null ? '' : cite);
+    if (!s) return { prefix: '', rest: '' };
+    const prefix = extractAuthorYearPrefix(s);
+    if (!prefix) return { prefix: '', rest: s };
+    return { prefix, rest: s.slice(prefix.length) };
+  }
+  function normalizeSpanStyles(html) {
+    // Convert class-based AND span-style formatting into semantic tags so the
+    // walker + downstream paste filter (Word) pick them up. Must run BEFORE
+    // class attrs get stripped. Handles:
+    //   - .warrant class → <u><b>...</b></u> (debate "evidence" markup, bold+underline)
+    //   - .hl class → highlight span
+    //   - .fmt-underline class wrapping <u> → unchanged (inner <u> already semantic)
+    //   - <span style="text-decoration:underline"> → <u>
+    //   - <span style="font-weight:bold|700"> → <b>
+    //   - <span style="background-color:<yellow>"> → highlight
+    let s = String(html == null ? '' : html);
+
+    // .warrant class — run multiple passes in case of nested/adjacent warrants
+    for (let iter = 0; iter < 4; iter++) {
+      const next = s.replace(
+        /<span([^>]*)\sclass=("|')([^"']*)\2([^>]*)>([\s\S]*?)<\/span>/gi,
+        (full, pre, quote, classVal, post, inner) => {
+          const classes = classVal.split(/\s+/);
+          const hasWarrant = classes.includes('warrant');
+          const hasHl = classes.includes('hl');
+          if (!hasWarrant && !hasHl) return full;
+          let wrapped = inner;
+          if (hasWarrant) wrapped = `<u><b>${wrapped}</b></u>`;
+          if (hasHl) wrapped = `<span style="background-color:#ffff00;color:#000">${wrapped}</span>`;
+          return wrapped;
+        }
+      );
+      if (next === s) break;
+      s = next;
+    }
+
+    // underline/bold/highlight via inline style
+    s = s.replace(
+      /<span([^>]*)\sstyle=("[^"]*"|'[^']*')([^>]*)>([\s\S]*?)<\/span>/gi,
+      (full, pre, rawStyle, post, inner) => {
+        const style = rawStyle.slice(1, -1);
+        const underline = /text-decoration\s*:\s*[^;"']*underline/i.test(style);
+        const bold = /font-weight\s*:\s*(?:bold|700|800|900)/i.test(style);
+        const highlight = /(?:background(?:-color)?\s*:\s*(?:#?[fF][fF][fF]?[fF]00|#?[fF][fF][eE][bB]3[bB]|yellow|#?[fF][fF][fF][0-9a-fA-F]{3}))/i.test(style);
+        if (!underline && !bold && !highlight) return full;
+        let wrapped = inner;
+        if (underline) wrapped = `<u>${wrapped}</u>`;
+        if (bold) wrapped = `<b>${wrapped}</b>`;
+        if (highlight) wrapped = `<mark>${wrapped}</mark>`;
+        return wrapped;
+      }
+    );
+    return s;
+  }
+
+  function flattenInlineStyles(html) {
+    const src = normalizeSpanStyles(String(html == null ? '' : html));
+    const FMT_TAGS = /^(u|b|strong|mark)$/i;
+    const stack = [];
+    let out = '';
+    let i = 0;
+
+    function emit(text) {
+      if (!text) return;
+      if (!stack.length) { out += text; return; }
+      let underline = false, bold = false, highlight = false;
+      for (const t of stack) {
+        if (t === 'u') underline = true;
+        else if (t === 'b' || t === 'strong') bold = true;
+        else if (t === 'mark') highlight = true;
+      }
+      // Word paste filter: preserves <u>, <b> reliably; strips <mark> on some versions.
+      // Use tags for u/b, span-with-background for highlight.
+      let open = '', close = '';
+      if (underline) { open += '<u style="text-decoration:underline">'; close = '</u>' + close; }
+      if (bold) { open += '<b style="font-weight:700">'; close = '</b>' + close; }
+      if (highlight) { open += '<span style="background-color:#ffff00;color:#000">'; close = '</span>' + close; }
+      out += open + text + close;
+    }
+
+    while (i < src.length) {
+      const lt = src.indexOf('<', i);
+      if (lt < 0) { emit(src.slice(i)); break; }
+      emit(src.slice(i, lt));
+      const gt = src.indexOf('>', lt);
+      if (gt < 0) { out += src.slice(lt); break; }
+      const raw = src.slice(lt + 1, gt).trim();
+      const isClose = raw.startsWith('/');
+      const name = (isClose ? raw.slice(1) : raw.split(/\s/)[0]).toLowerCase();
+      if (FMT_TAGS.test(name)) {
+        if (isClose) {
+          for (let j = stack.length - 1; j >= 0; j--) {
+            if (stack[j] === name) { stack.splice(j, 1); break; }
+          }
+        } else {
+          stack.push(name);
+        }
+      } else {
+        out += src.slice(lt, gt + 1);
+      }
+      i = gt + 1;
+    }
+    return out;
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function stripDangerousAttrs(html) {
+    let out = String(html || '')
+      .replace(/\s+on[a-z]+\s*=\s*"[^"]*"/gi, '')
+      .replace(/\s+on[a-z]+\s*=\s*'[^']*'/gi, '')
+      .replace(/\s+class\s*=\s*"[^"]*"/gi, '')
+      .replace(/\s+class\s*=\s*'[^']*'/gi, '')
+      .replace(/\s+data-[a-z0-9\-]+\s*=\s*"[^"]*"/gi, '')
+      .replace(/\s+data-[a-z0-9\-]+\s*=\s*'[^']*'/gi, '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '');
+    // Neutralize dangerous URL schemes in href/src
+    out = out.replace(
+      /(\s(?:href|src)\s*=\s*)(["'])\s*(?:javascript|data|vbscript):[^"']*\2/gi,
+      '$1$2#$2'
+    );
+    return out;
+  }
+
+  function htmlToPlain(html) {
+    return String(html || '')
+      .replace(/<\/(p|div|br|li)>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function serializeSelectionHtmlFromString(rawHtml, context) {
+    // Normalize semantic classes BEFORE class stripping so .warrant / .hl survive.
+    const normalized = normalizeSpanStyles(rawHtml);
+    const cleaned = stripDangerousAttrs(normalized);
+    let html;
+    if (context === 'cite') {
+      const text = htmlToPlain(cleaned);
+      const { prefix, rest } = splitCite(text);
+      if (prefix) {
+        html =
+          `<span style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;color:#000">${esc(prefix)}</span>` +
+          `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(rest)}</span>`;
+      } else {
+        html = `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(text)}</span>`;
+      }
+    } else if (context === 'tag') {
+      const text = htmlToPlain(cleaned);
+      html = `<p style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;color:#000;margin:0">${esc(text)}</p>`;
+    } else {
+      const flat = flattenInlineStyles(cleaned);
+      html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000">${flat}</div>`;
+    }
+    return { html, plain: htmlToPlain(cleaned) };
+  }
+
+  function buildCopyHtml(card) {
+    card = card || {};
+    const tag = card.tag || '';
+    const cite = card.cite || card.shortCite || '';
+    let body = card.body_html;
+    if (!body && card.body_plain) {
+      body = '<p>' + esc(card.body_plain).replace(/\n+/g, '</p><p>') + '</p>';
+    }
+    body = flattenInlineStyles(body || '');
+
+    const { prefix, rest } = splitCite(cite);
+    let citeHtml;
+    if (prefix) {
+      citeHtml =
+        `<span style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;color:#000">${esc(prefix)}</span>` +
+        `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(rest)}</span>`;
+    } else {
+      citeHtml = `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(cite)}</span>`;
+    }
+
+    const parts = [];
+    parts.push('<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000">');
+    if (tag) {
+      parts.push(`<p style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;margin:0 0 4pt 0">${esc(tag)}</p>`);
+    }
+    parts.push(`<p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:0 0 6pt 0">${citeHtml}</p>`);
+    parts.push(`<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${body}</div>`);
+    parts.push('</div>');
+    return parts.join('');
+  }
+  function buildCopyPlain(card) {
+    card = card || {};
+    const tag = card.tag || '';
+    const cite = card.cite || card.shortCite || '';
+    const body = card.body_plain || card.body_markdown || '';
+    return `${tag}\n${cite}\n\n${body}`;
+  }
+  function serializeSelectionHtml(range) {
+    if (!range || typeof range.cloneContents !== 'function') {
+      return { html: '', plain: '' };
+    }
+    const frag = range.cloneContents();
+    const tmp = (typeof document !== 'undefined' && document.createElement)
+      ? document.createElement('div') : null;
+    if (!tmp) return { html: '', plain: '' };
+    tmp.appendChild(frag);
+
+    // Region-aware path: when selection contains any card field(s), rebuild via
+    // buildCopyHtml so tag is 13pt bold, cite prefix is split 13pt/11pt, body
+    // runs through flatten. Guarantees native Ctrl+C matches the copy button.
+    const tagEl = tmp.querySelector('[data-field="tag"]');
+    const citeEl = tmp.querySelector('[data-field="cite"]');
+    const bodyEl = tmp.querySelector('[data-field="body"]');
+    if (tagEl || citeEl || bodyEl) {
+      const tag = tagEl ? (tagEl.textContent || '').trim() : '';
+      const cite = citeEl ? (citeEl.textContent || '').trim() : '';
+      const bodyHtml = bodyEl ? bodyEl.innerHTML : '';
+      const bodyPlain = bodyEl ? (bodyEl.textContent || '') : '';
+      return {
+        html: buildCopyHtml({ tag, cite, body_html: bodyHtml }),
+        plain: buildCopyPlain({ tag, cite, body_plain: bodyPlain })
+      };
+    }
+
+    // Single-region (user selected a word or phrase inside one field): use the
+    // string-based serializer with context detection.
+    const rawHtml = tmp.innerHTML;
+    const container = range.commonAncestorContainer;
+    const node = container && container.nodeType === 1 ? container : (container && container.parentElement);
+    let context = 'card-body';
+    if (node && typeof node.closest === 'function') {
+      if (node.closest('.cite-block, [data-field="cite"]')) context = 'cite';
+      else if (node.closest('[data-field="tag"]')) context = 'tag';
+      else if (node.closest('.wb-body, .card-preview, [data-field="body"]')) context = 'card-body';
+      else context = 'mixed';
+    }
+    return serializeSelectionHtmlFromString(rawHtml, context);
+  }
+
+  return {
+    extractAuthorYearPrefix,
+    splitCite,
+    flattenInlineStyles,
+    buildCopyHtml,
+    buildCopyPlain,
+    serializeSelectionHtmlFromString,
+    serializeSelectionHtml,
+  };
+}));
