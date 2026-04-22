@@ -898,21 +898,29 @@ body.nexus-full .nexus-closed-rail{display:none}
 .mycard:hover{border-color:var(--line-2);box-shadow:var(--shadow);transform:translateY(-1px)}
 .mycard .export-btn{display:none !important}
 .mycard:hover .export-btn{display:none !important}
-.mycard .date{transition:opacity .18s ease;margin-right:0}
+.mycard .date{
+  position:absolute;top:10px;right:12px;
+  font:500 11px/1 var(--font-mono);color:var(--muted);
+  transition:opacity .15s ease;pointer-events:none;z-index:1;
+  letter-spacing:.01em;
+}
+.mycard:hover .date{opacity:0}
 .export-btn.busy,.ev-export-btn.busy{pointer-events:none;opacity:.7 !important}
 .export-btn.busy svg,.ev-export-btn.busy svg{animation:spin 0.8s linear infinite}
-.ev-export-btn{transition:background .14s, color .14s, border-color .14s, transform .14s}
+.ev-export-btn{transition:background .14s, color .14s, border-color .14s, transform .14s;color:var(--ink)!important;border-color:var(--line-2)!important;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ev-export-btn svg{stroke-width:2!important}
 .ev-export-btn:hover{background:var(--lilac-soft)!important;color:var(--lilac-ink)!important;border-color:var(--lilac-2)!important;transform:scale(1.06)}
 .ev-export-btn.copied,.export-btn.copied{background:#dcfce7!important;border-color:#86efac!important;color:#047857!important;transform:scale(1.08)}
 .ev-export-btn.copied svg,.export-btn.copied svg{animation:copyPop .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes copyPop{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 .mycard .mc-copy-btn{
   position:absolute;top:8px;right:10px;
-  width:22px;height:22px;border-radius:5px;display:grid;place-items:center;
-  color:var(--muted);background:transparent;border:none;
-  opacity:0;transition:opacity .18s ease;cursor:pointer;z-index:2;
+  width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+  color:var(--ink);background:#fff;border:1px solid var(--line-2);
+  opacity:0;transition:opacity .15s ease,background .14s,color .14s,border-color .14s,transform .14s;
+  cursor:pointer;z-index:3;box-shadow:0 1px 2px rgba(0,0,0,.06);
 }
-.mycard .mc-copy-btn svg{width:13px;height:13px;stroke-width:1.7;color:var(--ink)}
+.mycard .mc-copy-btn svg{width:13px;height:13px;stroke-width:2;color:currentColor}
 .mycard:hover .mc-copy-btn{opacity:1}
 .mycard .mc-copy-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2);transform:scale(1.06)}
 .mycard .mc-copy-btn.busy{pointer-events:none;opacity:.7!important}
@@ -921,7 +929,7 @@ body.nexus-full .nexus-closed-rail{display:none}
 .mycard .mc-copy-btn.copied svg{animation:copyPop .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .mycard .export-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2)}
-.mycard .head{display:flex;align-items:center;gap:6px;padding-right:28px}
+.mycard .head{display:flex;align-items:center;gap:6px;padding-right:72px}
 .mycard .tag{font-size:14.5px;font-weight:600;color:var(--ink);font-family:var(--font-display);letter-spacing:-0.01em;line-height:1.4}
 .mycard .cite{font-size:11.5px;color:var(--muted);font-family:var(--font-display)}
 .mycard .preview{
@@ -1379,6 +1387,42 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .sfield-select{width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:500 13.5px/1 var(--font-display);cursor:pointer;appearance:auto;transition:border-color .14s,box-shadow .14s;outline:none}
 .sfield-select:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
 .sfield-select:hover{border-color:var(--line-2)}
+
+/* Custom menu dropdown */
+.sfield-menu{position:relative;width:100%;max-width:420px}
+.sfield-menu-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  font:500 13.5px/1.25 var(--font-display);cursor:pointer;outline:none;text-align:left;
+  transition:border-color .14s,box-shadow .14s,background .14s;
+}
+.sfield-menu-trigger:hover{border-color:var(--line-2)}
+.sfield-menu-trigger:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+.sfield-menu-trigger .caret{flex:0 0 auto;width:14px;height:14px;color:var(--muted);transition:transform .18s ease}
+.sfield-menu[data-open="true"] .sfield-menu-trigger{border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+.sfield-menu[data-open="true"] .sfield-menu-trigger .caret{transform:rotate(180deg)}
+.sfield-menu-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sfield-menu-list{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 12px 32px rgba(20,18,30,.12),0 1px 2px rgba(0,0,0,.05);
+  padding:5px;z-index:50;
+  opacity:0;transform:translateY(-4px);pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease;
+  max-height:280px;overflow:auto;
+}
+.sfield-menu[data-open="true"] .sfield-menu-list{opacity:1;transform:translateY(0);pointer-events:auto}
+.sfield-menu-item{
+  display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border-radius:7px;cursor:pointer;
+  font:500 13px/1.35 var(--font-display);color:var(--ink);transition:background .12s;
+}
+.sfield-menu-item:hover,.sfield-menu-item.active{background:var(--lilac-soft)}
+.sfield-menu-item[aria-selected="true"]{background:var(--lilac-soft);color:var(--lilac-ink)}
+.sfield-menu-item .mi-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sfield-menu-item .mi-title{font-weight:600;letter-spacing:-.01em}
+.sfield-menu-item .mi-sub{font:400 11.5px/1.3 var(--font-ui);color:var(--muted)}
+.sfield-menu-item .mi-check{flex:0 0 auto;width:14px;height:14px;margin-top:2px;color:var(--lilac-ink);opacity:0}
+.sfield-menu-item[aria-selected="true"] .mi-check{opacity:1}
 /* Settings item hover */
 .stab{transition:background .14s,color .14s,box-shadow .14s,transform .14s}
 .stab:hover{transform:translateY(-1px)}
@@ -2830,12 +2874,27 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
           <h4 class="spane-h mt">Card Cutter</h4>
           <div class="sfield">
-            <label class="sfield-l" for="cut-length-select">Card length</label>
-            <select class="sfield-select" id="cut-length-select">
-              <option value="short">Short — 2–3 paragraphs (~280w)</option>
-              <option value="medium">Medium — 3–5 paragraphs (~480w)</option>
-              <option value="long">Long — 5–8 paragraphs (~760w)</option>
-            </select>
+            <label class="sfield-l">Card length</label>
+            <div class="sfield-menu" id="cut-length-menu" data-open="false">
+              <button type="button" class="sfield-menu-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="sfield-menu-label" data-slot="label">Medium</span>
+                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="sfield-menu-list" role="listbox" tabindex="-1">
+                <div class="sfield-menu-item" role="option" data-val="short">
+                  <div class="mi-main"><span class="mi-title">Short</span><span class="mi-sub">2–3 paragraphs (~280w)</span></div>
+                  <svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="sfield-menu-item" role="option" data-val="medium" aria-selected="true">
+                  <div class="mi-main"><span class="mi-title">Medium</span><span class="mi-sub">3–5 paragraphs (~480w)</span></div>
+                  <svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="sfield-menu-item" role="option" data-val="long">
+                  <div class="mi-main"><span class="mi-title">Long</span><span class="mi-sub">5–8 paragraphs (~760w)</span></div>
+                  <svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+            </div>
           </div>
 
         </section>

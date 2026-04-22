@@ -996,7 +996,7 @@
       if (src) src.innerHTML = '<p class="shrink" style="color:var(--muted)">No source loaded. Paste a URL above to scrape, or submit a query to research.</p>';
       const title = $('#pane-source .pane-title');
       if (title) title.innerHTML = '<span class="pip"></span>Source';
-      toast('Cleared');
+      toast({ title: 'Cleared', variant: 'success', duration: 1800 });
     });
 
     // Open original — opens the source URL and copies the citation to clipboard.
@@ -1142,7 +1142,10 @@
     if (titleEl) titleEl.textContent = meta.t;
     if (subEl) subEl.textContent = meta.s;
     if (crumb) crumb.textContent = meta.t;
-    if (tab === 'evidence') { if (!state.evidenceCards.length) loadEvidence(); }
+    if (tab === 'evidence') {
+      if (!state.evidenceCards.length) loadEvidence();
+      else { renderEvidence(); if (state.evidenceCards[0]) renderEvidenceDetail(state.evidenceCards[0]); }
+    }
     if (tab === 'mine') { loadProjects(); renderMyCards(); }
     if (tab === 'history') renderHistory();
   }
@@ -1151,8 +1154,8 @@
 
   /* Evidence */
   async function loadEvidence() {
-    const list = $('#ev-list'); if (!list) return;
-    list.innerHTML = '<div style="padding:24px;color:var(--muted);font-size:13px">Loading library…</div>';
+    const list = $('#ev-list');
+    if (list) list.innerHTML = '<div style="padding:24px;color:var(--muted);font-size:13px">Loading library…</div>';
     state.evPage = 1;
     state.evShown = 50;
     state.evDone = false;
@@ -1163,11 +1166,25 @@
       state.evidenceCards = data.items || data.results || [];
       state.evidenceTotal = data.total || 0;
       if (!state.evidenceCards.length) state.evDone = true;
-      renderEvidence();
-      if (state.evidenceCards[0]) renderEvidenceDetail(state.evidenceCards[0]);
+      if (list) renderEvidence();
+      if (list && state.evidenceCards[0]) renderEvidenceDetail(state.evidenceCards[0]);
       if (!state.evDone) setTimeout(() => loadMoreEvidence(), 400);
     } catch (err) {
-      list.innerHTML = `<div style="padding:24px;color:#c33;font-size:13px">Error: ${esc(err.message)}</div>`;
+      if (list) list.innerHTML = `<div style="padding:24px;color:#c33;font-size:13px">Error: ${esc(err.message)}</div>`;
+    }
+  }
+
+  function preloadEvidenceBackground() {
+    if (state.evidenceCards.length || state.evLoading || state._evPreloadStarted) return;
+    state._evPreloadStarted = true;
+    setTimeout(() => { loadEvidence().catch(() => {}); }, 800);
+  }
+  window.__preloadEvidence = preloadEvidenceBackground;
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      preloadEvidenceBackground();
+    } else {
+      document.addEventListener('DOMContentLoaded', preloadEvidenceBackground, { once: true });
     }
   }
 
@@ -1376,6 +1393,29 @@
     } catch (err) { toast({ title: 'Copy blocked', description: err.message || 'Clipboard permission denied', variant: 'destructive' }); }
   });
 
+  function rankByKeyword(cards, q) {
+    const needle = String(q || '').trim().toLowerCase();
+    if (!needle) return cards;
+    const tokens = needle.split(/\s+/).filter(Boolean);
+    const score = (c) => {
+      const tag = String(c.tag || '').toLowerCase();
+      const cite = String(c.cite || c.shortCite || '').toLowerCase();
+      const body = String(c.body_plain || c.body_markdown || '').toLowerCase();
+      let s = 0;
+      for (const t of tokens) {
+        if (tag.includes(t)) s += 100;
+        if (tag.startsWith(t)) s += 50;
+        if (cite.includes(t)) s += 20;
+        if (body.includes(t)) s += 5;
+      }
+      if (tag.includes(needle)) s += 200;
+      return s;
+    };
+    return cards.map((c, i) => ({ c, i, s: score(c) }))
+      .sort((a, b) => b.s - a.s || a.i - b.i)
+      .map((x) => x.c);
+  }
+
   let evSearchTok = 0;
   async function runEvidenceSearch(q) {
     const myTok = ++evSearchTok;
@@ -1385,7 +1425,8 @@
     try {
       const data = await API.libraryCards({ q, limit: 200, sort: 'relevance' });
       if (myTok !== evSearchTok) return;
-      state.evSearchResults = data.items || data.results || [];
+      const raw = data.items || data.results || [];
+      state.evSearchResults = rankByKeyword(raw, q);
     } catch (err) {
       if (myTok !== evSearchTok) return;
       console.error('[library search error]', err);
@@ -1643,6 +1684,7 @@
     }
     if (q) {
       filtered = filtered.filter((c) => [c.tag, c.cite, c.topic, c.body_plain].join(' ').toLowerCase().includes(q));
+      filtered = rankByKeyword(filtered, q);
     }
     if (!filtered.length) {
       grid.innerHTML = '<div style="grid-column:1/-1;padding:32px;color:var(--muted);font-size:13px">No cards here yet.</div>';
@@ -2419,11 +2461,51 @@
       });
       applyT();
       refreshDirty();
-      // Cutter length select
-      const cutLenSel = document.getElementById('cut-length-select');
-      if (cutLenSel) {
-        cutLenSel.value = TWEAKS.cutterLength || 'medium';
-        cutLenSel.onchange = () => { TWEAKS.cutterLength = cutLenSel.value; persistTweaks(); };
+      // Cutter length custom menu
+      const cutLenMenu = document.getElementById('cut-length-menu');
+      if (cutLenMenu) {
+        const trigger = cutLenMenu.querySelector('.sfield-menu-trigger');
+        const list = cutLenMenu.querySelector('.sfield-menu-list');
+        const labelEl = cutLenMenu.querySelector('[data-slot="label"]');
+        const items = Array.from(cutLenMenu.querySelectorAll('.sfield-menu-item'));
+        const setValue = (v) => {
+          TWEAKS.cutterLength = v;
+          items.forEach((it) => it.setAttribute('aria-selected', String(it.dataset.val === v)));
+          const sel = items.find((it) => it.dataset.val === v) || items[1];
+          if (labelEl && sel) labelEl.textContent = sel.querySelector('.mi-title')?.textContent || v;
+          persistTweaks();
+        };
+        setValue(TWEAKS.cutterLength || 'medium');
+        const close = () => {
+          cutLenMenu.setAttribute('data-open', 'false');
+          trigger.setAttribute('aria-expanded', 'false');
+        };
+        const open = () => {
+          cutLenMenu.setAttribute('data-open', 'true');
+          trigger.setAttribute('aria-expanded', 'true');
+        };
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          cutLenMenu.getAttribute('data-open') === 'true' ? close() : open();
+        });
+        items.forEach((it) => it.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setValue(it.dataset.val);
+          close();
+          trigger.focus();
+        }));
+        document.addEventListener('click', (e) => {
+          if (!cutLenMenu.contains(e.target)) close();
+        });
+        trigger.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            open();
+            items[0]?.focus?.();
+          } else if (e.key === 'Escape') {
+            close();
+          }
+        });
       }
       // Cutter density cards
       document.querySelectorAll('#cut-density-cards .hl-card').forEach(card => {
