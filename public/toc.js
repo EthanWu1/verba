@@ -124,31 +124,38 @@
     else $('toc-detail-body').innerHTML = '<div class="toc-muted">No LD/PF/CX events indexed.</div>';
   }
 
+  function isPastTournament(t) {
+    if (!t || !t.endDate) return false;
+    return new Date(t.endDate) < new Date();
+  }
+
   function renderViewTabs() {
-    const isUpcoming = _currentTourn && new Date(_currentTourn.endDate) >= new Date();
-    return `<div class="toc-view-tabs">
-      <button class="toc-view-tab ${_currentView === 'results' ? 'active' : ''}" data-view="results">Results</button>
-      <button class="toc-view-tab ${_currentView === 'threats' ? 'active' : ''}" data-view="threats">${isUpcoming ? 'Threats' : 'Field'}</button>
-    </div>`;
+    const past = isPastTournament(_currentTourn);
+    if (past) {
+      return `<div class="toc-view-tabs"><button class="toc-view-tab active" data-view="results">Results</button></div>`;
+    }
+    return `<div class="toc-view-tabs"><button class="toc-view-tab active" data-view="threats">Threats</button></div>`;
   }
 
   async function loadEventBody(t, abbr) {
     _currentEvent = abbr;
     const body = $('toc-detail-body');
     body.innerHTML = '<div class="toc-muted">Loading…</div>';
+    const past = isPastTournament(t);
+    _currentView = past ? 'results' : 'threats';
     if (_currentView === 'threats') {
       const res = await fetch(`/api/toc/tournaments/${t.tourn_id}/threats/${abbr}`);
       const { threats } = await res.json();
       body.innerHTML = renderViewTabs() + renderThreats(threats, abbr);
     } else {
-      const res = await fetch(`/api/toc/tournaments/${t.tourn_id}/results/${abbr}`);
-      const { results, speakers } = await res.json();
-      body.innerHTML = renderViewTabs() + renderResults(results, speakers, abbr);
+      const [resultsRes, bracketRes] = await Promise.all([
+        fetch(`/api/toc/tournaments/${t.tourn_id}/results/${abbr}`),
+        fetch(`/api/toc/tournaments/${t.tourn_id}/bracket/${abbr}`),
+      ]);
+      const { results, speakers } = await resultsRes.json();
+      const { rounds } = await bracketRes.json();
+      body.innerHTML = renderViewTabs() + renderResults(results, speakers, abbr) + renderBracket(rounds);
     }
-    body.querySelectorAll('.toc-view-tab').forEach(b => b.addEventListener('click', () => {
-      _currentView = b.dataset.view;
-      loadEventBody(t, abbr);
-    }));
     attachEntryClicks(body);
   }
 
@@ -200,6 +207,24 @@
         <table class="toc-table"><thead><tr><th>#</th><th>Speaker</th><th>Points</th></tr></thead><tbody>${spkRows}</tbody></table>
       ` : ''}
     `;
+  }
+
+  function renderBracket(rounds) {
+    if (!rounds || !rounds.length) return '';
+    const cols = rounds.map(r => {
+      const winners = (r.ballots || []).filter(b => b.result === 'W');
+      const items = winners.map(w => `
+        <div class="bracket-cell">
+          <div class="bracket-name">${esc(w.displayName || '—')}</div>
+          <div class="bracket-school">${esc(w.schoolCode || '')}</div>
+        </div>
+      `).join('');
+      return `<div class="bracket-col">
+        <div class="bracket-col-head">${esc(r.name)}</div>
+        ${items || '<div class="toc-muted">—</div>'}
+      </div>`;
+    }).join('');
+    return `<div class="toc-section-title">Bracket</div><div class="bracket-grid">${cols}</div>`;
   }
 
   function attachEntryClicks(root) {
