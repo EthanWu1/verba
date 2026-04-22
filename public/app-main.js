@@ -385,6 +385,13 @@
     if (!item) return;
     const prevIndex = carouselState.items.findIndex(i => i.id === id);
     applyState(Carousel.removeItem(carouselState, id));
+    if (item.id && window.API && API.mine && typeof API.mine.remove === 'function') {
+      API.mine.remove(item.id).catch(() => {});
+    }
+    showUndoToast(item, prevIndex);
+  }
+
+  function showUndoToast(item, prevIndex) {
     const el = document.createElement('div');
     el.className = 'toast-undo';
     el.innerHTML = 'Card removed <button>Undo</button>';
