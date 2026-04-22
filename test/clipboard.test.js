@@ -192,8 +192,13 @@ test('buildCopyHtml: escapes HTML-dangerous chars in cite and tag', () => {
     cite: 'Smith 24 "quote"',
     body_html: '<p>x</p>'
   });
+  // Tag is a single escaped run, so the contiguous match is fine:
   assert.match(html, /A &amp; B &lt; C/);
-  assert.match(html, /Smith 24 &quot;quote&quot;/);
+  // Cite is split into prefix + rest spans. Verify both pieces are present AND escaped.
+  assert.match(html, /Smith 24/);
+  assert.match(html, /&quot;quote&quot;/);
+  // And verify no unescaped double-quote leaked into text content (only in style="" attrs).
+  assert.doesNotMatch(html, />[^<]*"quote"[^<]*</);
 });
 
 test('buildCopyHtml: empty card produces empty-safe output', () => {
