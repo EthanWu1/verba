@@ -2040,6 +2040,36 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .toc-topbar { flex-wrap: wrap; gap: 8px; }
   .toc-detail-meta { width: 100%; margin-left: 0; }
 }
+/* ── Teams (wk-) page ────────────────────────── */
+.wk-shell { display: flex; flex-direction: column; height: 100%; padding: 16px 20px; gap: 16px; box-sizing: border-box; }
+.wk-topbar { display: flex; align-items: center; gap: 12px; }
+.wk-search-input { flex: 1; max-width: 360px; background: var(--panel); border: 1px solid var(--line); color: var(--ink); padding: 8px 12px; border-radius: 6px; font: 13.5px var(--font-ui); transition: border-color .15s, box-shadow .15s; }
+.wk-search-input:focus { outline: none; border-color: var(--lilac-3, #a78bfa); box-shadow: 0 0 0 3px rgba(167,139,250,.15); }
+.wk-event-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); }
+.wk-event-tab { background: none; border: 0; padding: 8px 14px; font: 500 13px var(--font-display); color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+.wk-event-tab:hover { color: var(--ink-2); }
+.wk-event-tab.active { color: var(--ink); border-bottom-color: var(--lilac-3, #a78bfa); }
+.wk-count { margin-left: auto; color: var(--muted); font: 12px var(--font-mono); }
+.wk-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.wk-empty { padding: 24px; color: var(--muted); font-size: 13px; }
+.wk-row { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; transition: border-color .15s, transform .15s; }
+.wk-row:hover { border-color: var(--lilac-3, #a78bfa); }
+.wk-row-head { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; }
+.wk-school { font: 600 14px var(--font-display); color: var(--ink); flex: 1; }
+.wk-initials { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 24px; padding: 0 6px; background: var(--lilac-soft, #ede9fe); color: #4c1d95; border-radius: 4px; font: 700 11px var(--font-mono); letter-spacing: .5px; }
+.wk-debaters { color: var(--muted); font: 12.5px var(--font-ui); }
+.wk-chev { width: 16px; height: 16px; transition: transform .2s; opacity: .5; }
+.wk-row.open .wk-chev { transform: rotate(90deg); }
+.wk-row-body { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+.wk-row.open .wk-row-body { max-height: 800px; }
+.wk-row-body-inner { padding: 0 14px 14px; border-top: 1px dashed var(--line); margin-top: 4px; }
+.wk-arg { padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.wk-arg:last-child { border-bottom: 0; }
+.wk-arg-name { font: 600 13px var(--font-display); color: var(--ink); }
+.wk-arg-side { font-size: 11px; color: var(--muted); margin-left: 6px; text-transform: uppercase; }
+.wk-arg-snippet { color: var(--muted-2, #888); font: 12.5px var(--font-ui); margin-top: 4px; line-height: 1.4; }
+.wk-link-out { color: var(--lilac-3, #a78bfa); text-decoration: none; font-size: 12.5px; margin-top: 8px; display: inline-block; }
+.wk-link-out:hover { text-decoration: underline; }
 /* ── Rankings page ───────────────────────────── */
 .rk-shell { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 .rk-topbar {
@@ -2454,60 +2484,18 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       </section>
 
       <section class="page" id="page-teams">
-        <div class="wiki-shell">
-          <!-- Panel 1: Team search + list -->
-          <div class="wiki-panel wiki-panel-teams" id="wiki-panel-teams">
-            <div class="wiki-panel-head">
-              <input id="wiki-search" class="wiki-search" type="search" placeholder="Search teams…" autocomplete="off">
+        <div class="wk-shell">
+          <div class="wk-topbar">
+            <input id="wk-search" class="wk-search-input" type="search" placeholder="Search schools or debaters…" aria-label="Search teams">
+            <div class="wk-event-tabs">
+              <button class="wk-event-tab active" data-event="LD">LD</button>
+              <button class="wk-event-tab" data-event="PF">PF</button>
+              <button class="wk-event-tab" data-event="CX">CX</button>
             </div>
-            <div class="wiki-team-list" id="wiki-team-list">
-              <div class="wiki-skeleton-rows" id="wiki-skeleton">
-                <div class="wiki-skeleton-row"></div>
-                <div class="wiki-skeleton-row"></div>
-                <div class="wiki-skeleton-row"></div>
-                <div class="wiki-skeleton-row"></div>
-                <div class="wiki-skeleton-row"></div>
-              </div>
-            </div>
-            <div class="wiki-panel-foot">
-              <span id="wiki-team-count" class="wiki-muted"></span>
-              <button class="wiki-btn-sm" id="wiki-reindex-btn">Re-index All</button>
-            </div>
+            <div class="wk-count" id="wk-count"></div>
           </div>
-
-          <!-- Panel 2: Argument list -->
-          <div class="wiki-panel wiki-panel-args hidden" id="wiki-panel-args">
-            <div class="wiki-panel-head">
-              <div class="wiki-team-title" id="wiki-team-title"></div>
-              <div class="wiki-team-meta" id="wiki-team-meta"></div>
-              <div class="wiki-arg-actions">
-                <button class="wiki-btn-sm" id="wiki-download-all-btn">⬇ Download All</button>
-                <button class="wiki-btn-sm" id="wiki-refresh-btn">↻ Refresh</button>
-              </div>
-            </div>
-            <div class="wiki-arg-list" id="wiki-arg-list">
-              <div class="wiki-crawl-status hidden" id="wiki-crawl-status">
-                <div class="wiki-spinner"></div>
-                <span class="wiki-crawl-msg" id="wiki-crawl-msg">Fetching cases…</span>
-              </div>
-              <div class="wiki-error hidden" id="wiki-arg-error">
-                Failed to load — <button class="wiki-btn-link" id="wiki-retry-btn">Retry</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Panel 3: Argument detail -->
-          <div class="wiki-panel wiki-panel-detail hidden" id="wiki-panel-detail">
-            <div class="wiki-panel-head">
-              <div class="wiki-arg-title" id="wiki-arg-title"></div>
-              <div class="wiki-detail-actions">
-                <button class="wiki-btn-sm wiki-ask-btn" id="wiki-ask-btn">Ask ↗</button>
-                <button class="wiki-btn-sm" id="wiki-export-arg-btn">⬇ .docx</button>
-                <button class="wiki-btn-sm" id="wiki-copy-btn">Copy</button>
-                <button class="wiki-btn-sm" id="wiki-refresh-detail-btn">↻</button>
-              </div>
-            </div>
-            <div class="wiki-detail-body" id="wiki-detail-body"></div>
+          <div class="wk-list" id="wk-list">
+            <div class="wk-empty">Loading teams…</div>
           </div>
         </div>
       </section>
