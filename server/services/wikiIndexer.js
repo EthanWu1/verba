@@ -5,6 +5,18 @@ const db      = require('./wikiDb');
 
 let _indexing = false;
 
+// Debounce FTS rebuild across rapid successive team crawls.
+// Individual rebuilds scan all wiki_arguments; consecutive crawls in <5s coalesce into one rebuild.
+let _ftsRebuildTimer = null;
+function _scheduleArgumentsFtsRebuild() {
+  clearTimeout(_ftsRebuildTimer);
+  _ftsRebuildTimer = setTimeout(() => {
+    try { db.rebuildArgumentsFts(); }
+    catch (err) { console.error('[wiki] FTS rebuild error:', err.message); }
+    _ftsRebuildTimer = null;
+  }, 5000);
+}
+
 async function seedTeamIndex() {
   if (_indexing) return { skipped: true };
   _indexing = true;
@@ -102,7 +114,7 @@ async function crawlTeamDetail(teamId) {
       }
     }
 
-    db.rebuildArgumentsFts();
+    _scheduleArgumentsFtsRebuild();
     db.setTeamCrawled(teamId);
   } catch (err) {
     db.setTeamCrawlStatus(teamId, 'error');

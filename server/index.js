@@ -25,6 +25,8 @@ const authRoutes        = require('./routes/auth');
 const mineRoutes        = require('./routes/mine');
 const historyRoutes     = require('./routes/history');
 const wikiRoutes        = require('./routes/wiki');
+const tocRoutes         = require('./routes/toc');
+const rankingsRoutes    = require('./routes/rankings');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +60,8 @@ app.use('/api/auth',          authRoutes);
 app.use('/api/mine',          mineRoutes);
 app.use('/api/history',       historyRoutes);
 app.use('/api/wiki',          wikiRoutes);
+app.use('/api/toc',           tocRoutes);
+app.use('/api/rankings',      rankingsRoutes);
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {
@@ -163,6 +167,24 @@ app.get('*', (req, res) => {
       }
     } catch (err) {
       console.error('[wiki] Auto-seed init failed:', err.message);
+    }
+
+    // Auto-seed TOC tournament index if empty
+    try {
+      const { countTournaments } = require('./services/tocDb');
+      const { seedTocIndex } = require('./services/tocIndexer');
+      if (countTournaments() === 0) {
+        if (process.env.TOC_AUTOSEED === '1') {
+          console.log('[toc] TOC_AUTOSEED=1 — seeding tournament index...');
+          seedTocIndex()
+            .then(r => console.log(`[toc] Seeded ${r.tournaments} tournaments, ${r.entries} entries, ${r.skipped} skipped, ${r.errors} errors`))
+            .catch(err => console.error('[toc] Seed failed:', err.message));
+        } else {
+          console.log('[toc] No tournaments indexed. Set TOC_AUTOSEED=1 in .env or POST /api/toc/reindex to populate.');
+        }
+      }
+    } catch (err) {
+      console.error('[toc] Auto-seed init failed:', err.message);
     }
   });
 })();

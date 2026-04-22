@@ -905,21 +905,29 @@ body.nexus-full .nexus-closed-rail{display:none}
 .mycard:hover{border-color:var(--line-2);box-shadow:var(--shadow);transform:translateY(-1px)}
 .mycard .export-btn{display:none !important}
 .mycard:hover .export-btn{display:none !important}
-.mycard .date{transition:opacity .18s ease;margin-right:0}
+.mycard .date{
+  position:absolute;top:10px;right:12px;
+  font:500 11px/1 var(--font-mono);color:var(--muted);
+  transition:opacity .15s ease;pointer-events:none;z-index:1;
+  letter-spacing:.01em;
+}
+.mycard:hover .date{opacity:0}
 .export-btn.busy,.ev-export-btn.busy{pointer-events:none;opacity:.7 !important}
 .export-btn.busy svg,.ev-export-btn.busy svg{animation:spin 0.8s linear infinite}
-.ev-export-btn{transition:background .14s, color .14s, border-color .14s, transform .14s}
+.ev-export-btn{transition:background .14s, color .14s, border-color .14s, transform .14s;color:var(--ink)!important;border-color:var(--line-2)!important;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ev-export-btn svg{stroke-width:2!important}
 .ev-export-btn:hover{background:var(--lilac-soft)!important;color:var(--lilac-ink)!important;border-color:var(--lilac-2)!important;transform:scale(1.06)}
 .ev-export-btn.copied,.export-btn.copied{background:#dcfce7!important;border-color:#86efac!important;color:#047857!important;transform:scale(1.08)}
 .ev-export-btn.copied svg,.export-btn.copied svg{animation:copyPop .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes copyPop{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
 .mycard .mc-copy-btn{
   position:absolute;top:8px;right:10px;
-  width:22px;height:22px;border-radius:5px;display:grid;place-items:center;
-  color:var(--muted);background:transparent;border:none;
-  opacity:0;transition:opacity .18s ease;cursor:pointer;z-index:2;
+  width:24px;height:24px;border-radius:6px;display:grid;place-items:center;
+  color:var(--ink);background:#fff;border:1px solid var(--line-2);
+  opacity:0;transition:opacity .15s ease,background .14s,color .14s,border-color .14s,transform .14s;
+  cursor:pointer;z-index:3;box-shadow:0 1px 2px rgba(0,0,0,.06);
 }
-.mycard .mc-copy-btn svg{width:13px;height:13px;stroke-width:1.7;color:var(--ink)}
+.mycard .mc-copy-btn svg{width:13px;height:13px;stroke-width:2;color:currentColor}
 .mycard:hover .mc-copy-btn{opacity:1}
 .mycard .mc-copy-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2);transform:scale(1.06)}
 .mycard .mc-copy-btn.busy{pointer-events:none;opacity:.7!important}
@@ -928,7 +936,7 @@ body.nexus-full .nexus-closed-rail{display:none}
 .mycard .mc-copy-btn.copied svg{animation:copyPop .28s cubic-bezier(.2,.8,.2,1)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .mycard .export-btn:hover{color:var(--lilac-ink);background:var(--lilac-soft);border-color:var(--lilac-2)}
-.mycard .head{display:flex;align-items:center;gap:6px;padding-right:28px}
+.mycard .head{display:flex;align-items:center;gap:6px;padding-right:72px}
 .mycard .tag{font-size:14.5px;font-weight:600;color:var(--ink);font-family:var(--font-display);letter-spacing:-0.01em;line-height:1.4}
 .mycard .cite{font-size:11.5px;color:var(--muted);font-family:var(--font-display)}
 .mycard .preview{
@@ -1386,6 +1394,42 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .sfield-select{width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:500 13.5px/1 var(--font-display);cursor:pointer;appearance:auto;transition:border-color .14s,box-shadow .14s;outline:none}
 .sfield-select:focus{border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
 .sfield-select:hover{border-color:var(--line-2)}
+
+/* Custom menu dropdown */
+.sfield-menu{position:relative;width:100%;max-width:420px}
+.sfield-menu-trigger{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);
+  font:500 13.5px/1.25 var(--font-display);cursor:pointer;outline:none;text-align:left;
+  transition:border-color .14s,box-shadow .14s,background .14s;
+}
+.sfield-menu-trigger:hover{border-color:var(--line-2)}
+.sfield-menu-trigger:focus-visible{border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+.sfield-menu-trigger .caret{flex:0 0 auto;width:14px;height:14px;color:var(--muted);transition:transform .18s ease}
+.sfield-menu[data-open="true"] .sfield-menu-trigger{border-color:var(--ink);box-shadow:0 0 0 3px rgba(0,0,0,.08)}
+.sfield-menu[data-open="true"] .sfield-menu-trigger .caret{transform:rotate(180deg)}
+.sfield-menu-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sfield-menu-list{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:#fff;border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 12px 32px rgba(20,18,30,.12),0 1px 2px rgba(0,0,0,.05);
+  padding:5px;z-index:50;
+  opacity:0;transform:translateY(-4px);pointer-events:none;
+  transition:opacity .14s ease,transform .14s ease;
+  max-height:280px;overflow:auto;
+}
+.sfield-menu[data-open="true"] .sfield-menu-list{opacity:1;transform:translateY(0);pointer-events:auto}
+.sfield-menu-item{
+  display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border-radius:7px;cursor:pointer;
+  font:500 13px/1.35 var(--font-display);color:var(--ink);transition:background .12s;
+}
+.sfield-menu-item:hover,.sfield-menu-item.active{background:var(--lilac-soft)}
+.sfield-menu-item[aria-selected="true"]{background:var(--lilac-soft);color:var(--lilac-ink)}
+.sfield-menu-item .mi-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sfield-menu-item .mi-title{font-weight:600;letter-spacing:-.01em}
+.sfield-menu-item .mi-sub{font:400 11.5px/1.3 var(--font-ui);color:var(--muted)}
+.sfield-menu-item .mi-check{flex:0 0 auto;width:14px;height:14px;margin-top:2px;color:var(--lilac-ink);opacity:0}
+.sfield-menu-item[aria-selected="true"] .mi-check{opacity:1}
 /* Settings item hover */
 .stab{transition:background .14s,color .14s,box-shadow .14s,transform .14s}
 .stab:hover{transform:translateY(-1px)}
@@ -1876,6 +1920,181 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .wiki-panel-teams, .wiki-panel-args { width: 100%; border-right: none; border-bottom: 1px solid var(--border, #e5e5e5); max-height: 40vh; }
   .wiki-panel-detail { transform: none; max-height: 60vh; }
 }
+/* ── Tournament page ─────────────────────────── */
+.toc-shell { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.toc-topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border, #e5e5e5);
+  flex-shrink: 0;
+}
+.toc-topbar-left, .toc-topbar-right { display: flex; align-items: center; gap: 8px; }
+.toc-topbar-right { margin-left: auto; }
+.toc-muted { font: 11px var(--font-ui); color: var(--muted); }
+.toc-select {
+  font: 13px var(--font-ui); padding: 5px 8px;
+  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
+  background: var(--bg); color: var(--ink);
+}
+.toc-tabs { display: flex; gap: 4px; }
+.toc-tab {
+  font: 500 12px var(--font-ui); padding: 6px 14px; cursor: pointer;
+  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
+  background: var(--bg); color: var(--muted);
+}
+.toc-tab.active { color: var(--ink); background: #fff; box-shadow: var(--shadow-sm); }
+.toc-btn-sm {
+  font: 11px var(--font-ui); padding: 4px 10px; cursor: pointer;
+  border: 1px solid var(--border, #e5e5e5); border-radius: 5px;
+  background: var(--bg); color: var(--ink); white-space: nowrap;
+}
+.toc-btn-sm:hover { background: var(--hover-bg, #f5f5f5); }
+.toc-grid {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  align-content: start;
+}
+.toc-card {
+  border: 1px solid var(--border, #e5e5e5); border-radius: 8px;
+  padding: 12px 14px; cursor: pointer;
+  background: var(--bg); transition: box-shadow .18s ease, transform .18s ease;
+  opacity: 0; animation: toc-fade-in .22s ease forwards;
+}
+.toc-card:hover { box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,.08)); transform: translateY(-1px); }
+.toc-card-name { font: 600 13px var(--font-ui); color: var(--ink); margin-bottom: 4px; }
+.toc-card-dates { font: 11px var(--font-mono); color: var(--muted); margin-bottom: 2px; }
+.toc-card-loc { font: 11px var(--font-ui); color: var(--muted); margin-bottom: 8px; }
+.toc-card-events { display: flex; flex-wrap: wrap; gap: 4px; }
+.toc-badge-ld { background: #dbeafe; color: #1e40af; }
+.toc-badge-pf { background: #dcfce7; color: #166534; }
+.toc-badge-cx { background: #fee2e2; color: #991b1b; }
+.toc-badge-ld, .toc-badge-pf, .toc-badge-cx {
+  font: 500 10px/1 var(--font-mono); padding: 3px 6px; border-radius: 4px;
+}
+@keyframes toc-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.toc-skeleton-grid { display: contents; }
+.toc-skeleton-card {
+  height: 96px; border-radius: 8px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: toc-shimmer 1.4s infinite;
+}
+@keyframes toc-shimmer { to { background-position: -200% 0; } }
+.toc-detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.toc-detail-head { padding: 14px 16px; border-bottom: 1px solid var(--border, #e5e5e5); display: flex; align-items: center; gap: 12px; }
+.toc-detail-title { font: 600 15px var(--font-ui); color: var(--ink); }
+.toc-detail-meta { font: 11px var(--font-ui); color: var(--muted); margin-left: auto; }
+.toc-event-tabs {
+  display: flex; gap: 4px; padding: 10px 16px 0;
+  border-bottom: 1px solid var(--border, #e5e5e5);
+}
+.toc-event-tab {
+  font: 500 12px var(--font-ui); padding: 6px 14px; cursor: pointer;
+  border: 1px solid var(--border, #e5e5e5); border-bottom: none;
+  border-radius: 6px 6px 0 0; background: var(--bg); color: var(--muted);
+  margin-bottom: -1px;
+}
+.toc-event-tab.active { color: var(--ink); background: #fff; border-color: var(--border, #e5e5e5); }
+.toc-detail-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+.toc-table { width: 100%; border-collapse: collapse; font: 12px var(--font-ui); }
+.toc-table th, .toc-table td { padding: 7px 10px; border-bottom: 1px solid var(--border, #e5e5e5); text-align: left; }
+.toc-table th { font: 500 10px var(--font-ui); color: var(--muted); text-transform: uppercase; }
+.toc-table tr { cursor: pointer; }
+.toc-table tr:hover td { background: var(--hover-bg, #f5f5f5); }
+.toc-link { color: #2563eb; text-decoration: none; }
+.toc-link.disabled { color: #aaa; pointer-events: none; }
+.toc-section-title { font: 600 13px var(--font-ui); color: var(--ink); margin: 18px 0 6px; }
+.toc-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center; z-index: 500;
+}
+.toc-modal-card {
+  background: var(--bg); border-radius: 10px;
+  max-width: 720px; width: 92%; max-height: 80vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,.25);
+}
+.toc-modal-head { padding: 12px 16px; border-bottom: 1px solid var(--border, #e5e5e5); display: flex; align-items: center; gap: 10px; }
+.toc-modal-title { font: 600 14px var(--font-ui); color: var(--ink); flex: 1; }
+.toc-modal-body { overflow-y: auto; padding: 10px 16px 16px; }
+@media (max-width: 768px) {
+  .toc-grid { grid-template-columns: 1fr; }
+  .toc-topbar { flex-wrap: wrap; gap: 8px; }
+  .toc-detail-meta { width: 100%; margin-left: 0; }
+}
+/* ── Rankings page ───────────────────────────── */
+.rk-shell { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.rk-topbar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border, #e5e5e5);
+  flex-shrink: 0;
+}
+.rk-topbar-left, .rk-topbar-right { display: flex; align-items: center; gap: 8px; }
+.rk-topbar-right { margin-left: auto; }
+.rk-muted { font: 11px var(--font-ui); color: var(--muted); }
+.rk-select {
+  font: 13px var(--font-ui); padding: 5px 8px;
+  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
+  background: var(--bg); color: var(--ink);
+}
+.rk-event-tabs { display: flex; gap: 4px; }
+.rk-event-tab {
+  font: 500 12px var(--font-ui); padding: 6px 14px; cursor: pointer;
+  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
+  background: var(--bg); color: var(--muted);
+}
+.rk-event-tab.active { color: var(--ink); background: #fff; box-shadow: var(--shadow-sm); }
+.rk-search {
+  font: 12px var(--font-ui); padding: 5px 10px; min-width: 220px;
+  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
+  background: var(--bg); color: var(--ink);
+}
+.rk-btn-sm {
+  font: 11px var(--font-ui); padding: 4px 10px; cursor: pointer;
+  border: 1px solid var(--border, #e5e5e5); border-radius: 5px;
+  background: var(--bg); color: var(--ink); white-space: nowrap;
+}
+.rk-btn-sm:hover { background: var(--hover-bg, #f5f5f5); }
+.rk-board { flex: 1; overflow-y: auto; padding: 16px; }
+.rk-table { width: 100%; border-collapse: collapse; font: 12px var(--font-ui); max-width: 900px; }
+.rk-table th, .rk-table td { padding: 8px 10px; border-bottom: 1px solid var(--border, #e5e5e5); text-align: left; }
+.rk-table th { font: 500 10px var(--font-ui); color: var(--muted); text-transform: uppercase; }
+.rk-table tr { cursor: pointer; }
+.rk-table tr:hover td { background: var(--hover-bg, #f5f5f5); }
+.rk-rating-cell { font: 600 13px var(--font-mono); color: var(--ink); }
+.rk-rank-cell { font: 500 11px var(--font-mono); color: var(--muted); width: 32px; }
+.rk-skeleton-rows { padding: 8px 0; display: flex; flex-direction: column; gap: 6px; max-width: 900px; }
+.rk-skeleton-row {
+  height: 36px; border-radius: 6px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: rk-shimmer 1.4s infinite;
+}
+@keyframes rk-shimmer { to { background-position: -200% 0; } }
+.rk-pagination { display: flex; align-items: center; gap: 10px; padding: 12px 0; font: 11px var(--font-ui); color: var(--muted); }
+.rk-profile { flex: 1; overflow-y: auto; padding: 20px 24px; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+.rk-profile-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.rk-profile-sub { font: 11px var(--font-ui); color: var(--muted); margin-left: auto; }
+.rk-stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px; margin-bottom: 18px;
+}
+.rk-stat-card {
+  padding: 14px; border-radius: 8px; background: var(--bg);
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border, #e5e5e5);
+}
+.rk-stat-label { font: 500 10px var(--font-ui); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.rk-stat-value { font: 600 24px var(--font-ui); color: var(--ink); line-height: 1.1; }
+.rk-stat-sub { font: 11px var(--font-ui); color: var(--muted); margin-top: 2px; }
+.rk-section-title { font: 600 13px var(--font-ui); color: var(--ink); margin: 18px 0 8px; }
+.rk-chart-wrap { background: var(--bg); border: 1px solid var(--border, #e5e5e5); border-radius: 8px; padding: 10px; box-shadow: var(--shadow-sm); }
+.rk-chart-tooltip { position: absolute; background: #111; color: #fff; font: 11px var(--font-ui); padding: 4px 8px; border-radius: 4px; pointer-events: none; }
+@media (max-width: 768px) {
+  .rk-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .rk-topbar { flex-wrap: wrap; gap: 8px; }
+  .rk-topbar-right { margin-left: 0; width: 100%; }
+  .rk-search { width: 100%; min-width: 0; }
+}
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
 </head>
@@ -1922,9 +2141,17 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           <span>History</span>
         </button>
+        <button class="nav-item" data-page="tournament">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          <span>Tournament</span>
+        </button>
         <button class="nav-item" data-page="teams">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Teams</span>
+        </button>
+        <button class="nav-item" data-page="rankings">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg>
+          <span>Rankings</span>
         </button>
       </nav>
     </div>
@@ -2158,6 +2385,55 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         </div>
       </section>
 
+      <section class="page" id="page-tournament">
+        <div class="toc-shell" id="toc-shell">
+          <div class="toc-topbar">
+            <div class="toc-topbar-left">
+              <label class="toc-muted" for="toc-season">Season</label>
+              <select id="toc-season" class="toc-select"></select>
+            </div>
+            <div class="toc-tabs">
+              <button class="toc-tab active" data-toc-tab="upcoming">Upcoming</button>
+              <button class="toc-tab" data-toc-tab="past">Past</button>
+            </div>
+            <div class="toc-topbar-right">
+              <button class="toc-btn-sm" id="toc-reindex-btn">Re-index</button>
+            </div>
+          </div>
+
+          <div class="toc-grid" id="toc-grid">
+            <div class="toc-skeleton-grid" id="toc-skeleton">
+              <div class="toc-skeleton-card"></div>
+              <div class="toc-skeleton-card"></div>
+              <div class="toc-skeleton-card"></div>
+              <div class="toc-skeleton-card"></div>
+              <div class="toc-skeleton-card"></div>
+              <div class="toc-skeleton-card"></div>
+            </div>
+          </div>
+
+          <div class="toc-detail hidden" id="toc-detail">
+            <div class="toc-detail-head">
+              <button class="toc-btn-sm" id="toc-back-btn">← Back</button>
+              <div class="toc-detail-title" id="toc-detail-title"></div>
+              <div class="toc-detail-meta" id="toc-detail-meta"></div>
+            </div>
+            <div class="toc-event-tabs" id="toc-event-tabs"></div>
+            <div class="toc-detail-body" id="toc-detail-body"></div>
+          </div>
+
+          <div class="toc-modal hidden" id="toc-modal">
+            <div class="toc-modal-card">
+              <div class="toc-modal-head">
+                <div class="toc-modal-title" id="toc-modal-title"></div>
+                <button class="toc-btn-sm" id="toc-modal-close">×</button>
+              </div>
+              <div class="toc-modal-body" id="toc-modal-body"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="page" id="page-teams">
         <div class="wiki-shell">
           <!-- Panel 1: Team search + list -->
@@ -2213,6 +2489,48 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               </div>
             </div>
             <div class="wiki-detail-body" id="wiki-detail-body"></div>
+          </div>
+        </div>
+      </section>
+      <section class="page" id="page-rankings">
+        <div class="rk-shell" id="rk-shell">
+          <div class="rk-topbar">
+            <div class="rk-topbar-left">
+              <label class="rk-muted" for="rk-season">Season</label>
+              <select id="rk-season" class="rk-select"></select>
+            </div>
+            <div class="rk-event-tabs">
+              <button class="rk-event-tab active" data-rk-event="LD">LD</button>
+              <button class="rk-event-tab" data-rk-event="PF">PF</button>
+              <button class="rk-event-tab" data-rk-event="CX">CX</button>
+            </div>
+            <div class="rk-topbar-right">
+              <input class="rk-search" id="rk-search" type="search" placeholder="Search team or school…" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="rk-board" id="rk-board">
+            <div class="rk-skeleton-rows" id="rk-skeleton">
+              <div class="rk-skeleton-row"></div>
+              <div class="rk-skeleton-row"></div>
+              <div class="rk-skeleton-row"></div>
+              <div class="rk-skeleton-row"></div>
+              <div class="rk-skeleton-row"></div>
+            </div>
+          </div>
+
+          <div class="rk-profile hidden" id="rk-profile">
+            <div class="rk-profile-head">
+              <button class="rk-btn-sm" id="rk-back-btn">← Back</button>
+              <h2 id="rk-profile-title" style="margin:0;font:600 16px var(--font-ui)"></h2>
+              <div class="rk-profile-sub" id="rk-profile-sub"></div>
+            </div>
+            <div class="rk-stat-grid" id="rk-stat-grid"></div>
+            <div class="rk-section-title">Rating over Season</div>
+            <div class="rk-chart-wrap" id="rk-chart-wrap"></div>
+            <div class="rk-section-title">Tournaments</div>
+            <div id="rk-tourns"></div>
+            <div id="rk-args-wrap"></div>
           </div>
         </div>
       </section>
@@ -2563,12 +2881,27 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
           <h4 class="spane-h mt">Card Cutter</h4>
           <div class="sfield">
-            <label class="sfield-l" for="cut-length-select">Card length</label>
-            <select class="sfield-select" id="cut-length-select">
-              <option value="short">Short — 2–3 paragraphs (~280w)</option>
-              <option value="medium">Medium — 3–5 paragraphs (~480w)</option>
-              <option value="long">Long — 5–8 paragraphs (~760w)</option>
-            </select>
+            <label class="sfield-l">Card length</label>
+            <div class="sfield-menu" id="cut-length-menu" data-open="false">
+              <button type="button" class="sfield-menu-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="sfield-menu-label" data-slot="label">Medium</span>
+                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="sfield-menu-list" role="listbox" tabindex="-1">
+                <div class="sfield-menu-item" role="option" data-val="short">
+                  <div class="mi-main"><span class="mi-title">Short</span><span class="mi-sub">2–3 paragraphs (~280w)</span></div>
+                  <svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="sfield-menu-item" role="option" data-val="medium" aria-selected="true">
+                  <div class="mi-main"><span class="mi-title">Medium</span><span class="mi-sub">3–5 paragraphs (~480w)</span></div>
+                  <svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="sfield-menu-item" role="option" data-val="long">
+                  <div class="mi-main"><span class="mi-title">Long</span><span class="mi-sub">5–8 paragraphs (~760w)</span></div>
+                  <svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+            </div>
           </div>
 
         </section>
@@ -2746,5 +3079,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 <script src="lib/cmdPalette.js?v=20260422b" defer></script>
 <script src="app-main.search.js?v=20260422b"></script>
 <script src="app-main.js?v=20260422b"></script>
+<script src="/toc.js"></script>
+<script src="/rankings.js"></script>
 <script src="/wiki.js"></script>
 </body></html>

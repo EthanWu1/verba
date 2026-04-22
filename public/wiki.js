@@ -19,6 +19,13 @@
     $('wiki-export-arg-btn').addEventListener('click', downloadArg);
     $('wiki-copy-btn').addEventListener('click', copyArg);
     $('wiki-ask-btn').addEventListener('click', askArg);
+
+    // Deep-link: #teams?team=X (from tournament threat list)
+    const m = String(location.hash || '').match(/team=([^&]+)/);
+    if (m) {
+      const teamId = decodeURIComponent(m[1]);
+      selectTeam(teamId);
+    }
   };
 
   async function loadTeams(q) {
@@ -27,6 +34,18 @@
     $('wiki-skeleton').classList.add('hidden');
     $('wiki-team-count').textContent = `${total.toLocaleString()} teams`;
     renderTeams(teams);
+  }
+
+  // Prefetch cache: in-flight GETs by team id so hover + click share one request
+  const _prefetchCache = new Map();
+  let _hoverTimer = null;
+
+  function _prefetch(id) {
+    if (_prefetchCache.has(id)) return _prefetchCache.get(id);
+    const p = fetch(`/api/wiki/teams/${encodeURIComponent(id)}`).then(r => r.json()).catch(() => null);
+    _prefetchCache.set(id, p);
+    setTimeout(() => _prefetchCache.delete(id), 8000);
+    return p;
   }
 
   function renderTeams(teams) {
@@ -38,6 +57,11 @@
       row.dataset.id = t.id;
       row.innerHTML = `<span style="flex:1;font-weight:600">${esc(t.fullName)}</span><span class="wiki-badge">${esc(t.event || '?')}</span>`;
       row.addEventListener('click', () => selectTeam(t.id));
+      row.addEventListener('mouseenter', () => {
+        clearTimeout(_hoverTimer);
+        _hoverTimer = setTimeout(() => _prefetch(t.id), 200);
+      });
+      row.addEventListener('mouseleave', () => clearTimeout(_hoverTimer));
       list.appendChild(row);
     });
   }
@@ -49,7 +73,6 @@
 
     $('wiki-panel-args').classList.remove('hidden');
     $('wiki-panel-detail').classList.remove('visible');
-    showArgLoading();
 
     await fetchAndRenderTeam(id);
     pollIfCrawling(id);
@@ -57,21 +80,23 @@
 
   async function fetchAndRenderTeam(id) {
     try {
-      const res = await fetch(`/api/wiki/teams/${encodeURIComponent(id)}`);
-      const { team, arguments: args } = await res.json();
+      const data = await _prefetch(id);
+      if (!data) { showArgError(); return; }
+      const { team, arguments: args } = data;
 
       $('wiki-team-title').textContent = team.fullName;
       $('wiki-team-meta').textContent = `${(team.event || '').toUpperCase()} · ${team.lastCrawled ? relTime(team.lastCrawled) : 'Not yet crawled'}`;
 
-      if (team.crawlStatus === 'crawling') {
-        showArgLoading();
+      // Stale-while-revalidate: if cached args exist, render immediately even when
+      // server is mid-crawl. Poll will swap in fresh data when ready.
+      if (args && args.length) {
+        renderArgs(args);
+        hideArgLoading();
         return;
       }
-      if (team.crawlStatus === 'error') {
-        showArgError();
-        return;
-      }
-      renderArgs(args);
+      if (team.crawlStatus === 'error') { showArgError(); return; }
+      // No cached args — show spinner while initial crawl runs.
+      showArgLoading();
     } catch {
       showArgError();
     }
@@ -103,7 +128,9 @@
       if (team.crawlStatus !== 'crawling') {
         clearInterval(_pollTimer);
         rotateCrawlMsg(false);
-        renderArgs(args);
+        // Swap in fresh args without clearing — keeps UI stable during refresh.
+        if (args && args.length) renderArgs(args);
+        $('wiki-team-meta').textContent = `${(team.event || '').toUpperCase()} · ${team.lastCrawled ? relTime(team.lastCrawled) : 'Not yet crawled'}`;
       } else {
         rotateCrawlMsg(true);
       }

@@ -209,6 +209,128 @@ function _initSchema(db) {
       side       TEXT
     );
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS toc_tournaments (
+      tourn_id     INTEGER PRIMARY KEY,
+      name         TEXT NOT NULL,
+      webname      TEXT,
+      city         TEXT,
+      state        TEXT,
+      country      TEXT,
+      startDate    TEXT NOT NULL,
+      endDate      TEXT NOT NULL,
+      season       TEXT NOT NULL,
+      lastCrawled  TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_tourns_season ON toc_tournaments(season, startDate);
+
+    CREATE TABLE IF NOT EXISTS toc_tournament_events (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournId      INTEGER NOT NULL REFERENCES toc_tournaments(tourn_id) ON DELETE CASCADE,
+      eventId      INTEGER NOT NULL,
+      abbr         TEXT NOT NULL,
+      name         TEXT,
+      bidLevel     TEXT,
+      fullBids     INTEGER NOT NULL DEFAULT 0,
+      partialBids  INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(tournId, eventId)
+    );
+
+    CREATE TABLE IF NOT EXISTS toc_entries (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournId      INTEGER NOT NULL REFERENCES toc_tournaments(tourn_id) ON DELETE CASCADE,
+      eventAbbr    TEXT NOT NULL,
+      entryId      INTEGER NOT NULL,
+      teamKey      TEXT NOT NULL,
+      schoolId     INTEGER,
+      schoolName   TEXT,
+      schoolCode   TEXT,
+      displayName  TEXT,
+      earnedBid    TEXT,
+      UNIQUE(tournId, entryId)
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_entries_team  ON toc_entries(teamKey);
+    CREATE INDEX IF NOT EXISTS idx_toc_entries_scope ON toc_entries(tournId, eventAbbr);
+
+    CREATE TABLE IF NOT EXISTS toc_ballots (
+      id               INTEGER PRIMARY KEY,
+      tournId          INTEGER NOT NULL REFERENCES toc_tournaments(tourn_id) ON DELETE CASCADE,
+      eventAbbr        TEXT NOT NULL,
+      roundId          INTEGER NOT NULL,
+      roundName        TEXT NOT NULL,
+      roundType        TEXT NOT NULL,
+      entryId          INTEGER NOT NULL,
+      opponentEntryId  INTEGER,
+      side             TEXT,
+      judgeName        TEXT,
+      result           TEXT,
+      speakerPoints    REAL
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_ballots_entry ON toc_ballots(tournId, entryId, eventAbbr);
+    CREATE INDEX IF NOT EXISTS idx_toc_ballots_round ON toc_ballots(tournId, roundId);
+
+    CREATE TABLE IF NOT EXISTS toc_results (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      tournId        INTEGER NOT NULL REFERENCES toc_tournaments(tourn_id) ON DELETE CASCADE,
+      eventAbbr      TEXT NOT NULL,
+      entryId        INTEGER NOT NULL,
+      place          TEXT,
+      rank           INTEGER,
+      speakerRank    INTEGER,
+      speakerPoints  REAL,
+      UNIQUE(tournId, entryId, eventAbbr)
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_results_scope ON toc_results(tournId, eventAbbr);
+
+    CREATE TABLE IF NOT EXISTS toc_season_bids (
+      season       TEXT NOT NULL,
+      teamKey      TEXT NOT NULL,
+      eventAbbr    TEXT NOT NULL,
+      fullBids     INTEGER NOT NULL DEFAULT 0,
+      partialBids  INTEGER NOT NULL DEFAULT 0,
+      displayName  TEXT,
+      schoolCode   TEXT,
+      PRIMARY KEY (season, teamKey, eventAbbr)
+    );
+
+    CREATE TABLE IF NOT EXISTS toc_ratings (
+      season       TEXT NOT NULL,
+      eventAbbr    TEXT NOT NULL,
+      teamKey      TEXT NOT NULL,
+      displayName  TEXT,
+      schoolName   TEXT,
+      schoolCode   TEXT,
+      rating       REAL NOT NULL DEFAULT 1500,
+      roundCount   INTEGER NOT NULL DEFAULT 0,
+      wins         INTEGER NOT NULL DEFAULT 0,
+      losses       INTEGER NOT NULL DEFAULT 0,
+      peakRating   REAL NOT NULL DEFAULT 1500,
+      lastUpdated  TEXT NOT NULL,
+      PRIMARY KEY (season, eventAbbr, teamKey)
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_ratings_board ON toc_ratings(season, eventAbbr, rating DESC);
+
+    CREATE TABLE IF NOT EXISTS toc_rating_history (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      season         TEXT NOT NULL,
+      eventAbbr      TEXT NOT NULL,
+      teamKey        TEXT NOT NULL,
+      tournId        INTEGER NOT NULL,
+      roundId        INTEGER NOT NULL,
+      roundName      TEXT,
+      roundType      TEXT,
+      result         TEXT,
+      ratingBefore   REAL NOT NULL,
+      ratingAfter    REAL NOT NULL,
+      change         REAL NOT NULL,
+      opponentKey    TEXT,
+      opponentRating REAL,
+      occurredAt     TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_rating_history_scope ON toc_rating_history(teamKey, eventAbbr, season, occurredAt);
+    CREATE INDEX IF NOT EXISTS idx_toc_rating_history_tourn ON toc_rating_history(teamKey, tournId);
+  `);
 }
 
 function _runMigrations(db) {

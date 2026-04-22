@@ -10,14 +10,14 @@
   .va-alert{pointer-events:auto;display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;border:1px solid transparent;background:#fff;color:#111;font:500 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);transform:translateX(420px);opacity:0;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s ease}
   .va-alert.va-in{transform:translateX(0);opacity:1}
   .va-alert.va-out{transform:translateX(420px);opacity:0}
-  .va-alert .va-icon{flex:0 0 auto;width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin-top:1px}
-  .va-alert .va-icon svg{width:20px;height:20px}
+  .va-alert .va-icon{flex:0 0 auto;width:20px;height:20px;display:flex;align-items:center;justify-content:center;margin-top:1px;color:#000}
+  .va-alert .va-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;display:block}
   .va-alert .va-body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
   .va-alert .va-title{font-weight:600;letter-spacing:-.01em;color:inherit}
-  .va-alert .va-desc{font-weight:500;color:rgba(17,17,17,.72);word-break:break-word}
-  .va-alert .va-close{flex:0 0 auto;width:22px;height:22px;border:none;background:transparent;border-radius:6px;cursor:pointer;color:inherit;opacity:.55;display:flex;align-items:center;justify-content:center;padding:0;margin-top:-1px;transition:opacity .15s ease,background-color .15s ease}
-  .va-alert .va-close:hover{opacity:1;background:rgba(0,0,0,.06)}
-  .va-alert .va-close svg{width:14px;height:14px}
+  .va-alert .va-desc{font-weight:500;color:rgba(17,17,17,.82);word-break:break-word}
+  .va-alert .va-close{flex:0 0 auto;width:22px;height:22px;border:none;background:transparent;border-radius:6px;cursor:pointer;color:#000;opacity:.75;display:flex;align-items:center;justify-content:center;padding:0;margin-top:-1px;transition:opacity .15s ease,background-color .15s ease}
+  .va-alert .va-close:hover{opacity:1;background:rgba(0,0,0,.08)}
+  .va-alert .va-close svg{width:14px;height:14px;stroke:currentColor;fill:none;display:block}
 
   .va-alert[data-variant=success]{background:#dcfce7;border-color:#86efac;color:#000}
   .va-alert[data-variant=success] .va-icon{color:#000}
@@ -47,7 +47,7 @@
     destructive: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
     warning: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
     info: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-    secondary: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>',
+    secondary: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg>',
   };
 
   const CLOSE_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
