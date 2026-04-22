@@ -32,9 +32,22 @@ No authentication required. Rate limit: **500ms between requests** to be polite.
   id, name, webname, start, end, city, state, country,
   categories: [
     { id, abbr, name, settings, events: [
-      { id, abbr, name, type, rounds, result_sets: [
-        { label, results: [{ entry, values: [{ result_key, value, priority }] }] }
-      ] }
+      { id, abbr, name, type,
+        rounds: [
+          { id, name, type (prelim|elim), start_time, sections: [
+            { id, letter, flight, room, ballots: [
+              { id, entry, entry_code, entry_name, side (1|2),
+                judge, judge_first, judge_last,
+                scores: [{ tag (winloss|point), value, speaker? }] }
+            ] }
+          ] }
+        ],
+        result_sets: [
+          { label, result_keys: [{ tag }], results: [
+            { entry, place?, rank?, round?, percentile?, values: [{ result_key, value, priority }] }
+          ] }
+        ]
+      }
     ] }
   ],
   schools: [
@@ -44,6 +57,18 @@ No authentication required. Rate limit: **500ms between requests** to be polite.
   ]
 }
 ```
+
+**Per-ballot extraction:**
+- For each `round.sections[].ballots[b]`: opponent = the other ballot's `entry` in same section (NULL if bye/only one).
+- `side`: map `1 → 'aff'`, `2 → 'neg'`, else NULL. For PF use `'pro'/'con'` mapping instead? — Keep `aff`/`neg` for uniformity; UI relabels per event.
+- `result`: lookup `scores[].tag === 'winloss'`, value 1 → 'W', 0 → 'L'.
+- `speakerPoints`: first `scores[].tag === 'point'` value (REAL), or NULL if none.
+- `roundType`: `round.type` is `'prelim'` or `'elim'`.
+- `roundName`: `round.name` (number for prelims, label for elims like "Finals").
+
+**Final Places + Speaker Awards extraction:**
+- `result_sets[].label === 'Final Places'`: each `result` has `entry`, `place` ("1st", "Finals", etc.), `rank`. Insert into `toc_results`.
+- `result_sets[].label === 'Speaker Awards'`: iterate results sorted by values[priority=N for canonical tag]. Assign speakerRank by index; pull one canonical speaker-points value (first `result_keys[i].tag === 'Pts'`). Merge into `toc_results` via UPDATE on `(tournId, entryId, eventAbbr)`.
 
 ### Bid Level Inference
 
@@ -109,6 +134,36 @@ CREATE TABLE IF NOT EXISTS toc_entries (
 );
 CREATE INDEX IF NOT EXISTS idx_toc_entries_team  ON toc_entries(teamKey);
 CREATE INDEX IF NOT EXISTS idx_toc_entries_scope ON toc_entries(tournId, eventAbbr);
+
+CREATE TABLE IF NOT EXISTS toc_ballots (
+  id               INTEGER PRIMARY KEY,        -- tabroom ballot.id
+  tournId          INTEGER NOT NULL REFERENCES toc_tournaments(tourn_id) ON DELETE CASCADE,
+  eventAbbr        TEXT NOT NULL,
+  roundId          INTEGER NOT NULL,           -- tabroom round.id
+  roundName        TEXT NOT NULL,              -- "1", "2", "Finals", "Semis" etc.
+  roundType        TEXT NOT NULL,              -- 'prelim' | 'elim'
+  entryId          INTEGER NOT NULL,
+  opponentEntryId  INTEGER,                    -- the other entry in the same section (NULL for bye)
+  side             TEXT,                       -- 'aff' | 'neg' | NULL
+  judgeName        TEXT,
+  result           TEXT,                       -- 'W' | 'L' | 'bye' | NULL
+  speakerPoints    REAL
+);
+CREATE INDEX IF NOT EXISTS idx_toc_ballots_entry ON toc_ballots(tournId, entryId, eventAbbr);
+CREATE INDEX IF NOT EXISTS idx_toc_ballots_round ON toc_ballots(tournId, roundId);
+
+CREATE TABLE IF NOT EXISTS toc_results (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  tournId        INTEGER NOT NULL REFERENCES toc_tournaments(tourn_id) ON DELETE CASCADE,
+  eventAbbr      TEXT NOT NULL,
+  entryId        INTEGER NOT NULL,
+  place          TEXT,                         -- "1st" | "Finals" | "Semis" | "Octas" | NULL
+  rank           INTEGER,                      -- final placement rank (1 = champion)
+  speakerRank    INTEGER,                      -- NULL if not in speaker top N
+  speakerPoints  REAL,                         -- canonical adjusted points used for the speaker ranking
+  UNIQUE(tournId, entryId, eventAbbr)
+);
+CREATE INDEX IF NOT EXISTS idx_toc_results_scope ON toc_results(tournId, eventAbbr);
 
 CREATE TABLE IF NOT EXISTS toc_season_bids (
   season       TEXT NOT NULL,
@@ -176,6 +231,8 @@ GET  /api/toc/seasons                     — list { season, tournamentCount }
 GET  /api/toc/tournaments?season=2025-26&when=upcoming|past   — grid data
 GET  /api/toc/tournaments/:id             — detail + events + trigger stale refresh
 GET  /api/toc/tournaments/:id/threats/:event — threat list rows (event = LD|PF|CX)
+GET  /api/toc/tournaments/:id/results/:event — final places + speaker awards (past tournaments)
+GET  /api/toc/entries/:entryId/pairings      — per-entry round history (W/L, side, opponent, judge, points)
 GET  /api/toc/tournaments/:id/refresh     — force re-fetch (requires session cookie via server/middleware/requireUser)
 POST /api/toc/reindex                     — full re-seed (requires session cookie via server/middleware/requireUser)
 ```
@@ -207,9 +264,16 @@ New service files: `server/services/tocCrawler.js`, `server/services/tocDb.js`, 
 - Upcoming: **Threat List** table
   - Columns: `#` (row number) | `Team` (displayName) | `School` (schoolName + code) | `Season Bids` (fullBids) | `Wiki` (↗ link or grayed-out)
   - Sorted by fullBids DESC, then partialBids DESC, then alphabetical
-- Past: **Bid Earners** table
-  - Columns: `#` | `Team` | `School` | `Bid` (Full/Partial badge)
-  - Only shows entries where earnedBid != NULL
+- Past: **Final Results** table
+  - Columns: `Place` | `Team` | `School` | `Bid` (Full/Partial or —) | `Record`
+  - Sorted by `toc_results.rank` ASC
+  - Sub-section below: **Speaker Awards** — top 20 by `toc_results.speakerRank`
+    - Columns: `Speaker #` | `Name` | `Team` | `Points`
+- **Entry Detail** (click any row in threat list / final results / speaker awards → modal or drill-in panel)
+  - Header: displayName + school + event
+  - Table of pairings: columns `Round` | `Side` | `Opponent` | `Judge` | `Result` | `Points`
+  - Matches tabroom's per-entry pairings view
+  - Data from `GET /api/toc/entries/:entryId/pairings`
 
 ### Loading / Error / Empty
 - Loading: skeleton rows matching Wiki skeleton pattern + rotating crawl message ("Fetching tournament data…", "Parsing events…", "Computing bids…")
