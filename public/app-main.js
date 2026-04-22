@@ -721,6 +721,18 @@
     }
   }
 
+  function normalizeUnderlineTags(root) {
+    if (!root || !root.querySelectorAll) return;
+    const us = root.querySelectorAll('u');
+    for (const u of us) {
+      const existing = u.getAttribute('style') || '';
+      if (!/text-decoration\s*:\s*underline/i.test(existing)) {
+        const sep = existing && !existing.trim().endsWith(';') ? ';' : '';
+        u.setAttribute('style', existing + sep + 'text-decoration:underline');
+      }
+    }
+  }
+
   function selectionInside(el) {
     const sel = window.getSelection(); if (!sel || sel.rangeCount === 0) return false;
     return el.contains(sel.anchorNode) && el.contains(sel.focusNode);
@@ -848,7 +860,10 @@
     // Seed state from static demo DOM
     syncCardFromDom();
     const wbBody = $('#wb-body');
-    if (wbBody) wbBody.addEventListener('input', syncCardFromDom);
+    if (wbBody) wbBody.addEventListener('input', (evt) => {
+      syncCardFromDom();
+      normalizeUnderlineTags(evt.currentTarget);
+    });
 
     // Formatting toolbar — Underline/Bold native toggle, Highlight latched mode
     let highlightMode = false;
