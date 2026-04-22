@@ -293,6 +293,43 @@ function _initSchema(db) {
       schoolCode   TEXT,
       PRIMARY KEY (season, teamKey, eventAbbr)
     );
+
+    CREATE TABLE IF NOT EXISTS toc_ratings (
+      season       TEXT NOT NULL,
+      eventAbbr    TEXT NOT NULL,
+      teamKey      TEXT NOT NULL,
+      displayName  TEXT,
+      schoolName   TEXT,
+      schoolCode   TEXT,
+      rating       REAL NOT NULL DEFAULT 1500,
+      roundCount   INTEGER NOT NULL DEFAULT 0,
+      wins         INTEGER NOT NULL DEFAULT 0,
+      losses       INTEGER NOT NULL DEFAULT 0,
+      peakRating   REAL NOT NULL DEFAULT 1500,
+      lastUpdated  TEXT NOT NULL,
+      PRIMARY KEY (season, eventAbbr, teamKey)
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_ratings_board ON toc_ratings(season, eventAbbr, rating DESC);
+
+    CREATE TABLE IF NOT EXISTS toc_rating_history (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      season         TEXT NOT NULL,
+      eventAbbr      TEXT NOT NULL,
+      teamKey        TEXT NOT NULL,
+      tournId        INTEGER NOT NULL,
+      roundId        INTEGER NOT NULL,
+      roundName      TEXT,
+      roundType      TEXT,
+      result         TEXT,
+      ratingBefore   REAL NOT NULL,
+      ratingAfter    REAL NOT NULL,
+      change         REAL NOT NULL,
+      opponentKey    TEXT,
+      opponentRating REAL,
+      occurredAt     TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_toc_rating_history_scope ON toc_rating_history(teamKey, eventAbbr, season, occurredAt);
+    CREATE INDEX IF NOT EXISTS idx_toc_rating_history_tourn ON toc_rating_history(teamKey, tournId);
   `);
 }
 
