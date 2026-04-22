@@ -225,3 +225,39 @@ test('buildCopyPlain: falls back to body_markdown', () => {
 test('buildCopyPlain: empty card safe', () => {
   assert.equal(buildCopyPlain({}), '\n\n\n');
 });
+
+const { serializeSelectionHtmlFromString } = clipboard;
+
+test('serializeFromString: card-body context flattens nested formatting', () => {
+  const { html } = serializeSelectionHtmlFromString('<b><u>x</u></b>', 'card-body');
+  assert.match(html, /font-weight:700/);
+  assert.match(html, /text-decoration:underline/);
+});
+
+test('serializeFromString: cite context splits prefix', () => {
+  const { html } = serializeSelectionHtmlFromString('Smith 24, Prof', 'cite');
+  assert.match(html, /font-size:\s*13pt[^"']*font-weight:\s*700[^"']*">Smith 24/);
+  assert.match(html, /font-size:\s*11pt[^"']*">, Prof/);
+});
+
+test('serializeFromString: strips class and data attributes', () => {
+  const { html } = serializeSelectionHtmlFromString(
+    '<span class="foo" data-x="y">hi</span>',
+    'card-body'
+  );
+  assert.doesNotMatch(html, /class=/);
+  assert.doesNotMatch(html, /data-/);
+});
+
+test('serializeFromString: strips inline event handlers', () => {
+  const { html } = serializeSelectionHtmlFromString(
+    '<p onclick="alert(1)">x</p>',
+    'card-body'
+  );
+  assert.doesNotMatch(html, /onclick/i);
+});
+
+test('serializeFromString: plain text fallback for non-cite context', () => {
+  const { plain } = serializeSelectionHtmlFromString('<p>hello <b>world</b></p>', 'card-body');
+  assert.match(plain, /hello world/);
+});

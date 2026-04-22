@@ -75,6 +75,52 @@
       .replace(/"/g, '&quot;');
   }
 
+  function stripDangerousAttrs(html) {
+    return String(html || '')
+      .replace(/\s+on[a-z]+\s*=\s*"[^"]*"/gi, '')
+      .replace(/\s+on[a-z]+\s*=\s*'[^']*'/gi, '')
+      .replace(/\s+class\s*=\s*"[^"]*"/gi, '')
+      .replace(/\s+class\s*=\s*'[^']*'/gi, '')
+      .replace(/\s+data-[a-z0-9\-]+\s*=\s*"[^"]*"/gi, '')
+      .replace(/\s+data-[a-z0-9\-]+\s*=\s*'[^']*'/gi, '')
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '');
+  }
+
+  function htmlToPlain(html) {
+    return String(html || '')
+      .replace(/<\/(p|div|br|li)>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function serializeSelectionHtmlFromString(rawHtml, context) {
+    const cleaned = stripDangerousAttrs(rawHtml);
+    let html;
+    if (context === 'cite') {
+      const text = htmlToPlain(cleaned);
+      const { prefix, rest } = splitCite(text);
+      if (prefix) {
+        html =
+          `<span style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;color:#000">${esc(prefix)}</span>` +
+          `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(rest)}</span>`;
+      } else {
+        html = `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(text)}</span>`;
+      }
+    } else {
+      const flat = flattenInlineStyles(cleaned);
+      html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000">${flat}</div>`;
+    }
+    return { html, plain: htmlToPlain(cleaned) };
+  }
+
   function buildCopyHtml(card) {
     card = card || {};
     const tag = card.tag || '';
@@ -112,7 +158,27 @@
     const body = card.body_plain || card.body_markdown || '';
     return `${tag}\n${cite}\n\n${body}`;
   }
-  function serializeSelectionHtml() { return { html: '', plain: '' }; }
+  function serializeSelectionHtml(range) {
+    if (!range || typeof range.cloneContents !== 'function') {
+      return { html: '', plain: '' };
+    }
+    const frag = range.cloneContents();
+    const tmp = (typeof document !== 'undefined' && document.createElement)
+      ? document.createElement('div') : null;
+    if (!tmp) return { html: '', plain: '' };
+    tmp.appendChild(frag);
+    const rawHtml = tmp.innerHTML;
+
+    const container = range.commonAncestorContainer;
+    const node = container && container.nodeType === 1 ? container : (container && container.parentElement);
+    let context = 'card-body';
+    if (node && typeof node.closest === 'function') {
+      if (node.closest('.cite-block')) context = 'cite';
+      else if (node.closest('.wb-body, .card-preview, [data-field="body"]')) context = 'card-body';
+      else context = 'mixed';
+    }
+    return serializeSelectionHtmlFromString(rawHtml, context);
+  }
 
   return {
     extractAuthorYearPrefix,
@@ -120,6 +186,7 @@
     flattenInlineStyles,
     buildCopyHtml,
     buildCopyPlain,
+    serializeSelectionHtmlFromString,
     serializeSelectionHtml,
   };
 }));
