@@ -29,3 +29,6 @@ server/data/*.log
 # Editor / IDE
 .vscode/
 .idea/
+
+# Git worktrees
+.worktrees/
