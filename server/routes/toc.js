@@ -57,8 +57,13 @@ router.get('/tournaments/:id/threats/:event', (req, res) => {
   const t = db.getTournament(id);
   if (!t) return res.status(404).json({ error: 'not_found' });
   const enriched = db.listEnrichedThreats(id, ev, t.season);
+  const qualified = enriched.filter(e =>
+    (e.seasonFullBids || 0) > 0 ||
+    (e.seasonPartialBids || 0) > 0 ||
+    (Array.isArray(e.recentPlacements) && e.recentPlacements.length > 0)
+  );
   const { scoreEntries } = require('../services/threatScorer');
-  const ranked = scoreEntries(enriched, t.season, 30);
+  const ranked = scoreEntries(qualified, t.season, 30);
   return res.json({ threats: ranked, season: t.season });
 });
 

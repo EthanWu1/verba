@@ -1,6 +1,6 @@
 'use strict';
 (function () {
-  let _event = 'LD', _season = '', _sort = 'rating';
+  let _event = 'LD', _season = '';
   let _searchTimer = null;
 
   const $ = id => document.getElementById(id);
@@ -14,9 +14,10 @@
     try {
       const res = await fetch('/api/rankings/seasons');
       const { seasons } = await res.json();
+      const names = (seasons || []).map(s => typeof s === 'string' ? s : s.season).filter(Boolean);
       const sel = $('rk-season');
-      sel.innerHTML = (seasons || []).map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
-      _season = seasons?.[0] || '';
+      sel.innerHTML = names.map(name => `<option value="${esc(name)}">${esc(name)}</option>`).join('');
+      _season = names[0] || '';
       if (_season) sel.value = _season;
     } catch {
       _season = '';
@@ -27,36 +28,41 @@
     const tbody = $('rk-rows');
     const meta = $('rk-meta');
     const q = encodeURIComponent(($('rk-search')?.value || '').trim());
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;color:var(--muted)">Loading…</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;color:var(--muted)">Loading…</td></tr>';
+    if (!_season) {
+      tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;color:var(--muted)">No season available.</td></tr>';
+      return;
+    }
     try {
-      const res = await fetch(`/api/rankings?season=${encodeURIComponent(_season)}&event=${_event}&sort=${_sort}&q=${q}`);
+      const res = await fetch(`/api/rankings?season=${encodeURIComponent(_season)}&event=${_event}&q=${q}`);
       const { rows } = await res.json();
       if (meta) meta.textContent = `${rows.length} ranked · season ${_season}`;
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="padding:24px;color:var(--muted)">No ratings yet for this event.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;color:var(--muted)">No ratings yet for this event.</td></tr>';
         return;
       }
       tbody.innerHTML = rows.map((r, i) => {
         const rank = i + 1;
         const cls = rank <= 3 ? `rk-row-${rank}` : (rank <= 10 ? 'rk-row-top10' : '');
+        const schoolFull = r.schoolName || r.schoolCode || '—';
+        const schoolInit = initials(r.schoolName || r.schoolCode);
         return `<tr class="${cls}">
           <td><span class="rk-rank-badge">${rank}</span></td>
           <td>
             <div class="rk-team-line">
-              <span class="rk-team-initials">${esc(initials(r.schoolName || r.schoolCode))}</span>
+              <span class="rk-team-initials">${esc(schoolInit)}</span>
               <span class="rk-team-text">
-                <span class="rk-school-name">${esc(r.schoolName || r.schoolCode || '—')}</span>
-                <span class="rk-debaters">${esc(r.displayName || r.teamKey || '')}</span>
+                <span class="rk-school-name">${esc(schoolFull)}</span>
+                <span class="rk-debaters">${esc(r.displayName || '')}</span>
               </span>
             </div>
           </td>
           <td class="rk-col-num"><span class="rk-rating">${Math.round(r.rating)}</span></td>
           <td class="rk-col-num">${r.wins || 0}-${r.losses || 0}</td>
-          <td class="rk-col-num">${Math.round(r.peakRating || r.rating)}</td>
         </tr>`;
       }).join('');
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5" style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</td></tr>`;
     }
   }
 
@@ -67,7 +73,6 @@
       load();
     }));
     $('rk-season')?.addEventListener('change', e => { _season = e.target.value; load(); });
-    $('rk-sort')?.addEventListener('change', e => { _sort = e.target.value; load(); });
     $('rk-search')?.addEventListener('input', () => {
       clearTimeout(_searchTimer);
       _searchTimer = setTimeout(load, 300);

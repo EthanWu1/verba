@@ -2008,6 +2008,16 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .wk-arg-snippet { color: var(--muted-2, #888); font: 12.5px var(--font-ui); margin-top: 4px; line-height: 1.4; }
 .wk-link-out { color: var(--lilac-3, #a78bfa); text-decoration: none; font-size: 12.5px; margin-top: 8px; display: inline-block; }
 .wk-link-out:hover { text-decoration: underline; }
+.wk-debater-list { padding: 4px 14px 14px 56px; display: flex; flex-direction: column; gap: 4px; }
+.wk-debater { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; transition: border-color .15s; }
+.wk-debater:hover { border-color: var(--lilac-3, #a78bfa); }
+.wk-debater-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; }
+.wk-debater-name { flex: 1; font: 500 13px var(--font-ui); color: var(--ink); }
+.wk-chev-sm { width: 12px; height: 12px; }
+.wk-debater.open .wk-chev-sm { transform: rotate(90deg); }
+.wk-debater-body { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+.wk-debater.open .wk-debater-body { max-height: 600px; overflow-y: auto; }
+.wk-debater-body-inner { padding: 0 12px 12px; }
 /* ── Rankings page ───────────────────────────── */
 .rk-shell { display: flex; height: 100%; overflow: hidden; }
 .rk-sidebar { width: 260px; flex: 0 0 260px; border-right: 1px solid var(--line); padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; background: var(--panel); }
@@ -2059,52 +2069,60 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }
 }
 
-.cutter-strip{display:flex;gap:12px;align-items:center;padding:14px 22px;background:linear-gradient(180deg,#fafafa,#f1f2f6);border-bottom:1px solid #e5e5e5}
-.length-seg{display:inline-flex;padding:3px;background:#eef0f4;border:1px solid #e1e3eb;border-radius:999px}
-.length-opt{border:0;background:transparent;padding:5px 14px;font:600 11.5px var(--font-display,system-ui);color:#6b7280;border-radius:999px;cursor:pointer}
-.length-opt.is-active{background:#0d0d12;color:#fff}
-
-.cut-input-pill{flex:1;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 18px;background:#fff;border:1px solid #dcdfe6;border-radius:999px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.03)}
-.pill-icon{color:#9ca3af;flex-shrink:0}
-#cut-input{flex:1;border:0;outline:0;font:400 14px var(--font-display,system-ui);background:transparent;color:#111}
-#cut-submit{width:34px;height:34px;border-radius:50%;background:#0d0d12;color:#fff;border:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.18);cursor:pointer;flex-shrink:0}
-#cut-submit:disabled{opacity:0.5;cursor:not-allowed}
-
-.card-carousel{position:relative;background:linear-gradient(180deg,#fff,#f5f5f7);padding:44px 0 36px;min-height:560px}
-.card-stage{max-width:1100px;margin:0 auto;padding:0 56px;position:relative}
-.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e2e2e2;display:flex;align-items:center;justify-content:center;color:#888;font-size:16px;cursor:pointer;z-index:2}
-.carousel-prev{left:12px}
-.carousel-next{right:12px}
+/* Carousel nav (anchored to #card-pane) */
+#card-pane{position:relative}
+.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--line,#e5e7eb);display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:16px;cursor:pointer;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,0.06);opacity:0;transition:opacity .18s ease}
+#card-pane:hover .carousel-nav{opacity:1}
+.carousel-prev{left:-18px}
+.carousel-next{right:-18px}
 .carousel-nav[hidden]{display:none}
+.carousel-nav:hover{color:#111;border-color:#d1d5db}
 
-.carousel-dots{display:flex;justify-content:center;gap:6px;margin-top:20px}
-.dot{width:8px;height:8px;border-radius:50%;background:#ccc;border:0;padding:0;cursor:pointer}
+.carousel-dots{display:flex;justify-content:center;gap:6px;padding:10px 0 6px}
+.dot{width:7px;height:7px;border-radius:50%;background:#d4d4d8;border:0;padding:0;cursor:pointer;transition:background .15s}
 .dot.is-active{background:#0d0d12}
+.dot:hover{background:#9ca3af}
 
-.carousel-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;font:500 14px var(--font-display,system-ui);pointer-events:none}
+.carousel-empty{display:flex;align-items:center;justify-content:center;min-height:280px;color:#9ca3af;font:500 14px var(--font-display,system-ui)}
 
-.card-shell{background:#fff;border:1px solid #ececec;border-radius:18px;box-shadow:0 20px 60px rgba(15,20,40,0.08);padding:40px 48px;min-height:480px;position:relative;opacity:1;transform:translateX(0) scale(1);transition:transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease}
-.card-shell.leaving-left{transform:translateX(-40px) scale(0.96);opacity:0}
-.card-shell.leaving-right{transform:translateX( 40px) scale(0.96);opacity:0}
-.card-shell .shell-icons{position:absolute;top:18px;right:18px;display:flex;gap:8px}
-.card-shell .shell-icon{width:34px;height:34px;border-radius:8px;background:#fafafa;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;color:#4b5563;text-decoration:none;cursor:pointer}
-.card-shell .shell-icon[hidden]{display:none}
-.card-shell .cut-progress{height:4px;background:#eee;border-radius:2px;overflow:hidden;margin-bottom:24px}
-.card-shell .cut-progress-bar{height:100%;background:linear-gradient(90deg,#3b7cff,#9333ea);border-radius:2px;width:0;transition:width 260ms ease}
-.card-shell .cut-log{background:#0d0d12;border-radius:10px;padding:14px 18px;font:400 12px ui-monospace,Consolas,monospace;color:#b9bfd0;line-height:1.7}
-.card-shell .cut-log .current{color:#6ee7b7}
-.card-shell .cut-log .pending{opacity:0.4}
+/* Hover-reveal actions on card preview */
+.card-hover-actions{position:absolute;top:14px;right:14px;display:flex;gap:6px;opacity:0;transition:opacity .18s ease;z-index:5}
+#card-pane:hover .card-hover-actions,.card-hover-actions:focus-within{opacity:1}
+.card-hover-actions button,.card-hover-actions a{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.95);border:1px solid var(--line,#e5e7eb);display:flex;align-items:center;justify-content:center;color:#4b5563;text-decoration:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.06);padding:0}
+.card-hover-actions button:hover,.card-hover-actions a:hover{background:#fff;color:#111}
+.card-hover-actions a[hidden],.card-hover-actions button[hidden]{display:none}
+.card-hover-actions .copy-fx .lbl-copied{display:none}
+.card-hover-actions .copy-fx.copied .lbl-default{display:none}
+.card-hover-actions .copy-fx.copied .lbl-copied{display:inline-flex}
+
+/* Direction-aware shell transition on #wb-body */
+#wb-body{transition:transform 260ms cubic-bezier(0.22,1,0.36,1),opacity 200ms ease}
+#wb-body.leaving-left{transform:translateX(-32px) scale(0.98);opacity:0}
+#wb-body.leaving-right{transform:translateX(32px) scale(0.98);opacity:0}
+
+/* Cutting state inside #wb-body */
+.cut-progress{height:4px;background:#eee;border-radius:2px;overflow:hidden;margin-bottom:18px}
+.cut-progress-bar{height:100%;background:linear-gradient(90deg,#3b7cff,#9333ea);border-radius:2px;width:0;transition:width 260ms ease}
+.cut-status{font:500 11.5px var(--font-display,system-ui);color:#6b7280;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:14px}
+.cut-log{background:#0d0d12;border-radius:10px;padding:12px 16px;font:400 12px ui-monospace,Consolas,monospace;color:#b9bfd0;line-height:1.65}
+.cut-log .current{color:#6ee7b7}
+.cut-log .pending{opacity:0.4}
+.cut-error{padding:18px 0;color:#b91c1c;font:500 13.5px var(--font-display,system-ui)}
+
+.toast-undo button{background:rgba(255,255,255,0.15);color:#fff;border:0;padding:4px 10px;border-radius:6px;font:600 12px var(--font-display,system-ui);cursor:pointer}
+.toast-undo button:hover{background:rgba(255,255,255,0.25)}
+
+/* Research-bar polish */
+.research-bar{transition:box-shadow .18s ease,border-color .18s ease}
+.research-bar:focus-within{box-shadow:0 0 0 3px rgba(59,124,255,0.12),0 2px 10px rgba(15,20,40,0.06);border-color:#b5c4e4}
+.research-bar.is-drop{box-shadow:0 0 0 3px rgba(59,124,255,0.25)}
 
 @media (max-width:768px){
-  .card-stage{padding:0 44px}
-  .cutter-strip{flex-wrap:wrap;gap:8px}
-  .length-seg{order:2;margin-left:auto}
-  .cut-input-pill{order:1;min-width:100%}
-  .card-shell{padding:28px 20px;min-height:380px}
+  .carousel-prev{left:4px}
+  .carousel-next{right:4px}
+  .card-hover-actions{opacity:1}
+  .carousel-nav{opacity:1}
 }
-.toast-undo button { background: rgba(255,255,255,0.15); color: #fff; border: 0; padding: 4px 10px; border-radius: 6px; font: 600 12px var(--font-display, system-ui); cursor: pointer; }
-.toast-undo button:hover { background: rgba(255,255,255,0.25); }
-.cut-input-pill.is-drop { box-shadow: 0 0 0 3px rgba(59,124,255,0.25), inset 0 1px 2px rgba(0,0,0,0.03); }
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
 </head>
@@ -2254,54 +2272,26 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         </div>
 
         <div class="workbench" id="workbench">
-          <header class="cutter-strip">
-  <div class="length-seg" role="radiogroup" aria-label="Card length">
-    <button type="button" class="length-opt" data-length="short" aria-pressed="false">S</button>
-    <button type="button" class="length-opt" data-length="medium" aria-pressed="false">M</button>
-    <button type="button" class="length-opt is-active" data-length="long" aria-pressed="true">L</button>
-  </div>
-
-  <label class="cut-input-pill">
-    <svg class="pill-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/>
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/>
-    </svg>
-    <input id="cut-input" type="text" placeholder="Paste URL or drop a PDF to cut from…" autocomplete="off">
-    <button id="cut-submit" type="button" aria-label="Cut">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="12" y1="19" x2="12" y2="5"/>
-        <polyline points="5 12 12 5 19 12"/>
-      </svg>
-    </button>
-  </label>
-</header>
-
-<section class="card-carousel" aria-label="Cut cards">
-  <button class="carousel-nav carousel-prev" aria-label="Previous card" type="button">‹</button>
-  <div id="card-stage" class="card-stage"></div>
-  <button class="carousel-nav carousel-next" aria-label="Next card" type="button">›</button>
-  <div id="carousel-dots" class="carousel-dots" aria-hidden="true"></div>
-  <div id="carousel-empty" class="carousel-empty" hidden>No cards yet — paste a URL or drop a PDF above.</div>
-</section>
-
-          <!-- CARD -->
+          <!-- CARD PANE (hosts carousel) -->
           <div class="pane" id="card-pane">
-            <div class="pane-head">
-              <div class="pane-title card"><span class="pip"></span>Preview</div>
-              <div class="pane-actions">
-                <button class="pane-action-btn primary" id="wb-addto" title="Add">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
-                  Add
-                </button>
-                <button class="pane-action-btn copy-fx" id="wb-copy" title="Copy card">
-                  <span class="lbl-default"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</span>
-                  <span class="lbl-copied"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="5 12 10 17 20 7"/></svg>Copied</span>
-                </button>
-                <button class="pane-action-btn" id="wb-trash" title="Clear card">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
-                </button>
-              </div>
+            <button class="carousel-nav carousel-prev" aria-label="Previous card" type="button">‹</button>
+            <button class="carousel-nav carousel-next" aria-label="Next card" type="button">›</button>
+            <div class="card-hover-actions">
+              <button type="button" id="wb-addto" title="Add to project" aria-label="Add to project">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+              </button>
+              <button type="button" id="wb-copy" class="copy-fx" title="Copy card" aria-label="Copy card">
+                <span class="lbl-default"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></span>
+                <span class="lbl-copied"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 12 10 17 20 7"/></svg></span>
+              </button>
+              <a id="wb-source-link" target="_blank" rel="noopener noreferrer" title="View source" aria-label="View source" hidden>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+              <button type="button" id="wb-trash" title="Delete card" aria-label="Delete card">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+              </button>
             </div>
+            <div id="carousel-empty" class="carousel-empty" hidden>No cards yet — paste a URL or attach a PDF above.</div>
             <div class="pane-body doc" id="wb-body">
               <div class="cite-block">
                 <div class="tag" contenteditable="true" data-field="tag" data-placeholder="Tag will appear here after you cut a card"></div>
@@ -2309,6 +2299,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               </div>
               <div class="body" contenteditable="true" data-field="body" data-placeholder="Body will appear here after a cut. You can edit inline, then Copy or Add to a project."><p><br></p></div>
             </div>
+            <div id="carousel-dots" class="carousel-dots" aria-hidden="true"></div>
             <div class="pane-foot-tools" id="wb-foot-tools">
               <button class="tool-btn icon-only" data-fmt="highlight" title="Highlight" aria-label="Highlight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button>
               <button class="tool-btn icon-only" data-fmt="underline" title="Underline" aria-label="Underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
@@ -2405,18 +2396,15 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
       <section class="page" id="page-tournament">
         <div class="toc-shell" id="toc-shell">
-          <div class="toc-topbar">
+          <div class="toc-topbar" id="toc-topbar">
             <div class="toc-topbar-left">
               <label class="toc-muted" for="toc-season">Season</label>
               <select id="toc-season" class="toc-select"></select>
               <input id="toc-search" class="toc-search-input" type="search" placeholder="Search tournaments…" aria-label="Search tournaments">
             </div>
             <div class="toc-tabs">
-              <button class="toc-tab active" data-toc-tab="upcoming">Upcoming</button>
-              <button class="toc-tab" data-toc-tab="past">Past</button>
-            </div>
-            <div class="toc-topbar-right">
-              <button class="toc-btn-sm" id="toc-reindex-btn">Re-index</button>
+              <button class="toc-tab" data-toc-tab="upcoming">Upcoming</button>
+              <button class="toc-tab active" data-toc-tab="past">Past</button>
             </div>
           </div>
 
@@ -2485,15 +2473,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               <label for="rk-season">Season</label>
               <select id="rk-season" class="rk-select"></select>
             </div>
-            <div class="rk-control">
-              <label for="rk-sort">Sort by</label>
-              <select id="rk-sort" class="rk-select">
-                <option value="rating">Rating</option>
-                <option value="wins">Wins</option>
-                <option value="peak">Peak rating</option>
-                <option value="rounds">Rounds played</option>
-              </select>
-            </div>
             <div class="rk-meta" id="rk-meta"></div>
           </aside>
           <main class="rk-main">
@@ -2504,7 +2483,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
                   <th>Team</th>
                   <th class="rk-col-num">Rating</th>
                   <th class="rk-col-num">W-L</th>
-                  <th class="rk-col-num">Peak</th>
                 </tr>
               </thead>
               <tbody id="rk-rows"></tbody>

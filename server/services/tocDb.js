@@ -33,11 +33,18 @@ function getTournament(id) {
 function listTournaments({ season, when }) {
   const db = getDb();
   const nowIso = new Date().toISOString().slice(0, 10);
-  let sql = `SELECT * FROM toc_tournaments WHERE season = ?`;
+  let sql = `
+    SELECT t.* FROM toc_tournaments t
+    WHERE t.season = ?
+      AND EXISTS (
+        SELECT 1 FROM toc_tournament_events te
+        WHERE te.tournId = t.tourn_id AND te.bidLevel IS NOT NULL
+      )
+  `;
   const args = [season];
-  if (when === 'upcoming') { sql += ` AND endDate >= ?`; args.push(nowIso); }
-  else if (when === 'past') { sql += ` AND endDate < ?`;  args.push(nowIso); }
-  sql += ` ORDER BY startDate ASC`;
+  if (when === 'upcoming') { sql += ` AND t.endDate >= ?`; args.push(nowIso); }
+  else if (when === 'past') { sql += ` AND t.endDate < ?`;  args.push(nowIso); }
+  sql += ` ORDER BY t.startDate ASC`;
   return db.prepare(sql).all(...args);
 }
 

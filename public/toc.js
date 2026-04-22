@@ -2,7 +2,7 @@
 'use strict';
 
 (function () {
-  let _season = null, _when = 'upcoming';
+  let _season = null, _when = 'past';
   let _currentTourn = null, _currentEvent = null, _currentView = 'results';
 
   const $ = id => document.getElementById(id);
@@ -23,12 +23,6 @@
       _when = b.dataset.tocTab;
       await loadGrid();
     }));
-    $('toc-reindex-btn').addEventListener('click', async () => {
-      $('toc-reindex-btn').textContent = 'Reindexing…';
-      $('toc-reindex-btn').disabled = true;
-      await fetch('/api/toc/reindex', { method: 'POST' });
-      setTimeout(() => { $('toc-reindex-btn').textContent = 'Re-index'; $('toc-reindex-btn').disabled = false; loadGrid(); }, 1500);
-    });
     $('toc-back-btn').addEventListener('click', showGrid);
     $('toc-modal-close').addEventListener('click', closeModal);
     $('toc-modal').addEventListener('click', e => { if (e.target === $('toc-modal')) closeModal(); });
@@ -97,12 +91,14 @@
   function showGrid() {
     $('toc-grid').classList.remove('hidden');
     $('toc-detail').classList.add('hidden');
+    $('toc-topbar')?.classList.remove('hidden');
   }
 
   async function openDetail(t) {
     _currentTourn = t;
     $('toc-grid').classList.add('hidden');
     $('toc-detail').classList.remove('hidden');
+    $('toc-topbar')?.classList.add('hidden');
     $('toc-detail-title').textContent = t.name;
     $('toc-detail-meta').textContent = `${t.startDate} → ${t.endDate} · ${[t.city, t.state].filter(Boolean).join(', ')}`;
 
