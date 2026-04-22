@@ -306,31 +306,12 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 }
 .research-bar .plus:hover{color:var(--ink);border-color:var(--lilac-3);background:var(--lilac-soft)}
 
-/* Staging chips (4px rounded) */
-.staging{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:22px;max-width:820px;margin-left:auto;margin-right:auto}
-.stage-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font:500 11.5px/1 var(--font-display);border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:opacity .18s,transform .18s}
-.stage-chip.dismissing{opacity:0;transform:scale(.92)}
-.stage-chip.stage-pending{background:#fffbeb;border-color:#fde68a;color:#92400e}
-.stage-chip.stage-pending::before{content:'';width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.2s infinite}
-.stage-chip.stage-done{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
-.stage-chip.stage-error{background:#fef2f2;border-color:#fecaca;color:#991b1b}
-.stage-chip.stage-running{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-.stage-chip.stage-running::before{content:'';width:8px;height:8px;border-radius:50%;background:#3b82f6;animation:pulse 1.2s infinite}
-.stage-chip.active{box-shadow:0 0 0 2px rgba(59,130,246,.45);transform:translateY(-1px)}
-.stage-chip .chip-x{display:none;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.08);color:inherit;font-size:10px;line-height:1;margin-left:2px;cursor:pointer;flex:0 0 auto;border:none;padding:0}
-.stage-chip:hover .chip-x{display:inline-flex}
-.stage-chip .chip-x:hover{background:rgba(0,0,0,.18)}
 .cutter-progress{margin-top:8px;width:100%;font-family:var(--font-mono);font-size:11px;color:#000}
 .cutter-progress-label{margin-bottom:4px;letter-spacing:0.02em;opacity:.7}
 .cutter-progress-track{height:2px;background:#eee;border-radius:1px;overflow:hidden;width:100%}
 .cutter-progress-fill{height:100%;width:0;background:#000;border-radius:1px;transition:width .4s cubic-bezier(.4,0,.2,1)}
 .cutter-progress.err .cutter-progress-fill{background:#d32f2f}
 .cutter-progress.done .cutter-progress-fill{background:#2e7d32}
-.phase-log{font:11px/1.45 var(--font-mono);color:var(--ink);white-space:pre-wrap;max-height:140px;overflow-y:auto;padding:6px 10px;border:1px solid var(--line);border-radius:5px;background:#fafafa;scroll-behavior:smooth}
-.phase-log .phase-row{padding:2px 0}
-.phase-log .phase-ok{color:#065f46}
-.phase-log .phase-err{color:#991b1b}
-.phase-log .phase-run{color:#1d4ed8}
 .pane-fmt-tools{display:inline-flex;gap:4px;align-items:center;margin-left:10px;padding:2px 4px;border-left:1px solid var(--line)}
 .pane-foot-tools{flex:0 0 auto;display:flex;gap:2px;align-items:center;justify-content:flex-start;padding:6px 14px 0;border-top:1px solid var(--line-soft);background:#fafafa;position:sticky;bottom:0}
 .pane-foot-tools{background:linear-gradient(180deg,#fafafa,#f5f5f5)}
@@ -398,48 +379,7 @@ body.highlight-mode #wb-body .body{caret-color:#eab308}
 .section-head .hint{color:var(--muted);font-size:12px;font-family:var(--font-display)}
 
 /* Workbench */
-.workbench{
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;
-  min-height:420px;
-  height:calc(100vh - 180px);
-  max-height:calc(100vh - 160px);
-  transition:grid-template-columns .45s cubic-bezier(.22,.8,.3,1), gap .45s cubic-bezier(.22,.8,.3,1);
-  position:relative;
-}
-.workbench .pane{min-height:0;max-height:100%}
-.workbench .pane .pane-body{min-height:0;max-height:100%}
-.workbench .pane.source{
-  transition:opacity .22s ease, transform .45s cubic-bezier(.22,.8,.3,1);
-  transform-origin:left center;min-width:0;
-}
-.workbench .pane:not(.source){
-  transition:transform .45s cubic-bezier(.22,.8,.3,1);
-}
-.workbench.source-hidden{grid-template-columns:0fr minmax(0,1fr);gap:0}
-.workbench.source-hidden .pane.source{
-  opacity:0;transform:scale(.96) translateX(-12px);pointer-events:none;overflow:hidden;
-}
-.workbench.source-hidden .pane:not(.source){
-  animation: cardExpand .42s cubic-bezier(.22,.8,.3,1);
-}
-@keyframes cardExpand{
-  0%{transform:scale(.985)}
-  55%{transform:scale(1.015)}
-  100%{transform:scale(1)}
-}
-/* Nondescript reopen handle — a slim vertical tab on the left edge */
-.source-handle{
-  position:absolute;top:50%;left:-2px;transform:translateY(-50%) scaleX(0);transform-origin:left center;
-  width:14px;height:56px;border-radius:0 6px 6px 0;
-  background:var(--panel-2);border:1px solid var(--line);border-left:0;
-  display:grid;place-items:center;color:var(--muted);cursor:pointer;z-index:4;
-  transition:transform .35s cubic-bezier(.22,.8,.3,1) .15s, background .14s, color .14s, width .14s;
-  box-shadow:var(--shadow-sm);
-}
-.source-handle:hover{background:#fff;color:var(--ink);width:18px}
-.source-handle svg{width:10px;height:10px;stroke-width:1.8;opacity:.75}
-.workbench.source-hidden .source-handle{transform:translateY(-50%) scaleX(1)}
-.source-reopen{display:none;align-items:center;gap:5px}
+.workbench{position:relative;}
 .pane-close{width:24px;height:24px;border-radius:5px;display:grid;place-items:center;color:var(--muted);border:1px solid transparent;cursor:pointer}
 .pane-close:hover{background:var(--panel);color:var(--danger);border-color:var(--line)}
 .pane{
@@ -1240,7 +1180,7 @@ p.figure-omitted{display:block;text-align:center}
 .addto-pop.open,.proj-menu.open{opacity:1;transform:translateY(0)}
 
 /* Button click micro-animation */
-.btn:active,.pane-action-btn:active,.tool-btn:active,.stage-chip:active,
+.btn:active,.pane-action-btn:active,.tool-btn:active,
 .proj-item:active,.mycard .export-btn:active,#wb-addto:active,#wb-copy:active,
 .addto-row:active,.proj-menu-btn:active,.ap-send:active,.assistant-btn:active{
   transform:scale(.96);transition:transform .09s ease;
@@ -1661,13 +1601,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .font-cards,.hl-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pay-tier-row,.ap-suggestions{grid-template-columns:1fr}
 
-  .source-handle,.source-reopen{display:none}
-
-  .filter-row,.staging,.check-row,.nx-pinned{
+  .filter-row,.check-row,.nx-pinned{
     flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
     padding-bottom:6px;
   }
-  .filter-row > *,.staging > *,.check-row > *,.nx-pinned > *{flex:0 0 auto}
+  .filter-row > *,.check-row > *,.nx-pinned > *{flex:0 0 auto}
 
   .hist-row{
     grid-template-columns:auto 1fr !important;
@@ -2227,10 +2165,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <div class="crumb">
         <span class="muted">Workspace</span><span class="sep">/</span><span id="crumb-page">Cutter</span>
       </div>
-      <button class="btn btn-sm source-reopen" id="source-reopen" style="display:none">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"></path></svg>
-        Show source
-      </button>
       <button class="btn btn-sm assistant-btn" id="assistant-btn" style="margin-left:auto">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Assistant
@@ -2260,30 +2194,12 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
           </div>
         </div>
 
-        <div class="staging" id="staging"></div>
         <div id="cutter-progress" class="cutter-progress" hidden>
           <div class="cutter-progress-label">Idle</div>
           <div class="cutter-progress-track"><div class="cutter-progress-fill"></div></div>
         </div>
 
         <div class="workbench" id="workbench">
-          <button class="source-handle" id="source-handle" title="Show source" aria-label="Show source">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6"/></svg>
-          </button>
-          <!-- SOURCE -->
-          <div class="pane source" id="pane-source">
-            <div class="pane-head">
-              <div class="pane-title"><span class="pip"></span>Source</div>
-              <div class="pane-actions">
-                <button class="icon-btn" id="source-open-original" title="Open original"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><path d="M15 3h6v6M10 14L21 3"></path></svg></button>
-                <button class="pane-close" id="source-close" title="Hide source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
-              </div>
-            </div>
-            <div class="pane-body doc">
-              <p class="shrink" style="color:var(--muted)">No source loaded. Paste a URL above to scrape, or submit a query to research.</p>
-            </div>
-          </div>
-
           <!-- CARD -->
           <div class="pane" id="card-pane">
             <div class="pane-head">
@@ -2814,12 +2730,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     });
     updateSummary();
   }
-  // Source pane close/reopen — card expands to fill space, small edge handle to bring source back
-  const srcClose=document.getElementById('source-close'), srcReopen=document.getElementById('source-reopen'), srcHandle=document.getElementById('source-handle');
-  const wb=document.getElementById('workbench');
-  if(srcClose&&wb){srcClose.addEventListener('click',()=>{wb.classList.add('source-hidden')})}
-  if(srcHandle&&wb){srcHandle.addEventListener('click',()=>{wb.classList.remove('source-hidden')})}
-  if(srcReopen){srcReopen.style.display='none'}
   const cardDel=document.getElementById('card-delete');
   if(cardDel){cardDel.addEventListener('click',()=>{if(confirm('Delete this generated card?'))showToast('Card deleted')})}
 
