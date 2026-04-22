@@ -41,7 +41,6 @@
       list.innerHTML = schools.map(s => `
         <div class="wk-row" data-school="${esc(s.school)}">
           <div class="wk-row-head">
-            <span class="wk-initials">${esc(initials(s.school))}</span>
             <span class="wk-school">${esc(s.school)} <span class="wk-debaters">${s.debaters.length} debater${s.debaters.length === 1 ? '' : 's'}</span></span>
             <svg class="wk-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
           </div>

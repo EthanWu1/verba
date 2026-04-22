@@ -4,6 +4,7 @@
 (function () {
   let _season = null, _when = 'past';
   let _currentTourn = null, _currentEvent = null, _currentView = 'results';
+  let _resultsSubview = 'places';
 
   const $ = id => document.getElementById(id);
 
@@ -66,6 +67,37 @@
     }
   }
 
+  function divisionOf(ev) {
+    const n = String(ev && ev.name || '');
+    if (/novice/i.test(n)) return 'Novice';
+    if (/\bjv\b|junior varsity/i.test(n)) return 'JV';
+    return 'Varsity';
+  }
+
+  function dedupeEvents(events) {
+    const byKey = new Map();
+    for (const ev of (events || [])) {
+      const div = divisionOf(ev);
+      const key = `${div}|${ev.abbr}`;
+      if (!byKey.has(key)) byKey.set(key, { ...ev, division: div });
+      else {
+        const cur = byKey.get(key);
+        if (!cur.bidLevel && ev.bidLevel) cur.bidLevel = ev.bidLevel;
+      }
+    }
+    const DIV_ORDER = { Varsity: 0, JV: 1, Novice: 2 };
+    const EV_ORDER = { LD: 0, PF: 1, CX: 2 };
+    return [...byKey.values()].sort((a, b) => {
+      const d = (DIV_ORDER[a.division] ?? 9) - (DIV_ORDER[b.division] ?? 9);
+      if (d) return d;
+      return (EV_ORDER[a.abbr] ?? 9) - (EV_ORDER[b.abbr] ?? 9);
+    });
+  }
+
+  function eventLabel(ev) {
+    return `${ev.division} ${ev.abbr}${ev.bidLevel ? ' · ' + ev.bidLevel : ''}`;
+  }
+
   function renderGrid(tournaments) {
     const grid = $('toc-grid');
     grid.innerHTML = '';
@@ -73,19 +105,24 @@
       grid.innerHTML = `<div class="toc-muted" style="padding:12px">No ${_when} tournaments for ${esc(_season)}.</div>`;
       return;
     }
-    tournaments.forEach((t, i) => {
-      const card = document.createElement('div');
-      card.className = 'toc-card';
-      card.style.animationDelay = `${i * 20}ms`;
-      const events = (t.events || []).map(ev => `<span class="toc-badge-${ev.abbr.toLowerCase()}">${esc(ev.abbr)}${ev.bidLevel ? ' · ' + esc(ev.bidLevel) : ''}</span>`).join('');
-      card.innerHTML = `
-        <div class="toc-card-name">${esc(t.name)}</div>
-        <div class="toc-card-dates">${esc(t.startDate)} → ${esc(t.endDate)}</div>
-        <div class="toc-card-loc">${esc([t.city, t.state].filter(Boolean).join(', ')) || '&nbsp;'}</div>
-        <div class="toc-card-events">${events}</div>`;
-      card.addEventListener('click', () => openDetail(t));
-      grid.appendChild(card);
+    const list = document.createElement('div');
+    list.className = 'toc-list';
+    tournaments.forEach(t => {
+      const deduped = dedupeEvents(t.events || []);
+      const eventBadges = deduped.map(ev => `<span class="toc-badge-${ev.abbr.toLowerCase()}">${esc(eventLabel(ev))}</span>`).join('');
+      const loc = [t.city, t.state].filter(Boolean).join(', ');
+      const row = document.createElement('div');
+      row.className = 'toc-list-row';
+      row.innerHTML = `
+        <div class="toc-list-main">
+          <div class="toc-list-name">${esc(t.name)}</div>
+          <div class="toc-list-meta">${esc(t.startDate)} → ${esc(t.endDate)}${loc ? ' · ' + esc(loc) : ''}</div>
+        </div>
+        <div class="toc-list-events">${eventBadges}</div>`;
+      row.addEventListener('click', () => openDetail(t));
+      list.appendChild(row);
     });
+    grid.appendChild(list);
   }
 
   function showGrid() {
@@ -102,35 +139,31 @@
     $('toc-detail-title').textContent = t.name;
     $('toc-detail-meta').textContent = `${t.startDate} → ${t.endDate} · ${[t.city, t.state].filter(Boolean).join(', ')}`;
 
-    const events = t.events || [];
+    const events = dedupeEvents(t.events || []);
     const tabsEl = $('toc-event-tabs');
     tabsEl.innerHTML = '';
-    events.forEach((ev, i) => {
-      const b = document.createElement('button');
-      b.className = 'toc-event-tab' + (i === 0 ? ' active' : '');
-      b.textContent = ev.bidLevel ? `${ev.abbr} · ${ev.bidLevel}` : ev.abbr;
-      b.addEventListener('click', () => {
-        tabsEl.querySelectorAll('.toc-event-tab').forEach(x => x.classList.toggle('active', x === b));
-        loadEventBody(t, ev.abbr);
+    if (events.length) {
+      const select = document.createElement('select');
+      select.className = 'toc-event-select';
+      events.forEach(ev => {
+        const opt = document.createElement('option');
+        opt.value = ev.abbr;
+        opt.dataset.division = ev.division;
+        opt.textContent = eventLabel(ev);
+        select.appendChild(opt);
       });
-      tabsEl.appendChild(b);
-    });
+      select.addEventListener('change', () => loadEventBody(t, select.value));
+      tabsEl.appendChild(select);
+    }
     _currentView = 'results';
+    _resultsSubview = 'places';
     if (events.length) loadEventBody(t, events[0].abbr);
-    else $('toc-detail-body').innerHTML = '<div class="toc-muted">No LD/PF/CX events indexed.</div>';
+    else $('toc-detail-body').innerHTML = '<div class="toc-muted">No events indexed.</div>';
   }
 
   function isPastTournament(t) {
     if (!t || !t.endDate) return false;
     return new Date(t.endDate) < new Date();
-  }
-
-  function renderViewTabs() {
-    const past = isPastTournament(_currentTourn);
-    if (past) {
-      return `<div class="toc-view-tabs"><button class="toc-view-tab active" data-view="results">Results</button></div>`;
-    }
-    return `<div class="toc-view-tabs"><button class="toc-view-tab active" data-view="threats">Threats</button></div>`;
   }
 
   async function loadEventBody(t, abbr) {
@@ -142,7 +175,7 @@
     if (_currentView === 'threats') {
       const res = await fetch(`/api/toc/tournaments/${t.tourn_id}/threats/${abbr}`);
       const { threats } = await res.json();
-      body.innerHTML = renderViewTabs() + renderThreats(threats, abbr);
+      body.innerHTML = renderThreats(threats, abbr);
     } else {
       const [resultsRes, bracketRes] = await Promise.all([
         fetch(`/api/toc/tournaments/${t.tourn_id}/results/${abbr}`),
@@ -150,9 +183,49 @@
       ]);
       const { results, speakers } = await resultsRes.json();
       const { rounds } = await bracketRes.json();
-      body.innerHTML = renderViewTabs() + renderResults(results, speakers, abbr) + renderBracket(rounds);
+      body.innerHTML = renderResultsSubtabs() + renderResultsBody(results, speakers, abbr) + renderBracket(rounds);
+      body.querySelectorAll('.toc-sub-tab').forEach(b => b.addEventListener('click', () => {
+        _resultsSubview = b.dataset.sub;
+        body.querySelectorAll('.toc-sub-tab').forEach(x => x.classList.toggle('active', x === b));
+        const pane = body.querySelector('.toc-results-pane');
+        if (pane) pane.innerHTML = _resultsSubview === 'places' ? placesTable(results, abbr) : speakersTable(speakers);
+        attachEntryClicks(pane);
+      }));
     }
     attachEntryClicks(body);
+  }
+
+  function renderResultsSubtabs() {
+    return `<div class="toc-sub-tabs">
+      <button class="toc-sub-tab ${_resultsSubview === 'places' ? 'active' : ''}" data-sub="places">Final Places</button>
+      <button class="toc-sub-tab ${_resultsSubview === 'speakers' ? 'active' : ''}" data-sub="speakers">Speaker Awards</button>
+    </div>`;
+  }
+
+  function renderResultsBody(results, speakers, abbr) {
+    const pane = _resultsSubview === 'places' ? placesTable(results, abbr) : speakersTable(speakers);
+    return `<div class="toc-results-pane">${pane}</div>`;
+  }
+
+  function placesTable(results, abbr) {
+    const places = (results || []).filter(r => r.place || r.rank);
+    if (!places.length) return '<div class="toc-muted" style="padding:24px 0">No final places recorded.</div>';
+    const rows = places.map((r, i) => `<tr data-entry="${r.entryId}">
+      <td>${esc(r.place || (i + 1))}</td>
+      <td><strong>${esc(r.displayName || '')}</strong></td>
+      <td>${r.earnedBid ? `<span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span>` : '<span class="toc-muted">—</span>'}</td>
+    </tr>`).join('');
+    return `<table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>Bid</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function speakersTable(speakers) {
+    if (!speakers || !speakers.length) return '<div class="toc-muted" style="padding:24px 0">No speaker awards recorded.</div>';
+    const rows = speakers.map(s => `<tr data-entry="${s.entryId}">
+      <td>${s.speakerRank}</td>
+      <td><strong>${esc(s.displayName || '')}</strong></td>
+      <td>${s.speakerPoints != null ? s.speakerPoints.toFixed(2) : '—'}</td>
+    </tr>`).join('');
+    return `<table class="toc-table"><thead><tr><th>#</th><th>Speaker</th><th>Points</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function renderThreats(rows, abbr) {
@@ -167,42 +240,6 @@
       </tr>`;
     }).join('');
     return `<table class="toc-table"><thead><tr><th>#</th><th>Team</th><th>Season Bids (${esc(abbr)})</th><th>Wiki</th></tr></thead><tbody>${body}</tbody></table>`;
-  }
-
-  function renderResults(results, speakers, abbr) {
-    if (!results.length && !speakers.length) {
-      return '<div class="toc-muted" style="padding:24px 0">No results recorded yet for this event.</div>';
-    }
-    const bidders = results.filter(r => r.earnedBid);
-    const places = results.filter(r => r.place || r.rank);
-    const placeRows = places.map((r, i) => `<tr data-entry="${r.entryId}">
-      <td>${esc(r.place || (i + 1))}</td>
-      <td><strong>${esc(r.displayName || '')}</strong></td>
-      <td>${r.earnedBid ? `<span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span>` : '<span class="toc-muted">—</span>'}</td>
-    </tr>`).join('');
-    const bidderRows = bidders.map(r => `<tr data-entry="${r.entryId}">
-      <td><strong>${esc(r.displayName || '')}</strong></td>
-      <td><span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span></td>
-    </tr>`).join('');
-    const spkRows = speakers.map(s => `<tr data-entry="${s.entryId}">
-      <td>${s.speakerRank}</td>
-      <td><strong>${esc(s.displayName || '')}</strong></td>
-      <td>${s.speakerPoints != null ? s.speakerPoints.toFixed(2) : '—'}</td>
-    </tr>`).join('');
-    return `
-      ${places.length ? `
-        <div class="toc-section-title">Final Places</div>
-        <table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>Bid</th></tr></thead><tbody>${placeRows}</tbody></table>
-      ` : ''}
-      ${bidders.length ? `
-        <div class="toc-section-title">Bidders</div>
-        <table class="toc-table"><thead><tr><th>Team</th><th>Bid</th></tr></thead><tbody>${bidderRows}</tbody></table>
-      ` : ''}
-      ${speakers.length ? `
-        <div class="toc-section-title">Speaker Awards</div>
-        <table class="toc-table"><thead><tr><th>#</th><th>Speaker</th><th>Points</th></tr></thead><tbody>${spkRows}</tbody></table>
-      ` : ''}
-    `;
   }
 
   function renderBracket(rounds) {

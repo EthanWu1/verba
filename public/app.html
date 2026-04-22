@@ -1973,6 +1973,18 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .bracket-cell:hover { transform: translateX(2px); border-color: var(--lilac-3, #a78bfa); }
 .bracket-name { color: var(--ink); }
 .bracket-school { color: var(--muted); font-size: 11px; margin-top: 2px; }
+.toc-list { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; }
+.toc-list-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; background: var(--panel); transition: border-color .15s, transform .15s; }
+.toc-list-row:hover { border-color: var(--lilac-3, #a78bfa); transform: translateX(2px); }
+.toc-list-main { flex: 1; min-width: 0; }
+.toc-list-name { font: 600 14px var(--font-display); color: var(--ink); margin-bottom: 2px; }
+.toc-list-meta { font: 12px var(--font-ui); color: var(--muted); }
+.toc-list-events { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 50%; }
+.toc-event-select { background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 6px 10px; border-radius: 6px; font: 13px var(--font-ui); min-width: 200px; }
+.toc-sub-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 8px 0 12px; }
+.toc-sub-tab { background: none; border: 0; padding: 8px 14px; font: 500 13px var(--font-display); color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+.toc-sub-tab:hover { color: var(--ink-2); }
+.toc-sub-tab.active { color: var(--ink); border-bottom-color: var(--lilac-3, #a78bfa); }
 @media (max-width: 768px) {
   .toc-grid { grid-template-columns: 1fr; }
   .toc-topbar { flex-wrap: wrap; gap: 8px; }
@@ -2008,7 +2020,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .wk-arg-snippet { color: var(--muted-2, #888); font: 12.5px var(--font-ui); margin-top: 4px; line-height: 1.4; }
 .wk-link-out { color: var(--lilac-3, #a78bfa); text-decoration: none; font-size: 12.5px; margin-top: 8px; display: inline-block; }
 .wk-link-out:hover { text-decoration: underline; }
-.wk-debater-list { padding: 4px 14px 14px 56px; display: flex; flex-direction: column; gap: 4px; }
+.wk-debater-list { padding: 4px 14px 14px 20px; display: flex; flex-direction: column; gap: 4px; }
 .wk-debater { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; transition: border-color .15s; }
 .wk-debater:hover { border-color: var(--lilac-3, #a78bfa); }
 .wk-debater-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; }

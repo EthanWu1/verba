@@ -38,32 +38,72 @@
       const { rows } = await res.json();
       if (meta) meta.textContent = `${rows.length} ranked · season ${_season}`;
       if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;color:var(--muted)">No ratings yet for this event.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">No ratings yet for this event.</td></tr>';
         return;
       }
-      tbody.innerHTML = rows.map((r, i) => {
-        const rank = i + 1;
-        const cls = rank <= 3 ? `rk-row-${rank}` : (rank <= 10 ? 'rk-row-top10' : '');
-        const schoolFull = r.schoolName || r.schoolCode || '—';
-        const schoolInit = initials(r.schoolName || r.schoolCode);
-        return `<tr class="${cls}">
+      tbody.innerHTML = rows.map(r => {
+        const rank = r.rank || '?';
+        const cls = rank === 1 ? 'rk-row-1' : rank === 2 ? 'rk-row-2' : rank === 3 ? 'rk-row-3' : (rank <= 10 ? 'rk-row-top10' : '');
+        const code = r.displayName || '—';
+        const schoolFull = r.schoolName || r.schoolCode || '';
+        return `<tr class="${cls}" data-team="${esc(r.teamKey || '')}">
           <td><span class="rk-rank-badge">${rank}</span></td>
           <td>
-            <div class="rk-team-line">
-              <span class="rk-team-initials">${esc(schoolInit)}</span>
-              <span class="rk-team-text">
-                <span class="rk-school-name">${esc(schoolFull)}</span>
-                <span class="rk-debaters">${esc(r.displayName || '')}</span>
-              </span>
+            <div class="rk-team-text">
+              <span class="rk-school-name">${esc(code)}</span>
+              <span class="rk-debaters">${esc(schoolFull)}</span>
             </div>
           </td>
           <td class="rk-col-num"><span class="rk-rating">${Math.round(r.rating)}</span></td>
-          <td class="rk-col-num">${r.wins || 0}-${r.losses || 0}</td>
         </tr>`;
       }).join('');
+      tbody.querySelectorAll('tr[data-team]').forEach(tr => {
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', () => openProfile(tr.dataset.team));
+      });
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="4" style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</td></tr>`;
     }
+  }
+
+  async function openProfile(teamKey) {
+    if (!teamKey) return;
+    const main = document.querySelector('.rk-main');
+    main.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading profile…</div>';
+    try {
+      const res = await fetch(`/api/rankings/${encodeURIComponent(teamKey)}?season=${encodeURIComponent(_season)}&event=${_event}`);
+      const data = await res.json();
+      const t = data.team || {};
+      main.innerHTML = `
+        <button class="rk-back-btn" id="rk-back-btn">← Back</button>
+        <h2 class="rk-profile-title">${esc(t.displayName || '—')}</h2>
+        <div class="rk-profile-sub">${esc(t.schoolName || '')} · ${esc(_event)} · rank #${t.rank ?? '?'}</div>
+        <div class="rk-stat-grid">
+          <div class="rk-stat-card"><div class="rk-stat-label">Rating</div><div class="rk-stat-value">${Math.round(t.rating || 0)}</div></div>
+          <div class="rk-stat-card"><div class="rk-stat-label">Peak</div><div class="rk-stat-value">${Math.round(t.peakRating || t.rating || 0)}</div></div>
+          <div class="rk-stat-card"><div class="rk-stat-label">Rounds</div><div class="rk-stat-value">${t.roundCount || 0}</div></div>
+          <div class="rk-stat-card"><div class="rk-stat-label">Record</div><div class="rk-stat-value">${t.wins || 0}-${t.losses || 0}</div></div>
+        </div>`;
+      document.getElementById('rk-back-btn')?.addEventListener('click', () => restoreTable());
+    } catch (e) {
+      main.innerHTML = `<div style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</div>`;
+    }
+  }
+
+  function restoreTable() {
+    const main = document.querySelector('.rk-main');
+    main.innerHTML = `
+      <table class="rk-table">
+        <thead>
+          <tr>
+            <th class="rk-col-rank">#</th>
+            <th>Team</th>
+            <th class="rk-col-num">Rating</th>
+          </tr>
+        </thead>
+        <tbody id="rk-rows"></tbody>
+      </table>`;
+    load();
   }
 
   function bind() {

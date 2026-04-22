@@ -37,15 +37,31 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
   };
   const orderBy = orderClauses[sort] || orderClauses.rating;
   const totalCount = db.prepare(`SELECT COUNT(*) AS n ${base}${where}`).get(...args).n;
+  const rankedCte = `
+    WITH ranked AS (
+      SELECT teamKey, displayName, schoolName, schoolCode, rating, wins, losses, roundCount, peakRating,
+             ROW_NUMBER() OVER (ORDER BY rating DESC) AS rank
+      FROM toc_ratings
+      WHERE season = ? AND eventAbbr = ? AND roundCount >= ?
+    )
+  `;
+  const rankedArgs = [season, event, MIN_ROUNDS_FOR_BOARD];
+  let filter = '';
+  if (qTrim) {
+    filter = ` WHERE LOWER(displayName) LIKE ? OR LOWER(schoolName) LIKE ?`;
+    const like = '%' + qTrim.toLowerCase() + '%';
+    rankedArgs.push(like, like);
+  }
   const rows = db.prepare(`
-    SELECT teamKey, displayName, schoolName, schoolCode, rating, wins, losses, roundCount, peakRating
-    ${base}${where}
-    ORDER BY ${orderBy}
+    ${rankedCte}
+    SELECT * FROM ranked
+    ${filter}
+    ORDER BY rank ASC
     LIMIT ? OFFSET ?
-  `).all(...args, PAGE_SIZE, offset);
+  `).all(...rankedArgs, PAGE_SIZE, offset);
   return {
     season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount, sort,
-    rows: rows.map((r, i) => ({ ...r, rank: offset + i + 1 })),
+    rows,
   };
 }
 
