@@ -299,9 +299,8 @@
     return { lastYY: m[1].trim(), rest: m[2] || '' };
   }
 
-  /* Inject inline styles so Word honors nested mark/b/u on paste. Uses token
-     walker from lib/inlineStyleBody.js that merges active formats into one span. */
-  const inlineStyleBody = (window.VerbaInlineStyle && window.VerbaInlineStyle.inlineStyleBody)
+  /* Inject inline styles so Word honors nested mark/b/u on paste. */
+  const inlineStyleBody = (window.VerbaClipboard && window.VerbaClipboard.flattenInlineStyles)
     || ((html) => String(html || ''));
 
   /* Pull partial tag/cite/body from streaming JSON (may be mid-string). */
@@ -1284,8 +1283,8 @@
               try { const full = await API.libraryCard(c.id); if (full?.card) Object.assign(c, full.card); } catch {}
             }
             const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
-            const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
-            const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+            const buildHtml = (window.VerbaClipboard && window.VerbaClipboard.buildCopyHtml) || null;
+            const buildPlain = (window.VerbaClipboard && window.VerbaClipboard.buildCopyPlain) || null;
             const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
             const html = buildHtml
               ? buildHtml({ ...c, body_html: bodyHtml })
@@ -1399,8 +1398,8 @@
   $('#ev-copy')?.addEventListener('click', async () => {
     const c = state.currentEvidence; if (!c) { toast('No card selected'); return; }
     const bodyHtml = c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || '');
-    const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
-    const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+    const buildHtml = (window.VerbaClipboard && window.VerbaClipboard.buildCopyHtml) || null;
+    const buildPlain = (window.VerbaClipboard && window.VerbaClipboard.buildCopyPlain) || null;
     const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
     const html = buildHtml ? buildHtml({ ...c, body_html: bodyHtml }) : `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#111"><p><b>${esc(c.tag || '')}</b></p><p><i>${esc(c.cite || '')}</i></p>${bodyHtml}</div>`;
     try {
@@ -1756,8 +1755,8 @@
           : null;
         const c = full?.card ? Object.assign({}, item, full.card) : item;
         const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
-        const buildHtml  = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml)  || null;
-        const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
+        const buildHtml  = (window.VerbaClipboard && window.VerbaClipboard.buildCopyHtml)  || null;
+        const buildPlain = (window.VerbaClipboard && window.VerbaClipboard.buildCopyPlain) || null;
         const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
         const html  = buildHtml
           ? buildHtml({ ...c, body_html: bodyHtml })

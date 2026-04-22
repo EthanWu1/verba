@@ -261,3 +261,16 @@ test('serializeFromString: plain text fallback for non-cite context', () => {
   const { plain } = serializeSelectionHtmlFromString('<p>hello <b>world</b></p>', 'card-body');
   assert.match(plain, /hello world/);
 });
+
+// Gap tests ported from legacy suites
+
+test('buildCopyHtml: body_plain fallback renders in output', () => {
+  const html = buildCopyHtml({ cite: 'X 24', body_plain: 'hello world' });
+  assert.match(html, /hello world/);
+});
+
+test('flatten: highlight outside underline has no underline style', () => {
+  const out = flattenInlineStyles('before <mark>x</mark> after');
+  assert.match(out, /background-color:#ffff00/);
+  assert.doesNotMatch(out, /text-decoration:underline/);
+});
