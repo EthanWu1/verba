@@ -67,7 +67,44 @@
     }
     return out;
   }
-  function buildCopyHtml() { return ''; }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function buildCopyHtml(card) {
+    card = card || {};
+    const tag = card.tag || '';
+    const cite = card.cite || card.shortCite || '';
+    let body = card.body_html;
+    if (!body && card.body_plain) {
+      body = '<p>' + esc(card.body_plain).replace(/\n+/g, '</p><p>') + '</p>';
+    }
+    body = flattenInlineStyles(body || '');
+
+    const { prefix, rest } = splitCite(cite);
+    let citeHtml;
+    if (prefix) {
+      citeHtml =
+        `<span style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;color:#000">${esc(prefix)}</span>` +
+        `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(rest)}</span>`;
+    } else {
+      citeHtml = `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(cite)}</span>`;
+    }
+
+    const parts = [];
+    parts.push('<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000">');
+    if (tag) {
+      parts.push(`<p style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;margin:0 0 4pt 0">${esc(tag)}</p>`);
+    }
+    parts.push(`<p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:0 0 6pt 0">${citeHtml}</p>`);
+    parts.push(`<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt">${body}</div>`);
+    parts.push('</div>');
+    return parts.join('');
+  }
   function buildCopyPlain() { return ''; }
   function serializeSelectionHtml() { return { html: '', plain: '' }; }
 

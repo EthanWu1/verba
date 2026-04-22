@@ -132,3 +132,71 @@ test('flatten: preserves non-format tags like <p>', () => {
 test('flatten: plain text with no formatting passes through', () => {
   assert.equal(flattenInlineStyles('just text'), 'just text');
 });
+
+const { buildCopyHtml } = clipboard;
+
+test('buildCopyHtml: cite wraps in Calibri 11pt paragraph', () => {
+  const html = buildCopyHtml({ cite: 'Smith 24', body_html: '<p>x</p>' });
+  assert.match(html, /font-family:\s*Calibri/i);
+  assert.match(html, /font-size:\s*11pt/);
+  assert.match(html, /Smith 24/);
+});
+
+test('buildCopyHtml: author-year prefix is 13pt bold', () => {
+  const html = buildCopyHtml({
+    cite: 'Smith 24, professor of law',
+    body_html: '<p>x</p>'
+  });
+  assert.match(html, /font-size:\s*13pt[^"']*font-weight:\s*700[^"']*"[^>]*>\s*Smith 24/i);
+});
+
+test('buildCopyHtml: tag rendered bold 13pt above cite', () => {
+  const html = buildCopyHtml({
+    tag: 'Deterrence fails',
+    cite: 'Doe 25',
+    body_html: '<p>x</p>'
+  });
+  assert.match(html, /font-size:\s*13pt[^"']*font-weight:\s*700[^"']*">Deterrence fails/);
+});
+
+test('buildCopyHtml: body underline survives via flatten', () => {
+  const html = buildCopyHtml({
+    cite: 'Doe 25',
+    body_html: '<p><u>under</u></p>'
+  });
+  assert.match(html, /text-decoration:underline/);
+});
+
+test('buildCopyHtml: body highlight survives', () => {
+  const html = buildCopyHtml({
+    cite: 'Doe 25',
+    body_html: '<p><mark>key</mark></p>'
+  });
+  assert.match(html, /background-color:#ffff00/);
+});
+
+test('buildCopyHtml: nested b+u merge in body', () => {
+  const html = buildCopyHtml({
+    cite: 'Doe 25',
+    body_html: '<p><b><u>x</u></b></p>'
+  });
+  const m = html.match(/<span style="([^"]*)">x<\/span>/);
+  assert.ok(m);
+  assert.match(m[1], /font-weight:700/);
+  assert.match(m[1], /text-decoration:underline/);
+});
+
+test('buildCopyHtml: escapes HTML-dangerous chars in cite and tag', () => {
+  const html = buildCopyHtml({
+    tag: 'A & B < C',
+    cite: 'Smith 24 "quote"',
+    body_html: '<p>x</p>'
+  });
+  assert.match(html, /A &amp; B &lt; C/);
+  assert.match(html, /Smith 24 &quot;quote&quot;/);
+});
+
+test('buildCopyHtml: empty card produces empty-safe output', () => {
+  const html = buildCopyHtml({});
+  assert.equal(typeof html, 'string');
+});
