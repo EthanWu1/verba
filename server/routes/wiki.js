@@ -12,11 +12,14 @@ function _safeFilename(s) {
   return String(s || 'download').replace(/[^a-zA-Z0-9_\-\s]/g, '').trim() || 'download';
 }
 
-// GET /api/wiki/teams?q=memorial&limit=100
+// GET /api/wiki/teams?event=LD&q=text&limit=200
 router.get('/teams', (req, res) => {
-  const q     = String(req.query.q || '');
-  const limit = Math.max(1, Math.min(500, Number(req.query.limit) || 100));
-  return res.json({ teams: db.searchTeams(q, limit), total: db.countTeams() });
+  const event = String(req.query.event || '').toUpperCase();
+  const q = String(req.query.q || '').trim();
+  const limit = Math.min(500, Number(req.query.limit) || 200);
+  const validEvent = ['LD', 'PF', 'CX'].includes(event) ? event : '';
+  const teams = db.listTeamsByEvent({ event: validEvent, q, limit });
+  res.json({ teams });
 });
 
 // GET /api/wiki/teams/:id  — returns team + arguments; triggers crawl if stale
@@ -33,6 +36,15 @@ router.get('/teams/:id', async (req, res) => {
 
   const args = db.getTeamArguments(team.id);
   return res.json({ team, arguments: args });
+});
+
+// GET /api/wiki/teams/:id/full  — team + arguments (no crawl trigger)
+router.get('/teams/:id/full', (req, res) => {
+  const id = Number(req.params.id);
+  const team = db.getTeam(id);
+  if (!team) return res.status(404).json({ error: 'not_found' });
+  const args = db.getTeamArguments(id);
+  res.json({ team, arguments: args });
 });
 
 // GET /api/wiki/teams/:id/refresh  — force re-crawl

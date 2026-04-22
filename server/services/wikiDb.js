@@ -120,9 +120,30 @@ function clearRoundReports(teamId) {
   getDb().prepare(`DELETE FROM wiki_round_reports WHERE teamId = ?`).run(teamId);
 }
 
+function listTeamsByEvent({ event, q, limit = 200 }) {
+  const params = [];
+  let where = '1=1';
+  if (event) { where += ' AND event = ?'; params.push(event); }
+  if (q) {
+    const term = `%${q.toLowerCase()}%`;
+    where += ' AND (LOWER(school) LIKE ? OR LOWER(code) LIKE ? OR LOWER(fullName) LIKE ?)';
+    params.push(term, term, term);
+  }
+  const sql = `
+    SELECT id, school, code, fullName, event, pageUrl, lastCrawled
+    FROM wiki_teams
+    WHERE ${where}
+    ORDER BY school COLLATE NOCASE, code COLLATE NOCASE
+    LIMIT ?
+  `;
+  params.push(Number(limit));
+  return getDb().prepare(sql).all(...params);
+}
+
 module.exports = {
   upsertTeam, rebuildTeamsFts, searchTeams, getTeam,
   setTeamCrawlStatus, setTeamCrawled, isTeamStale, countTeams,
   upsertArgument, rebuildArgumentsFts, getTeamArguments, getArgument,
   insertRoundReport, clearRoundReports,
+  listTeamsByEvent,
 };
