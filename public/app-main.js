@@ -990,10 +990,8 @@
       // Mixed-context selections route through card-body branch (flattenInlineStyles); cite prefix
       // splitting is intentionally skipped for cross-block selections.
       const cardScope = node.closest('#workbench, .wb-body, .card-preview, .cite-block, [data-field="body"], [data-field="tag"], [data-field="cite"], [contenteditable="true"], .pane, .pane-body, .card, .doc, .ev-body-render, .card-body');
-      console.log('[clipboard] copy fired; node=', node.tagName, node.className || '(no class)', 'scope=', cardScope?.tagName || 'null');
       if (!cardScope) return;
       const { html, plain } = VC.serializeSelectionHtml(range);
-      console.log('[clipboard] serialized html length=', html?.length || 0);
       if (!html) return;
       e.clipboardData.setData('text/html', html);
       e.clipboardData.setData('text/plain', plain);
