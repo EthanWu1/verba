@@ -86,3 +86,57 @@ test('clearAll empties and zeros activeIndex', () => {
   assert.equal(s.items.length, 0);
   assert.equal(s.activeIndex, 0);
 });
+
+const { serialize, deserialize, hydrate, SOFT_CAP_ITEMS } = carousel;
+
+test('serialize strips ephemeral fields', () => {
+  let s = pushItem(createState(), {
+    id: 'a', status: 'cutting', phase: 'x', phaseHistory: ['p1'], error: null
+  });
+  const json = serialize(s);
+  const parsed = JSON.parse(json);
+  assert.equal(parsed.items[0].id, 'a');
+  assert.equal(parsed.items[0].tag, '');
+  assert.equal(parsed.items[0].phase, null);
+  assert.equal(parsed.items[0].phaseHistory.length, 0);
+  assert.equal(parsed.items[0].error, null);
+});
+
+test('deserialize reconstructs state with ephemeral fields zeroed', () => {
+  const json = JSON.stringify({
+    items: [{ id: 'a', status: 'done', tag: '', cite: '', body_html: '',
+              body_markdown: '', body_plain: '', createdAt: 1, sourceUrl: null, sourceLabel: null }],
+    activeIndex: 0
+  });
+  const s = deserialize(json);
+  assert.equal(s.items.length, 1);
+  assert.equal(s.items[0].phase, null);
+  assert.deepEqual(s.items[0].phaseHistory, []);
+});
+
+test('hydrate converts cutting → error (interrupted)', () => {
+  const json = JSON.stringify({
+    items: [{ id: 'a', status: 'cutting', tag: '', cite: '', body_html: '',
+              body_markdown: '', body_plain: '', createdAt: 1, sourceUrl: null, sourceLabel: null }],
+    activeIndex: 0
+  });
+  const s = hydrate(json);
+  assert.equal(s.items[0].status, 'error');
+  assert.match(s.items[0].error, /interrupted/i);
+});
+
+test('hydrate returns empty state on invalid json', () => {
+  assert.deepEqual(hydrate('not json').items, []);
+  assert.deepEqual(hydrate('').items, []);
+  assert.deepEqual(hydrate(null).items, []);
+});
+
+test('pushItem evicts oldest done when over SOFT_CAP_ITEMS', () => {
+  let s = createState();
+  for (let i = 0; i < SOFT_CAP_ITEMS + 5; i++) {
+    s = pushItem(s, { id: String(i), status: 'done' });
+  }
+  assert.equal(s.items.length, SOFT_CAP_ITEMS);
+  assert.equal(s.items[0].id, '5');
+  assert.equal(s.activeIndex, SOFT_CAP_ITEMS - 1);
+});

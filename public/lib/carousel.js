@@ -6,6 +6,17 @@
   const SOFT_CAP_BYTES = 500 * 1024;
 
   function createState() { return { items: [], activeIndex: 0 }; }
+  function evictIfOverCap(items) {
+    if (items.length <= SOFT_CAP_ITEMS) return items;
+    const copy = items.slice();
+    while (copy.length > SOFT_CAP_ITEMS) {
+      const idx = copy.findIndex(i => i.status !== 'cutting');
+      if (idx < 0) break; // all cutting — can't evict
+      copy.splice(idx, 1);
+    }
+    return copy;
+  }
+
   function pushItem(state, partial) {
     const item = {
       id: partial.id,
@@ -22,7 +33,7 @@
       phaseHistory: partial.phaseHistory || [],
       error: partial.error || null
     };
-    const items = state.items.concat(item);
+    const items = evictIfOverCap(state.items.concat(item));
     return { items, activeIndex: items.length - 1 };
   }
   function updateItem(state, id, patch) {
@@ -51,13 +62,55 @@
   }
 
   function clearAll(state) { return { items: [], activeIndex: 0 }; }
-  function serialize(state) { return ''; }
-  function deserialize(json) { return createState(); }
-  function hydrate(json) { return createState(); }
+
+  function serialize(state) {
+    const items = state.items.map(i => ({
+      id: i.id,
+      status: i.status,
+      createdAt: i.createdAt,
+      sourceUrl: i.sourceUrl,
+      sourceLabel: i.sourceLabel,
+      tag: i.tag,
+      cite: i.cite,
+      body_html: i.body_html,
+      body_markdown: i.body_markdown,
+      body_plain: i.body_plain,
+      phase: null,
+      phaseHistory: [],
+      error: null
+    }));
+    return JSON.stringify({ items, activeIndex: state.activeIndex });
+  }
+
+  function deserialize(json) {
+    if (!json || typeof json !== 'string') return createState();
+    try {
+      const parsed = JSON.parse(json);
+      const items = (parsed.items || []).map(i => Object.assign({}, i, {
+        phase: null,
+        phaseHistory: [],
+        error: null
+      }));
+      return { items, activeIndex: parsed.activeIndex || 0 };
+    } catch (e) {
+      return createState();
+    }
+  }
+
+  function hydrate(json) {
+    const s = deserialize(json);
+    const items = s.items.map(i => {
+      if (i.status === 'cutting') {
+        return Object.assign({}, i, { status: 'error', error: 'Cut interrupted by reload' });
+      }
+      return i;
+    });
+    return { items, activeIndex: s.activeIndex };
+  }
 
   return {
     createState, pushItem, updateItem, removeItem, setActive, clearAll,
-    serialize, deserialize, hydrate,
+    serialize, deserialize, hydrate, evictIfOverCap,
     SOFT_CAP_ITEMS, SOFT_CAP_BYTES
   };
 }));
