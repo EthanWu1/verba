@@ -253,7 +253,11 @@
   }
 
   function roundLabel(p) {
-    if (p.roundType === 'elim') return p.roundName;
+    if (p.depth) return p.depth;
+    if (p.roundType === 'elim' || p.roundType === 'highlow') {
+      const n = parseInt(p.roundName, 10);
+      return Number.isFinite(n) ? 'Elim ' + n : p.roundName;
+    }
     const n = parseInt(p.roundName, 10);
     return Number.isFinite(n) ? 'R' + n : p.roundName;
   }

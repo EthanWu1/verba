@@ -135,8 +135,11 @@ function clearBallotsForTournament(tournId) {
   getDb().prepare(`DELETE FROM toc_ballots WHERE tournId = ?`).run(Number(tournId));
 }
 
+const COUNT_TO_DEPTH = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octas', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+
 function getPairingsForEntry(entryId) {
-  const rows = getDb().prepare(`
+  const db = getDb();
+  const rows = db.prepare(`
     SELECT b.*,
            opp.displayName AS opponentName,
            opp.schoolName  AS opponentSchool
@@ -151,6 +154,21 @@ function getPairingsForEntry(entryId) {
              b.roundName,
              b.id
   `).all(Number(entryId));
+
+  const depthByRoundId = new Map();
+  if (rows.length) {
+    const tournId = rows[0].tournId;
+    const eventAbbr = rows[0].eventAbbr;
+    const counts = db.prepare(`
+      SELECT roundId, COUNT(DISTINCT entryId) AS entryCount
+      FROM toc_ballots
+      WHERE tournId = ? AND eventAbbr = ? AND roundType != 'prelim'
+      GROUP BY roundId
+    `).all(tournId, eventAbbr);
+    for (const c of counts) {
+      if (COUNT_TO_DEPTH[c.entryCount]) depthByRoundId.set(c.roundId, COUNT_TO_DEPTH[c.entryCount]);
+    }
+  }
   const byRound = new Map();
   for (const r of rows) {
     const key = `${r.roundType}|${r.roundName}|${r.roundId || r.opponentEntryId || r.id}`;
@@ -158,6 +176,8 @@ function getPairingsForEntry(entryId) {
       byRound.set(key, {
         roundType: r.roundType,
         roundName: r.roundName,
+        roundId: r.roundId,
+        depth: depthByRoundId.get(r.roundId) || null,
         side: r.side,
         opponentEntryId: r.opponentEntryId,
         opponentName: r.opponentName,
@@ -181,6 +201,7 @@ function getPairingsForEntry(entryId) {
   return [...byRound.values()].map(r => ({
     roundType: r.roundType,
     roundName: r.roundName,
+    depth: r.depth,
     side: r.side,
     opponentEntryId: r.opponentEntryId,
     opponentName: r.opponentName,
@@ -297,12 +318,12 @@ function listEnrichedThreats(tournId, eventAbbr, season) {
 
 function listElimRounds(tournId, eventAbbr) {
   return getDb().prepare(`
-    SELECT b.roundName, b.roundType, b.entryId, b.opponentEntryId, b.result, b.side,
+    SELECT b.roundId, b.roundName, b.roundType, b.entryId, b.opponentEntryId, b.result, b.side,
            e.displayName, e.schoolName, e.schoolCode
     FROM toc_ballots b
     LEFT JOIN toc_entries e ON e.tournId = b.tournId AND e.entryId = b.entryId AND e.eventAbbr = b.eventAbbr
     WHERE b.tournId = ? AND b.eventAbbr = ? AND b.roundType = 'elim'
-    ORDER BY b.roundName, b.entryId
+    ORDER BY CAST(b.roundName AS INTEGER), b.roundName, b.entryId
   `).all(Number(tournId), eventAbbr);
 }
 

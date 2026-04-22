@@ -101,15 +101,19 @@ router.get('/tournaments/:id/bracket/:event', (req, res) => {
   const ev = _validateEvent(req, res); if (!ev) return;
   const id = Number(req.params.id);
   const rows = db.listElimRounds(id, ev);
-  const byRound = new Map();
+  const byRoundId = new Map();
   for (const r of rows) {
-    if (!byRound.has(r.roundName)) byRound.set(r.roundName, []);
-    byRound.get(r.roundName).push(r);
+    const key = r.roundId || r.roundName;
+    if (!byRoundId.has(key)) byRoundId.set(key, { roundId: r.roundId, roundName: r.roundName, ballots: [] });
+    byRoundId.get(key).ballots.push(r);
   }
-  const ROUND_ORDER = ['Triples', 'Doubles', 'Octas', 'Quarters', 'Semis', 'Finals'];
-  const rounds = ROUND_ORDER
-    .filter(name => byRound.has(name))
-    .map(name => ({ name, ballots: byRound.get(name) }));
+  const COUNT_TO_DEPTH = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octas', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+  const DEPTH_ORDER = { Triples: 0, Doubles: 1, Octas: 2, Quarters: 3, Semis: 4, Finals: 5 };
+  const rounds = [...byRoundId.values()].map(r => {
+    const entries = new Set(r.ballots.map(b => b.entryId));
+    const name = COUNT_TO_DEPTH[entries.size] || r.roundName || `Elim`;
+    return { name, ballots: r.ballots };
+  }).sort((a, b) => (DEPTH_ORDER[a.name] ?? 9) - (DEPTH_ORDER[b.name] ?? 9));
   return res.json({ rounds });
 });
 
