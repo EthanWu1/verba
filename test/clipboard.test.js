@@ -305,6 +305,34 @@ test('flatten: converts span with yellow background to highlight', () => {
   assert.match(out, /background-color:#ffff00/);
 });
 
+test('flatten: converts .warrant class to <u><b>', () => {
+  const out = flattenInlineStyles('<span class="warrant">evidence</span>');
+  assert.match(out, /<u[^>]*><b[^>]*>evidence<\/b><\/u>/);
+});
+
+test('flatten: converts .hl class to highlight', () => {
+  const out = flattenInlineStyles('<span class="hl">hi</span>');
+  assert.match(out, /background-color:#ffff00/);
+});
+
+test('flatten: nested warrant inside hl', () => {
+  const out = flattenInlineStyles('<span class="hl"><span class="warrant">x</span></span>');
+  assert.match(out, /background-color:#ffff00/);
+  assert.match(out, /<u[^>]*>/);
+  assert.match(out, /<b[^>]*>/);
+  assert.match(out, /x/);
+});
+
+test('buildCopyHtml: .warrant class body survives as underlined bold in output', () => {
+  const html = buildCopyHtml({
+    cite: 'Miller 21',
+    body_html: '<p>lead <span class="warrant">underlined phrase</span> tail</p>'
+  });
+  assert.match(html, /text-decoration:underline/);
+  assert.match(html, /font-weight:700/);
+  assert.match(html, /underlined phrase/);
+});
+
 test('extract prefix: straight apostrophe year', () => {
   assert.equal(extractAuthorYearPrefix("Miller '21, Professor"), "Miller '21");
 });

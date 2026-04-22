@@ -17,11 +17,37 @@
     return { prefix, rest: s.slice(prefix.length) };
   }
   function normalizeSpanStyles(html) {
-    // Convert span-based inline formatting into semantic tags so the walker
-    // picks them up. Handles styles copied from Word/Docs or previous pastes
-    // where underline/bold/highlight were stored as styled spans.
+    // Convert class-based AND span-style formatting into semantic tags so the
+    // walker + downstream paste filter (Word) pick them up. Must run BEFORE
+    // class attrs get stripped. Handles:
+    //   - .warrant class → <u><b>...</b></u> (debate "evidence" markup, bold+underline)
+    //   - .hl class → highlight span
+    //   - .fmt-underline class wrapping <u> → unchanged (inner <u> already semantic)
+    //   - <span style="text-decoration:underline"> → <u>
+    //   - <span style="font-weight:bold|700"> → <b>
+    //   - <span style="background-color:<yellow>"> → highlight
     let s = String(html == null ? '' : html);
-    // underline spans
+
+    // .warrant class — run multiple passes in case of nested/adjacent warrants
+    for (let iter = 0; iter < 4; iter++) {
+      const next = s.replace(
+        /<span([^>]*)\sclass=("|')([^"']*)\2([^>]*)>([\s\S]*?)<\/span>/gi,
+        (full, pre, quote, classVal, post, inner) => {
+          const classes = classVal.split(/\s+/);
+          const hasWarrant = classes.includes('warrant');
+          const hasHl = classes.includes('hl');
+          if (!hasWarrant && !hasHl) return full;
+          let wrapped = inner;
+          if (hasWarrant) wrapped = `<u><b>${wrapped}</b></u>`;
+          if (hasHl) wrapped = `<span style="background-color:#ffff00;color:#000">${wrapped}</span>`;
+          return wrapped;
+        }
+      );
+      if (next === s) break;
+      s = next;
+    }
+
+    // underline/bold/highlight via inline style
     s = s.replace(
       /<span([^>]*)\sstyle=("[^"]*"|'[^']*')([^>]*)>([\s\S]*?)<\/span>/gi,
       (full, pre, rawStyle, post, inner) => {
@@ -130,7 +156,9 @@
   }
 
   function serializeSelectionHtmlFromString(rawHtml, context) {
-    const cleaned = stripDangerousAttrs(rawHtml);
+    // Normalize semantic classes BEFORE class stripping so .warrant / .hl survive.
+    const normalized = normalizeSpanStyles(rawHtml);
+    const cleaned = stripDangerousAttrs(normalized);
     let html;
     if (context === 'cite') {
       const text = htmlToPlain(cleaned);
@@ -142,6 +170,9 @@
       } else {
         html = `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:400;color:#000">${esc(text)}</span>`;
       }
+    } else if (context === 'tag') {
+      const text = htmlToPlain(cleaned);
+      html = `<p style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;color:#000;margin:0">${esc(text)}</p>`;
     } else {
       const flat = flattenInlineStyles(cleaned);
       html = `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000">${flat}</div>`;
@@ -195,13 +226,33 @@
       ? document.createElement('div') : null;
     if (!tmp) return { html: '', plain: '' };
     tmp.appendChild(frag);
-    const rawHtml = tmp.innerHTML;
 
+    // Region-aware path: when selection contains any card field(s), rebuild via
+    // buildCopyHtml so tag is 13pt bold, cite prefix is split 13pt/11pt, body
+    // runs through flatten. Guarantees native Ctrl+C matches the copy button.
+    const tagEl = tmp.querySelector('[data-field="tag"]');
+    const citeEl = tmp.querySelector('[data-field="cite"]');
+    const bodyEl = tmp.querySelector('[data-field="body"]');
+    if (tagEl || citeEl || bodyEl) {
+      const tag = tagEl ? (tagEl.textContent || '').trim() : '';
+      const cite = citeEl ? (citeEl.textContent || '').trim() : '';
+      const bodyHtml = bodyEl ? bodyEl.innerHTML : '';
+      const bodyPlain = bodyEl ? (bodyEl.textContent || '') : '';
+      return {
+        html: buildCopyHtml({ tag, cite, body_html: bodyHtml }),
+        plain: buildCopyPlain({ tag, cite, body_plain: bodyPlain })
+      };
+    }
+
+    // Single-region (user selected a word or phrase inside one field): use the
+    // string-based serializer with context detection.
+    const rawHtml = tmp.innerHTML;
     const container = range.commonAncestorContainer;
     const node = container && container.nodeType === 1 ? container : (container && container.parentElement);
     let context = 'card-body';
     if (node && typeof node.closest === 'function') {
-      if (node.closest('.cite-block')) context = 'cite';
+      if (node.closest('.cite-block, [data-field="cite"]')) context = 'cite';
+      else if (node.closest('[data-field="tag"]')) context = 'tag';
       else if (node.closest('.wb-body, .card-preview, [data-field="body"]')) context = 'card-body';
       else context = 'mixed';
     }
