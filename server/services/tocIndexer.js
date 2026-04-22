@@ -10,6 +10,21 @@ const DEBATE_ABBRS = new Set(['LD', 'PF', 'CX']);
 let _seeding = false;
 const _inflight = new Map();
 
+const SEED_CONCURRENCY = 3;
+
+async function runWithConcurrency(items, limit, worker) {
+  let idx = 0;
+  async function next() {
+    while (idx < items.length) {
+      const i = idx++;
+      try { await worker(items[i], i); }
+      catch (e) { /* worker handles its own logging; just keep draining */ }
+    }
+  }
+  const pool = Array.from({ length: Math.min(limit, items.length) }, () => next());
+  await Promise.all(pool);
+}
+
 async function seedTocIndex() {
   if (_seeding) return { skipped: true };
   _seeding = true;
@@ -17,16 +32,19 @@ async function seedTocIndex() {
   try {
     const circuitId = await crawler.fetchTocCircuitId();
     const ids = await crawler.fetchCircuitTournIds(circuitId);
-    for (const id of ids) {
+    console.log(`[toc] seeding ${ids.length} tournaments with concurrency=${SEED_CONCURRENCY}`);
+
+    await runWithConcurrency(ids, SEED_CONCURRENCY, async (id) => {
       try {
-        const indexed = await indexTournament(id);
+        const indexed = await indexTournament(id, { skipRecompute: true });
         if (indexed) { stats.tournaments++; stats.entries += indexed.entries; }
         else stats.skipped++;
       } catch (err) {
         console.error(`[toc] tournament ${id} failed:`, err.message);
         stats.errors++;
       }
-    }
+    });
+
     for (const { season } of db.listSeasons()) {
       db.rebuildSeasonBids(season);
       try { rankings.recomputeRatings(season); }
@@ -48,7 +66,8 @@ async function crawlTournament(tournId) {
   return p;
 }
 
-async function indexTournament(tournId) {
+async function indexTournament(tournId, opts = {}) {
+  const { skipRecompute = false } = opts;
   const json = await crawler.fetchTournamentJson(tournId);
 
   const debateCats = (json.categories || []).filter(c => DEBATE_ABBRS.has((c.abbr || '').toUpperCase()));
@@ -135,9 +154,11 @@ async function indexTournament(tournId) {
   }
 
   db.setTournamentCrawled(tournId);
-  db.rebuildSeasonBids(season);
-  try { rankings.recomputeRatings(season); }
-  catch (err) { console.error('[rankings] recompute failed for', season, '-', err.message); }
+  if (!skipRecompute) {
+    db.rebuildSeasonBids(season);
+    try { rankings.recomputeRatings(season); }
+    catch (err) { console.error('[rankings] recompute failed for', season, '-', err.message); }
+  }
 
   return { entries: entryEventMap.size };
 }

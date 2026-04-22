@@ -3,7 +3,7 @@
 const axios = require('axios');
 
 const BASE = 'https://www.tabroom.com';
-const DELAY_MS = 500;
+const DELAY_MS = 250;
 const TIMEOUT_MS = 60000;
 
 let _lastRequestAt = 0;
