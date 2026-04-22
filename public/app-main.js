@@ -80,7 +80,7 @@
   /* ──────────────────────────────────────────
      ROUTER — 2 pages: home (Card Cutter), library
      ────────────────────────────────────────── */
-  const PAGES = ['home', 'library'];
+  const PAGES = ['home', 'library', 'tournament', 'teams', 'rankings'];
   const LEGACY = {
     community: 'library', saved: 'library', history: 'library', mine: 'library',
     research: 'home', chatbot: 'home', assistant: 'library',
@@ -595,7 +595,7 @@
       if (input) input.value = '';
       toast('Loading source…');
       try {
-        const data = await window.API.scrape(val);
+        const data = await window.VerbaAPI.scrape(val);
         renderSourceInPane({ ...data, paragraphs: [] });
       } catch (err) {
         toast({ variant: 'destructive', title: 'Scrape failed', description: err.message || String(err), duration: 4000 });
