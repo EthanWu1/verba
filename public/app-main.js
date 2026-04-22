@@ -961,6 +961,24 @@
       }
     });
 
+    // Native Ctrl+C / Cmd+C — route through same serializer as copy button
+    document.addEventListener('copy', (e) => {
+      const VC = window.VerbaClipboard;
+      if (!VC) return;
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+      const range = sel.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const node = container.nodeType === 1 ? container : container.parentElement;
+      if (!node || !node.closest) return;
+      if (!node.closest('.wb-body, .card-preview, .cite-block, [data-field="body"]')) return;
+      const { html, plain } = VC.serializeSelectionHtml(range);
+      if (!html) return;
+      e.clipboardData.setData('text/html', html);
+      e.clipboardData.setData('text/plain', plain);
+      e.preventDefault();
+    });
+
     // Add to… button — popover
     $('#wb-addto')?.addEventListener('click', (e) => {
       e.stopPropagation();
