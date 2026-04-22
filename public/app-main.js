@@ -352,49 +352,8 @@
     `;
   }
 
-  function renderSourceInPane(article) {
-    const body = $('#pane-source .pane-body');
-    const titleEl = $('#pane-source .pane-title');
-    if (!body) return;
-    state.currentSource = article;
-    if (titleEl) titleEl.innerHTML = `<span class="pip"></span>Source · ${esc(article.source || article.url || 'Pasted text')}`;
-    const head = article.author || article.date ? `<p class="shrink">${esc(article.author || '')}${article.date ? ' · ' + esc(article.date) : ''}</p>` : '';
-    const paragraphs = Array.isArray(article.paragraphs) && article.paragraphs.length
-      ? article.paragraphs
-      : String(article.bodyText || '').split(/\n\n+/).map((t, i) => ({ text: t, anchor: `p-${i}` }));
-    const paras = paragraphs.slice(0, 120).map((p) => {
-      if (p.isFigure || p.text === '[FIGURE OMITTED]') {
-        return `<p class="figure-omitted" id="${esc(p.anchor || '')}">[FIGURE OMITTED]</p>`;
-      }
-      return `<p id="${esc(p.anchor || '')}">${esc(p.text)}</p>`;
-    }).join('');
-    body.innerHTML = head + paras;
-  }
-
-  /* ── Queue manager: multi-job research with live phase updates and switchable chips ── */
-  const QUEUE_MAX_CHIPS = 6;
-  const queues = []; // { id, label, mode, input, chip, article, card, phaseLog, status, es }
-
-  function renderPhaseLog(job) {
-    const body = $('#pane-source .pane-body');
-    const titleEl = $('#pane-source .pane-title');
-    if (!body) return;
-    if (titleEl) titleEl.innerHTML = `<span class="pip"></span>Source · ${esc(job.label)}`;
-    const rows = job.phaseLog.slice(-200).map((p) => {
-      const cls = p.level === 'err' ? 'phase-err' : p.level === 'ok' ? 'phase-ok' : 'phase-run';
-      return `<div class="phase-row ${cls}">${esc(p.text)}</div>`;
-    }).join('');
-    const hint = job.status !== 'done' && job.status !== 'error'
-      ? '<div class="phase-row phase-run" style="opacity:.7;margin-top:6px">live — updating as sources return</div>'
-      : '';
-    let log = body.querySelector('.phase-log');
-    if (!log) {
-      body.innerHTML = `<div class="phase-log"></div>`;
-      log = body.querySelector('.phase-log');
-    }
-    log.innerHTML = rows + hint;
-    log.scrollTop = log.scrollHeight;
-  }
+  // TEMP: rewired in Task 11
+  function startCut(input /*, opts */) { console.warn('startCut not yet wired'); }
 
   function describePhase(p) {
     switch (p.type) {
@@ -417,58 +376,8 @@
     }
   }
 
-  function activateJob(job) {
-    queues.forEach((j) => j.chip?.classList.toggle('active', j === job));
-    if (job.card) renderCardInPane(job.card);
-    if (job.article) renderSourceInPane(job.article);
-    else renderPhaseLog(job);
-  }
-
   function updateChipLabel(job) {
-    if (!job.chip) return;
-    job.chip._gen = (job.chip._gen || 0) + 1;
-    const icon = job.status === 'done' ? '✓ ' : job.status === 'error' ? '✗ ' : '● ';
-    job.chip.textContent = icon + job.label;
-    job.chip.className = 'stage-chip stage-' + job.status + (queues.find((j) => j.chip?.classList.contains('active')) === job ? ' active' : '');
-  }
-
-  function trimChipOverflow() {
-    const stg = $('#staging'); if (!stg) return;
-    while (queues.length > QUEUE_MAX_CHIPS) {
-      // Evict oldest terminal (done/error) chip. If none, evict oldest.
-      let evictIdx = queues.findIndex((j) => j.status === 'done' || j.status === 'error');
-      if (evictIdx < 0) evictIdx = 0;
-      const [victim] = queues.splice(evictIdx, 1);
-      victim.es?.close?.();
-      victim.chip?.remove();
-    }
-  }
-
-  function createJob(input) {
-    const isUrl = /^https?:\/\//i.test(input);
-    const mode = isUrl ? 'url' : 'query';
-    const label = mode === 'url' ? new URL(input).hostname : input.slice(0, 40);
-    const chip = document.createElement('span');
-    chip.className = 'stage-chip stage-pending';
-    chip.title = 'Click to switch to this job';
-    const stg = $('#staging');
-    if (stg) stg.appendChild(chip);
-    const job = { id: Math.random().toString(36).slice(2, 9), label, mode, input, chip, article: null, card: null, phaseLog: [], status: 'pending', es: null };
-    queues.push(job);
-    trimChipOverflow();
-    chip.addEventListener('click', () => activateJob(job));
-    updateChipLabel(job);
-    const xBtn = document.createElement('button');
-    xBtn.className = 'chip-x';
-    xBtn.innerHTML = '&times;';
-    xBtn.title = 'Dismiss';
-    xBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      chip.classList.add('dismissing');
-      setTimeout(() => chip.remove(), 200);
-    });
-    chip.appendChild(xBtn);
-    return job;
+    // no-op: chip UI removed; kept so SSE event handlers don't throw
   }
 
   /* Map SSE phase → chip status + typewriter label. */
@@ -502,15 +411,8 @@
     job.phaseLog.push({ text, level });
     const phaseMap = PHASE_CHIP_MAP[p.type];
     if (phaseMap && job.status !== 'done' && job.status !== 'error') {
-      if (job.status !== phaseMap.status) {
-        job.status = phaseMap.status;
-        job.chip.className = 'stage-chip stage-' + phaseMap.status
-          + (queues.find((j) => j.chip?.classList.contains('active')) === job ? ' active' : '');
-      }
-      typewriteChip(job.chip, '● ', phaseMap.label);
+      job.status = phaseMap.status;
     }
-    const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || queues[queues.length - 1];
-    if (activeJob === job && !job.article) renderPhaseLog(job);
     setProgress(p);
   }
 
@@ -604,9 +506,8 @@
       const argument = await askArgument(val);
       if (!argument) return;
 
-      const job = createJob(val);
-      job.mode = 'url';
-      activateJob(job);
+      startCut(val);
+      const job = { id: Math.random().toString(36).slice(2, 9), label: new URL(val).hostname, mode: 'url', input: val, article: null, card: null, phaseLog: [], status: 'pending', es: null };
       pushPhase(job, { type: 'mode', mode: 'url', url: val, query: argument });
 
       const params = new URLSearchParams();
@@ -665,7 +566,6 @@
     // Attached file: content already scraped on upload — render preview, clear attachment
     if (attached && !val) {
       if (input) input.value = '';
-      renderSourceInPane({ source: attached.filename, bodyText: attached.preview || '', paragraphs: [] });
       window.__verbaAttachedFile = null;
       renderAttachTray();
       return;
@@ -675,8 +575,8 @@
     if (input) input.value = '';
 
     const jobLabel = attached ? attached.filename : val;
-    const job = createJob(jobLabel);
-    activateJob(job);
+    startCut(jobLabel);
+    const job = { id: Math.random().toString(36).slice(2, 9), label: jobLabel.slice(0, 40), mode: attached ? 'file' : 'query', input: jobLabel, article: null, card: null, phaseLog: [], status: 'pending', es: null };
     pushPhase(job, { type: 'mode', mode: attached ? 'file' : job.mode, query: val, url: val });
 
     const params = new URLSearchParams();
@@ -714,8 +614,6 @@
         job.article = article;
         job.cite = s.cite;
         job.lowConfidence = s.lowConfidence;
-        const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
-        if (activeJob === job) renderSourceInPane(article);
         if (s.lowConfidence) toast({ variant: 'warning', title: 'Low-confidence match', description: 'Review source carefully', duration: 4000 });
       } catch {}
     });
@@ -725,8 +623,7 @@
         const partial = extractPartialCard(acc);
         if (!partial.body && !partial.tag && !partial.cite) return;
         const ghost = { tag: partial.tag, cite: partial.cite, body_markdown: partial.body, body_html: '' };
-        const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
-        if (activeJob === job) renderCardGhost(ghost);
+        renderCardGhost(ghost);
       } catch {}
     });
     es.addEventListener('card', (e) => {
@@ -738,8 +635,7 @@
         job.label = (card.tag || job.label).slice(0, 48);
         updateChipLabel(job);
         finishProgress(true);
-        const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
-        if (activeJob === job) renderCardInPane(card);
+        renderCardInPane(card);
         API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
         try { window.__refreshUsage?.(); } catch {}
         if (c.fidelity && c.fidelity.ok === false) {
@@ -1066,24 +962,6 @@
       openAddToPopover($('#wb-addto'), state.currentCard);
     });
 
-    // Source close — trigger expand animation
-    const srcClose = $('#source-close'), wb = $('#workbench'),
-          srcHandle = $('#source-handle'), srcReopen = $('#source-reopen');
-    function updateSourceReopen() {
-      if (srcReopen) srcReopen.style.display = wb?.classList.contains('source-hidden') ? 'inline-flex' : 'none';
-    }
-    function showSource() { wb?.classList.remove('source-hidden'); updateSourceReopen(); }
-    function hideSource() {
-      wb?.classList.add('source-hidden');
-      const card = wb?.querySelector('.pane:not(.source)');
-      if (card) { card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; }
-      updateSourceReopen();
-    }
-    srcClose?.addEventListener('click', hideSource);
-    srcHandle?.addEventListener('click', showSource);
-    srcReopen?.addEventListener('click', showSource);
-    updateSourceReopen();
-
     // Trashcan — clear card + source, reset state
     $('#wb-trash')?.addEventListener('click', () => {
       state.currentCard = null;
@@ -1095,10 +973,6 @@
           <div class="meta" contenteditable="true" data-field="cite" data-placeholder="Cite will appear here"></div>
         </div>
         <div class="body" contenteditable="true" data-field="body" data-placeholder="Body will appear here after a cut."><p><br></p></div>`;
-      const src = $('#pane-source .pane-body');
-      if (src) src.innerHTML = '<p class="shrink" style="color:var(--muted)">No source loaded. Paste a URL above to scrape, or submit a query to research.</p>';
-      const title = $('#pane-source .pane-title');
-      if (title) title.innerHTML = '<span class="pip"></span>Source';
       toast({ title: 'Cleared', variant: 'success', duration: 1800 });
     });
 
