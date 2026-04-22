@@ -19,6 +19,13 @@
     $('wiki-export-arg-btn').addEventListener('click', downloadArg);
     $('wiki-copy-btn').addEventListener('click', copyArg);
     $('wiki-ask-btn').addEventListener('click', askArg);
+
+    // Deep-link: #teams?team=X (from tournament threat list)
+    const m = String(location.hash || '').match(/team=([^&]+)/);
+    if (m) {
+      const teamId = decodeURIComponent(m[1]);
+      selectTeam(teamId);
+    }
   };
 
   async function loadTeams(q) {
