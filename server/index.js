@@ -172,10 +172,14 @@ app.get('*', (req, res) => {
       const { countTournaments } = require('./services/tocDb');
       const { seedTocIndex } = require('./services/tocIndexer');
       if (countTournaments() === 0) {
-        console.log('[toc] No tournaments indexed — seeding...');
-        seedTocIndex()
-          .then(r => console.log(`[toc] Seeded ${r.tournaments} tournaments, ${r.entries} entries, ${r.skipped} skipped, ${r.errors} errors`))
-          .catch(err => console.error('[toc] Seed failed:', err.message));
+        if (process.env.TOC_AUTOSEED === '1') {
+          console.log('[toc] TOC_AUTOSEED=1 — seeding tournament index...');
+          seedTocIndex()
+            .then(r => console.log(`[toc] Seeded ${r.tournaments} tournaments, ${r.entries} entries, ${r.skipped} skipped, ${r.errors} errors`))
+            .catch(err => console.error('[toc] Seed failed:', err.message));
+        } else {
+          console.log('[toc] No tournaments indexed. Set TOC_AUTOSEED=1 in .env or POST /api/toc/reindex to populate.');
+        }
       }
     } catch (err) {
       console.error('[toc] Auto-seed init failed:', err.message);
