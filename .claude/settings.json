@@ -1,7 +1,4 @@
 {
-  "enabledPlugins": {
-    "autoresearch@ai-research-skills": true
-  },
   "hooks": {
     "PreToolUse": [
       {
@@ -14,5 +11,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "autoresearch@ai-research-skills": false
   }
 }
