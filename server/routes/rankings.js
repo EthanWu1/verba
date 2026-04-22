@@ -22,8 +22,9 @@ router.get('/', (req, res) => {
   if (!season) return res.status(400).json({ error: 'missing_season' });
   const page = Math.max(1, Number(req.query.page) || 1);
   const q = String(req.query.q || '');
+  const sort = String(req.query.sort || 'rating');
   try {
-    return res.json(rdb.leaderboard({ season, event: ev, page, q }));
+    return res.json(rdb.leaderboard({ season, event: ev, page, q, sort }));
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

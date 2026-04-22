@@ -14,7 +14,7 @@ function listSeasons() {
   `).all();
 }
 
-function leaderboard({ season, event, page = 1, q = '' }) {
+function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
   const db = getDb();
   const offset = Math.max(0, (Number(page) - 1) * PAGE_SIZE);
   const qTrim = String(q || '').trim();
@@ -29,15 +29,22 @@ function leaderboard({ season, event, page = 1, q = '' }) {
     const like = '%' + qTrim.toLowerCase() + '%';
     args.push(like, like);
   }
+  const orderClauses = {
+    rating: 'rating DESC',
+    wins: 'wins DESC, rating DESC',
+    peak: 'peakRating DESC, rating DESC',
+    rounds: 'roundCount DESC, rating DESC',
+  };
+  const orderBy = orderClauses[sort] || orderClauses.rating;
   const totalCount = db.prepare(`SELECT COUNT(*) AS n ${base}${where}`).get(...args).n;
   const rows = db.prepare(`
-    SELECT teamKey, displayName, schoolName, schoolCode, rating
+    SELECT teamKey, displayName, schoolName, schoolCode, rating, wins, losses, roundCount, peakRating
     ${base}${where}
-    ORDER BY rating DESC
+    ORDER BY ${orderBy}
     LIMIT ? OFFSET ?
   `).all(...args, PAGE_SIZE, offset);
   return {
-    season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount,
+    season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount, sort,
     rows: rows.map((r, i) => ({ ...r, rank: offset + i + 1 })),
   };
 }
