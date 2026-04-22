@@ -205,7 +205,7 @@ function listThreats(tournId, eventAbbr, season) {
       COALESCE(sb.partialBids, 0) AS seasonPartialBids,
       (SELECT w.id FROM wiki_teams w
         WHERE LOWER(w.school) = LOWER(e.schoolName)
-          AND LOWER(w.code)   = LOWER(SUBSTR(e.displayName, LENGTH(e.schoolName) + 2))
+          AND (' ' || LOWER(e.displayName) || ' ') LIKE '% ' || LOWER(w.code) || ' %'
         LIMIT 1) AS wikiTeamId
     FROM toc_entries e
     LEFT JOIN toc_season_bids sb
