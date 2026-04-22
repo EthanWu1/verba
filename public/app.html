@@ -2083,7 +2083,9 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .dot.is-active{background:#0d0d12}
 .dot:hover{background:#9ca3af}
 
-.carousel-empty{display:flex;align-items:center;justify-content:center;min-height:280px;color:#9ca3af;font:500 14px var(--font-display,system-ui)}
+.carousel-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;font:500 14px var(--font-display,system-ui);pointer-events:none;z-index:1}
+.carousel-empty[hidden]{display:none}
+#wb-body[hidden]{display:none}
 
 /* Hover-reveal actions on card preview */
 .card-hover-actions{position:absolute;top:14px;right:14px;display:flex;gap:6px;opacity:0;transition:opacity .18s ease;z-index:5}
@@ -2114,8 +2116,8 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
 /* Research-bar polish */
 .research-bar{transition:box-shadow .18s ease,border-color .18s ease}
-.research-bar:focus-within{box-shadow:0 0 0 3px rgba(59,124,255,0.12),0 2px 10px rgba(15,20,40,0.06);border-color:#b5c4e4}
-.research-bar.is-drop{box-shadow:0 0 0 3px rgba(59,124,255,0.25)}
+.research-bar:focus-within{box-shadow:0 0 0 3px rgba(0,0,0,0.14),0 2px 12px rgba(0,0,0,0.10);border-color:#111}
+.research-bar.is-drop{box-shadow:0 0 0 3px rgba(0,0,0,0.22)}
 
 @media (max-width:768px){
   .carousel-prev{left:4px}
@@ -2482,7 +2484,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
                   <th class="rk-col-rank">#</th>
                   <th>Team</th>
                   <th class="rk-col-num">Rating</th>
-                  <th class="rk-col-num">W-L</th>
                 </tr>
               </thead>
               <tbody id="rk-rows"></tbody>

@@ -498,7 +498,7 @@
     applyState(Carousel.pushItem(carouselState, {
       id, status: 'cutting', sourceUrl, createdAt: Date.now(),
     }));
-    openCutStream({ input, length: currentLength(), density: 'standard' }, id);
+    openCutStream({ input, argument: opts.argument || input, length: currentLength(), density: 'standard' }, id);
   }
 
   function currentLength() {
@@ -510,10 +510,10 @@
     const params = new URLSearchParams();
     if (isUrl) {
       params.set('url', body.input);
-      params.set('argument', body.input); // argument pre-filled for carousel flow
+      params.set('argument', body.argument || body.input);
     } else {
       params.set('query', body.input);
-      params.set('argument', body.input);
+      params.set('argument', body.argument || body.input);
     }
     params.set('density', body.density || 'standard');
     params.set('length', body.length || 'long');
@@ -743,8 +743,11 @@
     const val = (input?.value || '').trim();
     const attached = window.__verbaAttachedFile || null;
     if (!val && !attached) { toast('Paste a URL, type an argument, or attach a file'); return; }
-    if (input) input.value = '';
+
     if (attached) {
+      if (input) input.value = '';
+      const argument = await askArgument(attached.name);
+      if (!argument) return;
       try {
         const fd = new FormData();
         fd.append('file', attached);
@@ -753,10 +756,22 @@
         const data = await res.json();
         window.__verbaAttachedFile = null;
         if (typeof renderAttachTray === 'function') renderAttachTray();
-        startCut(data.title || attached.name);
+        startCut(data.title || attached.name, { argument });
       } catch (err) { console.error(err); toast({ variant: 'destructive', title: 'Upload failed', description: err.message || String(err), duration: 4000 }); }
       return;
     }
+
+    // URL input → ask user for argument to cut toward
+    if (/^https?:\/\//i.test(val)) {
+      if (input) input.value = '';
+      const argument = await askArgument(val);
+      if (!argument) return;
+      startCut(val, { argument });
+      return;
+    }
+
+    // Bare query — argument IS the input
+    if (input) input.value = '';
     startCut(val);
   }
 
