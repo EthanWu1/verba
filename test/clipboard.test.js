@@ -200,3 +200,23 @@ test('buildCopyHtml: empty card produces empty-safe output', () => {
   const html = buildCopyHtml({});
   assert.equal(typeof html, 'string');
 });
+
+const { buildCopyPlain } = clipboard;
+
+test('buildCopyPlain: joins tag, cite, body with newlines', () => {
+  const out = buildCopyPlain({
+    tag: 'Tag here',
+    cite: 'Smith 24',
+    body_plain: 'Body text.'
+  });
+  assert.equal(out, 'Tag here\nSmith 24\n\nBody text.');
+});
+
+test('buildCopyPlain: falls back to body_markdown', () => {
+  const out = buildCopyPlain({ tag: 'T', cite: 'S 24', body_markdown: 'md' });
+  assert.equal(out, 'T\nS 24\n\nmd');
+});
+
+test('buildCopyPlain: empty card safe', () => {
+  assert.equal(buildCopyPlain({}), '\n\n\n');
+});

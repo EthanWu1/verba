@@ -105,7 +105,13 @@
     parts.push('</div>');
     return parts.join('');
   }
-  function buildCopyPlain() { return ''; }
+  function buildCopyPlain(card) {
+    card = card || {};
+    const tag = card.tag || '';
+    const cite = card.cite || card.shortCite || '';
+    const body = card.body_plain || card.body_markdown || '';
+    return `${tag}\n${cite}\n\n${body}`;
+  }
   function serializeSelectionHtml() { return { html: '', plain: '' }; }
 
   return {
