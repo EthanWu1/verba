@@ -81,3 +81,15 @@ test('parseBallots handles bye (one ballot in section)', () => {
   assert.strictEqual(rows[0].opponentEntryId, null);
   assert.strictEqual(rows[0].result, 'W');
 });
+
+test('teamKeyFor falls back to entry.id when students array is empty', () => {
+  const a = teamKeyFor({ students: [], id: 42 }, { id: 797828 });
+  const b = teamKeyFor({ students: [], id: 43 }, { id: 797828 });
+  assert.strictEqual(a, '797828:e42');
+  assert.notStrictEqual(a, b);
+});
+
+test('teamKeyFor falls back to hashed entry.code when both students and id missing', () => {
+  const k = teamKeyFor({ students: [], code: 'Foo AB' }, { id: 797828 });
+  assert.match(k, /^797828:ec:[0-9a-f]+$/);
+});

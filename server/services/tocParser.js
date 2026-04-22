@@ -21,8 +21,10 @@ function seasonFor(isoDate) {
 
 function teamKeyFor(entry, school) {
   const sid = school?.id != null ? String(school.id) : ('h:' + fnv1a(String(school?.name || '').toLowerCase()));
-  const students = Array.isArray(entry.students) ? [...entry.students].map(String).sort() : [];
-  return `${sid}:${students.join(',')}`;
+  const students = Array.isArray(entry.students) ? [...entry.students].map(String).filter(Boolean).sort() : [];
+  if (students.length) return `${sid}:${students.join(',')}`;
+  // Fallback: no student ids on the entry. Use entry.id (globally unique) to keep entries distinct.
+  return `${sid}:e${entry.id ?? ('c:' + fnv1a(String(entry.code || entry.name || '')))}`;
 }
 
 const BID_MAP = { 64: 'Triples', 32: 'Doubles', 16: 'Octas', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
