@@ -25,8 +25,6 @@
       await loadGrid();
     }));
     $('toc-back-btn').addEventListener('click', showGrid);
-    $('toc-modal-close').addEventListener('click', closeModal);
-    $('toc-modal').addEventListener('click', e => { if (e.target === $('toc-modal')) closeModal(); });
     let _searchTimer = null;
     const searchEl = $('toc-search');
     if (searchEl) {
@@ -248,34 +246,58 @@
   }
 
   function attachEntryClicks(root) {
+    if (!root) return;
     root.querySelectorAll('tr[data-entry]').forEach(tr => {
-      tr.addEventListener('click', () => openPairings(Number(tr.dataset.entry)));
+      tr.addEventListener('click', () => showPairings(Number(tr.dataset.entry)));
     });
   }
 
-  async function openPairings(entryId) {
-    $('toc-modal-title').textContent = 'Loading…';
-    $('toc-modal-body').innerHTML = '';
-    $('toc-modal').classList.remove('hidden');
-    const res = await fetch(`/api/toc/entries/${entryId}/pairings`);
-    const { entry, pairings } = await res.json();
-    $('toc-modal-title').textContent = `${entry.displayName || 'Entry'} — ${entry.eventAbbr}`;
-    if (!pairings.length) {
-      $('toc-modal-body').innerHTML = '<div class="toc-muted">No pairings recorded.</div>';
-      return;
-    }
-    const rows = pairings.map(p => `<tr>
-      <td>${esc(p.roundType === 'elim' ? p.roundName : 'R' + p.roundName)}</td>
-      <td>${esc((p.side || '—').toUpperCase())}</td>
-      <td>${p.opponentEntryId || '<span class="toc-muted">bye</span>'}</td>
-      <td>${esc(p.judgeName || '—')}</td>
-      <td><strong>${esc(p.result || '—')}</strong></td>
-      <td>${p.speakerPoints != null ? p.speakerPoints.toFixed(1) : '—'}</td>
-    </tr>`).join('');
-    $('toc-modal-body').innerHTML = `<table class="toc-table"><thead><tr><th>Round</th><th>Side</th><th>Opp</th><th>Judge</th><th>Result</th><th>Pts</th></tr></thead><tbody>${rows}</tbody></table>`;
+  function roundLabel(p) {
+    if (p.roundType === 'elim') return p.roundName;
+    const n = parseInt(p.roundName, 10);
+    return Number.isFinite(n) ? 'R' + n : p.roundName;
   }
 
-  function closeModal() { $('toc-modal').classList.add('hidden'); }
+  async function showPairings(entryId) {
+    const body = $('toc-detail-body');
+    body.innerHTML = '<div class="toc-muted">Loading pairings…</div>';
+    const res = await fetch(`/api/toc/entries/${entryId}/pairings`);
+    const { entry, pairings } = await res.json();
+    const backHTML = `<button class="toc-btn-sm" id="toc-pair-back">← Back</button>`;
+    if (!pairings || !pairings.length) {
+      body.innerHTML = `${backHTML}<div class="toc-section-title">${esc(entry.displayName || 'Entry')}</div><div class="toc-muted">No pairings recorded.</div>`;
+    } else {
+      const rows = pairings.map(p => {
+        const oppCell = p.opponentEntryId
+          ? `<a href="#" class="toc-link" data-opp="${p.opponentEntryId}">${esc(p.opponentName || '#' + p.opponentEntryId)}${p.opponentSchool ? ' <span class="toc-muted">· ' + esc(p.opponentSchool) + '</span>' : ''}</a>`
+          : '<span class="toc-muted">bye</span>';
+        return `<tr>
+          <td><strong>${esc(roundLabel(p))}</strong></td>
+          <td>${esc((p.side || '—').toUpperCase())}</td>
+          <td>${oppCell}</td>
+          <td>${esc(p.judgeName || '—')}</td>
+          <td><strong>${esc(p.result || '—')}</strong></td>
+          <td>${p.speakerPoints != null ? p.speakerPoints.toFixed(1) : '—'}</td>
+        </tr>`;
+      }).join('');
+      body.innerHTML = `
+        ${backHTML}
+        <div class="toc-section-title">${esc(entry.displayName || 'Entry')} · ${esc(entry.eventAbbr || '')}</div>
+        <table class="toc-table">
+          <thead><tr><th>Round</th><th>Side</th><th>Opponent</th><th>Judge</th><th>Result</th><th>Pts</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      body.querySelectorAll('a[data-opp]').forEach(a => {
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          showPairings(Number(a.dataset.opp));
+        });
+      });
+    }
+    document.getElementById('toc-pair-back')?.addEventListener('click', () => {
+      if (_currentTourn && _currentEvent) loadEventBody(_currentTourn, _currentEvent);
+    });
+  }
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

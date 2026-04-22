@@ -136,10 +136,60 @@ function clearBallotsForTournament(tournId) {
 }
 
 function getPairingsForEntry(entryId) {
-  return getDb().prepare(`
-    SELECT * FROM toc_ballots WHERE entryId = ?
-    ORDER BY roundType DESC, CAST(roundName AS INTEGER), roundName
+  const rows = getDb().prepare(`
+    SELECT b.*,
+           opp.displayName AS opponentName,
+           opp.schoolName  AS opponentSchool
+    FROM toc_ballots b
+    LEFT JOIN toc_entries opp
+      ON opp.tournId = b.tournId
+     AND opp.entryId = b.opponentEntryId
+     AND opp.eventAbbr = b.eventAbbr
+    WHERE b.entryId = ?
+    ORDER BY CASE b.roundType WHEN 'prelim' THEN 0 ELSE 1 END,
+             CAST(b.roundName AS INTEGER),
+             b.roundName,
+             b.id
   `).all(Number(entryId));
+  const byRound = new Map();
+  for (const r of rows) {
+    const key = `${r.roundType}|${r.roundName}|${r.roundId || r.opponentEntryId || r.id}`;
+    if (!byRound.has(key)) {
+      byRound.set(key, {
+        roundType: r.roundType,
+        roundName: r.roundName,
+        side: r.side,
+        opponentEntryId: r.opponentEntryId,
+        opponentName: r.opponentName,
+        opponentSchool: r.opponentSchool,
+        judgeNames: new Set(),
+        wins: 0,
+        losses: 0,
+        speakerPointsTotal: 0,
+        speakerPointsCount: 0,
+      });
+    }
+    const agg = byRound.get(key);
+    if (r.judgeName) agg.judgeNames.add(r.judgeName);
+    if (r.result === 'W') agg.wins++;
+    else if (r.result === 'L') agg.losses++;
+    if (r.speakerPoints != null) {
+      agg.speakerPointsTotal += r.speakerPoints;
+      agg.speakerPointsCount++;
+    }
+  }
+  return [...byRound.values()].map(r => ({
+    roundType: r.roundType,
+    roundName: r.roundName,
+    side: r.side,
+    opponentEntryId: r.opponentEntryId,
+    opponentName: r.opponentName,
+    opponentSchool: r.opponentSchool,
+    judgeName: [...r.judgeNames].join(', ') || null,
+    result: r.wins > r.losses ? 'W' : r.losses > r.wins ? 'L' : null,
+    ballotCount: r.wins + r.losses,
+    speakerPoints: r.speakerPointsCount ? r.speakerPointsTotal / r.speakerPointsCount : null,
+  }));
 }
 
 // ── Results ───────────────────────────────────────────────────
