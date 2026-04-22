@@ -242,6 +242,164 @@
      ────────────────────────────────────────── */
   const state = { currentSource: null, currentCard: null, evidenceCards: [], activeType: 'all', evSearch: '', evShown: 50, evFiltered: [], evPage: 1, evSeed: 0, evLoading: false, evDone: false };
 
+  const Carousel = window.VerbaCarousel;
+  if (!Carousel) { console.error('VerbaCarousel not loaded'); return; }
+
+  const LS_KEY = 'verba.cutter.carousel.v1';
+  let carouselState = Carousel.hydrate(localStorage.getItem(LS_KEY));
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(LS_KEY, Carousel.serialize(carouselState)); } catch (_) {}
+    }, 400);
+  }
+  function applyState(next) {
+    carouselState = next;
+    renderCarousel();
+    scheduleSave();
+  }
+  function activeItem() {
+    return carouselState.items[carouselState.activeIndex] || null;
+  }
+
+  Object.defineProperty(state, 'currentCard', {
+    get() { return activeItem() || null; },
+    configurable: true
+  });
+
+  function renderCarousel() {
+    const stage = document.getElementById('card-stage');
+    const empty = document.getElementById('carousel-empty');
+    const prevBtn = document.querySelector('.carousel-prev');
+    const nextBtn = document.querySelector('.carousel-next');
+    const dots = document.getElementById('carousel-dots');
+    if (!stage) return;
+
+    const items = carouselState.items;
+    if (empty) empty.hidden = items.length !== 0;
+    if (prevBtn) prevBtn.hidden = carouselState.activeIndex <= 0;
+    if (nextBtn) nextBtn.hidden = carouselState.activeIndex >= items.length - 1;
+
+    // Dots
+    if (dots) {
+      dots.innerHTML = '';
+      if (items.length > 1) {
+        items.forEach((_, i) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'dot' + (i === carouselState.activeIndex ? ' is-active' : '');
+          b.addEventListener('click', () => applyState(Carousel.setActive(carouselState, i)));
+          dots.appendChild(b);
+        });
+      }
+    }
+
+    // Render active shell only
+    stage.innerHTML = '';
+    const item = items[carouselState.activeIndex];
+    if (!item) return;
+    stage.appendChild(renderCardShell(item));
+  }
+
+  function renderCardShell(item) {
+    const shell = document.createElement('article');
+    shell.className = 'card-shell';
+    shell.dataset.id = item.id;
+
+    // Icon stack
+    const icons = document.createElement('div');
+    icons.className = 'shell-icons';
+    if (item.sourceUrl) {
+      const a = document.createElement('a');
+      a.className = 'shell-icon';
+      a.href = item.sourceUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.title = 'View Source';
+      a.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+      icons.appendChild(a);
+    }
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'shell-icon';
+    copyBtn.title = 'Copy card';
+    copyBtn.id = 'wb-copy';
+    copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    icons.appendChild(copyBtn);
+
+    const trash = document.createElement('button');
+    trash.type = 'button';
+    trash.className = 'shell-icon';
+    trash.title = 'Delete card';
+    trash.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    trash.addEventListener('click', () => handleTrash(item.id));
+    icons.appendChild(trash);
+    shell.appendChild(icons);
+
+    if (item.status === 'cutting') {
+      shell.innerHTML += renderCuttingBody(item);
+    } else if (item.status === 'error') {
+      shell.innerHTML += renderErrorBody(item);
+    } else {
+      shell.appendChild(renderEditorBody(item));
+    }
+    return shell;
+  }
+
+  function renderCuttingBody(item) {
+    const pct = Math.min(95, (item.phaseHistory.length / 5) * 100);
+    const logLines = item.phaseHistory.slice(-5).map((p, i, arr) => {
+      const cls = i === arr.length - 1 ? 'current' : '';
+      return `<div class="${cls}">${i === arr.length - 1 ? '→' : '✓'} ${escapeHtml(p)}</div>`;
+    }).join('');
+    return `
+      <div class="cut-progress"><div class="cut-progress-bar" style="width:${pct}%"></div></div>
+      <div style="font:500 12px var(--font-display,system-ui);color:#6b7280;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:16px">Cutting · stage ${item.phaseHistory.length} of 5</div>
+      <div class="cut-log">${logLines}</div>
+    `;
+  }
+
+  function renderErrorBody(item) {
+    return `<div style="padding:24px 0;color:#b91c1c;font:500 14px var(--font-display,system-ui)">${escapeHtml(item.error || 'Cut failed')}</div>`;
+  }
+
+  function renderEditorBody(item) {
+    const holder = document.createElement('div');
+    holder.innerHTML = `
+      <div class="tag" contenteditable="true" data-field="tag">${escapeHtml(item.tag || '')}</div>
+      <div class="cite-block"><div class="meta" contenteditable="true" data-field="cite">${escapeHtml(item.cite || '')}</div></div>
+      <div class="body" contenteditable="true" data-field="body">${item.body_html || '<p><br></p>'}</div>
+    `;
+    return holder;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function handleTrash(id) {
+    const item = carouselState.items.find(i => i.id === id);
+    if (!item) return;
+    const prevIndex = carouselState.items.findIndex(i => i.id === id);
+    applyState(Carousel.removeItem(carouselState, id));
+    const el = document.createElement('div');
+    el.className = 'toast-undo';
+    el.innerHTML = 'Card removed <button>Undo</button>';
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0d0d12;color:#fff;padding:10px 16px;border-radius:10px;display:flex;gap:12px;align-items:center;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.25);font:500 13px var(--font-display,system-ui)';
+    document.body.appendChild(el);
+    const remove = () => el.remove();
+    const t = setTimeout(remove, 4000);
+    el.querySelector('button').addEventListener('click', () => {
+      clearTimeout(t);
+      const items = carouselState.items.slice();
+      items.splice(Math.min(prevIndex, items.length), 0, item);
+      applyState({ items, activeIndex: prevIndex });
+      remove();
+    });
+  }
+
   function filterEvidenceClient(cards, q) {
     const needle = String(q || '').trim().toLowerCase();
     if (!needle) return cards.slice();
@@ -662,19 +820,24 @@
     es.addEventListener('done', () => { clearTimeout(watchdog); es.close(); });
   }
 
-  function syncCardFromDom() {
-    const tagEl = $('#wb-body [data-field="tag"]');
-    const citeEl = $('#wb-body [data-field="cite"]');
-    const bodyEl = $('#wb-body [data-field="body"]');
-    if (!tagEl && !bodyEl) return;
-    state.currentCard = state.currentCard || {};
-    if (tagEl) state.currentCard.tag = tagEl.textContent.trim();
-    if (citeEl) state.currentCard.cite = citeEl.textContent.trim();
+  function syncActiveFromDom() {
+    const shell = document.querySelector('.card-shell');
+    if (!shell) return;
+    const item = activeItem();
+    if (!item) return;
+    const tagEl = shell.querySelector('[data-field="tag"]');
+    const citeEl = shell.querySelector('[data-field="cite"]');
+    const bodyEl = shell.querySelector('[data-field="body"]');
+    const patch = {};
+    if (tagEl) patch.tag = tagEl.textContent.trim();
+    if (citeEl) patch.cite = citeEl.textContent.trim();
     if (bodyEl) {
-      state.currentCard.body_html = bodyEl.innerHTML;
-      state.currentCard.body_plain = bodyEl.textContent;
+      patch.body_html = bodyEl.innerHTML;
+      patch.body_plain = bodyEl.textContent;
     }
+    applyState(Carousel.updateItem(carouselState, item.id, patch));
   }
+  function syncCardFromDom() { syncActiveFromDom(); }
 
   function normalizeUnderlineTags(root) {
     if (!root || !root.querySelectorAll) return;
@@ -812,13 +975,8 @@
       });
     }
 
-    // Seed state from static demo DOM
-    syncCardFromDom();
-    const wbBody = $('#wb-body');
-    if (wbBody) wbBody.addEventListener('input', (evt) => {
-      syncCardFromDom();
-      normalizeUnderlineTags(evt.currentTarget);
-    });
+    // Seed state from static demo DOM (no-op now — carousel owns the editor state)
+    // #wb-body input handler replaced by document-level delegation in Task 10
 
     // Formatting toolbar — Underline/Bold native toggle, Highlight latched mode
     let highlightMode = false;
@@ -901,35 +1059,7 @@
       }
     });
 
-    // Copy button — preserve formatting
-    $('#wb-copy')?.addEventListener('click', async () => {
-      syncCardFromDom();
-      const c = state.currentCard;
-      if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
-      const VC = window.VerbaClipboard;
-      if (!VC) { toast('Clipboard module missing'); return; }
-      const card = {
-        ...c,
-        body_html: c.body_html || (c.body_markdown && typeof markdownCardToHtml === 'function' ? markdownCardToHtml(c.body_markdown) : c.body_html)
-      };
-      const html = VC.buildCopyHtml(card);
-      const plain = VC.buildCopyPlain(card);
-      try {
-        if (window.ClipboardItem && navigator.clipboard?.write) {
-          await navigator.clipboard.write([new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([plain], { type: 'text/plain' }),
-          })]);
-        } else {
-          await navigator.clipboard.writeText(plain);
-        }
-        const b = $('#wb-copy');
-        if (b) { b.classList.add('copied'); setTimeout(() => b.classList.remove('copied'), 1400); }
-      } catch (err) {
-        console.error(err);
-        toast('Copy blocked');
-      }
-    });
+    // Copy button — handled by event delegation at document level (button lives inside card-shell)
 
     // Native Ctrl+C / Cmd+C — route through same serializer as copy button
     document.addEventListener('copy', (e) => {
@@ -2733,6 +2863,62 @@
     });
     window.__verba.toggleSidebar = flip;
   })();
+
+  // Task 9 Step 2 — carousel navigation handlers
+  const _prevBtn = document.querySelector('.carousel-prev');
+  const _nextBtn = document.querySelector('.carousel-next');
+  if (_prevBtn) _prevBtn.addEventListener('click', () => {
+    applyState(Carousel.setActive(carouselState, carouselState.activeIndex - 1));
+  });
+  if (_nextBtn) _nextBtn.addEventListener('click', () => {
+    applyState(Carousel.setActive(carouselState, carouselState.activeIndex + 1));
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const ae = document.activeElement;
+    if (!ae) return;
+    const tag = ae.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || ae.isContentEditable) return;
+    if (e.key === 'ArrowLeft')  applyState(Carousel.setActive(carouselState, carouselState.activeIndex - 1));
+    if (e.key === 'ArrowRight') applyState(Carousel.setActive(carouselState, carouselState.activeIndex + 1));
+  });
+
+  // Task 9 Step 3 — initial render
+  renderCarousel();
+
+  // Task 10 Step 4 — copy button via event delegation (button lives inside card-shell)
+  document.addEventListener('click', async (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('#wb-copy');
+    if (!btn) return;
+    syncActiveFromDom();
+    const c = activeItem();
+    if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
+    const VC = window.VerbaClipboard;
+    if (!VC) { toast('Clipboard module missing'); return; }
+    const card = { ...c, body_html: c.body_html || (c.body_markdown && typeof markdownCardToHtml === 'function' ? markdownCardToHtml(c.body_markdown) : c.body_html) };
+    const html = VC.buildCopyHtml(card);
+    const plain = VC.buildCopyPlain(card);
+    try {
+      if (window.ClipboardItem && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plain], { type: 'text/plain' }),
+        })]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      btn.classList.add('copied'); setTimeout(() => btn.classList.remove('copied'), 1400);
+    } catch (err) { console.error(err); toast('Copy blocked'); }
+  });
+
+  // Task 10 Step 5 — editor input delegation
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.closest && e.target.closest('.card-shell [data-field]')) {
+      syncActiveFromDom();
+      if (typeof normalizeUnderlineTags === 'function') normalizeUnderlineTags(e.target);
+    }
+  });
+
 })();
 
 // Mobile drawer toggle
