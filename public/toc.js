@@ -67,35 +67,23 @@
     }
   }
 
-  function divisionOf(ev) {
-    const n = String(ev && ev.name || '');
-    if (/novice/i.test(n)) return 'Novice';
-    if (/\bjv\b|junior varsity/i.test(n)) return 'JV';
-    return 'Varsity';
-  }
+  const BID_RANK = { Finals: 6, Semis: 5, Quarters: 4, Octas: 3, Doubles: 2, Triples: 1 };
 
   function dedupeEvents(events) {
-    const byKey = new Map();
+    const byAbbr = new Map();
     for (const ev of (events || [])) {
-      const div = divisionOf(ev);
-      const key = `${div}|${ev.abbr}`;
-      if (!byKey.has(key)) byKey.set(key, { ...ev, division: div });
-      else {
-        const cur = byKey.get(key);
-        if (!cur.bidLevel && ev.bidLevel) cur.bidLevel = ev.bidLevel;
-      }
+      if (!['LD', 'PF', 'CX'].includes(ev.abbr)) continue;
+      const cur = byAbbr.get(ev.abbr);
+      const curRank = cur && cur.bidLevel ? (BID_RANK[cur.bidLevel] || 0) : 0;
+      const newRank = ev.bidLevel ? (BID_RANK[ev.bidLevel] || 0) : 0;
+      if (!cur || newRank > curRank) byAbbr.set(ev.abbr, { abbr: ev.abbr, bidLevel: ev.bidLevel || null });
     }
-    const DIV_ORDER = { Varsity: 0, JV: 1, Novice: 2 };
     const EV_ORDER = { LD: 0, PF: 1, CX: 2 };
-    return [...byKey.values()].sort((a, b) => {
-      const d = (DIV_ORDER[a.division] ?? 9) - (DIV_ORDER[b.division] ?? 9);
-      if (d) return d;
-      return (EV_ORDER[a.abbr] ?? 9) - (EV_ORDER[b.abbr] ?? 9);
-    });
+    return [...byAbbr.values()].sort((a, b) => (EV_ORDER[a.abbr] ?? 9) - (EV_ORDER[b.abbr] ?? 9));
   }
 
   function eventLabel(ev) {
-    return `${ev.division} ${ev.abbr}${ev.bidLevel ? ' · ' + ev.bidLevel : ''}`;
+    return ev.bidLevel ? `${ev.abbr} · ${ev.bidLevel}` : ev.abbr;
   }
 
   function renderGrid(tournaments) {
@@ -109,7 +97,7 @@
     list.className = 'toc-list';
     tournaments.forEach(t => {
       const deduped = dedupeEvents(t.events || []);
-      const eventBadges = deduped.map(ev => `<span class="toc-badge-${ev.abbr.toLowerCase()}">${esc(eventLabel(ev))}</span>`).join('');
+      const eventBadges = deduped.map(ev => `<span>${esc(eventLabel(ev))}</span>`).join('');
       const loc = [t.city, t.state].filter(Boolean).join(', ');
       const row = document.createElement('div');
       row.className = 'toc-list-row';
@@ -148,7 +136,6 @@
       events.forEach(ev => {
         const opt = document.createElement('option');
         opt.value = ev.abbr;
-        opt.dataset.division = ev.division;
         opt.textContent = eventLabel(ev);
         select.appendChild(opt);
       });

@@ -1973,13 +1973,14 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .bracket-cell:hover { transform: translateX(2px); border-color: var(--lilac-3, #a78bfa); }
 .bracket-name { color: var(--ink); }
 .bracket-school { color: var(--muted); font-size: 11px; margin-top: 2px; }
-.toc-list { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; }
-.toc-list-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; background: var(--panel); transition: border-color .15s, transform .15s; }
-.toc-list-row:hover { border-color: var(--lilac-3, #a78bfa); transform: translateX(2px); }
-.toc-list-main { flex: 1; min-width: 0; }
-.toc-list-name { font: 600 14px var(--font-display); color: var(--ink); margin-bottom: 2px; }
+.toc-list { display: flex; flex-direction: column; padding: 0; width: 100%; }
+.toc-list-row { display: flex; align-items: center; gap: 16px; padding: 12px 4px; border-bottom: 1px solid var(--line); cursor: pointer; background: transparent; transition: background-color .12s; }
+.toc-list-row:hover { background: var(--panel); }
+.toc-list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.toc-list-name { font: 600 14px var(--font-display); color: var(--ink); }
 .toc-list-meta { font: 12px var(--font-ui); color: var(--muted); }
-.toc-list-events { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 50%; }
+.toc-list-events { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; flex-shrink: 0; }
+.toc-list-events > span { font: 500 11.5px var(--font-mono); color: var(--muted); padding: 3px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
 .toc-event-select { background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 6px 10px; border-radius: 6px; font: 13px var(--font-ui); min-width: 200px; }
 .toc-sub-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 8px 0 12px; }
 .toc-sub-tab { background: none; border: 0; padding: 8px 14px; font: 500 13px var(--font-display); color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
