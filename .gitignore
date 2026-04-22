@@ -32,3 +32,7 @@ server/data/*.log
 
 # Git worktrees
 .worktrees/
+
+# Agent / brainstorm scratch dirs
+.agent/
+.superpowers/
