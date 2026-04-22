@@ -283,8 +283,8 @@
 
     if (empty) empty.hidden = items.length !== 0;
     if (wbBody) wbBody.hidden = items.length === 0;
-    if (prevBtn) prevBtn.hidden = carouselState.activeIndex <= 0;
-    if (nextBtn) nextBtn.hidden = carouselState.activeIndex >= items.length - 1;
+    if (prevBtn) prevBtn.disabled = items.length === 0 || carouselState.activeIndex <= 0;
+    if (nextBtn) nextBtn.disabled = items.length === 0 || carouselState.activeIndex >= items.length - 1;
 
     if (sourceLink) {
       if (item && item.sourceUrl) {

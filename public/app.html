@@ -2083,12 +2083,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
 /* Carousel nav (anchored to #card-pane) */
 #card-pane{position:relative}
-.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--line,#e5e7eb);display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:16px;cursor:pointer;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,0.06);opacity:0;transition:opacity .18s ease}
-#card-pane:hover .carousel-nav{opacity:1}
+.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--line,#e5e7eb);display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:16px;cursor:pointer;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,0.06);transition:opacity .18s ease,color .15s,border-color .15s}
+.carousel-nav:disabled{opacity:0.3;cursor:not-allowed}
 .carousel-prev{left:-18px}
 .carousel-next{right:-18px}
-.carousel-nav[hidden]{display:none}
-.carousel-nav:hover{color:#111;border-color:#d1d5db}
+.carousel-nav:not(:disabled):hover{color:#111;border-color:#d1d5db}
 
 .carousel-dots{display:flex;justify-content:center;gap:6px;padding:10px 0 6px}
 .dot{width:7px;height:7px;border-radius:50%;background:#d4d4d8;border:0;padding:0;cursor:pointer;transition:background .15s}
