@@ -28,7 +28,15 @@ router.get('/seasons', (req, res) => {
 router.get('/tournaments', (req, res) => {
   const season = String(req.query.season || '');
   const when   = String(req.query.when || 'upcoming');
-  const rows = db.listTournaments({ season, when });
+  const search = String(req.query.search || '').trim().toLowerCase();
+  let rows = db.listTournaments({ season, when });
+  if (search) {
+    rows = rows.filter(t =>
+      String(t.name || '').toLowerCase().includes(search) ||
+      String(t.city || '').toLowerCase().includes(search) ||
+      String(t.state || '').toLowerCase().includes(search)
+    );
+  }
   const out = rows.map(t => ({ ...t, events: db.listEvents(t.tourn_id) }));
   return res.json({ tournaments: out });
 });
@@ -48,8 +56,10 @@ router.get('/tournaments/:id/threats/:event', (req, res) => {
   const id = Number(req.params.id);
   const t = db.getTournament(id);
   if (!t) return res.status(404).json({ error: 'not_found' });
-  const rows = db.listThreats(id, ev, t.season);
-  return res.json({ threats: rows, season: t.season });
+  const enriched = db.listEnrichedThreats(id, ev, t.season);
+  const { scoreEntries } = require('../services/threatScorer');
+  const ranked = scoreEntries(enriched, t.season, 30);
+  return res.json({ threats: ranked, season: t.season });
 });
 
 router.get('/tournaments/:id/results/:event', (req, res) => {
@@ -80,6 +90,22 @@ router.get('/tournaments/:id/refresh', requireUser, async (req, res) => {
 router.post('/reindex', requireUser, (req, res) => {
   res.json({ ok: true, message: 'Reindexing started' });
   indexer.seedTocIndex().catch(err => console.error('[toc] reindex error:', err.message));
+});
+
+router.get('/tournaments/:id/bracket/:event', (req, res) => {
+  const ev = _validateEvent(req, res); if (!ev) return;
+  const id = Number(req.params.id);
+  const rows = db.listElimRounds(id, ev);
+  const byRound = new Map();
+  for (const r of rows) {
+    if (!byRound.has(r.roundName)) byRound.set(r.roundName, []);
+    byRound.get(r.roundName).push(r);
+  }
+  const ROUND_ORDER = ['Triples', 'Doubles', 'Octas', 'Quarters', 'Semis', 'Finals'];
+  const rounds = ROUND_ORDER
+    .filter(name => byRound.has(name))
+    .map(name => ({ name, ballots: byRound.get(name) }));
+  return res.json({ rounds });
 });
 
 module.exports = router;
