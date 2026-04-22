@@ -2071,77 +2071,54 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .wk-link-out { color: var(--lilac-3, #a78bfa); text-decoration: none; font-size: 12.5px; margin-top: 8px; display: inline-block; }
 .wk-link-out:hover { text-decoration: underline; }
 /* ── Rankings page ───────────────────────────── */
-.rk-shell { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-.rk-topbar {
-  display: flex; align-items: center; gap: 16px;
-  padding: 10px 16px; border-bottom: 1px solid var(--border, #e5e5e5);
-  flex-shrink: 0;
-}
-.rk-topbar-left, .rk-topbar-right { display: flex; align-items: center; gap: 8px; }
-.rk-topbar-right { margin-left: auto; }
-.rk-muted { font: 11px var(--font-ui); color: var(--muted); }
-.rk-select {
-  font: 13px var(--font-ui); padding: 5px 8px;
-  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
-  background: var(--bg); color: var(--ink);
-}
-.rk-event-tabs { display: flex; gap: 4px; }
-.rk-event-tab {
-  font: 500 12px var(--font-ui); padding: 6px 14px; cursor: pointer;
-  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
-  background: var(--bg); color: var(--muted);
-}
-.rk-event-tab.active { color: var(--ink); background: #fff; box-shadow: var(--shadow-sm); }
-.rk-search {
-  font: 12px var(--font-ui); padding: 5px 10px; min-width: 220px;
-  border: 1px solid var(--border, #e5e5e5); border-radius: 6px;
-  background: var(--bg); color: var(--ink);
-}
-.rk-btn-sm {
-  font: 11px var(--font-ui); padding: 4px 10px; cursor: pointer;
-  border: 1px solid var(--border, #e5e5e5); border-radius: 5px;
-  background: var(--bg); color: var(--ink); white-space: nowrap;
-}
-.rk-btn-sm:hover { background: var(--hover-bg, #f5f5f5); }
-.rk-board { flex: 1; overflow-y: auto; padding: 16px; }
-.rk-table { width: 100%; border-collapse: collapse; font: 12px var(--font-ui); max-width: 900px; }
-.rk-table th, .rk-table td { padding: 8px 10px; border-bottom: 1px solid var(--border, #e5e5e5); text-align: left; }
-.rk-table th { font: 500 10px var(--font-ui); color: var(--muted); text-transform: uppercase; }
-.rk-table tr { cursor: pointer; }
-.rk-table tr:hover td { background: var(--hover-bg, #f5f5f5); }
-.rk-rating-cell { font: 600 13px var(--font-mono); color: var(--ink); }
-.rk-rank-cell { font: 500 11px var(--font-mono); color: var(--muted); width: 32px; }
-.rk-skeleton-rows { padding: 8px 0; display: flex; flex-direction: column; gap: 6px; max-width: 900px; }
-.rk-skeleton-row {
-  height: 36px; border-radius: 6px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: rk-shimmer 1.4s infinite;
-}
-@keyframes rk-shimmer { to { background-position: -200% 0; } }
-.rk-pagination { display: flex; align-items: center; gap: 10px; padding: 12px 0; font: 11px var(--font-ui); color: var(--muted); }
-.rk-profile { flex: 1; overflow-y: auto; padding: 20px 24px; max-width: 1000px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-.rk-profile-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-.rk-profile-sub { font: 11px var(--font-ui); color: var(--muted); margin-left: auto; }
-.rk-stat-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px; margin-bottom: 18px;
-}
-.rk-stat-card {
-  padding: 14px; border-radius: 8px; background: var(--bg);
-  box-shadow: var(--shadow-sm); border: 1px solid var(--border, #e5e5e5);
-}
-.rk-stat-label { font: 500 10px var(--font-ui); color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.rk-stat-value { font: 600 24px var(--font-ui); color: var(--ink); line-height: 1.1; }
-.rk-stat-sub { font: 11px var(--font-ui); color: var(--muted); margin-top: 2px; }
-.rk-section-title { font: 600 13px var(--font-ui); color: var(--ink); margin: 18px 0 8px; }
-.rk-chart-wrap { background: var(--bg); border: 1px solid var(--border, #e5e5e5); border-radius: 8px; padding: 10px; box-shadow: var(--shadow-sm); }
-.rk-chart-tooltip { position: absolute; background: #111; color: #fff; font: 11px var(--font-ui); padding: 4px 8px; border-radius: 4px; pointer-events: none; }
+.rk-shell { display: flex; height: 100%; overflow: hidden; }
+.rk-sidebar { width: 260px; flex: 0 0 260px; border-right: 1px solid var(--line); padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; background: var(--panel); }
+.rk-search-input { background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 8px 10px; border-radius: 6px; font: 13px var(--font-ui); transition: border-color .15s, box-shadow .15s; }
+.rk-search-input:focus { outline: none; border-color: var(--lilac-3, #a78bfa); box-shadow: 0 0 0 3px rgba(167,139,250,.15); }
+.rk-control { display: flex; flex-direction: column; gap: 6px; }
+.rk-control label { font: 600 11px var(--font-display); color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.rk-select { background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 6px 8px; border-radius: 6px; font: 13px var(--font-ui); }
+.rk-event-tabs { display: flex; gap: 2px; }
+.rk-event-tab { flex: 1; background: var(--bg); border: 1px solid var(--line); color: var(--muted); padding: 6px 0; font: 600 12px var(--font-display); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.rk-event-tab:first-child { border-radius: 6px 0 0 6px; }
+.rk-event-tab:last-child { border-radius: 0 6px 6px 0; }
+.rk-event-tab.active { background: var(--lilac-soft, #ede9fe); color: #4c1d95; border-color: var(--lilac-3, #a78bfa); }
+.rk-meta { margin-top: auto; font: 11px var(--font-mono); color: var(--muted); }
+.rk-main { flex: 1; overflow: auto; padding: 16px 20px; }
+.rk-table { width: 100%; border-collapse: collapse; font: 13px var(--font-ui); }
+.rk-table thead th { text-align: left; padding: 10px 12px; font: 600 11.5px var(--font-display); color: var(--muted); text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 1; }
+.rk-table tbody tr { border-bottom: 1px solid var(--line); transition: background .15s, transform .15s; }
+.rk-table tbody tr:hover { background: var(--panel); transform: translateX(2px); }
+.rk-table td { padding: 12px; vertical-align: middle; }
+.rk-col-rank { width: 56px; }
+.rk-col-num { width: 84px; text-align: right; }
+.rk-rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font: 700 12px var(--font-mono); background: var(--panel); color: var(--ink); }
+.rk-team-line { display: flex; align-items: center; gap: 10px; }
+.rk-team-initials { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 28px; padding: 0 8px; background: var(--lilac-soft, #ede9fe); color: #4c1d95; border-radius: 5px; font: 700 11px var(--font-mono); letter-spacing: .5px; }
+.rk-team-text { display: flex; flex-direction: column; line-height: 1.3; }
+.rk-school-name { font: 600 13.5px var(--font-display); color: var(--ink); }
+.rk-debaters { font: 12px var(--font-ui); color: var(--muted); }
+.rk-rating { font: 700 13px var(--font-mono); color: var(--ink); }
+.rk-row-1 { box-shadow: inset 4px 0 0 #d4af37; background: linear-gradient(90deg, rgba(212,175,55,.06), transparent 30%); }
+.rk-row-2 { box-shadow: inset 4px 0 0 #c0c0c0; background: linear-gradient(90deg, rgba(192,192,192,.06), transparent 30%); }
+.rk-row-3 { box-shadow: inset 4px 0 0 #cd7f32; background: linear-gradient(90deg, rgba(205,127,50,.06), transparent 30%); }
+.rk-row-1 .rk-rank-badge { background: #d4af37; color: #fff; }
+.rk-row-2 .rk-rank-badge { background: #c0c0c0; color: #fff; }
+.rk-row-3 .rk-rank-badge { background: #cd7f32; color: #fff; }
+.rk-row-top10 { background: rgba(167,139,250,.04); }
 @media (max-width: 768px) {
-  .rk-stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .rk-topbar { flex-wrap: wrap; gap: 8px; }
-  .rk-topbar-right { margin-left: 0; width: 100%; }
-  .rk-search { width: 100%; min-width: 0; }
+  .rk-shell { flex-direction: column; }
+  .rk-sidebar { width: 100%; flex: 0 0 auto; border-right: 0; border-bottom: 1px solid var(--line); }
+}
+/* ── Global polish ──────────────────────────── */
+:root { --tx-fast: 150ms; --tx-med: 200ms; --easing: cubic-bezier(.4,0,.2,1); }
+.toc-modal-card { transform: scale(.96); opacity: 0; transition: transform var(--tx-med) var(--easing), opacity var(--tx-med) var(--easing); }
+.toc-modal:not(.hidden) .toc-modal-card { transform: scale(1); opacity: 1; }
+.toc-card { transition: transform var(--tx-fast) var(--easing), box-shadow var(--tx-fast) var(--easing), border-color var(--tx-fast) var(--easing); }
+.toc-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.06); }
+.nav-item { transition: background-color var(--tx-fast) var(--easing), color var(--tx-fast) var(--easing); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }
 }
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
@@ -2500,45 +2477,46 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         </div>
       </section>
       <section class="page" id="page-rankings">
-        <div class="rk-shell" id="rk-shell">
-          <div class="rk-topbar">
-            <div class="rk-topbar-left">
-              <label class="rk-muted" for="rk-season">Season</label>
+        <div class="rk-shell">
+          <aside class="rk-sidebar">
+            <input id="rk-search" class="rk-search-input" type="search" placeholder="Search team or school…" aria-label="Search rankings">
+            <div class="rk-control">
+              <label>Event</label>
+              <div class="rk-event-tabs">
+                <button class="rk-event-tab active" data-event="LD">LD</button>
+                <button class="rk-event-tab" data-event="PF">PF</button>
+                <button class="rk-event-tab" data-event="CX">CX</button>
+              </div>
+            </div>
+            <div class="rk-control">
+              <label for="rk-season">Season</label>
               <select id="rk-season" class="rk-select"></select>
             </div>
-            <div class="rk-event-tabs">
-              <button class="rk-event-tab active" data-rk-event="LD">LD</button>
-              <button class="rk-event-tab" data-rk-event="PF">PF</button>
-              <button class="rk-event-tab" data-rk-event="CX">CX</button>
+            <div class="rk-control">
+              <label for="rk-sort">Sort by</label>
+              <select id="rk-sort" class="rk-select">
+                <option value="rating">Rating</option>
+                <option value="wins">Wins</option>
+                <option value="peak">Peak rating</option>
+                <option value="rounds">Rounds played</option>
+              </select>
             </div>
-            <div class="rk-topbar-right">
-              <input class="rk-search" id="rk-search" type="search" placeholder="Search team or school…" autocomplete="off">
-            </div>
-          </div>
-
-          <div class="rk-board" id="rk-board">
-            <div class="rk-skeleton-rows" id="rk-skeleton">
-              <div class="rk-skeleton-row"></div>
-              <div class="rk-skeleton-row"></div>
-              <div class="rk-skeleton-row"></div>
-              <div class="rk-skeleton-row"></div>
-              <div class="rk-skeleton-row"></div>
-            </div>
-          </div>
-
-          <div class="rk-profile hidden" id="rk-profile">
-            <div class="rk-profile-head">
-              <button class="rk-btn-sm" id="rk-back-btn">← Back</button>
-              <h2 id="rk-profile-title" style="margin:0;font:600 16px var(--font-ui)"></h2>
-              <div class="rk-profile-sub" id="rk-profile-sub"></div>
-            </div>
-            <div class="rk-stat-grid" id="rk-stat-grid"></div>
-            <div class="rk-section-title">Rating over Season</div>
-            <div class="rk-chart-wrap" id="rk-chart-wrap"></div>
-            <div class="rk-section-title">Tournaments</div>
-            <div id="rk-tourns"></div>
-            <div id="rk-args-wrap"></div>
-          </div>
+            <div class="rk-meta" id="rk-meta"></div>
+          </aside>
+          <main class="rk-main">
+            <table class="rk-table">
+              <thead>
+                <tr>
+                  <th class="rk-col-rank">#</th>
+                  <th>Team</th>
+                  <th class="rk-col-num">Rating</th>
+                  <th class="rk-col-num">W-L</th>
+                  <th class="rk-col-num">Peak</th>
+                </tr>
+              </thead>
+              <tbody id="rk-rows"></tbody>
+            </table>
+          </main>
         </div>
       </section>
 
