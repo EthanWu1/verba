@@ -254,12 +254,11 @@
 
   function roundLabel(p) {
     if (p.depth) return p.depth;
-    if (p.roundType === 'elim' || p.roundType === 'highlow') {
-      const n = parseInt(p.roundName, 10);
-      return Number.isFinite(n) ? 'Elim ' + n : p.roundName;
-    }
     const n = parseInt(p.roundName, 10);
-    return Number.isFinite(n) ? 'R' + n : p.roundName;
+    if (p.roundType === 'prelim' || p.roundType === 'highlow') {
+      return Number.isFinite(n) ? 'R' + n : p.roundName;
+    }
+    return Number.isFinite(n) ? 'Elim ' + n : p.roundName;
   }
 
   async function showPairings(entryId) {
