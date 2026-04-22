@@ -3,6 +3,7 @@
 const crawler = require('./tocCrawler');
 const db      = require('./tocDb');
 const parser  = require('./tocParser');
+const rankings = require('./rankingsEngine');
 
 const DEBATE_ABBRS = new Set(['LD', 'PF', 'CX']);
 
@@ -26,7 +27,11 @@ async function seedTocIndex() {
         stats.errors++;
       }
     }
-    for (const { season } of db.listSeasons()) db.rebuildSeasonBids(season);
+    for (const { season } of db.listSeasons()) {
+      db.rebuildSeasonBids(season);
+      try { rankings.recomputeRatings(season); }
+      catch (err) { console.error('[rankings] seed recompute failed for', season, '-', err.message); }
+    }
   } finally {
     _seeding = false;
   }
@@ -131,6 +136,8 @@ async function indexTournament(tournId) {
 
   db.setTournamentCrawled(tournId);
   db.rebuildSeasonBids(season);
+  try { rankings.recomputeRatings(season); }
+  catch (err) { console.error('[rankings] recompute failed for', season, '-', err.message); }
 
   return { entries: entryEventMap.size };
 }
