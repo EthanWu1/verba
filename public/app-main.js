@@ -265,6 +265,7 @@
 
   Object.defineProperty(state, 'currentCard', {
     get() { return activeItem() || null; },
+    set(_v) { /* no-op: carousel owns active card; wb-trash calls removeItem instead */ },
     configurable: true
   });
 
@@ -481,37 +482,172 @@
     return out;
   }
 
-  /* Render a mid-stream card with a ghost caret on the last paragraph. */
-  function renderCardGhost(card) {
-    const paneBody = $('#wb-body');
-    if (!paneBody) return;
-    state.currentCard = card;
-    const bodyHtml = markdownCardToHtml(card.body_markdown || '');
-    const withCaret = bodyHtml.replace(/<\/p>\s*$/, '<span class="ghost-caret"></span></p>') || bodyHtml + '<span class="ghost-caret"></span>';
-    paneBody.innerHTML = `
-      <div class="cite-block">
-        <div class="tag" contenteditable="false" data-field="tag">${esc(card.tag || '')}</div>
-        <div class="meta" contenteditable="false" data-field="cite">${esc(card.cite || '')}</div>
-      </div>
-      <div class="body" contenteditable="false" data-field="body">${withCaret}</div>
-    `;
-  }
+  /* renderCardGhost / renderCardInPane — replaced by carousel state in Task 11.
+     Kept as no-ops so legacy callers (evidence open, library open) don't throw.
+     Those callers still work: renderCardInPane is re-mapped below to push a
+     carousel item when called from legacy paths. */
+  function renderCardGhost(_card) { /* no-op: streaming handled via carouselState */ }
 
   function renderCardInPane(card) {
-    const paneBody = $('#wb-body');
-    if (!paneBody) return;
-    state.currentCard = card;
-    paneBody.innerHTML = `
-      <div class="cite-block">
-        <div class="tag" contenteditable="true" data-field="tag">${esc(card.tag || '')}</div>
-        <div class="meta" contenteditable="true" data-field="cite">${esc(card.cite || '')}</div>
-      </div>
-      <div class="body" contenteditable="true" data-field="body">${cardBodyHTML(card)}</div>
-    `;
+    // Legacy callers (ev-open, library open) push card into carousel instead
+    // of mutating #wb-body directly.
+    if (!card) return;
+    const id = card.id || ('legacy_' + Date.now());
+    const existing = carouselState.items.find(i => i.id === id);
+    if (existing) {
+      applyState(Carousel.setActive(carouselState, carouselState.items.indexOf(existing)));
+    } else {
+      applyState(Carousel.pushItem(carouselState, {
+        id,
+        status: 'done',
+        sourceUrl: card.url || null,
+        createdAt: Date.now(),
+        tag: card.tag || '',
+        cite: card.cite || '',
+        body_html: card.body_html || (card.body_markdown ? markdownCardToHtml(card.body_markdown) : ''),
+        body_plain: card.body_plain || card.body || '',
+        body_markdown: card.body_markdown || '',
+      }));
+    }
   }
 
-  // TEMP: rewired in Task 11
-  function startCut(input /*, opts */) { console.warn('startCut not yet wired'); }
+  function startCut(input, opts = {}) {
+    const id = (crypto.randomUUID && crypto.randomUUID()) || ('c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+    const sourceUrl = /^https?:\/\//i.test(input) ? input : null;
+    applyState(Carousel.pushItem(carouselState, {
+      id, status: 'cutting', sourceUrl, createdAt: Date.now(),
+    }));
+    openCutStream({ input, length: currentLength(), density: 'standard' }, id);
+  }
+
+  function currentLength() {
+    const active = document.querySelector('.length-opt.is-active');
+    return active ? active.dataset.length : 'long';
+  }
+
+  function openCutStream(body, id) {
+    const isUrl = /^https?:\/\//i.test(body.input);
+    const params = new URLSearchParams();
+    if (isUrl) {
+      params.set('url', body.input);
+      params.set('argument', body.input); // argument pre-filled for carousel flow
+    } else {
+      params.set('query', body.input);
+      params.set('argument', body.input);
+    }
+    params.set('density', body.density || 'standard');
+    params.set('length', body.length || 'long');
+
+    const es = new EventSource('/api/research-source-stream?' + params.toString());
+    // Track cite from source event for card merge
+    let streamCite = '';
+
+    const watchdog = setTimeout(() => {
+      applyState(Carousel.updateItem(carouselState, id, { status: 'error', error: 'Timed out' }));
+      finishProgress(false);
+      toast({ variant: 'destructive', title: 'Cutter timed out', description: 'Try again', duration: 4000 });
+      try { es.close(); } catch {}
+    }, 100000);
+
+    es.addEventListener('phase', (e) => {
+      try {
+        const p = JSON.parse(e.data);
+        const { text } = describePhase(p);
+        const cur = carouselState.items.find(i => i.id === id);
+        const prev = cur ? (cur.phaseHistory || []) : [];
+        applyState(Carousel.updateItem(carouselState, id, {
+          phase: text,
+          phaseHistory: [...prev.slice(-4), text],
+        }));
+        setProgress(p);
+      } catch {}
+    });
+
+    es.addEventListener('source', (e) => {
+      try {
+        const s = JSON.parse(e.data);
+        streamCite = s.cite || '';
+        if (s.lowConfidence) toast({ variant: 'warning', title: 'Low-confidence match', description: 'Review source carefully', duration: 4000 });
+      } catch {}
+    });
+
+    es.addEventListener('card_delta', (e) => {
+      try {
+        const { acc } = JSON.parse(e.data);
+        const partial = extractPartialCard(acc);
+        if (!partial.body && !partial.tag && !partial.cite) return;
+        applyState(Carousel.updateItem(carouselState, id, {
+          status: 'cutting',
+          tag: partial.tag || '',
+          cite: partial.cite || streamCite || '',
+          body_markdown: partial.body || '',
+          body_html: partial.body ? markdownCardToHtml(partial.body) : '',
+        }));
+      } catch {}
+    });
+
+    es.addEventListener('card', (e) => {
+      try {
+        const c = JSON.parse(e.data);
+        const card = { ...c.card, cite: c.card.cite || streamCite };
+        clearTimeout(watchdog);
+        applyState(Carousel.updateItem(carouselState, id, {
+          status: 'done',
+          tag: card.tag || '',
+          cite: card.cite || '',
+          body_html: card.body_html || (card.body_markdown ? markdownCardToHtml(card.body_markdown) : ''),
+          body_plain: card.body_plain || card.body || '',
+          body_markdown: card.body_markdown || '',
+        }));
+        finishProgress(true);
+        API.mine.save(card).catch(() => {});
+        API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
+        try { window.__refreshUsage?.(); } catch {}
+        if (c.fidelity && c.fidelity.ok === false) {
+          toast({ variant: 'warning', title: 'Fidelity warning', description: `${c.fidelity.missing.length} paraphrased span(s) — review`, duration: 5000 });
+        } else {
+          toast({ variant: 'success', title: 'Card cut', description: card.tag || card.cite || 'Ready in editor', duration: 3200 });
+        }
+      } catch {}
+    });
+
+    es.addEventListener('error', (e) => {
+      clearTimeout(watchdog);
+      try {
+        const d = e.data ? JSON.parse(e.data) : null;
+        if (d?.error) {
+          applyState(Carousel.updateItem(carouselState, id, { status: 'error', error: d.error }));
+          finishProgress(false);
+          toast({ variant: 'destructive', title: 'Cut failed', description: d.error, duration: 5000 });
+        }
+      } catch {}
+    });
+
+    es.addEventListener('done', () => { clearTimeout(watchdog); es.close(); });
+  }
+
+  // Wire cut-input / cut-submit
+  (function wireCutInput() {
+    const cutInput = document.getElementById('cut-input');
+    const cutSubmit = document.getElementById('cut-submit');
+    function trySubmit() {
+      const val = cutInput ? cutInput.value.trim() : '';
+      if (!val) return;
+      cutInput.value = '';
+      startCut(val);
+    }
+    cutSubmit?.addEventListener('click', trySubmit);
+    cutInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); trySubmit(); } });
+
+    // Segmented length control
+    document.querySelectorAll('.length-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.length-opt').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false'); });
+        btn.classList.add('is-active');
+        btn.setAttribute('aria-pressed', 'true');
+      });
+    });
+  })();
 
   function describePhase(p) {
     switch (p.type) {
@@ -2882,6 +3018,27 @@
     if (e.key === 'ArrowLeft')  applyState(Carousel.setActive(carouselState, carouselState.activeIndex - 1));
     if (e.key === 'ArrowRight') applyState(Carousel.setActive(carouselState, carouselState.activeIndex + 1));
   });
+
+  // Task 12 — direction-aware shell transition
+  let lastActiveIndex = -1;
+  const _baseRenderCarousel = renderCarousel;
+  renderCarousel = function () {
+    const stage = document.getElementById('card-stage');
+    if (!stage) return _baseRenderCarousel();
+    const prev = stage.querySelector('.card-shell');
+    const nextIdx = carouselState.activeIndex;
+    if (prev && lastActiveIndex !== nextIdx && carouselState.items.length > 0) {
+      const dir = nextIdx < lastActiveIndex ? 'right' : 'left';
+      prev.classList.add('leaving-' + dir);
+      setTimeout(() => {
+        _baseRenderCarousel();
+        lastActiveIndex = nextIdx;
+      }, 240);
+      return;
+    }
+    _baseRenderCarousel();
+    lastActiveIndex = nextIdx;
+  };
 
   // Task 9 Step 3 — initial render
   renderCarousel();
