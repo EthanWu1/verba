@@ -985,7 +985,11 @@
       const container = range.commonAncestorContainer;
       const node = container.nodeType === 1 ? container : container.parentElement;
       if (!node || !node.closest) return;
-      if (!node.closest('.wb-body, .card-preview, .cite-block, [data-field="body"]')) return;
+      // Widen guard to catch cross-region selections (e.g. cite-block through wb-body) where
+      // commonAncestorContainer resolves to a parent wrapper rather than the content elements.
+      // Mixed-context selections route through card-body branch (flattenInlineStyles); cite prefix
+      // splitting is intentionally skipped for cross-block selections.
+      if (!node.closest('.wb-body, .card-preview, .cite-block, [data-field="body"], #workbench, .pane')) return;
       const { html, plain } = VC.serializeSelectionHtml(range);
       if (!html) return;
       e.clipboardData.setData('text/html', html);

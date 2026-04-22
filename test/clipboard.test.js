@@ -274,3 +274,28 @@ test('flatten: highlight outside underline has no underline style', () => {
   assert.match(out, /background-color:#ffff00/);
   assert.doesNotMatch(out, /text-decoration:underline/);
 });
+
+test('serializeFromString: neutralizes javascript: href', () => {
+  const { html } = serializeSelectionHtmlFromString(
+    '<a href="javascript:alert(1)">click</a>',
+    'card-body'
+  );
+  assert.doesNotMatch(html, /javascript:/i);
+  assert.match(html, /href=/i);
+});
+
+test('serializeFromString: neutralizes data: href', () => {
+  const { html } = serializeSelectionHtmlFromString(
+    '<a href="data:text/html,<script>alert(1)</script>">x</a>',
+    'card-body'
+  );
+  assert.doesNotMatch(html, /data:text\/html/i);
+});
+
+test('serializeFromString: preserves safe http/https href', () => {
+  const { html } = serializeSelectionHtmlFromString(
+    '<a href="https://example.com">x</a>',
+    'card-body'
+  );
+  assert.match(html, /href="https:\/\/example\.com"/);
+});

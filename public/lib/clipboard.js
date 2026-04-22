@@ -76,7 +76,7 @@
   }
 
   function stripDangerousAttrs(html) {
-    return String(html || '')
+    let out = String(html || '')
       .replace(/\s+on[a-z]+\s*=\s*"[^"]*"/gi, '')
       .replace(/\s+on[a-z]+\s*=\s*'[^']*'/gi, '')
       .replace(/\s+class\s*=\s*"[^"]*"/gi, '')
@@ -85,6 +85,12 @@
       .replace(/\s+data-[a-z0-9\-]+\s*=\s*'[^']*'/gi, '')
       .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
       .replace(/<!--[\s\S]*?-->/g, '');
+    // Neutralize dangerous URL schemes in href/src
+    out = out.replace(
+      /(\s(?:href|src)\s*=\s*)(["'])\s*(?:javascript|data|vbscript):[^"']*\2/gi,
+      '$1$2#$2'
+    );
+    return out;
   }
 
   function htmlToPlain(html) {
