@@ -934,14 +934,16 @@
     // Copy button — preserve formatting
     $('#wb-copy')?.addEventListener('click', async () => {
       syncCardFromDom();
-      const c = state.currentCard; if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
-      const bodyHtml = inlineStyleBody(c.body_html || markdownCardToHtml(c.body_markdown || c.body_plain || ''));
-      const buildHtml = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyHtml) || null;
-      const buildPlain = (window.VerbaCopyExport && window.VerbaCopyExport.buildCopyPlain) || null;
-      const plain = buildPlain ? buildPlain(c) : `${c.tag || ''}\n${c.cite || ''}\n\n${c.body_plain || c.body_markdown || ''}`;
-      const html = buildHtml
-        ? buildHtml({ ...c, body_html: bodyHtml })
-        : `<div style="font-family:Calibri,Arial,sans-serif;color:#000"><p style="font-weight:700">${esc(c.tag || '')}</p><p>${esc(c.cite || '')}</p>${bodyHtml}</div>`;
+      const c = state.currentCard;
+      if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
+      const VC = window.VerbaClipboard;
+      if (!VC) { toast('Clipboard module missing'); return; }
+      const card = {
+        ...c,
+        body_html: c.body_html || (c.body_markdown && typeof markdownCardToHtml === 'function' ? markdownCardToHtml(c.body_markdown) : c.body_html)
+      };
+      const html = VC.buildCopyHtml(card);
+      const plain = VC.buildCopyPlain(card);
       try {
         if (window.ClipboardItem && navigator.clipboard?.write) {
           await navigator.clipboard.write([new ClipboardItem({
@@ -951,8 +953,12 @@
         } else {
           await navigator.clipboard.writeText(plain);
         }
-        const b = $('#wb-copy'); if (b) { b.classList.add('copied'); setTimeout(()=>b.classList.remove('copied'), 1400); }
-      } catch (err) { console.error(err); toast('Copy blocked'); }
+        const b = $('#wb-copy');
+        if (b) { b.classList.add('copied'); setTimeout(() => b.classList.remove('copied'), 1400); }
+      } catch (err) {
+        console.error(err);
+        toast('Copy blocked');
+      }
     });
 
     // Add to… button — popover
