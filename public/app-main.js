@@ -242,6 +242,172 @@
      ────────────────────────────────────────── */
   const state = { currentSource: null, currentCard: null, evidenceCards: [], activeType: 'all', evSearch: '', evShown: 50, evFiltered: [], evPage: 1, evSeed: 0, evLoading: false, evDone: false };
 
+  const Carousel = window.VerbaCarousel;
+  if (!Carousel) { console.error('VerbaCarousel not loaded'); return; }
+
+  const LS_KEY = 'verba.cutter.carousel.v1';
+  let carouselState = Carousel.hydrate(localStorage.getItem(LS_KEY));
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(LS_KEY, Carousel.serialize(carouselState)); } catch (_) {}
+    }, 400);
+  }
+  function applyState(next) {
+    carouselState = next;
+    renderCarousel();
+    scheduleSave();
+  }
+  function activeItem() {
+    return carouselState.items[carouselState.activeIndex] || null;
+  }
+
+  Object.defineProperty(state, 'currentCard', {
+    get() { return activeItem() || null; },
+    set(_v) { /* no-op: carousel owns active card; wb-trash calls removeItem instead */ },
+    configurable: true
+  });
+
+  function renderCarousel() {
+    const stage = document.getElementById('card-stage');
+    const empty = document.getElementById('carousel-empty');
+    const prevBtn = document.querySelector('.carousel-prev');
+    const nextBtn = document.querySelector('.carousel-next');
+    const dots = document.getElementById('carousel-dots');
+    if (!stage) return;
+
+    const items = carouselState.items;
+    if (empty) empty.hidden = items.length !== 0;
+    if (prevBtn) prevBtn.hidden = carouselState.activeIndex <= 0;
+    if (nextBtn) nextBtn.hidden = carouselState.activeIndex >= items.length - 1;
+
+    // Dots
+    if (dots) {
+      dots.innerHTML = '';
+      if (items.length > 1) {
+        items.forEach((_, i) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'dot' + (i === carouselState.activeIndex ? ' is-active' : '');
+          b.addEventListener('click', () => applyState(Carousel.setActive(carouselState, i)));
+          dots.appendChild(b);
+        });
+      }
+    }
+
+    // Render active shell only
+    stage.innerHTML = '';
+    const item = items[carouselState.activeIndex];
+    if (!item) return;
+    stage.appendChild(renderCardShell(item));
+  }
+
+  function renderCardShell(item) {
+    const shell = document.createElement('article');
+    shell.className = 'card-shell';
+    shell.dataset.id = item.id;
+
+    // Icon stack
+    const icons = document.createElement('div');
+    icons.className = 'shell-icons';
+    if (item.sourceUrl) {
+      const a = document.createElement('a');
+      a.className = 'shell-icon';
+      a.href = item.sourceUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.title = 'View Source';
+      a.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+      icons.appendChild(a);
+    }
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'shell-icon';
+    copyBtn.title = 'Copy card';
+    copyBtn.id = 'wb-copy';
+    copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    icons.appendChild(copyBtn);
+
+    const trash = document.createElement('button');
+    trash.type = 'button';
+    trash.className = 'shell-icon';
+    trash.title = 'Delete card';
+    trash.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    trash.addEventListener('click', () => handleTrash(item.id));
+    icons.appendChild(trash);
+    shell.appendChild(icons);
+
+    if (item.status === 'cutting') {
+      shell.innerHTML += renderCuttingBody(item);
+    } else if (item.status === 'error') {
+      shell.innerHTML += renderErrorBody(item);
+    } else {
+      shell.appendChild(renderEditorBody(item));
+    }
+    return shell;
+  }
+
+  function renderCuttingBody(item) {
+    const pct = Math.min(95, (item.phaseHistory.length / 5) * 100);
+    const logLines = item.phaseHistory.slice(-5).map((p, i, arr) => {
+      const cls = i === arr.length - 1 ? 'current' : '';
+      return `<div class="${cls}">${i === arr.length - 1 ? '→' : '✓'} ${escapeHtml(p)}</div>`;
+    }).join('');
+    return `
+      <div class="cut-progress"><div class="cut-progress-bar" style="width:${pct}%"></div></div>
+      <div style="font:500 12px var(--font-display,system-ui);color:#6b7280;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:16px">Cutting · stage ${item.phaseHistory.length} of 5</div>
+      <div class="cut-log">${logLines}</div>
+    `;
+  }
+
+  function renderErrorBody(item) {
+    return `<div style="padding:24px 0;color:#b91c1c;font:500 14px var(--font-display,system-ui)">${escapeHtml(item.error || 'Cut failed')}</div>`;
+  }
+
+  function renderEditorBody(item) {
+    const holder = document.createElement('div');
+    holder.innerHTML = `
+      <div class="tag" contenteditable="true" data-field="tag">${escapeHtml(item.tag || '')}</div>
+      <div class="cite-block"><div class="meta" contenteditable="true" data-field="cite">${escapeHtml(item.cite || '')}</div></div>
+      <div class="body" contenteditable="true" data-field="body">${item.body_html || '<p><br></p>'}</div>
+    `;
+    return holder;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function handleTrash(id) {
+    const item = carouselState.items.find(i => i.id === id);
+    if (!item) return;
+    const prevIndex = carouselState.items.findIndex(i => i.id === id);
+    applyState(Carousel.removeItem(carouselState, id));
+    if (item.id && window.API && API.mine && typeof API.mine.remove === 'function') {
+      API.mine.remove(item.id).catch(() => {});
+    }
+    showUndoToast(item, prevIndex);
+  }
+
+  function showUndoToast(item, prevIndex) {
+    const el = document.createElement('div');
+    el.className = 'toast-undo';
+    el.innerHTML = 'Card removed <button>Undo</button>';
+    el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0d0d12;color:#fff;padding:10px 16px;border-radius:10px;display:flex;gap:12px;align-items:center;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.25);font:500 13px var(--font-display,system-ui)';
+    document.body.appendChild(el);
+    const remove = () => el.remove();
+    const t = setTimeout(remove, 4000);
+    el.querySelector('button').addEventListener('click', () => {
+      clearTimeout(t);
+      const items = carouselState.items.slice();
+      items.splice(Math.min(prevIndex, items.length), 0, item);
+      applyState({ items, activeIndex: prevIndex });
+      remove();
+    });
+  }
+
   function filterEvidenceClient(cards, q) {
     const needle = String(q || '').trim().toLowerCase();
     if (!needle) return cards.slice();
@@ -323,78 +489,172 @@
     return out;
   }
 
-  /* Render a mid-stream card with a ghost caret on the last paragraph. */
-  function renderCardGhost(card) {
-    const paneBody = $('#wb-body');
-    if (!paneBody) return;
-    state.currentCard = card;
-    const bodyHtml = markdownCardToHtml(card.body_markdown || '');
-    const withCaret = bodyHtml.replace(/<\/p>\s*$/, '<span class="ghost-caret"></span></p>') || bodyHtml + '<span class="ghost-caret"></span>';
-    paneBody.innerHTML = `
-      <div class="cite-block">
-        <div class="tag" contenteditable="false" data-field="tag">${esc(card.tag || '')}</div>
-        <div class="meta" contenteditable="false" data-field="cite">${esc(card.cite || '')}</div>
-      </div>
-      <div class="body" contenteditable="false" data-field="body">${withCaret}</div>
-    `;
-  }
+  /* renderCardGhost / renderCardInPane — replaced by carousel state in Task 11.
+     Kept as no-ops so legacy callers (evidence open, library open) don't throw.
+     Those callers still work: renderCardInPane is re-mapped below to push a
+     carousel item when called from legacy paths. */
+  function renderCardGhost(_card) { /* no-op: streaming handled via carouselState */ }
 
   function renderCardInPane(card) {
-    const paneBody = $('#wb-body');
-    if (!paneBody) return;
-    state.currentCard = card;
-    paneBody.innerHTML = `
-      <div class="cite-block">
-        <div class="tag" contenteditable="true" data-field="tag">${esc(card.tag || '')}</div>
-        <div class="meta" contenteditable="true" data-field="cite">${esc(card.cite || '')}</div>
-      </div>
-      <div class="body" contenteditable="true" data-field="body">${cardBodyHTML(card)}</div>
-    `;
-  }
-
-  function renderSourceInPane(article) {
-    const body = $('#pane-source .pane-body');
-    const titleEl = $('#pane-source .pane-title');
-    if (!body) return;
-    state.currentSource = article;
-    if (titleEl) titleEl.innerHTML = `<span class="pip"></span>Source · ${esc(article.source || article.url || 'Pasted text')}`;
-    const head = article.author || article.date ? `<p class="shrink">${esc(article.author || '')}${article.date ? ' · ' + esc(article.date) : ''}</p>` : '';
-    const paragraphs = Array.isArray(article.paragraphs) && article.paragraphs.length
-      ? article.paragraphs
-      : String(article.bodyText || '').split(/\n\n+/).map((t, i) => ({ text: t, anchor: `p-${i}` }));
-    const paras = paragraphs.slice(0, 120).map((p) => {
-      if (p.isFigure || p.text === '[FIGURE OMITTED]') {
-        return `<p class="figure-omitted" id="${esc(p.anchor || '')}">[FIGURE OMITTED]</p>`;
-      }
-      return `<p id="${esc(p.anchor || '')}">${esc(p.text)}</p>`;
-    }).join('');
-    body.innerHTML = head + paras;
-  }
-
-  /* ── Queue manager: multi-job research with live phase updates and switchable chips ── */
-  const QUEUE_MAX_CHIPS = 6;
-  const queues = []; // { id, label, mode, input, chip, article, card, phaseLog, status, es }
-
-  function renderPhaseLog(job) {
-    const body = $('#pane-source .pane-body');
-    const titleEl = $('#pane-source .pane-title');
-    if (!body) return;
-    if (titleEl) titleEl.innerHTML = `<span class="pip"></span>Source · ${esc(job.label)}`;
-    const rows = job.phaseLog.slice(-200).map((p) => {
-      const cls = p.level === 'err' ? 'phase-err' : p.level === 'ok' ? 'phase-ok' : 'phase-run';
-      return `<div class="phase-row ${cls}">${esc(p.text)}</div>`;
-    }).join('');
-    const hint = job.status !== 'done' && job.status !== 'error'
-      ? '<div class="phase-row phase-run" style="opacity:.7;margin-top:6px">live — updating as sources return</div>'
-      : '';
-    let log = body.querySelector('.phase-log');
-    if (!log) {
-      body.innerHTML = `<div class="phase-log"></div>`;
-      log = body.querySelector('.phase-log');
+    // Legacy callers (ev-open, library open) push card into carousel instead
+    // of mutating #wb-body directly.
+    if (!card) return;
+    const id = card.id || ('legacy_' + Date.now());
+    const existing = carouselState.items.find(i => i.id === id);
+    if (existing) {
+      applyState(Carousel.setActive(carouselState, carouselState.items.indexOf(existing)));
+    } else {
+      applyState(Carousel.pushItem(carouselState, {
+        id,
+        status: 'done',
+        sourceUrl: card.url || null,
+        createdAt: Date.now(),
+        tag: card.tag || '',
+        cite: card.cite || '',
+        body_html: card.body_html || (card.body_markdown ? markdownCardToHtml(card.body_markdown) : ''),
+        body_plain: card.body_plain || card.body || '',
+        body_markdown: card.body_markdown || '',
+      }));
     }
-    log.innerHTML = rows + hint;
-    log.scrollTop = log.scrollHeight;
   }
+
+  function startCut(input, opts = {}) {
+    const id = (crypto.randomUUID && crypto.randomUUID()) || ('c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+    const sourceUrl = /^https?:\/\//i.test(input) ? input : null;
+    applyState(Carousel.pushItem(carouselState, {
+      id, status: 'cutting', sourceUrl, createdAt: Date.now(),
+    }));
+    openCutStream({ input, length: currentLength(), density: 'standard' }, id);
+  }
+
+  function currentLength() {
+    const active = document.querySelector('.length-opt.is-active');
+    return active ? active.dataset.length : 'long';
+  }
+
+  function openCutStream(body, id) {
+    const isUrl = /^https?:\/\//i.test(body.input);
+    const params = new URLSearchParams();
+    if (isUrl) {
+      params.set('url', body.input);
+      params.set('argument', body.input); // argument pre-filled for carousel flow
+    } else {
+      params.set('query', body.input);
+      params.set('argument', body.input);
+    }
+    params.set('density', body.density || 'standard');
+    params.set('length', body.length || 'long');
+
+    const es = new EventSource('/api/research-source-stream?' + params.toString());
+    // Track cite from source event for card merge
+    let streamCite = '';
+
+    const watchdog = setTimeout(() => {
+      applyState(Carousel.updateItem(carouselState, id, { status: 'error', error: 'Timed out' }));
+      finishProgress(false);
+      toast({ variant: 'destructive', title: 'Cutter timed out', description: 'Try again', duration: 4000 });
+      try { es.close(); } catch {}
+    }, 100000);
+
+    es.addEventListener('phase', (e) => {
+      try {
+        const p = JSON.parse(e.data);
+        const { text } = describePhase(p);
+        const cur = carouselState.items.find(i => i.id === id);
+        const prev = cur ? (cur.phaseHistory || []) : [];
+        applyState(Carousel.updateItem(carouselState, id, {
+          phase: text,
+          phaseHistory: [...prev.slice(-4), text],
+        }));
+        setProgress(p);
+      } catch {}
+    });
+
+    es.addEventListener('source', (e) => {
+      try {
+        const s = JSON.parse(e.data);
+        streamCite = s.cite || '';
+        if (s.lowConfidence) toast({ variant: 'warning', title: 'Low-confidence match', description: 'Review source carefully', duration: 4000 });
+      } catch {}
+    });
+
+    es.addEventListener('card_delta', (e) => {
+      try {
+        const { acc } = JSON.parse(e.data);
+        const partial = extractPartialCard(acc);
+        if (!partial.body && !partial.tag && !partial.cite) return;
+        applyState(Carousel.updateItem(carouselState, id, {
+          status: 'cutting',
+          tag: partial.tag || '',
+          cite: partial.cite || streamCite || '',
+          body_markdown: partial.body || '',
+          body_html: partial.body ? markdownCardToHtml(partial.body) : '',
+        }));
+      } catch {}
+    });
+
+    es.addEventListener('card', (e) => {
+      try {
+        const c = JSON.parse(e.data);
+        const card = { ...c.card, cite: c.card.cite || streamCite };
+        clearTimeout(watchdog);
+        applyState(Carousel.updateItem(carouselState, id, {
+          status: 'done',
+          tag: card.tag || '',
+          cite: card.cite || '',
+          body_html: card.body_html || (card.body_markdown ? markdownCardToHtml(card.body_markdown) : ''),
+          body_plain: card.body_plain || card.body || '',
+          body_markdown: card.body_markdown || '',
+        }));
+        finishProgress(true);
+        API.mine.save(card).catch(() => {});
+        API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
+        try { window.__refreshUsage?.(); } catch {}
+        if (c.fidelity && c.fidelity.ok === false) {
+          toast({ variant: 'warning', title: 'Fidelity warning', description: `${c.fidelity.missing.length} paraphrased span(s) — review`, duration: 5000 });
+        } else {
+          toast({ variant: 'success', title: 'Card cut', description: card.tag || card.cite || 'Ready in editor', duration: 3200 });
+        }
+      } catch {}
+    });
+
+    es.addEventListener('error', (e) => {
+      clearTimeout(watchdog);
+      try {
+        const d = e.data ? JSON.parse(e.data) : null;
+        if (d?.error) {
+          applyState(Carousel.updateItem(carouselState, id, { status: 'error', error: d.error }));
+          finishProgress(false);
+          toast({ variant: 'destructive', title: 'Cut failed', description: d.error, duration: 5000 });
+        }
+      } catch {}
+    });
+
+    es.addEventListener('done', () => { clearTimeout(watchdog); es.close(); });
+  }
+
+  // Wire cut-input / cut-submit
+  (function wireCutInput() {
+    const cutInput = document.getElementById('cut-input');
+    const cutSubmit = document.getElementById('cut-submit');
+    function trySubmit() {
+      const val = cutInput ? cutInput.value.trim() : '';
+      if (!val) return;
+      cutInput.value = '';
+      startCut(val);
+    }
+    cutSubmit?.addEventListener('click', trySubmit);
+    cutInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); trySubmit(); } });
+
+    // Segmented length control
+    document.querySelectorAll('.length-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.length-opt').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false'); });
+        btn.classList.add('is-active');
+        btn.setAttribute('aria-pressed', 'true');
+      });
+    });
+  })();
 
   function describePhase(p) {
     switch (p.type) {
@@ -417,58 +677,8 @@
     }
   }
 
-  function activateJob(job) {
-    queues.forEach((j) => j.chip?.classList.toggle('active', j === job));
-    if (job.card) renderCardInPane(job.card);
-    if (job.article) renderSourceInPane(job.article);
-    else renderPhaseLog(job);
-  }
-
   function updateChipLabel(job) {
-    if (!job.chip) return;
-    job.chip._gen = (job.chip._gen || 0) + 1;
-    const icon = job.status === 'done' ? '✓ ' : job.status === 'error' ? '✗ ' : '● ';
-    job.chip.textContent = icon + job.label;
-    job.chip.className = 'stage-chip stage-' + job.status + (queues.find((j) => j.chip?.classList.contains('active')) === job ? ' active' : '');
-  }
-
-  function trimChipOverflow() {
-    const stg = $('#staging'); if (!stg) return;
-    while (queues.length > QUEUE_MAX_CHIPS) {
-      // Evict oldest terminal (done/error) chip. If none, evict oldest.
-      let evictIdx = queues.findIndex((j) => j.status === 'done' || j.status === 'error');
-      if (evictIdx < 0) evictIdx = 0;
-      const [victim] = queues.splice(evictIdx, 1);
-      victim.es?.close?.();
-      victim.chip?.remove();
-    }
-  }
-
-  function createJob(input) {
-    const isUrl = /^https?:\/\//i.test(input);
-    const mode = isUrl ? 'url' : 'query';
-    const label = mode === 'url' ? new URL(input).hostname : input.slice(0, 40);
-    const chip = document.createElement('span');
-    chip.className = 'stage-chip stage-pending';
-    chip.title = 'Click to switch to this job';
-    const stg = $('#staging');
-    if (stg) stg.appendChild(chip);
-    const job = { id: Math.random().toString(36).slice(2, 9), label, mode, input, chip, article: null, card: null, phaseLog: [], status: 'pending', es: null };
-    queues.push(job);
-    trimChipOverflow();
-    chip.addEventListener('click', () => activateJob(job));
-    updateChipLabel(job);
-    const xBtn = document.createElement('button');
-    xBtn.className = 'chip-x';
-    xBtn.innerHTML = '&times;';
-    xBtn.title = 'Dismiss';
-    xBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      chip.classList.add('dismissing');
-      setTimeout(() => chip.remove(), 200);
-    });
-    chip.appendChild(xBtn);
-    return job;
+    // no-op: chip UI removed; kept so SSE event handlers don't throw
   }
 
   /* Map SSE phase → chip status + typewriter label. */
@@ -502,15 +712,8 @@
     job.phaseLog.push({ text, level });
     const phaseMap = PHASE_CHIP_MAP[p.type];
     if (phaseMap && job.status !== 'done' && job.status !== 'error') {
-      if (job.status !== phaseMap.status) {
-        job.status = phaseMap.status;
-        job.chip.className = 'stage-chip stage-' + phaseMap.status
-          + (queues.find((j) => j.chip?.classList.contains('active')) === job ? ' active' : '');
-      }
-      typewriteChip(job.chip, '● ', phaseMap.label);
+      job.status = phaseMap.status;
     }
-    const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || queues[queues.length - 1];
-    if (activeJob === job && !job.article) renderPhaseLog(job);
     setProgress(p);
   }
 
@@ -604,9 +807,8 @@
       const argument = await askArgument(val);
       if (!argument) return;
 
-      const job = createJob(val);
-      job.mode = 'url';
-      activateJob(job);
+      startCut(val);
+      const job = { id: Math.random().toString(36).slice(2, 9), label: new URL(val).hostname, mode: 'url', input: val, article: null, card: null, phaseLog: [], status: 'pending', es: null };
       pushPhase(job, { type: 'mode', mode: 'url', url: val, query: argument });
 
       const params = new URLSearchParams();
@@ -665,7 +867,6 @@
     // Attached file: content already scraped on upload — render preview, clear attachment
     if (attached && !val) {
       if (input) input.value = '';
-      renderSourceInPane({ source: attached.filename, bodyText: attached.preview || '', paragraphs: [] });
       window.__verbaAttachedFile = null;
       renderAttachTray();
       return;
@@ -675,8 +876,8 @@
     if (input) input.value = '';
 
     const jobLabel = attached ? attached.filename : val;
-    const job = createJob(jobLabel);
-    activateJob(job);
+    startCut(jobLabel);
+    const job = { id: Math.random().toString(36).slice(2, 9), label: jobLabel.slice(0, 40), mode: attached ? 'file' : 'query', input: jobLabel, article: null, card: null, phaseLog: [], status: 'pending', es: null };
     pushPhase(job, { type: 'mode', mode: attached ? 'file' : job.mode, query: val, url: val });
 
     const params = new URLSearchParams();
@@ -714,8 +915,6 @@
         job.article = article;
         job.cite = s.cite;
         job.lowConfidence = s.lowConfidence;
-        const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
-        if (activeJob === job) renderSourceInPane(article);
         if (s.lowConfidence) toast({ variant: 'warning', title: 'Low-confidence match', description: 'Review source carefully', duration: 4000 });
       } catch {}
     });
@@ -725,8 +924,7 @@
         const partial = extractPartialCard(acc);
         if (!partial.body && !partial.tag && !partial.cite) return;
         const ghost = { tag: partial.tag, cite: partial.cite, body_markdown: partial.body, body_html: '' };
-        const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
-        if (activeJob === job) renderCardGhost(ghost);
+        renderCardGhost(ghost);
       } catch {}
     });
     es.addEventListener('card', (e) => {
@@ -738,8 +936,7 @@
         job.label = (card.tag || job.label).slice(0, 48);
         updateChipLabel(job);
         finishProgress(true);
-        const activeJob = queues.find((j) => j.chip?.classList.contains('active')) || job;
-        if (activeJob === job) renderCardInPane(card);
+        renderCardInPane(card);
         API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
         try { window.__refreshUsage?.(); } catch {}
         if (c.fidelity && c.fidelity.ok === false) {
@@ -766,19 +963,24 @@
     es.addEventListener('done', () => { clearTimeout(watchdog); es.close(); });
   }
 
-  function syncCardFromDom() {
-    const tagEl = $('#wb-body [data-field="tag"]');
-    const citeEl = $('#wb-body [data-field="cite"]');
-    const bodyEl = $('#wb-body [data-field="body"]');
-    if (!tagEl && !bodyEl) return;
-    state.currentCard = state.currentCard || {};
-    if (tagEl) state.currentCard.tag = tagEl.textContent.trim();
-    if (citeEl) state.currentCard.cite = citeEl.textContent.trim();
+  function syncActiveFromDom() {
+    const shell = document.querySelector('.card-shell');
+    if (!shell) return;
+    const item = activeItem();
+    if (!item) return;
+    const tagEl = shell.querySelector('[data-field="tag"]');
+    const citeEl = shell.querySelector('[data-field="cite"]');
+    const bodyEl = shell.querySelector('[data-field="body"]');
+    const patch = {};
+    if (tagEl) patch.tag = tagEl.textContent.trim();
+    if (citeEl) patch.cite = citeEl.textContent.trim();
     if (bodyEl) {
-      state.currentCard.body_html = bodyEl.innerHTML;
-      state.currentCard.body_plain = bodyEl.textContent;
+      patch.body_html = bodyEl.innerHTML;
+      patch.body_plain = bodyEl.textContent;
     }
+    applyState(Carousel.updateItem(carouselState, item.id, patch));
   }
+  function syncCardFromDom() { syncActiveFromDom(); }
 
   function normalizeUnderlineTags(root) {
     if (!root || !root.querySelectorAll) return;
@@ -916,13 +1118,8 @@
       });
     }
 
-    // Seed state from static demo DOM
-    syncCardFromDom();
-    const wbBody = $('#wb-body');
-    if (wbBody) wbBody.addEventListener('input', (evt) => {
-      syncCardFromDom();
-      normalizeUnderlineTags(evt.currentTarget);
-    });
+    // Seed state from static demo DOM (no-op now — carousel owns the editor state)
+    // #wb-body input handler replaced by document-level delegation in Task 10
 
     // Formatting toolbar — Underline/Bold native toggle, Highlight latched mode
     let highlightMode = false;
@@ -1005,35 +1202,7 @@
       }
     });
 
-    // Copy button — preserve formatting
-    $('#wb-copy')?.addEventListener('click', async () => {
-      syncCardFromDom();
-      const c = state.currentCard;
-      if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
-      const VC = window.VerbaClipboard;
-      if (!VC) { toast('Clipboard module missing'); return; }
-      const card = {
-        ...c,
-        body_html: c.body_html || (c.body_markdown && typeof markdownCardToHtml === 'function' ? markdownCardToHtml(c.body_markdown) : c.body_html)
-      };
-      const html = VC.buildCopyHtml(card);
-      const plain = VC.buildCopyPlain(card);
-      try {
-        if (window.ClipboardItem && navigator.clipboard?.write) {
-          await navigator.clipboard.write([new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([plain], { type: 'text/plain' }),
-          })]);
-        } else {
-          await navigator.clipboard.writeText(plain);
-        }
-        const b = $('#wb-copy');
-        if (b) { b.classList.add('copied'); setTimeout(() => b.classList.remove('copied'), 1400); }
-      } catch (err) {
-        console.error(err);
-        toast('Copy blocked');
-      }
-    });
+    // Copy button — handled by event delegation at document level (button lives inside card-shell)
 
     // Native Ctrl+C / Cmd+C — route through same serializer as copy button
     document.addEventListener('copy', (e) => {
@@ -1066,24 +1235,6 @@
       openAddToPopover($('#wb-addto'), state.currentCard);
     });
 
-    // Source close — trigger expand animation
-    const srcClose = $('#source-close'), wb = $('#workbench'),
-          srcHandle = $('#source-handle'), srcReopen = $('#source-reopen');
-    function updateSourceReopen() {
-      if (srcReopen) srcReopen.style.display = wb?.classList.contains('source-hidden') ? 'inline-flex' : 'none';
-    }
-    function showSource() { wb?.classList.remove('source-hidden'); updateSourceReopen(); }
-    function hideSource() {
-      wb?.classList.add('source-hidden');
-      const card = wb?.querySelector('.pane:not(.source)');
-      if (card) { card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; }
-      updateSourceReopen();
-    }
-    srcClose?.addEventListener('click', hideSource);
-    srcHandle?.addEventListener('click', showSource);
-    srcReopen?.addEventListener('click', showSource);
-    updateSourceReopen();
-
     // Trashcan — clear card + source, reset state
     $('#wb-trash')?.addEventListener('click', () => {
       state.currentCard = null;
@@ -1095,10 +1246,6 @@
           <div class="meta" contenteditable="true" data-field="cite" data-placeholder="Cite will appear here"></div>
         </div>
         <div class="body" contenteditable="true" data-field="body" data-placeholder="Body will appear here after a cut."><p><br></p></div>`;
-      const src = $('#pane-source .pane-body');
-      if (src) src.innerHTML = '<p class="shrink" style="color:var(--muted)">No source loaded. Paste a URL above to scrape, or submit a query to research.</p>';
-      const title = $('#pane-source .pane-title');
-      if (title) title.innerHTML = '<span class="pip"></span>Source';
       toast({ title: 'Cleared', variant: 'success', duration: 1800 });
     });
 
@@ -2859,6 +3006,111 @@
     });
     window.__verba.toggleSidebar = flip;
   })();
+
+  // Task 9 Step 2 — carousel navigation handlers
+  const _prevBtn = document.querySelector('.carousel-prev');
+  const _nextBtn = document.querySelector('.carousel-next');
+  if (_prevBtn) _prevBtn.addEventListener('click', () => {
+    applyState(Carousel.setActive(carouselState, carouselState.activeIndex - 1));
+  });
+  if (_nextBtn) _nextBtn.addEventListener('click', () => {
+    applyState(Carousel.setActive(carouselState, carouselState.activeIndex + 1));
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const ae = document.activeElement;
+    if (!ae) return;
+    const tag = ae.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || ae.isContentEditable) return;
+    if (e.key === 'ArrowLeft')  applyState(Carousel.setActive(carouselState, carouselState.activeIndex - 1));
+    if (e.key === 'ArrowRight') applyState(Carousel.setActive(carouselState, carouselState.activeIndex + 1));
+  });
+
+  // Task 12 — direction-aware shell transition
+  let lastActiveIndex = -1;
+  const _baseRenderCarousel = renderCarousel;
+  renderCarousel = function () {
+    const stage = document.getElementById('card-stage');
+    if (!stage) return _baseRenderCarousel();
+    const prev = stage.querySelector('.card-shell');
+    const nextIdx = carouselState.activeIndex;
+    if (prev && lastActiveIndex !== nextIdx && carouselState.items.length > 0) {
+      const dir = nextIdx < lastActiveIndex ? 'right' : 'left';
+      prev.classList.add('leaving-' + dir);
+      setTimeout(() => {
+        _baseRenderCarousel();
+        lastActiveIndex = nextIdx;
+      }, 240);
+      return;
+    }
+    _baseRenderCarousel();
+    lastActiveIndex = nextIdx;
+  };
+
+  // Task 9 Step 3 — initial render
+  renderCarousel();
+
+  // Task 10 Step 4 — copy button via event delegation (button lives inside card-shell)
+  document.addEventListener('click', async (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('#wb-copy');
+    if (!btn) return;
+    syncActiveFromDom();
+    const c = activeItem();
+    if (!c || (!c.tag && !c.body_html)) { toast('Nothing to copy'); return; }
+    const VC = window.VerbaClipboard;
+    if (!VC) { toast('Clipboard module missing'); return; }
+    const card = { ...c, body_html: c.body_html || (c.body_markdown && typeof markdownCardToHtml === 'function' ? markdownCardToHtml(c.body_markdown) : c.body_html) };
+    const html = VC.buildCopyHtml(card);
+    const plain = VC.buildCopyPlain(card);
+    try {
+      if (window.ClipboardItem && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plain], { type: 'text/plain' }),
+        })]);
+      } else {
+        await navigator.clipboard.writeText(plain);
+      }
+      btn.classList.add('copied'); setTimeout(() => btn.classList.remove('copied'), 1400);
+    } catch (err) { console.error(err); toast('Copy blocked'); }
+  });
+
+  // Task 10 Step 5 — editor input delegation
+  document.addEventListener('input', (e) => {
+    if (e.target && e.target.closest && e.target.closest('.card-shell [data-field]')) {
+      syncActiveFromDom();
+      if (typeof normalizeUnderlineTags === 'function') normalizeUnderlineTags(e.target);
+    }
+  });
+
+  // Task 14 — PDF drop on input pill
+  const pill = document.querySelector('.cut-input-pill');
+  if (pill) {
+    pill.addEventListener('dragover', (e) => { e.preventDefault(); pill.classList.add('is-drop'); });
+    pill.addEventListener('dragleave', () => pill.classList.remove('is-drop'));
+    pill.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      pill.classList.remove('is-drop');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file || !/\.pdf$/i.test(file.name)) return;
+      // Try existing helper first
+      if (typeof uploadPdfAndCut === 'function') {
+        uploadPdfAndCut(file);
+        return;
+      }
+      // Fallback: POST to /api/scrape/file (field: file) — returns { token, filename, title, cite, chars, preview }
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/scrape/file', { method: 'POST', body: fd, credentials: 'include' });
+        if (!res.ok) throw new Error('upload failed');
+        const data = await res.json();
+        if (data && data.token) startCut(data.title || file.name);
+        else toast('PDF extracted but empty');
+      } catch (err) { console.error(err); toast('PDF upload failed'); }
+    });
+  }
+
 })();
 
 // Mobile drawer toggle

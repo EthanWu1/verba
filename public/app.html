@@ -306,31 +306,12 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 }
 .research-bar .plus:hover{color:var(--ink);border-color:var(--lilac-3);background:var(--lilac-soft)}
 
-/* Staging chips (4px rounded) */
-.staging{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:22px;max-width:820px;margin-left:auto;margin-right:auto}
-.stage-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font:500 11.5px/1 var(--font-display);border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:opacity .18s,transform .18s}
-.stage-chip.dismissing{opacity:0;transform:scale(.92)}
-.stage-chip.stage-pending{background:#fffbeb;border-color:#fde68a;color:#92400e}
-.stage-chip.stage-pending::before{content:'';width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.2s infinite}
-.stage-chip.stage-done{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
-.stage-chip.stage-error{background:#fef2f2;border-color:#fecaca;color:#991b1b}
-.stage-chip.stage-running{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
-.stage-chip.stage-running::before{content:'';width:8px;height:8px;border-radius:50%;background:#3b82f6;animation:pulse 1.2s infinite}
-.stage-chip.active{box-shadow:0 0 0 2px rgba(59,130,246,.45);transform:translateY(-1px)}
-.stage-chip .chip-x{display:none;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,.08);color:inherit;font-size:10px;line-height:1;margin-left:2px;cursor:pointer;flex:0 0 auto;border:none;padding:0}
-.stage-chip:hover .chip-x{display:inline-flex}
-.stage-chip .chip-x:hover{background:rgba(0,0,0,.18)}
 .cutter-progress{margin-top:8px;width:100%;font-family:var(--font-mono);font-size:11px;color:#000}
 .cutter-progress-label{margin-bottom:4px;letter-spacing:0.02em;opacity:.7}
 .cutter-progress-track{height:2px;background:#eee;border-radius:1px;overflow:hidden;width:100%}
 .cutter-progress-fill{height:100%;width:0;background:#000;border-radius:1px;transition:width .4s cubic-bezier(.4,0,.2,1)}
 .cutter-progress.err .cutter-progress-fill{background:#d32f2f}
 .cutter-progress.done .cutter-progress-fill{background:#2e7d32}
-.phase-log{font:11px/1.45 var(--font-mono);color:var(--ink);white-space:pre-wrap;max-height:140px;overflow-y:auto;padding:6px 10px;border:1px solid var(--line);border-radius:5px;background:#fafafa;scroll-behavior:smooth}
-.phase-log .phase-row{padding:2px 0}
-.phase-log .phase-ok{color:#065f46}
-.phase-log .phase-err{color:#991b1b}
-.phase-log .phase-run{color:#1d4ed8}
 .pane-fmt-tools{display:inline-flex;gap:4px;align-items:center;margin-left:10px;padding:2px 4px;border-left:1px solid var(--line)}
 .pane-foot-tools{flex:0 0 auto;display:flex;gap:2px;align-items:center;justify-content:flex-start;padding:6px 14px 0;border-top:1px solid var(--line-soft);background:#fafafa;position:sticky;bottom:0}
 .pane-foot-tools{background:linear-gradient(180deg,#fafafa,#f5f5f5)}
@@ -398,48 +379,7 @@ body.highlight-mode #wb-body .body{caret-color:#eab308}
 .section-head .hint{color:var(--muted);font-size:12px;font-family:var(--font-display)}
 
 /* Workbench */
-.workbench{
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;
-  min-height:420px;
-  height:calc(100vh - 180px);
-  max-height:calc(100vh - 160px);
-  transition:grid-template-columns .45s cubic-bezier(.22,.8,.3,1), gap .45s cubic-bezier(.22,.8,.3,1);
-  position:relative;
-}
-.workbench .pane{min-height:0;max-height:100%}
-.workbench .pane .pane-body{min-height:0;max-height:100%}
-.workbench .pane.source{
-  transition:opacity .22s ease, transform .45s cubic-bezier(.22,.8,.3,1);
-  transform-origin:left center;min-width:0;
-}
-.workbench .pane:not(.source){
-  transition:transform .45s cubic-bezier(.22,.8,.3,1);
-}
-.workbench.source-hidden{grid-template-columns:0fr minmax(0,1fr);gap:0}
-.workbench.source-hidden .pane.source{
-  opacity:0;transform:scale(.96) translateX(-12px);pointer-events:none;overflow:hidden;
-}
-.workbench.source-hidden .pane:not(.source){
-  animation: cardExpand .42s cubic-bezier(.22,.8,.3,1);
-}
-@keyframes cardExpand{
-  0%{transform:scale(.985)}
-  55%{transform:scale(1.015)}
-  100%{transform:scale(1)}
-}
-/* Nondescript reopen handle — a slim vertical tab on the left edge */
-.source-handle{
-  position:absolute;top:50%;left:-2px;transform:translateY(-50%) scaleX(0);transform-origin:left center;
-  width:14px;height:56px;border-radius:0 6px 6px 0;
-  background:var(--panel-2);border:1px solid var(--line);border-left:0;
-  display:grid;place-items:center;color:var(--muted);cursor:pointer;z-index:4;
-  transition:transform .35s cubic-bezier(.22,.8,.3,1) .15s, background .14s, color .14s, width .14s;
-  box-shadow:var(--shadow-sm);
-}
-.source-handle:hover{background:#fff;color:var(--ink);width:18px}
-.source-handle svg{width:10px;height:10px;stroke-width:1.8;opacity:.75}
-.workbench.source-hidden .source-handle{transform:translateY(-50%) scaleX(1)}
-.source-reopen{display:none;align-items:center;gap:5px}
+.workbench{position:relative;}
 .pane-close{width:24px;height:24px;border-radius:5px;display:grid;place-items:center;color:var(--muted);border:1px solid transparent;cursor:pointer}
 .pane-close:hover{background:var(--panel);color:var(--danger);border-color:var(--line)}
 .pane{
@@ -1240,7 +1180,7 @@ p.figure-omitted{display:block;text-align:center}
 .addto-pop.open,.proj-menu.open{opacity:1;transform:translateY(0)}
 
 /* Button click micro-animation */
-.btn:active,.pane-action-btn:active,.tool-btn:active,.stage-chip:active,
+.btn:active,.pane-action-btn:active,.tool-btn:active,
 .proj-item:active,.mycard .export-btn:active,#wb-addto:active,#wb-copy:active,
 .addto-row:active,.proj-menu-btn:active,.ap-send:active,.assistant-btn:active{
   transform:scale(.96);transition:transform .09s ease;
@@ -1661,13 +1601,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .font-cards,.hl-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pay-tier-row,.ap-suggestions{grid-template-columns:1fr}
 
-  .source-handle,.source-reopen{display:none}
-
-  .filter-row,.staging,.check-row,.nx-pinned{
+  .filter-row,.check-row,.nx-pinned{
     flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
     padding-bottom:6px;
   }
-  .filter-row > *,.staging > *,.check-row > *,.nx-pinned > *{flex:0 0 auto}
+  .filter-row > *,.check-row > *,.nx-pinned > *{flex:0 0 auto}
 
   .hist-row{
     grid-template-columns:auto 1fr !important;
@@ -2120,6 +2058,53 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }
 }
+
+.cutter-strip{display:flex;gap:12px;align-items:center;padding:14px 22px;background:linear-gradient(180deg,#fafafa,#f1f2f6);border-bottom:1px solid #e5e5e5}
+.length-seg{display:inline-flex;padding:3px;background:#eef0f4;border:1px solid #e1e3eb;border-radius:999px}
+.length-opt{border:0;background:transparent;padding:5px 14px;font:600 11.5px var(--font-display,system-ui);color:#6b7280;border-radius:999px;cursor:pointer}
+.length-opt.is-active{background:#0d0d12;color:#fff}
+
+.cut-input-pill{flex:1;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 18px;background:#fff;border:1px solid #dcdfe6;border-radius:999px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.03)}
+.pill-icon{color:#9ca3af;flex-shrink:0}
+#cut-input{flex:1;border:0;outline:0;font:400 14px var(--font-display,system-ui);background:transparent;color:#111}
+#cut-submit{width:34px;height:34px;border-radius:50%;background:#0d0d12;color:#fff;border:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.18);cursor:pointer;flex-shrink:0}
+#cut-submit:disabled{opacity:0.5;cursor:not-allowed}
+
+.card-carousel{position:relative;background:linear-gradient(180deg,#fff,#f5f5f7);padding:44px 0 36px;min-height:560px}
+.card-stage{max-width:1100px;margin:0 auto;padding:0 56px;position:relative}
+.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e2e2e2;display:flex;align-items:center;justify-content:center;color:#888;font-size:16px;cursor:pointer;z-index:2}
+.carousel-prev{left:12px}
+.carousel-next{right:12px}
+.carousel-nav[hidden]{display:none}
+
+.carousel-dots{display:flex;justify-content:center;gap:6px;margin-top:20px}
+.dot{width:8px;height:8px;border-radius:50%;background:#ccc;border:0;padding:0;cursor:pointer}
+.dot.is-active{background:#0d0d12}
+
+.carousel-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;font:500 14px var(--font-display,system-ui);pointer-events:none}
+
+.card-shell{background:#fff;border:1px solid #ececec;border-radius:18px;box-shadow:0 20px 60px rgba(15,20,40,0.08);padding:40px 48px;min-height:480px;position:relative;opacity:1;transform:translateX(0) scale(1);transition:transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease}
+.card-shell.leaving-left{transform:translateX(-40px) scale(0.96);opacity:0}
+.card-shell.leaving-right{transform:translateX( 40px) scale(0.96);opacity:0}
+.card-shell .shell-icons{position:absolute;top:18px;right:18px;display:flex;gap:8px}
+.card-shell .shell-icon{width:34px;height:34px;border-radius:8px;background:#fafafa;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;color:#4b5563;text-decoration:none;cursor:pointer}
+.card-shell .shell-icon[hidden]{display:none}
+.card-shell .cut-progress{height:4px;background:#eee;border-radius:2px;overflow:hidden;margin-bottom:24px}
+.card-shell .cut-progress-bar{height:100%;background:linear-gradient(90deg,#3b7cff,#9333ea);border-radius:2px;width:0;transition:width 260ms ease}
+.card-shell .cut-log{background:#0d0d12;border-radius:10px;padding:14px 18px;font:400 12px ui-monospace,Consolas,monospace;color:#b9bfd0;line-height:1.7}
+.card-shell .cut-log .current{color:#6ee7b7}
+.card-shell .cut-log .pending{opacity:0.4}
+
+@media (max-width:768px){
+  .card-stage{padding:0 44px}
+  .cutter-strip{flex-wrap:wrap;gap:8px}
+  .length-seg{order:2;margin-left:auto}
+  .cut-input-pill{order:1;min-width:100%}
+  .card-shell{padding:28px 20px;min-height:380px}
+}
+.toast-undo button { background: rgba(255,255,255,0.15); color: #fff; border: 0; padding: 4px 10px; border-radius: 6px; font: 600 12px var(--font-display, system-ui); cursor: pointer; }
+.toast-undo button:hover { background: rgba(255,255,255,0.25); }
+.cut-input-pill.is-drop { box-shadow: 0 0 0 3px rgba(59,124,255,0.25), inset 0 1px 2px rgba(0,0,0,0.03); }
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
 </head>
@@ -2234,10 +2219,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
       <div class="crumb">
         <span class="muted">Workspace</span><span class="sep">/</span><span id="crumb-page">Cutter</span>
       </div>
-      <button class="btn btn-sm source-reopen" id="source-reopen" style="display:none">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"></path></svg>
-        Show source
-      </button>
       <button class="btn btn-sm assistant-btn" id="assistant-btn" style="margin-left:auto">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Assistant
@@ -2267,29 +2248,41 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
           </div>
         </div>
 
-        <div class="staging" id="staging"></div>
         <div id="cutter-progress" class="cutter-progress" hidden>
           <div class="cutter-progress-label">Idle</div>
           <div class="cutter-progress-track"><div class="cutter-progress-fill"></div></div>
         </div>
 
         <div class="workbench" id="workbench">
-          <button class="source-handle" id="source-handle" title="Show source" aria-label="Show source">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 6l6 6-6 6"/></svg>
-          </button>
-          <!-- SOURCE -->
-          <div class="pane source" id="pane-source">
-            <div class="pane-head">
-              <div class="pane-title"><span class="pip"></span>Source</div>
-              <div class="pane-actions">
-                <button class="icon-btn" id="source-open-original" title="Open original"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"></path><path d="M15 3h6v6M10 14L21 3"></path></svg></button>
-                <button class="pane-close" id="source-close" title="Hide source"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
-              </div>
-            </div>
-            <div class="pane-body doc">
-              <p class="shrink" style="color:var(--muted)">No source loaded. Paste a URL above to scrape, or submit a query to research.</p>
-            </div>
-          </div>
+          <header class="cutter-strip">
+  <div class="length-seg" role="radiogroup" aria-label="Card length">
+    <button type="button" class="length-opt" data-length="short" aria-pressed="false">S</button>
+    <button type="button" class="length-opt" data-length="medium" aria-pressed="false">M</button>
+    <button type="button" class="length-opt is-active" data-length="long" aria-pressed="true">L</button>
+  </div>
+
+  <label class="cut-input-pill">
+    <svg class="pill-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/>
+    </svg>
+    <input id="cut-input" type="text" placeholder="Paste URL or drop a PDF to cut from…" autocomplete="off">
+    <button id="cut-submit" type="button" aria-label="Cut">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="19" x2="12" y2="5"/>
+        <polyline points="5 12 12 5 19 12"/>
+      </svg>
+    </button>
+  </label>
+</header>
+
+<section class="card-carousel" aria-label="Cut cards">
+  <button class="carousel-nav carousel-prev" aria-label="Previous card" type="button">‹</button>
+  <div id="card-stage" class="card-stage"></div>
+  <button class="carousel-nav carousel-next" aria-label="Next card" type="button">›</button>
+  <div id="carousel-dots" class="carousel-dots" aria-hidden="true"></div>
+  <div id="carousel-empty" class="carousel-empty" hidden>No cards yet — paste a URL or drop a PDF above.</div>
+</section>
 
           <!-- CARD -->
           <div class="pane" id="card-pane">
@@ -2780,12 +2773,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
     });
     updateSummary();
   }
-  // Source pane close/reopen — card expands to fill space, small edge handle to bring source back
-  const srcClose=document.getElementById('source-close'), srcReopen=document.getElementById('source-reopen'), srcHandle=document.getElementById('source-handle');
-  const wb=document.getElementById('workbench');
-  if(srcClose&&wb){srcClose.addEventListener('click',()=>{wb.classList.add('source-hidden')})}
-  if(srcHandle&&wb){srcHandle.addEventListener('click',()=>{wb.classList.remove('source-hidden')})}
-  if(srcReopen){srcReopen.style.display='none'}
   const cardDel=document.getElementById('card-delete');
   if(cardDel){cardDel.addEventListener('click',()=>{if(confirm('Delete this generated card?'))showToast('Card deleted')})}
 
@@ -3063,6 +3050,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 <script src="lib/wordSnap.js?v=20260422b"></script>
 <script src="lib/cmdPalette.js?v=20260422b" defer></script>
 <script src="app-main.search.js?v=20260422b"></script>
+<script src="lib/carousel.js"></script>
 <script src="app-main.js?v=20260422b"></script>
 <script src="/toc.js"></script>
 <script src="/rankings.js"></script>
