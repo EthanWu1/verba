@@ -16,8 +16,32 @@
     if (!prefix) return { prefix: '', rest: s };
     return { prefix, rest: s.slice(prefix.length) };
   }
+  function normalizeSpanStyles(html) {
+    // Convert span-based inline formatting into semantic tags so the walker
+    // picks them up. Handles styles copied from Word/Docs or previous pastes
+    // where underline/bold/highlight were stored as styled spans.
+    let s = String(html == null ? '' : html);
+    // underline spans
+    s = s.replace(
+      /<span([^>]*)\sstyle=("[^"]*"|'[^']*')([^>]*)>([\s\S]*?)<\/span>/gi,
+      (full, pre, rawStyle, post, inner) => {
+        const style = rawStyle.slice(1, -1);
+        const underline = /text-decoration\s*:\s*[^;"']*underline/i.test(style);
+        const bold = /font-weight\s*:\s*(?:bold|700|800|900)/i.test(style);
+        const highlight = /(?:background(?:-color)?\s*:\s*(?:#?[fF][fF][fF]?[fF]00|#?[fF][fF][eE][bB]3[bB]|yellow|#?[fF][fF][fF][0-9a-fA-F]{3}))/i.test(style);
+        if (!underline && !bold && !highlight) return full;
+        let wrapped = inner;
+        if (underline) wrapped = `<u>${wrapped}</u>`;
+        if (bold) wrapped = `<b>${wrapped}</b>`;
+        if (highlight) wrapped = `<mark>${wrapped}</mark>`;
+        return wrapped;
+      }
+    );
+    return s;
+  }
+
   function flattenInlineStyles(html) {
-    const src = String(html == null ? '' : html);
+    const src = normalizeSpanStyles(String(html == null ? '' : html));
     const FMT_TAGS = /^(u|b|strong|mark)$/i;
     const stack = [];
     let out = '';
@@ -32,10 +56,12 @@
         else if (t === 'b' || t === 'strong') bold = true;
         else if (t === 'mark') highlight = true;
       }
+      // Word paste filter: preserves <u>, <b> reliably; strips <mark> on some versions.
+      // Use tags for u/b, span-with-background for highlight.
       let open = '', close = '';
       if (underline) { open += '<u style="text-decoration:underline">'; close = '</u>' + close; }
       if (bold) { open += '<b style="font-weight:700">'; close = '</b>' + close; }
-      if (highlight) { open += '<mark style="background-color:#ffff00;color:#000">'; close = '</mark>' + close; }
+      if (highlight) { open += '<span style="background-color:#ffff00;color:#000">'; close = '</span>' + close; }
       out += open + text + close;
     }
 

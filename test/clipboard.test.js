@@ -100,9 +100,9 @@ test('flatten: wraps <b> in tag with inline bold style', () => {
   assert.match(out, /<b style="font-weight:700">bold<\/b>/);
 });
 
-test('flatten: wraps <mark> in tag with inline yellow background', () => {
+test('flatten: wraps <mark> in span with inline yellow background (Word compat)', () => {
   const out = flattenInlineStyles('<mark>hi</mark>');
-  assert.match(out, /<mark style="[^"]*background-color:#ffff00[^"]*">hi<\/mark>/);
+  assert.match(out, /<span style="[^"]*background-color:#ffff00[^"]*">hi<\/span>/);
 });
 
 test('flatten: nested <b><u>x</u></b> emits nested u>b tags', () => {
@@ -110,9 +110,9 @@ test('flatten: nested <b><u>x</u></b> emits nested u>b tags', () => {
   assert.match(out, /<u[^>]*><b[^>]*>x<\/b><\/u>/);
 });
 
-test('flatten: nested <u><b><mark>x</mark></b></u> emits all three tags', () => {
+test('flatten: nested <u><b><mark>x</mark></b></u> emits u+b tags + highlight span', () => {
   const out = flattenInlineStyles('<u><b><mark>x</mark></b></u>');
-  assert.match(out, /<u[^>]*><b[^>]*><mark[^>]*>x<\/mark><\/b><\/u>/);
+  assert.match(out, /<u[^>]*><b[^>]*><span[^>]*background-color:#ffff00[^>]*>x<\/span><\/b><\/u>/);
 });
 
 test('flatten: preserves non-format tags like <p>', () => {
@@ -288,6 +288,21 @@ test('serializeFromString: preserves safe http/https href', () => {
     'card-body'
   );
   assert.match(html, /href="https:\/\/example\.com"/);
+});
+
+test('flatten: converts span with text-decoration:underline to <u> semantics', () => {
+  const out = flattenInlineStyles('<span style="text-decoration:underline">hi</span>');
+  assert.match(out, /<u[^>]*>hi<\/u>/);
+});
+
+test('flatten: converts span with font-weight:bold to <b> semantics', () => {
+  const out = flattenInlineStyles('<span style="font-weight:bold">hi</span>');
+  assert.match(out, /<b[^>]*>hi<\/b>/);
+});
+
+test('flatten: converts span with yellow background to highlight', () => {
+  const out = flattenInlineStyles('<span style="background-color:#FFEB3B">hi</span>');
+  assert.match(out, /background-color:#ffff00/);
 });
 
 test('extract prefix: straight apostrophe year', () => {

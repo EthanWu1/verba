@@ -989,7 +989,7 @@
       // commonAncestorContainer resolves to a parent wrapper rather than the content elements.
       // Mixed-context selections route through card-body branch (flattenInlineStyles); cite prefix
       // splitting is intentionally skipped for cross-block selections.
-      const cardScope = node.closest('#workbench, .wb-body, .card-preview, .cite-block, [data-field="body"], [data-field="tag"], [data-field="cite"], [contenteditable="true"], .pane, .card');
+      const cardScope = node.closest('#workbench, .wb-body, .card-preview, .cite-block, [data-field="body"], [data-field="tag"], [data-field="cite"], [contenteditable="true"], .pane, .pane-body, .card, .doc, .ev-body-render, .card-body');
       console.log('[clipboard] copy fired; node=', node.tagName, node.className || '(no class)', 'scope=', cardScope?.tagName || 'null');
       if (!cardScope) return;
       const { html, plain } = VC.serializeSelectionHtml(range);
