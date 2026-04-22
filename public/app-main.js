@@ -502,8 +502,7 @@
   }
 
   function currentLength() {
-    const active = document.querySelector('.length-opt.is-active');
-    return active ? active.dataset.length : 'long';
+    return (window.TWEAKS && window.TWEAKS.cutterLength) || 'long';
   }
 
   function openCutStream(body, id) {
