@@ -270,19 +270,31 @@
   });
 
   function renderCarousel() {
-    const stage = document.getElementById('card-stage');
+    const wbBody = document.getElementById('wb-body');
     const empty = document.getElementById('carousel-empty');
     const prevBtn = document.querySelector('.carousel-prev');
     const nextBtn = document.querySelector('.carousel-next');
     const dots = document.getElementById('carousel-dots');
-    if (!stage) return;
+    const sourceLink = document.getElementById('wb-source-link');
+    if (!wbBody) return;
 
     const items = carouselState.items;
+    const item = items[carouselState.activeIndex];
+
     if (empty) empty.hidden = items.length !== 0;
+    if (wbBody) wbBody.hidden = items.length === 0;
     if (prevBtn) prevBtn.hidden = carouselState.activeIndex <= 0;
     if (nextBtn) nextBtn.hidden = carouselState.activeIndex >= items.length - 1;
 
-    // Dots
+    if (sourceLink) {
+      if (item && item.sourceUrl) {
+        sourceLink.href = item.sourceUrl;
+        sourceLink.hidden = false;
+      } else {
+        sourceLink.hidden = true;
+      }
+    }
+
     if (dots) {
       dots.innerHTML = '';
       if (items.length > 1) {
@@ -296,56 +308,18 @@
       }
     }
 
-    // Render active shell only
-    stage.innerHTML = '';
-    const item = items[carouselState.activeIndex];
-    if (!item) return;
-    stage.appendChild(renderCardShell(item));
-  }
-
-  function renderCardShell(item) {
-    const shell = document.createElement('article');
-    shell.className = 'card-shell';
-    shell.dataset.id = item.id;
-
-    // Icon stack
-    const icons = document.createElement('div');
-    icons.className = 'shell-icons';
-    if (item.sourceUrl) {
-      const a = document.createElement('a');
-      a.className = 'shell-icon';
-      a.href = item.sourceUrl;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.title = 'View Source';
-      a.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
-      icons.appendChild(a);
+    if (!item) {
+      wbBody.innerHTML = '';
+      return;
     }
-    const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.className = 'shell-icon';
-    copyBtn.title = 'Copy card';
-    copyBtn.id = 'wb-copy';
-    copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
-    icons.appendChild(copyBtn);
-
-    const trash = document.createElement('button');
-    trash.type = 'button';
-    trash.className = 'shell-icon';
-    trash.title = 'Delete card';
-    trash.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
-    trash.addEventListener('click', () => handleTrash(item.id));
-    icons.appendChild(trash);
-    shell.appendChild(icons);
 
     if (item.status === 'cutting') {
-      shell.innerHTML += renderCuttingBody(item);
+      wbBody.innerHTML = renderCuttingBody(item);
     } else if (item.status === 'error') {
-      shell.innerHTML += renderErrorBody(item);
+      wbBody.innerHTML = renderErrorBody(item);
     } else {
-      shell.appendChild(renderEditorBody(item));
+      wbBody.innerHTML = renderEditorBody(item);
     }
-    return shell;
   }
 
   function renderCuttingBody(item) {
@@ -356,23 +330,23 @@
     }).join('');
     return `
       <div class="cut-progress"><div class="cut-progress-bar" style="width:${pct}%"></div></div>
-      <div style="font:500 12px var(--font-display,system-ui);color:#6b7280;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:16px">Cutting · stage ${item.phaseHistory.length} of 5</div>
-      <div class="cut-log">${logLines}</div>
+      <div class="cut-status">Cutting · stage ${item.phaseHistory.length} of 5</div>
+      <div class="cut-log">${logLines || '<div class="pending">○ starting…</div>'}</div>
     `;
   }
 
   function renderErrorBody(item) {
-    return `<div style="padding:24px 0;color:#b91c1c;font:500 14px var(--font-display,system-ui)">${escapeHtml(item.error || 'Cut failed')}</div>`;
+    return `<div class="cut-error">${escapeHtml(item.error || 'Cut failed')}</div>`;
   }
 
   function renderEditorBody(item) {
-    const holder = document.createElement('div');
-    holder.innerHTML = `
-      <div class="tag" contenteditable="true" data-field="tag">${escapeHtml(item.tag || '')}</div>
-      <div class="cite-block"><div class="meta" contenteditable="true" data-field="cite">${escapeHtml(item.cite || '')}</div></div>
-      <div class="body" contenteditable="true" data-field="body">${item.body_html || '<p><br></p>'}</div>
+    return `
+      <div class="cite-block">
+        <div class="tag" contenteditable="true" data-field="tag" data-placeholder="Tag will appear here after you cut a card">${escapeHtml(item.tag || '')}</div>
+        <div class="meta" contenteditable="true" data-field="cite" data-placeholder="Cite will appear here">${escapeHtml(item.cite || '')}</div>
+      </div>
+      <div class="body" contenteditable="true" data-field="body" data-placeholder="Body will appear here after a cut. You can edit inline, then Copy or Add to a project.">${item.body_html || '<p><br></p>'}</div>
     `;
-    return holder;
   }
 
   function escapeHtml(s) {
@@ -633,28 +607,7 @@
     es.addEventListener('done', () => { clearTimeout(watchdog); es.close(); });
   }
 
-  // Wire cut-input / cut-submit
-  (function wireCutInput() {
-    const cutInput = document.getElementById('cut-input');
-    const cutSubmit = document.getElementById('cut-submit');
-    function trySubmit() {
-      const val = cutInput ? cutInput.value.trim() : '';
-      if (!val) return;
-      cutInput.value = '';
-      startCut(val);
-    }
-    cutSubmit?.addEventListener('click', trySubmit);
-    cutInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); trySubmit(); } });
-
-    // Segmented length control
-    document.querySelectorAll('.length-opt').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.length-opt').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false'); });
-        btn.classList.add('is-active');
-        btn.setAttribute('aria-pressed', 'true');
-      });
-    });
-  })();
+  // (cutter-strip removed — #zone-enter is the only input; length defaults to 'long')
 
   function describePhase(p) {
     switch (p.type) {
@@ -791,180 +744,25 @@
     const val = (input?.value || '').trim();
     const attached = window.__verbaAttachedFile || null;
     if (!val && !attached) { toast('Paste a URL, type an argument, or attach a file'); return; }
-
-    // URL: scrape, then ask for argument and cut card
-    if (/^https?:\/\//i.test(val)) {
-      if (input) input.value = '';
-      toast('Loading source…');
-      let scraped = null;
-      try {
-        scraped = await window.VerbaAPI.scrape(val);
-        renderSourceInPane({ ...scraped, paragraphs: [] });
-      } catch (err) {
-        toast({ variant: 'destructive', title: 'Scrape failed', description: err.message || String(err), duration: 4000 });
-        return;
-      }
-      const argument = await askArgument(val);
-      if (!argument) return;
-
-      startCut(val);
-      const job = { id: Math.random().toString(36).slice(2, 9), label: new URL(val).hostname, mode: 'url', input: val, article: null, card: null, phaseLog: [], status: 'pending', es: null };
-      pushPhase(job, { type: 'mode', mode: 'url', url: val, query: argument });
-
-      const params = new URLSearchParams();
-      params.set('url', val);
-      params.set('argument', argument);
-      params.set('density', TWEAKS.cutterDensity || 'standard');
-      params.set('length', TWEAKS.cutterLength || 'medium');
-
-      const es = new EventSource('/api/research-source-stream?' + params.toString());
-      job.es = es;
-
-      const watchdog = setTimeout(() => {
-        if (job.status === 'pending' || job.status === 'running') {
-          job.status = 'error';
-          job.label = 'Timed out';
-          updateChipLabel(job);
-          toast({ variant: 'destructive', title: 'Cutter timed out', description: 'Try again', duration: 4000 });
-          try { es.close(); } catch {}
-        }
-      }, 100000);
-
-      es.addEventListener('phase', (e) => {
-        try { pushPhase(job, JSON.parse(e.data)); } catch {}
-      });
-      es.addEventListener('article', (e) => {
-        try {
-          const article = JSON.parse(e.data);
-          job.article = article;
-          if (activeJob === job) renderSourceInPane(article);
-        } catch {}
-      });
-      es.addEventListener('card', (e) => {
-        try {
-          const card = JSON.parse(e.data);
-          job.card = card;
-          if (activeJob === job) renderCardInPane(card);
-        } catch {}
-      });
-      es.addEventListener('done', () => {
-        clearTimeout(watchdog);
-        job.status = 'done';
-        updateChipLabel(job);
-        try { es.close(); } catch {}
-      });
-      es.addEventListener('error', () => {
-        clearTimeout(watchdog);
-        if (job.status !== 'done') {
-          job.status = 'error';
-          updateChipLabel(job);
-        }
-        try { es.close(); } catch {}
-      });
-      return;
-    }
-
-    // Attached file: content already scraped on upload — render preview, clear attachment
-    if (attached && !val) {
-      if (input) input.value = '';
-      window.__verbaAttachedFile = null;
-      renderAttachTray();
-      return;
-    }
-
-    let argument = val;
     if (input) input.value = '';
-
-    const jobLabel = attached ? attached.filename : val;
-    startCut(jobLabel);
-    const job = { id: Math.random().toString(36).slice(2, 9), label: jobLabel.slice(0, 40), mode: attached ? 'file' : 'query', input: jobLabel, article: null, card: null, phaseLog: [], status: 'pending', es: null };
-    pushPhase(job, { type: 'mode', mode: attached ? 'file' : job.mode, query: val, url: val });
-
-    const params = new URLSearchParams();
     if (attached) {
-      params.set('fileToken', attached.token);
-      params.set('argument', argument);
-    } else {
-      params.set('query', val); params.set('argument', argument);
+      try {
+        const fd = new FormData();
+        fd.append('file', attached);
+        const res = await fetch('/api/scrape/file', { method: 'POST', body: fd, credentials: 'include' });
+        if (!res.ok) throw new Error('upload failed');
+        const data = await res.json();
+        window.__verbaAttachedFile = null;
+        if (typeof renderAttachTray === 'function') renderAttachTray();
+        startCut(data.title || attached.name);
+      } catch (err) { console.error(err); toast({ variant: 'destructive', title: 'Upload failed', description: err.message || String(err), duration: 4000 }); }
+      return;
     }
-    params.set('density', TWEAKS.cutterDensity || 'standard');
-    params.set('length', TWEAKS.cutterLength || 'medium');
-    // Clear the attachment once submitted (token consumed)
-    if (attached) { window.__verbaAttachedFile = null; renderAttachTray(); }
-
-    const es = new EventSource('/api/research-source-stream?' + params.toString());
-    job.es = es;
-
-    const watchdog = setTimeout(() => {
-      if (job.status === 'pending' || job.status === 'running') {
-        job.status = 'error';
-        job.label = 'Timed out';
-        updateChipLabel(job);
-        toast({ variant: 'destructive', title: 'Cutter timed out', description: 'Try again', duration: 4000 });
-        try { es.close(); } catch {}
-      }
-    }, 100000);
-
-    es.addEventListener('phase', (e) => {
-      try { pushPhase(job, JSON.parse(e.data)); } catch {}
-    });
-    es.addEventListener('source', (e) => {
-      try {
-        const s = JSON.parse(e.data);
-        const article = { ...s.article, paragraphs: s.paragraphs || s.article.paragraphs || [] };
-        job.article = article;
-        job.cite = s.cite;
-        job.lowConfidence = s.lowConfidence;
-        if (s.lowConfidence) toast({ variant: 'warning', title: 'Low-confidence match', description: 'Review source carefully', duration: 4000 });
-      } catch {}
-    });
-    es.addEventListener('card_delta', (e) => {
-      try {
-        const { acc } = JSON.parse(e.data);
-        const partial = extractPartialCard(acc);
-        if (!partial.body && !partial.tag && !partial.cite) return;
-        const ghost = { tag: partial.tag, cite: partial.cite, body_markdown: partial.body, body_html: '' };
-        renderCardGhost(ghost);
-      } catch {}
-    });
-    es.addEventListener('card', (e) => {
-      try {
-        const c = JSON.parse(e.data);
-        const card = { ...c.card, cite: c.card.cite || job.cite };
-        job.card = card;
-        job.status = 'done';
-        job.label = (card.tag || job.label).slice(0, 48);
-        updateChipLabel(job);
-        finishProgress(true);
-        renderCardInPane(card);
-        API.history.push({ type: 'cut', tag: card.tag, cite: card.cite, model: c.model }).catch(() => {});
-        try { window.__refreshUsage?.(); } catch {}
-        if (c.fidelity && c.fidelity.ok === false) {
-          toast({ variant: 'warning', title: 'Fidelity warning', description: `${c.fidelity.missing.length} paraphrased span(s) — review`, duration: 5000 });
-        } else {
-          toast({ variant: 'success', title: 'Card cut', description: card.tag || card.cite || 'Ready in editor', duration: 3200 });
-        }
-      } catch {}
-    });
-    es.addEventListener('error', (e) => {
-      clearTimeout(watchdog);
-      // Only mark error if the stream itself ends with one
-      try {
-        const d = e.data ? JSON.parse(e.data) : null;
-        if (d?.error) {
-          job.status = 'error';
-          job.label = d.error.slice(0, 56);
-          updateChipLabel(job);
-          finishProgress(false);
-          toast({ variant: 'destructive', title: 'Cut failed', description: d.error, duration: 5000 });
-        }
-      } catch {}
-    });
-    es.addEventListener('done', () => { clearTimeout(watchdog); es.close(); });
+    startCut(val);
   }
 
   function syncActiveFromDom() {
-    const shell = document.querySelector('.card-shell');
+    const shell = document.getElementById('wb-body');
     if (!shell) return;
     const item = activeItem();
     if (!item) return;
@@ -3026,21 +2824,21 @@
     if (e.key === 'ArrowRight') applyState(Carousel.setActive(carouselState, carouselState.activeIndex + 1));
   });
 
-  // Task 12 — direction-aware shell transition
+  // Direction-aware transition on #wb-body
   let lastActiveIndex = -1;
   const _baseRenderCarousel = renderCarousel;
   renderCarousel = function () {
-    const stage = document.getElementById('card-stage');
-    if (!stage) return _baseRenderCarousel();
-    const prev = stage.querySelector('.card-shell');
+    const wbBody = document.getElementById('wb-body');
+    if (!wbBody) return _baseRenderCarousel();
     const nextIdx = carouselState.activeIndex;
-    if (prev && lastActiveIndex !== nextIdx && carouselState.items.length > 0) {
+    if (lastActiveIndex !== -1 && lastActiveIndex !== nextIdx && carouselState.items.length > 0) {
       const dir = nextIdx < lastActiveIndex ? 'right' : 'left';
-      prev.classList.add('leaving-' + dir);
+      wbBody.classList.add('leaving-' + dir);
       setTimeout(() => {
+        wbBody.classList.remove('leaving-left', 'leaving-right');
         _baseRenderCarousel();
         lastActiveIndex = nextIdx;
-      }, 240);
+      }, 220);
       return;
     }
     _baseRenderCarousel();
@@ -3075,30 +2873,25 @@
     } catch (err) { console.error(err); toast('Copy blocked'); }
   });
 
-  // Task 10 Step 5 — editor input delegation
+  // Editor input delegation — syncs active carousel item
   document.addEventListener('input', (e) => {
-    if (e.target && e.target.closest && e.target.closest('.card-shell [data-field]')) {
+    if (e.target && e.target.closest && e.target.closest('#wb-body [data-field]')) {
       syncActiveFromDom();
       if (typeof normalizeUnderlineTags === 'function') normalizeUnderlineTags(e.target);
     }
   });
 
-  // Task 14 — PDF drop on input pill
-  const pill = document.querySelector('.cut-input-pill');
-  if (pill) {
-    pill.addEventListener('dragover', (e) => { e.preventDefault(); pill.classList.add('is-drop'); });
-    pill.addEventListener('dragleave', () => pill.classList.remove('is-drop'));
-    pill.addEventListener('drop', async (e) => {
+  // PDF drop on research-bar
+  const bar = document.querySelector('.research-bar');
+  if (bar) {
+    bar.addEventListener('dragover', (e) => { e.preventDefault(); bar.classList.add('is-drop'); });
+    bar.addEventListener('dragleave', () => bar.classList.remove('is-drop'));
+    bar.addEventListener('drop', async (e) => {
       e.preventDefault();
-      pill.classList.remove('is-drop');
+      bar.classList.remove('is-drop');
       const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
       if (!file || !/\.pdf$/i.test(file.name)) return;
-      // Try existing helper first
-      if (typeof uploadPdfAndCut === 'function') {
-        uploadPdfAndCut(file);
-        return;
-      }
-      // Fallback: POST to /api/scrape/file (field: file) — returns { token, filename, title, cite, chars, preview }
+      if (typeof uploadPdfAndCut === 'function') { uploadPdfAndCut(file); return; }
       try {
         const fd = new FormData();
         fd.append('file', file);
