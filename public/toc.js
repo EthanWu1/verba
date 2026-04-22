@@ -135,7 +135,7 @@
   function renderThreats(rows, abbr) {
     if (!rows.length) return '<div class="toc-muted">No entries in this event yet.</div>';
     const body = rows.map((r, i) => {
-      const wikiAttr = r.wikiTeamId ? `href="#teams?team=${encodeURIComponent(r.wikiTeamId)}" class="toc-link"` : 'class="toc-link disabled"';
+      const wikiAttr = r.wikiTeamId ? `href="${esc('#teams?team=' + encodeURIComponent(r.wikiTeamId))}" class="toc-link"` : 'class="toc-link disabled"';
       return `<tr data-entry="${r.entryId}">
         <td>${i + 1}</td>
         <td><strong>${esc(r.displayName)}</strong></td>
