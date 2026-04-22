@@ -9,7 +9,13 @@
     );
     return m ? m[1] : null;
   }
-  function splitCite() { return { prefix: '', rest: '' }; }
+  function splitCite(cite) {
+    const s = String(cite == null ? '' : cite);
+    if (!s) return { prefix: '', rest: '' };
+    const prefix = extractAuthorYearPrefix(s);
+    if (!prefix) return { prefix: '', rest: s };
+    return { prefix, rest: s.slice(prefix.length) };
+  }
   function flattenInlineStyles(html) { return String(html || ''); }
   function buildCopyHtml() { return ''; }
   function buildCopyPlain() { return ''; }

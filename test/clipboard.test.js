@@ -62,3 +62,28 @@ test('extract prefix: returns null for empty string', () => {
   assert.equal(extractAuthorYearPrefix(null), null);
   assert.equal(extractAuthorYearPrefix(undefined), null);
 });
+
+const { splitCite } = clipboard;
+
+test('splitCite: splits prefix and rest', () => {
+  const r = splitCite('Smith 24, Professor of Law, 2024');
+  assert.equal(r.prefix, 'Smith 24');
+  assert.equal(r.rest, ', Professor of Law, 2024');
+});
+
+test('splitCite: multi-author prefix', () => {
+  const r = splitCite('Van Dyke and Smith 2024, report');
+  assert.equal(r.prefix, 'Van Dyke and Smith 2024');
+  assert.equal(r.rest, ', report');
+});
+
+test('splitCite: no prefix match returns full string as rest', () => {
+  const r = splitCite('not a valid cite');
+  assert.equal(r.prefix, '');
+  assert.equal(r.rest, 'not a valid cite');
+});
+
+test('splitCite: empty / null input', () => {
+  assert.deepEqual(splitCite(''), { prefix: '', rest: '' });
+  assert.deepEqual(splitCite(null), { prefix: '', rest: '' });
+});
