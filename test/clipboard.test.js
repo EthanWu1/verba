@@ -87,3 +87,48 @@ test('splitCite: empty / null input', () => {
   assert.deepEqual(splitCite(''), { prefix: '', rest: '' });
   assert.deepEqual(splitCite(null), { prefix: '', rest: '' });
 });
+
+const { flattenInlineStyles } = clipboard;
+
+test('flatten: wraps <u> text in span with text-decoration', () => {
+  const out = flattenInlineStyles('<u>under</u>');
+  assert.match(out, /<span style="[^"]*text-decoration:underline[^"]*">under<\/span>/);
+});
+
+test('flatten: wraps <b> in span with font-weight:700', () => {
+  const out = flattenInlineStyles('<b>bold</b>');
+  assert.match(out, /<span style="[^"]*font-weight:700[^"]*">bold<\/span>/);
+});
+
+test('flatten: wraps <mark> in span with yellow background', () => {
+  const out = flattenInlineStyles('<mark>hi</mark>');
+  assert.match(out, /<span style="[^"]*background-color:#ffff00[^"]*">hi<\/span>/);
+});
+
+test('flatten: nested <b><u>x</u></b> merges into single span', () => {
+  const out = flattenInlineStyles('<b><u>x</u></b>');
+  const m = out.match(/<span style="([^"]*)">x<\/span>/);
+  assert.ok(m, `expected single span wrapping x, got: ${out}`);
+  assert.match(m[1], /font-weight:700/);
+  assert.match(m[1], /text-decoration:underline/);
+});
+
+test('flatten: nested <u><b><mark>x</mark></b></u> merges all three', () => {
+  const out = flattenInlineStyles('<u><b><mark>x</mark></b></u>');
+  const m = out.match(/<span style="([^"]*)">x<\/span>/);
+  assert.ok(m);
+  assert.match(m[1], /font-weight:700/);
+  assert.match(m[1], /text-decoration:underline/);
+  assert.match(m[1], /background-color:#ffff00/);
+});
+
+test('flatten: preserves non-format tags like <p>', () => {
+  const out = flattenInlineStyles('<p><u>hi</u></p>');
+  assert.match(out, /<p>/);
+  assert.match(out, /<\/p>/);
+  assert.match(out, /text-decoration:underline/);
+});
+
+test('flatten: plain text with no formatting passes through', () => {
+  assert.equal(flattenInlineStyles('just text'), 'just text');
+});

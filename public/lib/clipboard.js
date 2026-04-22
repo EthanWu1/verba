@@ -16,7 +16,57 @@
     if (!prefix) return { prefix: '', rest: s };
     return { prefix, rest: s.slice(prefix.length) };
   }
-  function flattenInlineStyles(html) { return String(html || ''); }
+  function flattenInlineStyles(html) {
+    const src = String(html == null ? '' : html);
+    const FMT_TAGS = /^(u|b|strong|mark)$/i;
+    const stack = [];
+    let out = '';
+    let i = 0;
+
+    function currentStyle() {
+      let underline = false, bold = false, highlight = false;
+      for (const t of stack) {
+        if (t === 'u') underline = true;
+        else if (t === 'b' || t === 'strong') bold = true;
+        else if (t === 'mark') highlight = true;
+      }
+      const parts = ['color:#000', 'font-style:normal'];
+      if (highlight) parts.push('background-color:#ffff00');
+      if (bold) parts.push('font-weight:700');
+      if (underline) parts.push('text-decoration:underline');
+      return parts.join(';');
+    }
+
+    function emit(text) {
+      if (!text) return;
+      if (!stack.length) { out += text; return; }
+      out += `<span style="${currentStyle()}">${text}</span>`;
+    }
+
+    while (i < src.length) {
+      const lt = src.indexOf('<', i);
+      if (lt < 0) { emit(src.slice(i)); break; }
+      emit(src.slice(i, lt));
+      const gt = src.indexOf('>', lt);
+      if (gt < 0) { out += src.slice(lt); break; }
+      const raw = src.slice(lt + 1, gt).trim();
+      const isClose = raw.startsWith('/');
+      const name = (isClose ? raw.slice(1) : raw.split(/\s/)[0]).toLowerCase();
+      if (FMT_TAGS.test(name)) {
+        if (isClose) {
+          for (let j = stack.length - 1; j >= 0; j--) {
+            if (stack[j] === name) { stack.splice(j, 1); break; }
+          }
+        } else {
+          stack.push(name);
+        }
+      } else {
+        out += src.slice(lt, gt + 1);
+      }
+      i = gt + 1;
+    }
+    return out;
+  }
   function buildCopyHtml() { return ''; }
   function buildCopyPlain() { return ''; }
   function serializeSelectionHtml() { return { html: '', plain: '' }; }
