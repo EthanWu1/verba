@@ -37,3 +37,52 @@ test('pushItem fills default fields', () => {
   assert.equal(s.items[0].body_html, '');
   assert.equal(s.items[0].phaseHistory.length, 0);
 });
+
+const { updateItem, removeItem, setActive, clearAll } = carousel;
+
+test('updateItem merges patch by id', () => {
+  let s = pushItem(createState(), { id: 'a', status: 'cutting' });
+  s = updateItem(s, 'a', { status: 'done', tag: 'hello' });
+  assert.equal(s.items[0].status, 'done');
+  assert.equal(s.items[0].tag, 'hello');
+});
+
+test('updateItem is no-op for unknown id', () => {
+  const s1 = pushItem(createState(), { id: 'a' });
+  const s2 = updateItem(s1, 'missing', { tag: 'x' });
+  assert.equal(s2.items[0].tag, '');
+});
+
+test('removeItem splices by id and clamps activeIndex', () => {
+  let s = pushItem(createState(), { id: 'a' });
+  s = pushItem(s, { id: 'b' });
+  s = pushItem(s, { id: 'c' });
+  // activeIndex is 2 (c). remove b (index 1).
+  s = removeItem(s, 'b');
+  assert.equal(s.items.length, 2);
+  assert.deepEqual(s.items.map(i => i.id), ['a','c']);
+  assert.equal(s.activeIndex, 1); // still points at c (now index 1)
+});
+
+test('removeItem clamps activeIndex when removing active last', () => {
+  let s = pushItem(createState(), { id: 'a' });
+  s = pushItem(s, { id: 'b' });
+  s = removeItem(s, 'b'); // active was 1, now only 1 item
+  assert.equal(s.activeIndex, 0);
+});
+
+test('setActive clamps to valid range', () => {
+  let s = pushItem(createState(), { id: 'a' });
+  s = pushItem(s, { id: 'b' });
+  assert.equal(setActive(s, 99).activeIndex, 1);
+  assert.equal(setActive(s, -5).activeIndex, 0);
+  assert.equal(setActive(s, 0).activeIndex, 0);
+});
+
+test('clearAll empties and zeros activeIndex', () => {
+  let s = pushItem(createState(), { id: 'a' });
+  s = pushItem(s, { id: 'b' });
+  s = clearAll(s);
+  assert.equal(s.items.length, 0);
+  assert.equal(s.activeIndex, 0);
+});

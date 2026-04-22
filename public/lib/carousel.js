@@ -25,10 +25,32 @@
     const items = state.items.concat(item);
     return { items, activeIndex: items.length - 1 };
   }
-  function updateItem(state, id, patch) { return state; }
-  function removeItem(state, id) { return state; }
-  function setActive(state, index) { return state; }
-  function clearAll(state) { return state; }
+  function updateItem(state, id, patch) {
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx < 0) return state;
+    const items = state.items.slice();
+    items[idx] = Object.assign({}, items[idx], patch);
+    return { items, activeIndex: state.activeIndex };
+  }
+
+  function removeItem(state, id) {
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx < 0) return state;
+    const items = state.items.slice();
+    items.splice(idx, 1);
+    let activeIndex = state.activeIndex;
+    if (idx < activeIndex) activeIndex -= 1;
+    if (activeIndex >= items.length) activeIndex = Math.max(0, items.length - 1);
+    return { items, activeIndex };
+  }
+
+  function setActive(state, index) {
+    if (state.items.length === 0) return { items: state.items, activeIndex: 0 };
+    const clamped = Math.min(Math.max(index, 0), state.items.length - 1);
+    return { items: state.items, activeIndex: clamped };
+  }
+
+  function clearAll(state) { return { items: [], activeIndex: 0 }; }
   function serialize(state) { return ''; }
   function deserialize(json) { return createState(); }
   function hydrate(json) { return createState(); }
