@@ -215,11 +215,45 @@ function listThreats(tournId, eventAbbr, season) {
   `).all(season, Number(tournId), eventAbbr);
 }
 
+function listEnrichedThreats(tournId, eventAbbr, season) {
+  const threats = listThreats(Number(tournId), eventAbbr, season);
+  const placements = getDb().prepare(`
+    SELECT r.entryId, r.place, te.bidLevel, e.teamKey
+    FROM toc_results r
+    JOIN toc_entries e ON e.tournId = r.tournId AND e.entryId = r.entryId AND e.eventAbbr = r.eventAbbr
+    JOIN toc_tournaments t ON t.tourn_id = r.tournId
+    JOIN toc_tournament_events te ON te.tournId = r.tournId AND te.abbr = r.eventAbbr
+    WHERE t.season = ? AND r.eventAbbr = ? AND e.teamKey IN (${threats.map(() => '?').join(',') || "''"})
+      AND r.place IS NOT NULL
+  `).all(season, eventAbbr, ...threats.map(t => t.teamKey));
+
+  const byTeam = new Map();
+  for (const p of placements) {
+    if (!byTeam.has(p.teamKey)) byTeam.set(p.teamKey, []);
+    byTeam.get(p.teamKey).push({ place: p.place, bidLevel: p.bidLevel });
+  }
+  return threats.map(t => ({
+    ...t,
+    recentPlacements: byTeam.get(t.teamKey) || [],
+  }));
+}
+
+function listElimRounds(tournId, eventAbbr) {
+  return getDb().prepare(`
+    SELECT b.roundName, b.roundType, b.entryId, b.opponentEntryId, b.result, b.side,
+           e.displayName, e.schoolName, e.schoolCode
+    FROM toc_ballots b
+    LEFT JOIN toc_entries e ON e.tournId = b.tournId AND e.entryId = b.entryId AND e.eventAbbr = b.eventAbbr
+    WHERE b.tournId = ? AND b.eventAbbr = ? AND b.roundType = 'elim'
+    ORDER BY b.roundName, b.entryId
+  `).all(Number(tournId), eventAbbr);
+}
+
 module.exports = {
   upsertTournament, getTournament, listTournaments, listSeasons, countTournaments, setTournamentCrawled,
   upsertEvent, listEvents,
   upsertEntry, clearEntriesForTournament, getEntry, listEntriesForEvent,
   insertBallot, clearBallotsForTournament, getPairingsForEntry,
   upsertResult, clearResultsForTournament, listResults, listSpeakerAwards,
-  rebuildSeasonBids, listThreats,
+  rebuildSeasonBids, listThreats, listEnrichedThreats, listElimRounds,
 };
