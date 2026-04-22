@@ -166,6 +166,20 @@ app.get('*', (req, res) => {
     } catch (err) {
       console.error('[wiki] Auto-seed init failed:', err.message);
     }
+
+    // Auto-seed TOC tournament index if empty
+    try {
+      const { countTournaments } = require('./services/tocDb');
+      const { seedTocIndex } = require('./services/tocIndexer');
+      if (countTournaments() === 0) {
+        console.log('[toc] No tournaments indexed — seeding...');
+        seedTocIndex()
+          .then(r => console.log(`[toc] Seeded ${r.tournaments} tournaments, ${r.entries} entries, ${r.skipped} skipped, ${r.errors} errors`))
+          .catch(err => console.error('[toc] Seed failed:', err.message));
+      }
+    } catch (err) {
+      console.error('[toc] Auto-seed init failed:', err.message);
+    }
   });
 })();
 
