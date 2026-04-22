@@ -6,7 +6,25 @@
   const SOFT_CAP_BYTES = 500 * 1024;
 
   function createState() { return { items: [], activeIndex: 0 }; }
-  function pushItem(state, partial) { return state; }
+  function pushItem(state, partial) {
+    const item = {
+      id: partial.id,
+      status: partial.status || 'done',
+      createdAt: typeof partial.createdAt === 'number' ? partial.createdAt : Date.now(),
+      sourceUrl: partial.sourceUrl || null,
+      sourceLabel: partial.sourceLabel || null,
+      tag: partial.tag || '',
+      cite: partial.cite || '',
+      body_html: partial.body_html || '',
+      body_markdown: partial.body_markdown || '',
+      body_plain: partial.body_plain || '',
+      phase: partial.phase || null,
+      phaseHistory: partial.phaseHistory || [],
+      error: partial.error || null
+    };
+    const items = state.items.concat(item);
+    return { items, activeIndex: items.length - 1 };
+  }
   function updateItem(state, id, patch) { return state; }
   function removeItem(state, id) { return state; }
   function setActive(state, index) { return state; }
