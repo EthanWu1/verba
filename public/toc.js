@@ -32,6 +32,14 @@
     $('toc-back-btn').addEventListener('click', showGrid);
     $('toc-modal-close').addEventListener('click', closeModal);
     $('toc-modal').addEventListener('click', e => { if (e.target === $('toc-modal')) closeModal(); });
+    let _searchTimer = null;
+    const searchEl = $('toc-search');
+    if (searchEl) {
+      searchEl.addEventListener('input', () => {
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(() => loadGrid(), 300);
+      });
+    }
   }
 
   async function loadSeasons() {
@@ -55,7 +63,8 @@
     $('toc-skeleton').classList.remove('hidden');
     if (!_season) { grid.innerHTML = '<div class="toc-muted" style="padding:12px">No seasons indexed yet.</div>'; return; }
     try {
-      const res = await fetch(`/api/toc/tournaments?season=${encodeURIComponent(_season)}&when=${_when}`);
+      const search = encodeURIComponent(($('toc-search')?.value || '').trim());
+      const res = await fetch(`/api/toc/tournaments?season=${encodeURIComponent(_season)}&when=${_when}&search=${search}`);
       const { tournaments } = await res.json();
       renderGrid(tournaments);
     } catch {
