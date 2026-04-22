@@ -5,7 +5,7 @@
   function extractAuthorYearPrefix(cite) {
     if (!cite) return null;
     const m = String(cite).match(
-      /^((?:[A-Z][A-Za-z'\-]+|and|&|et\s+al\.?)(?:\s+(?:[A-Z][A-Za-z'\-]+|and|&|et\s+al\.?))*\s+\d{2,4})/
+      /^([A-Z][A-Za-z'\-]+(?:\s+(?:[A-Z][A-Za-z'\-]+|and|&|et\s+al\.?))*\s+\d{2,4})/
     );
     return m ? m[1] : null;
   }

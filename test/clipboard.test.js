@@ -44,3 +44,21 @@ test('extract prefix: 4-digit year', () => {
 test('extract prefix: hyphenated surname', () => {
   assert.equal(extractAuthorYearPrefix("O'Brien-Jones 24, book"), "O'Brien-Jones 24");
 });
+
+test('extract prefix: returns null for lowercase start', () => {
+  assert.equal(extractAuthorYearPrefix('smith 24, journal'), null);
+});
+
+test('extract prefix: returns null with no year', () => {
+  assert.equal(extractAuthorYearPrefix('Smith, Professor of Law'), null);
+});
+
+test('extract prefix: returns null for conjunction-only start', () => {
+  assert.equal(extractAuthorYearPrefix('and Yang 24'), null);
+});
+
+test('extract prefix: returns null for empty string', () => {
+  assert.equal(extractAuthorYearPrefix(''), null);
+  assert.equal(extractAuthorYearPrefix(null), null);
+  assert.equal(extractAuthorYearPrefix(undefined), null);
+});
