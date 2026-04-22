@@ -5,7 +5,7 @@
   function extractAuthorYearPrefix(cite) {
     if (!cite) return null;
     const m = String(cite).match(
-      /^([A-Z][A-Za-z'\-]+(?:\s+(?:[A-Z][A-Za-z'\-]+|and|&|et\s+al\.?))*\s+\d{2,4})/
+      /^([A-Z][A-Za-z'‘’\-]+(?:\s+(?:[A-Z][A-Za-z'‘’\-]+|and|&|et\s+al\.?))*\s+['‘’]?\d{2,4})/
     );
     return m ? m[1] : null;
   }
@@ -23,24 +23,20 @@
     let out = '';
     let i = 0;
 
-    function currentStyle() {
+    function emit(text) {
+      if (!text) return;
+      if (!stack.length) { out += text; return; }
       let underline = false, bold = false, highlight = false;
       for (const t of stack) {
         if (t === 'u') underline = true;
         else if (t === 'b' || t === 'strong') bold = true;
         else if (t === 'mark') highlight = true;
       }
-      const parts = ['color:#000', 'font-style:normal'];
-      if (highlight) parts.push('background-color:#ffff00');
-      if (bold) parts.push('font-weight:700');
-      if (underline) parts.push('text-decoration:underline');
-      return parts.join(';');
-    }
-
-    function emit(text) {
-      if (!text) return;
-      if (!stack.length) { out += text; return; }
-      out += `<span style="${currentStyle()}">${text}</span>`;
+      let open = '', close = '';
+      if (underline) { open += '<u style="text-decoration:underline">'; close = '</u>' + close; }
+      if (bold) { open += '<b style="font-weight:700">'; close = '</b>' + close; }
+      if (highlight) { open += '<mark style="background-color:#ffff00;color:#000">'; close = '</mark>' + close; }
+      out += open + text + close;
     }
 
     while (i < src.length) {

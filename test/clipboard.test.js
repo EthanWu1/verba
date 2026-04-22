@@ -90,36 +90,29 @@ test('splitCite: empty / null input', () => {
 
 const { flattenInlineStyles } = clipboard;
 
-test('flatten: wraps <u> text in span with text-decoration', () => {
+test('flatten: wraps <u> text in tag with inline underline style', () => {
   const out = flattenInlineStyles('<u>under</u>');
-  assert.match(out, /<span style="[^"]*text-decoration:underline[^"]*">under<\/span>/);
+  assert.match(out, /<u style="text-decoration:underline">under<\/u>/);
 });
 
-test('flatten: wraps <b> in span with font-weight:700', () => {
+test('flatten: wraps <b> in tag with inline bold style', () => {
   const out = flattenInlineStyles('<b>bold</b>');
-  assert.match(out, /<span style="[^"]*font-weight:700[^"]*">bold<\/span>/);
+  assert.match(out, /<b style="font-weight:700">bold<\/b>/);
 });
 
-test('flatten: wraps <mark> in span with yellow background', () => {
+test('flatten: wraps <mark> in tag with inline yellow background', () => {
   const out = flattenInlineStyles('<mark>hi</mark>');
-  assert.match(out, /<span style="[^"]*background-color:#ffff00[^"]*">hi<\/span>/);
+  assert.match(out, /<mark style="[^"]*background-color:#ffff00[^"]*">hi<\/mark>/);
 });
 
-test('flatten: nested <b><u>x</u></b> merges into single span', () => {
+test('flatten: nested <b><u>x</u></b> emits nested u>b tags', () => {
   const out = flattenInlineStyles('<b><u>x</u></b>');
-  const m = out.match(/<span style="([^"]*)">x<\/span>/);
-  assert.ok(m, `expected single span wrapping x, got: ${out}`);
-  assert.match(m[1], /font-weight:700/);
-  assert.match(m[1], /text-decoration:underline/);
+  assert.match(out, /<u[^>]*><b[^>]*>x<\/b><\/u>/);
 });
 
-test('flatten: nested <u><b><mark>x</mark></b></u> merges all three', () => {
+test('flatten: nested <u><b><mark>x</mark></b></u> emits all three tags', () => {
   const out = flattenInlineStyles('<u><b><mark>x</mark></b></u>');
-  const m = out.match(/<span style="([^"]*)">x<\/span>/);
-  assert.ok(m);
-  assert.match(m[1], /font-weight:700/);
-  assert.match(m[1], /text-decoration:underline/);
-  assert.match(m[1], /background-color:#ffff00/);
+  assert.match(out, /<u[^>]*><b[^>]*><mark[^>]*>x<\/mark><\/b><\/u>/);
 });
 
 test('flatten: preserves non-format tags like <p>', () => {
@@ -175,15 +168,12 @@ test('buildCopyHtml: body highlight survives', () => {
   assert.match(html, /background-color:#ffff00/);
 });
 
-test('buildCopyHtml: nested b+u merge in body', () => {
+test('buildCopyHtml: nested b+u emits nested tags in body', () => {
   const html = buildCopyHtml({
     cite: 'Doe 25',
     body_html: '<p><b><u>x</u></b></p>'
   });
-  const m = html.match(/<span style="([^"]*)">x<\/span>/);
-  assert.ok(m);
-  assert.match(m[1], /font-weight:700/);
-  assert.match(m[1], /text-decoration:underline/);
+  assert.match(html, /<u[^>]*><b[^>]*>x<\/b><\/u>/);
 });
 
 test('buildCopyHtml: escapes HTML-dangerous chars in cite and tag', () => {
@@ -298,4 +288,20 @@ test('serializeFromString: preserves safe http/https href', () => {
     'card-body'
   );
   assert.match(html, /href="https:\/\/example\.com"/);
+});
+
+test('extract prefix: straight apostrophe year', () => {
+  assert.equal(extractAuthorYearPrefix("Miller '21, Professor"), "Miller '21");
+});
+
+test('extract prefix: curly apostrophe year', () => {
+  assert.equal(extractAuthorYearPrefix("Miller ’21, Professor"), "Miller ’21");
+});
+
+test('extract prefix: curly apostrophe in surname', () => {
+  assert.equal(extractAuthorYearPrefix("O’Brien 24, book"), "O’Brien 24");
+});
+
+test('extract prefix: apostrophe-year with multi-author', () => {
+  assert.equal(extractAuthorYearPrefix("Tuck and Yang '24, paper"), "Tuck and Yang '24");
 });
