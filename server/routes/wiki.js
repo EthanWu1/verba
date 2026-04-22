@@ -40,7 +40,7 @@ router.get('/teams/:id', async (req, res) => {
 
 // GET /api/wiki/teams/:id/full  — team + arguments (no crawl trigger)
 router.get('/teams/:id/full', (req, res) => {
-  const id = Number(req.params.id);
+  const id = String(req.params.id);
   const team = db.getTeam(id);
   if (!team) return res.status(404).json({ error: 'not_found' });
   const args = db.getTeamArguments(id);
