@@ -589,16 +589,76 @@
     const attached = window.__verbaAttachedFile || null;
     if (!val && !attached) { toast('Paste a URL, type an argument, or attach a file'); return; }
 
-    // URL: scrape only — do not run a research job
+    // URL: scrape, then ask for argument and cut card
     if (/^https?:\/\//i.test(val)) {
       if (input) input.value = '';
       toast('Loading source…');
+      let scraped = null;
       try {
-        const data = await window.VerbaAPI.scrape(val);
-        renderSourceInPane({ ...data, paragraphs: [] });
+        scraped = await window.VerbaAPI.scrape(val);
+        renderSourceInPane({ ...scraped, paragraphs: [] });
       } catch (err) {
         toast({ variant: 'destructive', title: 'Scrape failed', description: err.message || String(err), duration: 4000 });
+        return;
       }
+      const argument = await askArgument(val);
+      if (!argument) return;
+
+      const job = createJob(val);
+      job.mode = 'url';
+      activateJob(job);
+      pushPhase(job, { type: 'mode', mode: 'url', url: val, query: argument });
+
+      const params = new URLSearchParams();
+      params.set('url', val);
+      params.set('argument', argument);
+      params.set('density', TWEAKS.cutterDensity || 'standard');
+      params.set('length', TWEAKS.cutterLength || 'medium');
+
+      const es = new EventSource('/api/research-source-stream?' + params.toString());
+      job.es = es;
+
+      const watchdog = setTimeout(() => {
+        if (job.status === 'pending' || job.status === 'running') {
+          job.status = 'error';
+          job.label = 'Timed out';
+          updateChipLabel(job);
+          toast({ variant: 'destructive', title: 'Cutter timed out', description: 'Try again', duration: 4000 });
+          try { es.close(); } catch {}
+        }
+      }, 100000);
+
+      es.addEventListener('phase', (e) => {
+        try { pushPhase(job, JSON.parse(e.data)); } catch {}
+      });
+      es.addEventListener('article', (e) => {
+        try {
+          const article = JSON.parse(e.data);
+          job.article = article;
+          if (activeJob === job) renderSourceInPane(article);
+        } catch {}
+      });
+      es.addEventListener('card', (e) => {
+        try {
+          const card = JSON.parse(e.data);
+          job.card = card;
+          if (activeJob === job) renderCardInPane(card);
+        } catch {}
+      });
+      es.addEventListener('done', () => {
+        clearTimeout(watchdog);
+        job.status = 'done';
+        updateChipLabel(job);
+        try { es.close(); } catch {}
+      });
+      es.addEventListener('error', () => {
+        clearTimeout(watchdog);
+        if (job.status !== 'done') {
+          job.status = 'error';
+          updateChipLabel(job);
+        }
+        try { es.close(); } catch {}
+      });
       return;
     }
 

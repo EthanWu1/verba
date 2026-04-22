@@ -3,7 +3,7 @@
 
 (function () {
   let _season = null, _when = 'upcoming';
-  let _currentTourn = null, _currentEvent = null;
+  let _currentTourn = null, _currentEvent = null, _currentView = 'results';
 
   const $ = id => document.getElementById(id);
 
@@ -110,26 +110,37 @@
       });
       tabsEl.appendChild(b);
     });
+    _currentView = 'results';
     if (events.length) loadEventBody(t, events[0].abbr);
     else $('toc-detail-body').innerHTML = '<div class="toc-muted">No LD/PF/CX events indexed.</div>';
+  }
+
+  function renderViewTabs() {
+    const isUpcoming = _currentTourn && new Date(_currentTourn.endDate) >= new Date();
+    return `<div class="toc-view-tabs">
+      <button class="toc-view-tab ${_currentView === 'results' ? 'active' : ''}" data-view="results">Results</button>
+      <button class="toc-view-tab ${_currentView === 'threats' ? 'active' : ''}" data-view="threats">${isUpcoming ? 'Threats' : 'Field'}</button>
+    </div>`;
   }
 
   async function loadEventBody(t, abbr) {
     _currentEvent = abbr;
     const body = $('toc-detail-body');
     body.innerHTML = '<div class="toc-muted">Loading…</div>';
-    const isPast = new Date(t.endDate) < new Date();
-    if (isPast) {
-      const res = await fetch(`/api/toc/tournaments/${t.tourn_id}/results/${abbr}`);
-      const { results, speakers } = await res.json();
-      body.innerHTML = renderResults(results, speakers, abbr);
-      attachEntryClicks(body);
-    } else {
+    if (_currentView === 'threats') {
       const res = await fetch(`/api/toc/tournaments/${t.tourn_id}/threats/${abbr}`);
       const { threats } = await res.json();
-      body.innerHTML = renderThreats(threats, abbr);
-      attachEntryClicks(body);
+      body.innerHTML = renderViewTabs() + renderThreats(threats, abbr);
+    } else {
+      const res = await fetch(`/api/toc/tournaments/${t.tourn_id}/results/${abbr}`);
+      const { results, speakers } = await res.json();
+      body.innerHTML = renderViewTabs() + renderResults(results, speakers, abbr);
     }
+    body.querySelectorAll('.toc-view-tab').forEach(b => b.addEventListener('click', () => {
+      _currentView = b.dataset.view;
+      loadEventBody(t, abbr);
+    }));
+    attachEntryClicks(body);
   }
 
   function renderThreats(rows, abbr) {
@@ -139,33 +150,47 @@
       return `<tr data-entry="${r.entryId}">
         <td>${i + 1}</td>
         <td><strong>${esc(r.displayName)}</strong></td>
-        <td>${esc(r.schoolName || '')} ${r.schoolCode ? '<span class="toc-muted">(' + esc(r.schoolCode) + ')</span>' : ''}</td>
         <td>${r.seasonFullBids}${r.seasonPartialBids ? ' <span class="toc-muted">+' + r.seasonPartialBids + 'P</span>' : ''}</td>
-        <td><a ${wikiAttr} onclick="event.stopPropagation()">↗</a></td>
+        <td><a ${wikiAttr} onclick="event.stopPropagation()">Wiki ↗</a></td>
       </tr>`;
     }).join('');
-    return `<table class="toc-table"><thead><tr><th>#</th><th>Team</th><th>School</th><th>Season Bids (${esc(abbr)})</th><th>Wiki</th></tr></thead><tbody>${body}</tbody></table>`;
+    return `<table class="toc-table"><thead><tr><th>#</th><th>Team</th><th>Season Bids (${esc(abbr)})</th><th>Wiki</th></tr></thead><tbody>${body}</tbody></table>`;
   }
 
   function renderResults(results, speakers, abbr) {
-    if (!results.length && !speakers.length) return '<div class="toc-muted">No results yet.</div>';
-    const resRows = results.map((r, i) => `<tr data-entry="${r.entryId}">
+    if (!results.length && !speakers.length) {
+      return '<div class="toc-muted" style="padding:24px 0">No results recorded yet for this event.</div>';
+    }
+    const bidders = results.filter(r => r.earnedBid);
+    const places = results.filter(r => r.place || r.rank);
+    const placeRows = places.map((r, i) => `<tr data-entry="${r.entryId}">
       <td>${esc(r.place || (i + 1))}</td>
       <td><strong>${esc(r.displayName || '')}</strong></td>
-      <td>${esc(r.schoolName || '')}</td>
       <td>${r.earnedBid ? `<span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span>` : '<span class="toc-muted">—</span>'}</td>
+    </tr>`).join('');
+    const bidderRows = bidders.map(r => `<tr data-entry="${r.entryId}">
+      <td><strong>${esc(r.displayName || '')}</strong></td>
+      <td><span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span></td>
     </tr>`).join('');
     const spkRows = speakers.map(s => `<tr data-entry="${s.entryId}">
       <td>${s.speakerRank}</td>
       <td><strong>${esc(s.displayName || '')}</strong></td>
-      <td>${esc(s.schoolName || '')}</td>
       <td>${s.speakerPoints != null ? s.speakerPoints.toFixed(2) : '—'}</td>
     </tr>`).join('');
     return `
-      <div class="toc-section-title">Final Results</div>
-      <table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>School</th><th>Bid</th></tr></thead><tbody>${resRows || '<tr><td colspan=4 class="toc-muted">No results.</td></tr>'}</tbody></table>
-      <div class="toc-section-title">Speaker Awards</div>
-      <table class="toc-table"><thead><tr><th>#</th><th>Speaker</th><th>Team</th><th>Points</th></tr></thead><tbody>${spkRows || '<tr><td colspan=4 class="toc-muted">No speaker awards.</td></tr>'}</tbody></table>`;
+      ${places.length ? `
+        <div class="toc-section-title">Final Places</div>
+        <table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>Bid</th></tr></thead><tbody>${placeRows}</tbody></table>
+      ` : ''}
+      ${bidders.length ? `
+        <div class="toc-section-title">Bidders</div>
+        <table class="toc-table"><thead><tr><th>Team</th><th>Bid</th></tr></thead><tbody>${bidderRows}</tbody></table>
+      ` : ''}
+      ${speakers.length ? `
+        <div class="toc-section-title">Speaker Awards</div>
+        <table class="toc-table"><thead><tr><th>#</th><th>Speaker</th><th>Points</th></tr></thead><tbody>${spkRows}</tbody></table>
+      ` : ''}
+    `;
   }
 
   function attachEntryClicks(root) {
