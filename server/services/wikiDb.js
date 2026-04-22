@@ -123,7 +123,7 @@ function clearRoundReports(teamId) {
 function listTeamsByEvent({ event, q, limit = 200 }) {
   const params = [];
   let where = '1=1';
-  if (event) { where += ' AND event = ?'; params.push(event); }
+  if (event) { where += ' AND LOWER(event) = LOWER(?)'; params.push(event); }
   if (q) {
     const term = `%${q.toLowerCase()}%`;
     where += ' AND (LOWER(school) LIKE ? OR LOWER(code) LIKE ? OR LOWER(fullName) LIKE ?)';
