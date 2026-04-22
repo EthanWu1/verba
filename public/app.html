@@ -2051,6 +2051,50 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .rk-topbar-right { margin-left: 0; width: 100%; }
   .rk-search { width: 100%; min-width: 0; }
 }
+
+.cutter-strip{display:flex;gap:12px;align-items:center;padding:14px 22px;background:linear-gradient(180deg,#fafafa,#f1f2f6);border-bottom:1px solid #e5e5e5}
+.length-seg{display:inline-flex;padding:3px;background:#eef0f4;border:1px solid #e1e3eb;border-radius:999px}
+.length-opt{border:0;background:transparent;padding:5px 14px;font:600 11.5px var(--font-display,system-ui);color:#6b7280;border-radius:999px;cursor:pointer}
+.length-opt.is-active{background:#0d0d12;color:#fff}
+
+.cut-input-pill{flex:1;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 18px;background:#fff;border:1px solid #dcdfe6;border-radius:999px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.03)}
+.pill-icon{color:#9ca3af;flex-shrink:0}
+#cut-input{flex:1;border:0;outline:0;font:400 14px var(--font-display,system-ui);background:transparent;color:#111}
+#cut-submit{width:34px;height:34px;border-radius:50%;background:#0d0d12;color:#fff;border:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.18);cursor:pointer;flex-shrink:0}
+#cut-submit:disabled{opacity:0.5;cursor:not-allowed}
+
+.card-carousel{position:relative;background:linear-gradient(180deg,#fff,#f5f5f7);padding:44px 0 36px;min-height:560px}
+.card-stage{max-width:1100px;margin:0 auto;padding:0 56px;position:relative}
+.carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e2e2e2;display:flex;align-items:center;justify-content:center;color:#888;font-size:16px;cursor:pointer;z-index:2}
+.carousel-prev{left:12px}
+.carousel-next{right:12px}
+.carousel-nav[hidden]{display:none}
+
+.carousel-dots{display:flex;justify-content:center;gap:6px;margin-top:20px}
+.dot{width:8px;height:8px;border-radius:50%;background:#ccc;border:0;padding:0;cursor:pointer}
+.dot.is-active{background:#0d0d12}
+
+.carousel-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;font:500 14px var(--font-display,system-ui);pointer-events:none}
+
+.card-shell{background:#fff;border:1px solid #ececec;border-radius:18px;box-shadow:0 20px 60px rgba(15,20,40,0.08);padding:40px 48px;min-height:480px;position:relative;opacity:1;transform:translateX(0) scale(1);transition:transform 280ms cubic-bezier(0.22,1,0.36,1), opacity 220ms ease}
+.card-shell.leaving-left{transform:translateX(-40px) scale(0.96);opacity:0}
+.card-shell.leaving-right{transform:translateX( 40px) scale(0.96);opacity:0}
+.card-shell .shell-icons{position:absolute;top:18px;right:18px;display:flex;gap:8px}
+.card-shell .shell-icon{width:34px;height:34px;border-radius:8px;background:#fafafa;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;color:#4b5563;text-decoration:none;cursor:pointer}
+.card-shell .shell-icon[hidden]{display:none}
+.card-shell .cut-progress{height:4px;background:#eee;border-radius:2px;overflow:hidden;margin-bottom:24px}
+.card-shell .cut-progress-bar{height:100%;background:linear-gradient(90deg,#3b7cff,#9333ea);border-radius:2px;width:0;transition:width 260ms ease}
+.card-shell .cut-log{background:#0d0d12;border-radius:10px;padding:14px 18px;font:400 12px ui-monospace,Consolas,monospace;color:#b9bfd0;line-height:1.7}
+.card-shell .cut-log .current{color:#6ee7b7}
+.card-shell .cut-log .pending{opacity:0.4}
+
+@media (max-width:768px){
+  .card-stage{padding:0 44px}
+  .cutter-strip{flex-wrap:wrap;gap:8px}
+  .length-seg{order:2;margin-left:auto}
+  .cut-input-pill{order:1;min-width:100%}
+  .card-shell{padding:28px 20px;min-height:380px}
+}
 </style>
 <link rel="stylesheet" href="assets/mobile.css">
 </head>
@@ -2200,6 +2244,36 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
         </div>
 
         <div class="workbench" id="workbench">
+          <header class="cutter-strip">
+  <div class="length-seg" role="radiogroup" aria-label="Card length">
+    <button type="button" class="length-opt" data-length="short" aria-pressed="false">S</button>
+    <button type="button" class="length-opt" data-length="medium" aria-pressed="false">M</button>
+    <button type="button" class="length-opt is-active" data-length="long" aria-pressed="true">L</button>
+  </div>
+
+  <label class="cut-input-pill">
+    <svg class="pill-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/>
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"/>
+    </svg>
+    <input id="cut-input" type="text" placeholder="Paste URL or drop a PDF to cut from…" autocomplete="off">
+    <button id="cut-submit" type="button" aria-label="Cut">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="19" x2="12" y2="5"/>
+        <polyline points="5 12 12 5 19 12"/>
+      </svg>
+    </button>
+  </label>
+</header>
+
+<section class="card-carousel" aria-label="Cut cards">
+  <button class="carousel-nav carousel-prev" aria-label="Previous card" type="button">‹</button>
+  <div id="card-stage" class="card-stage"></div>
+  <button class="carousel-nav carousel-next" aria-label="Next card" type="button">›</button>
+  <div id="carousel-dots" class="carousel-dots" aria-hidden="true"></div>
+  <div id="carousel-empty" class="carousel-empty" hidden>No cards yet — paste a URL or drop a PDF above.</div>
+</section>
+
           <!-- CARD -->
           <div class="pane" id="card-pane">
             <div class="pane-head">
