@@ -3083,6 +3083,34 @@
     }
   });
 
+  // Task 14 — PDF drop on input pill
+  const pill = document.querySelector('.cut-input-pill');
+  if (pill) {
+    pill.addEventListener('dragover', (e) => { e.preventDefault(); pill.classList.add('is-drop'); });
+    pill.addEventListener('dragleave', () => pill.classList.remove('is-drop'));
+    pill.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      pill.classList.remove('is-drop');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file || !/\.pdf$/i.test(file.name)) return;
+      // Try existing helper first
+      if (typeof uploadPdfAndCut === 'function') {
+        uploadPdfAndCut(file);
+        return;
+      }
+      // Fallback: POST to /api/scrape/file (field: file) — returns { token, filename, title, cite, chars, preview }
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/scrape/file', { method: 'POST', body: fd, credentials: 'include' });
+        if (!res.ok) throw new Error('upload failed');
+        const data = await res.json();
+        if (data && data.token) startCut(data.title || file.name);
+        else toast('PDF extracted but empty');
+      } catch (err) { console.error(err); toast('PDF upload failed'); }
+    });
+  }
+
 })();
 
 // Mobile drawer toggle
