@@ -136,6 +136,36 @@ function profile(teamKey, season, event) {
     ORDER BY t.startDate ASC
   `).all(teamKey, event, event, teamKey, event, season, event, teamKey);
 
+  // Prelim vs elim records per tournament, majority-voted across panel ballots.
+  const ballotRecs = db.prepare(`
+    SELECT b.tournId, b.roundId, b.roundType,
+           SUM(CASE WHEN b.result='W' THEN 1 ELSE 0 END) AS w,
+           SUM(CASE WHEN b.result='L' THEN 1 ELSE 0 END) AS l
+    FROM toc_ballots b
+    JOIN toc_entries e ON e.tournId=b.tournId AND e.entryId=b.entryId AND e.eventAbbr=b.eventAbbr
+    JOIN toc_tournaments t ON t.tourn_id=b.tournId
+    WHERE e.teamKey=? AND b.eventAbbr=? AND t.season=?
+    GROUP BY b.tournId, b.roundId, b.roundType
+  `).all(teamKey, event, season);
+  const recByTourn = new Map();
+  let seasonPW = 0, seasonPL = 0, seasonEW = 0, seasonEL = 0;
+  for (const r of ballotRecs) {
+    if (!recByTourn.has(r.tournId)) recByTourn.set(r.tournId, { prelimWins: 0, prelimLosses: 0, elimWins: 0, elimLosses: 0 });
+    const rec = recByTourn.get(r.tournId);
+    const isPrelim = r.roundType === 'prelim' || r.roundType === 'highlow';
+    if (r.w > r.l) {
+      if (isPrelim) { rec.prelimWins++; seasonPW++; }
+      else          { rec.elimWins++;   seasonEW++; }
+    } else if (r.l > r.w) {
+      if (isPrelim) { rec.prelimLosses++; seasonPL++; }
+      else          { rec.elimLosses++;   seasonEL++; }
+    }
+  }
+  for (const t of tournaments) {
+    const rec = recByTourn.get(t.tournId) || { prelimWins: 0, prelimLosses: 0, elimWins: 0, elimLosses: 0 };
+    Object.assign(t, rec);
+  }
+
   const wiki = db.prepare(`
     SELECT w.id, w.fullName FROM wiki_teams w
     WHERE LOWER(w.school) = LOWER(?)
@@ -165,7 +195,11 @@ function profile(teamKey, season, event) {
     teamKey, season, event,
     displayName: rating.displayName, schoolName: rating.schoolName, schoolCode: rating.schoolCode,
     rating: { current: rating.rating, peak: rating.peakRating, rank, outOf: total },
-    record: { wins: rating.wins, losses: rating.losses, winPct, roundCount: rating.roundCount },
+    record: {
+      wins: rating.wins, losses: rating.losses, winPct, roundCount: rating.roundCount,
+      prelimWins: seasonPW, prelimLosses: seasonPL,
+      elimWins: seasonEW,   elimLosses: seasonEL,
+    },
     bids,
     tournaments,
     topArguments,

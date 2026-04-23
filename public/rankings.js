@@ -118,14 +118,19 @@
       const tournRows = tournaments.map(t => {
         const placeCell = (!t.place || isPrelim(t.place)) ? '<span class="rk-muted">—</span>' : esc(t.place);
         const bidCell = t.earnedBid ? `<span class="${bidCls(t.earnedBid)}">${esc(shortBid(t.earnedBid))}</span>` : '<span class="rk-muted">—</span>';
+        const pw = t.prelimWins || 0, pl = t.prelimLosses || 0;
+        const ew = t.elimWins || 0, el = t.elimLosses || 0;
+        const prelimCell = (pw + pl) ? `${pw}-${pl}` : '<span class="rk-muted">—</span>';
+        const elimCell   = (ew + el) ? `${ew}-${el}` : '<span class="rk-muted">—</span>';
         return `<tr>
           <td>${esc(t.name || '')}</td>
           <td>${esc(t.startDate || '')}</td>
-          <td>${t.wins || 0}-${t.losses || 0}</td>
+          <td>${prelimCell}</td>
+          <td>${elimCell}</td>
           <td>${placeCell}</td>
           <td>${bidCell}</td>
         </tr>`;
-      }).join('') || `<tr><td colspan="5" style="padding:16px;color:var(--muted)">No tournaments yet.</td></tr>`;
+      }).join('') || `<tr><td colspan="6" style="padding:16px;color:var(--muted)">No tournaments yet.</td></tr>`;
 
       const favBlock = topArg
         ? `<div class="rk-stat-card rk-arg-card">
@@ -154,8 +159,8 @@
           <div class="rk-stat-grid">
             <div class="rk-stat-card"><div class="rk-stat-label">Elo</div><div class="rk-stat-value">${Math.round(rating.current || 0)}</div></div>
             <div class="rk-stat-card"><div class="rk-stat-label">Peak</div><div class="rk-stat-value">${Math.round(rating.peak || rating.current || 0)}</div></div>
-            <div class="rk-stat-card"><div class="rk-stat-label">Rounds</div><div class="rk-stat-value">${record.roundCount || 0}</div></div>
-            <div class="rk-stat-card"><div class="rk-stat-label">Record</div><div class="rk-stat-value">${record.wins || 0}-${record.losses || 0}</div></div>
+            <div class="rk-stat-card"><div class="rk-stat-label">Prelim</div><div class="rk-stat-value">${record.prelimWins || 0}-${record.prelimLosses || 0}</div></div>
+            <div class="rk-stat-card"><div class="rk-stat-label">Elim</div><div class="rk-stat-value">${record.elimWins || 0}-${record.elimLosses || 0}</div></div>
             <div class="rk-stat-card"><div class="rk-stat-label">Bids</div><div class="rk-stat-value">${bids.fullBids || 0}${(bids.partialBids || 0) > 0 ? ` <span class="rk-muted">+${bids.partialBids}P</span>` : ''}</div></div>
             ${favBlock}
           </div>
@@ -163,7 +168,7 @@
           <div class="rk-chart">${chart}</div>
           <div class="rk-section-title">Season record</div>
           <table class="rk-inner-table">
-            <thead><tr><th>Tournament</th><th>Date</th><th>W-L</th><th>Place</th><th>Bid</th></tr></thead>
+            <thead><tr><th>Tournament</th><th>Date</th><th>Prelim</th><th>Elim</th><th>Place</th><th>Bid</th></tr></thead>
             <tbody>${tournRows}</tbody>
           </table>
         </div>`;

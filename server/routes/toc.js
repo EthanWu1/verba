@@ -75,6 +75,10 @@ router.get('/tournaments/:id/results/:event', (req, res) => {
   const hasUsablePlaces = results.some(r => r.place || r.rank);
   if (!hasUsablePlaces) {
     results = db.inferResultsFromBallots(id, ev);
+  } else {
+    // Attach prelim/elim record data to each row.
+    const recs = db.listRecordsForTournament(id, ev);
+    results = results.map(r => ({ ...r, ...(recs.get(r.entryId) || { prelimWins: 0, prelimLosses: 0, elimWins: 0, elimLosses: 0 }) }));
   }
   return res.json({
     results:  results.map(withShortenedName),

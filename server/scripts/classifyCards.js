@@ -22,7 +22,7 @@ const { complete, parseJSON } = require('../services/llm');
 
 const BATCH_SIZE = 25;
 const DELAY_MS   = 400;
-const PRIMARY_MODEL  = 'google/gemini-2.0-flash-lite-001';
+const PRIMARY_MODEL  = 'google/gemini-2.5-flash-lite';
 const FALLBACK_MODEL = 'openai/gpt-4o-mini';
 
 const args = process.argv.slice(2);
@@ -135,11 +135,13 @@ function saveResult(id, result, sourceRow) {
 async function main() {
   const database = db.getDb();
 
+  const CANONICAL_ONLY = args.includes('--canonical');
+  const whereCanon = CANONICAL_ONLY ? ' AND isCanonical=1' : '';
   const query = RECLASSIFY_ALL
-    ? `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards ORDER BY importedAt DESC`
+    ? `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards WHERE 1=1${whereCanon} ORDER BY importedAt DESC`
     : `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards
-       WHERE argumentTags IN ('[]', '["none"]')
-          OR argumentTypes IN ('[]', '["none"]')
+       WHERE (argumentTags IN ('[]', '["none"]')
+          OR argumentTypes IN ('[]', '["none"]'))${whereCanon}
        ORDER BY importedAt DESC`;
 
   let cards = database.prepare(query).all();

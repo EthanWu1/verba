@@ -264,13 +264,19 @@
       const bidHtml = bidTxt
         ? `<span class="toc-bid ${bidClass(r.earnedBid)}">${esc(bidTxt)}</span>`
         : '<span class="toc-muted">—</span>';
+      const pw = r.prelimWins || 0, pl = r.prelimLosses || 0;
+      const ew = r.elimWins || 0,  el = r.elimLosses || 0;
+      const prelimCell = (pw + pl) ? `${pw}-${pl}` : '<span class="toc-muted">—</span>';
+      const elimCell   = (ew + el) ? `${ew}-${el}` : '<span class="toc-muted">—</span>';
       return `<tr data-entry="${r.entryId}">
         <td>${esc(placeCell)}</td>
         <td><strong>${esc(r.displayName || '')}</strong></td>
+        <td>${prelimCell}</td>
+        <td>${elimCell}</td>
         <td>${bidHtml}</td>
       </tr>`;
     }).join('');
-    return `<table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>Bid</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>Prelim</th><th>Elim</th><th>Bid</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function speakersTable(speakers) {

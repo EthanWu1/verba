@@ -282,31 +282,56 @@ function rebuildSeasonBids(season) {
   tx(season);
 }
 
+// Per-entry prelim + elim win/loss counts, aggregated so 3-judge panels count as ONE round.
+function listRecordsForTournament(tournId, eventAbbr) {
+  const rows = getDb().prepare(`
+    SELECT entryId, roundId, roundType,
+           SUM(CASE WHEN result='W' THEN 1 ELSE 0 END) AS w,
+           SUM(CASE WHEN result='L' THEN 1 ELSE 0 END) AS l
+    FROM toc_ballots
+    WHERE tournId = ? AND eventAbbr = ?
+    GROUP BY entryId, roundId
+  `).all(Number(tournId), eventAbbr);
+  const out = new Map();
+  for (const r of rows) {
+    if (!out.has(r.entryId)) out.set(r.entryId, { prelimWins: 0, prelimLosses: 0, elimWins: 0, elimLosses: 0 });
+    const rec = out.get(r.entryId);
+    const isPrelim = r.roundType === 'prelim' || r.roundType === 'highlow';
+    if (r.w > r.l)      (isPrelim ? rec.prelimWins++ : rec.elimWins++);
+    else if (r.l > r.w) (isPrelim ? rec.prelimLosses++ : rec.elimLosses++);
+  }
+  return out;
+}
+
 // Infer final places for a tournament from toc_ballots when toc_results is empty.
 // Each entry's place is the depth label of the deepest elim round they played, with
 // winners of the final receiving "1st" and the final losers "2nd".
 function inferResultsFromBallots(tournId, eventAbbr) {
   const db = getDb();
   const ballots = db.prepare(`
-    SELECT b.roundId, b.roundName, b.entryId, b.result,
+    SELECT b.roundId, b.roundName, b.roundType, b.entryId, b.result,
            e.displayName, e.schoolName, e.schoolCode, e.earnedBid
     FROM toc_ballots b
     JOIN toc_entries e ON e.tournId = b.tournId AND e.entryId = b.entryId AND e.eventAbbr = b.eventAbbr
-    WHERE b.tournId = ? AND b.eventAbbr = ? AND b.roundType != 'prelim'
+    WHERE b.tournId = ? AND b.eventAbbr = ?
   `).all(Number(tournId), eventAbbr);
   if (!ballots.length) return [];
+  const records = listRecordsForTournament(tournId, eventAbbr);
 
-  // Count unique entries per roundId (to infer depth).
+  // Split elim-only ballots for depth inference below.
+  const elimBallots = ballots.filter(b => b.roundType !== 'prelim' && b.roundType !== 'highlow');
+
+  // Count unique entries per elim roundId (to infer depth).
   const entriesPerRound = new Map();
-  for (const b of ballots) {
+  for (const b of elimBallots) {
     if (!entriesPerRound.has(b.roundId)) entriesPerRound.set(b.roundId, new Set());
     entriesPerRound.get(b.roundId).add(b.entryId);
   }
 
-  // Aggregate per (entry, round) → majority result.
+  // Aggregate elim ballots per (entry, round) for depth lookup.
   const key = (e, r) => `${e}|${r}`;
   const agg = new Map();
-  for (const b of ballots) {
+  for (const b of elimBallots) {
     const k = key(b.entryId, b.roundId);
     if (!agg.has(k)) agg.set(k, { wins: 0, losses: 0, roundId: b.roundId, entryId: b.entryId, meta: b });
     const a = agg.get(k);
@@ -314,7 +339,7 @@ function inferResultsFromBallots(tournId, eventAbbr) {
     else if (b.result === 'L') a.losses++;
   }
 
-  // For each entry, find the deepest round they appeared in (fewest entries in the round).
+  // Deepest elim round each entry played.
   const perEntry = new Map();
   for (const { roundId, entryId, wins, losses, meta } of agg.values()) {
     const size = entriesPerRound.get(roundId).size;
@@ -323,17 +348,22 @@ function inferResultsFromBallots(tournId, eventAbbr) {
     }
   }
 
-  // Determine champion: if an entry WON their deepest round and that round size === 2, they're 1st.
-  // The opponent in the same round with L → 2nd.
+  // Meta per-entry (for prelim-only players we still need displayName/school).
+  const entryMeta = new Map();
+  for (const b of ballots) if (!entryMeta.has(b.entryId)) entryMeta.set(b.entryId, b);
+
   const results = [];
-  for (const [entryId, info] of perEntry.entries()) {
+  for (const [entryId, meta] of entryMeta.entries()) {
+    const info = perEntry.get(entryId);
+    const rec = records.get(entryId) || { prelimWins: 0, prelimLosses: 0, elimWins: 0, elimLosses: 0 };
     let place;
-    const depth = COUNT_TO_DEPTH[info.size];
-    const won = info.wins > info.losses;
-    if (info.size === 2) {
-      place = won ? '1st' : '2nd';
+    if (info) {
+      const depth = COUNT_TO_DEPTH[info.size];
+      const won = info.wins > info.losses;
+      if (info.size === 2) place = won ? '1st' : '2nd';
+      else place = depth || ('Round ' + info.meta.roundName);
     } else {
-      place = depth || ('Round ' + info.meta.roundName);
+      place = 'Prelim';
     }
     results.push({
       tournId: Number(tournId),
@@ -341,15 +371,15 @@ function inferResultsFromBallots(tournId, eventAbbr) {
       entryId,
       place,
       rank: null,
-      displayName: info.meta.displayName,
-      schoolName: info.meta.schoolName,
-      schoolCode: info.meta.schoolCode,
-      earnedBid: info.meta.earnedBid,
+      displayName: meta.displayName,
+      schoolName: meta.schoolName,
+      schoolCode: meta.schoolCode,
+      earnedBid: meta.earnedBid,
+      ...rec,
     });
   }
-  // Sort: 1st, 2nd, 3rd, Semis, Quarters, Octos, ...
-  const PLACE_ORDER = { '1st': 0, '2nd': 1, '3rd': 2, Semis: 3, Quarters: 4, Octos: 5, Doubles: 6, Triples: 7, Partials: 8 };
-  results.sort((a, b) => (PLACE_ORDER[a.place] ?? 99) - (PLACE_ORDER[b.place] ?? 99));
+  const PLACE_ORDER = { '1st': 0, '2nd': 1, '3rd': 2, Semis: 3, Quarters: 4, Octos: 5, Doubles: 6, Triples: 7, Partials: 8, Prelim: 99 };
+  results.sort((a, b) => (PLACE_ORDER[a.place] ?? 50) - (PLACE_ORDER[b.place] ?? 50));
   return results;
 }
 
@@ -410,6 +440,6 @@ module.exports = {
   upsertEvent, listEvents, clearEventsForTournament,
   upsertEntry, clearEntriesForTournament, getEntry, listEntriesForEvent,
   insertBallot, clearBallotsForTournament, getPairingsForEntry,
-  upsertResult, clearResultsForTournament, listResults, listSpeakerAwards, inferResultsFromBallots,
+  upsertResult, clearResultsForTournament, listResults, listSpeakerAwards, inferResultsFromBallots, listRecordsForTournament,
   rebuildSeasonBids, listThreats, listEnrichedThreats, listElimRounds,
 };
