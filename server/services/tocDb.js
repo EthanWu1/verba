@@ -105,6 +105,10 @@ function upsertEntry(tournId, entry) {
   );
 }
 
+function clearEventsForTournament(tournId) {
+  getDb().prepare(`DELETE FROM toc_tournament_events WHERE tournId = ?`).run(Number(tournId));
+}
+
 function clearEntriesForTournament(tournId) {
   getDb().prepare(`DELETE FROM toc_entries WHERE tournId = ?`).run(Number(tournId));
 }
@@ -403,7 +407,7 @@ function listElimRounds(tournId, eventAbbr) {
 
 module.exports = {
   upsertTournament, getTournament, listTournaments, listSeasons, countTournaments, setTournamentCrawled,
-  upsertEvent, listEvents,
+  upsertEvent, listEvents, clearEventsForTournament,
   upsertEntry, clearEntriesForTournament, getEntry, listEntriesForEvent,
   insertBallot, clearBallotsForTournament, getPairingsForEntry,
   upsertResult, clearResultsForTournament, listResults, listSpeakerAwards, inferResultsFromBallots,

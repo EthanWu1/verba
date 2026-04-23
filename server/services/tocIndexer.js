@@ -131,6 +131,7 @@ async function indexTournament(tournId, opts = {}) {
     season,
   });
 
+  db.clearEventsForTournament(tournId);
   const entryEventMap = new Map();
   for (const cat of debateCats) {
     for (const ev of (cat.events || [])) {
