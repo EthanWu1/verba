@@ -91,13 +91,9 @@
       grid.innerHTML = `<div class="toc-muted" style="padding:12px">No ${_when} tournaments for ${esc(_season)}.</div>`;
       return;
     }
-    const head = document.createElement('div');
-    head.className = 'toc-list-head';
-    head.innerHTML = `<div>Tournament</div><div>Dates</div><div>Location</div><div style="text-align:right">Events</div>`;
-    grid.appendChild(head);
-
     const list = document.createElement('div');
     list.className = 'toc-list';
+    list.innerHTML = `<div class="toc-list-head"><div>Tournament</div><div>Dates</div><div>Location</div><div style="text-align:right">Events</div></div>`;
     tournaments.forEach(t => {
       const deduped = dedupeEvents(t.events || []);
       const eventBadges = deduped.map(ev => `<span>${esc(ev.abbr)}</span>`).join('');
