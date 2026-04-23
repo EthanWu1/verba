@@ -8,7 +8,7 @@ const rankings = require('./rankingsEngine');
 // Tabroom uses many abbr variants: LD, VLD, LD-O, LD-INP, OLD (Open LD),
 // PF, VPF, PF-O, PF-INP, PF-ONL; CX, VCX, CX-INP, POL. Match by pattern on
 // both abbr and event name; skip non-varsity (novice / JV / middle school).
-const NON_VARSITY_NAME_RE = /novice|junior\s*varsity|\bjv\b|\bms\b|middle\s*school|\bCFL\b|\bCHSSA\b|-\s*CA\b|\bCA\s*(?:bracket|division|championship)/i;
+const NON_VARSITY_NAME_RE = /novice|junior\s*varsity|\bjv\b|\bjunior\b|\bms\b|middle\s*school|rising\s*star|\bCFL\b|\bCHSSA\b|-\s*CA\b|\bCA\s*(?:bracket|division|championship)/i;
 // Side events that are not the main competitive draw: round robins, challenge/invite
 // sub-brackets, exhibitions. These often share abbrs like PFRR, LDRR, CXRR, PFCh, etc.
 const SIDE_EVENT_NAME_RE = /round\s*robin|challenge|showcase|exhibit|invitational\s*round/i;
@@ -31,6 +31,8 @@ function _isNonVarsityEvent(ev) {
   if (/^N(LD|PF|CX|POL)/.test(abbr)) return true;    // NLD, NPF, NCX, NPOL
   if (/RR$/.test(abbr)) return true;                 // PFRR, LDRR, CXRR (Round Robin)
   if (/-CA$/.test(abbr)) return true;                 // LD-CA, PF-CA (California bracket)
+  if (/-RS$/.test(abbr)) return true;                 // LD-RS, PF-RS, CX-RS (Rising Star)
+  if (/^J(LD|PF|CX|POL)/.test(abbr)) return true;     // JLD, JPF, JCX (Junior)
   return false;
 }
 function _canonicalAbbrFromText(text) {
