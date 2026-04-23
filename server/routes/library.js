@@ -65,4 +65,54 @@ router.get('/analytics', (req, res) => {
   return res.json(getLibraryAnalytics());
 });
 
+const _qCache = new Map();
+const Q_CACHE_MAX = 256;
+function _cacheGet(k) {
+  const v = _qCache.get(k);
+  if (!v) return null;
+  _qCache.delete(k); _qCache.set(k, v); // LRU bump
+  return v;
+}
+function _cachePut(k, v) {
+  _qCache.set(k, v);
+  if (_qCache.size > Q_CACHE_MAX) _qCache.delete(_qCache.keys().next().value);
+}
+
+router.get('/semantic-search', async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  const k = Math.min(100, Number(req.query.k) || 25);
+  if (q.length < 3) return res.json({ results: [] });
+
+  try {
+    const { embedOne } = require('../services/embedder');
+    const { knn } = require('../services/semanticIndex');
+    const { getDb } = require('../services/db');
+
+    let vec = _cacheGet(q);
+    if (!vec) {
+      vec = await embedOne(q);
+      if (vec) _cachePut(q, vec);
+    }
+    if (!vec) return res.json({ results: [] });
+
+    const hits = knn(vec, k);
+    if (!hits.length) return res.json({ results: [] });
+
+    const db = getDb();
+    const placeholders = hits.map(() => '?').join(',');
+    const rows = db.prepare(`
+      SELECT rowid, id, tag, cite, shortCite, body_plain
+      FROM cards WHERE rowid IN (${placeholders})
+    `).all(...hits.map(h => h.card_id));
+    const byRowid = new Map(rows.map(r => [r.rowid, r]));
+    const results = hits.map(h => {
+      const r = byRowid.get(h.card_id);
+      return r ? { ...r, score: 1 - h.distance } : null;
+    }).filter(Boolean);
+    res.json({ results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
