@@ -72,17 +72,21 @@
     main.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading profile…</div>';
     try {
       const res = await fetch(`/api/rankings/${encodeURIComponent(teamKey)}?season=${encodeURIComponent(_season)}&event=${_event}`);
-      const data = await res.json();
-      const t = data.team || {};
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const p = await res.json();
+      const rating = p.rating || {};
+      const record = p.record || {};
+      const bids = p.bids || {};
       main.innerHTML = `
-        <button class="rk-back-btn" id="rk-back-btn">← Back</button>
-        <h2 class="rk-profile-title">${esc(t.displayName || '—')}</h2>
-        <div class="rk-profile-sub">${esc(t.schoolName || '')} · ${esc(_event)} · rank #${t.rank ?? '?'}</div>
+        <button class="rk-btn-sm rk-back-btn" id="rk-back-btn">← Back</button>
+        <h2 class="rk-profile-title">${esc(p.displayName || '—')}</h2>
+        <div class="rk-profile-sub">${esc(p.schoolName || '')}${p.schoolCode ? ' · ' + esc(p.schoolCode) : ''} · ${esc(p.event || _event)} · rank #${rating.rank ?? '?'} of ${rating.outOf ?? '?'}</div>
         <div class="rk-stat-grid">
-          <div class="rk-stat-card"><div class="rk-stat-label">Rating</div><div class="rk-stat-value">${Math.round(t.rating || 0)}</div></div>
-          <div class="rk-stat-card"><div class="rk-stat-label">Peak</div><div class="rk-stat-value">${Math.round(t.peakRating || t.rating || 0)}</div></div>
-          <div class="rk-stat-card"><div class="rk-stat-label">Rounds</div><div class="rk-stat-value">${t.roundCount || 0}</div></div>
-          <div class="rk-stat-card"><div class="rk-stat-label">Record</div><div class="rk-stat-value">${t.wins || 0}-${t.losses || 0}</div></div>
+          <div class="rk-stat-card"><div class="rk-stat-label">Rating</div><div class="rk-stat-value">${Math.round(rating.current || 0)}</div></div>
+          <div class="rk-stat-card"><div class="rk-stat-label">Peak</div><div class="rk-stat-value">${Math.round(rating.peak || rating.current || 0)}</div></div>
+          <div class="rk-stat-card"><div class="rk-stat-label">Rounds</div><div class="rk-stat-value">${record.roundCount || 0}</div></div>
+          <div class="rk-stat-card"><div class="rk-stat-label">Record</div><div class="rk-stat-value">${record.wins || 0}-${record.losses || 0}</div></div>
+          ${bids.full != null ? `<div class="rk-stat-card"><div class="rk-stat-label">Bids</div><div class="rk-stat-value">${bids.full}${bids.partial ? ' <span style="font-size:14px;color:var(--muted)">+' + bids.partial + 'P</span>' : ''}</div></div>` : ''}
         </div>`;
       document.getElementById('rk-back-btn')?.addEventListener('click', () => restoreTable());
     } catch (e) {

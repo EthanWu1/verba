@@ -22,7 +22,7 @@ async function _login() {
         remember: true,
       }, {
         validateStatus: s => s >= 200 && s < 300,
-        timeout: 15000,
+        timeout: 60000,
       });
       const setCookie = res.headers['set-cookie'];
       if (!setCookie) throw new Error('opencaselist login: no cookie returned');
@@ -39,7 +39,7 @@ async function _get(path) {
   try {
     const res = await axios.get(`${BASE}${path}`, {
       headers: { Cookie: _cookie },
-      timeout: 15000,
+      timeout: 60000,
     });
     return res.data;
   } catch (err) {
@@ -48,7 +48,7 @@ async function _get(path) {
       await _login();
       const res = await axios.get(`${BASE}${path}`, {
         headers: { Cookie: _cookie },
-        timeout: 15000,
+        timeout: 60000,
       });
       return res.data;
     }
