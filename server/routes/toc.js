@@ -5,6 +5,7 @@ const router = express.Router();
 const db = require('../services/tocDb');
 const indexer = require('../services/tocIndexer');
 const requireUser = require('../middleware/requireUser');
+const { shortenDisplayName, withShortenedName } = require('../services/nameUtil');
 
 const STALE_MS = 24 * 60 * 60 * 1000;
 
@@ -63,7 +64,7 @@ router.get('/tournaments/:id/threats/:event', (req, res) => {
     (Array.isArray(e.recentPlacements) && e.recentPlacements.length > 0)
   );
   const { scoreEntries } = require('../services/threatScorer');
-  const ranked = scoreEntries(qualified, t.season, 30);
+  const ranked = scoreEntries(qualified, t.season, 30).map(withShortenedName);
   return res.json({ threats: ranked, season: t.season });
 });
 
@@ -71,8 +72,8 @@ router.get('/tournaments/:id/results/:event', (req, res) => {
   const ev = _validateEvent(req, res); if (!ev) return;
   const id = Number(req.params.id);
   return res.json({
-    results: db.listResults(id, ev),
-    speakers: db.listSpeakerAwards(id, ev, 20),
+    results:  db.listResults(id, ev).map(withShortenedName),
+    speakers: db.listSpeakerAwards(id, ev, 20).map(withShortenedName),
   });
 });
 
@@ -80,7 +81,12 @@ router.get('/entries/:entryId/pairings', (req, res) => {
   const entryId = Number(req.params.entryId);
   const entry = db.getEntry(entryId);
   if (!entry) return res.status(404).json({ error: 'not_found' });
-  return res.json({ entry, pairings: db.getPairingsForEntry(entryId) });
+  const shortEntry = { ...entry, displayName: shortenDisplayName(entry.displayName, entry.schoolName) };
+  const pairings = db.getPairingsForEntry(entryId).map(p => ({
+    ...p,
+    opponentName: shortenDisplayName(p.opponentName, p.opponentSchool),
+  }));
+  return res.json({ entry: shortEntry, pairings });
 });
 
 router.get('/tournaments/:id/refresh', requireUser, async (req, res) => {
@@ -107,8 +113,8 @@ router.get('/tournaments/:id/bracket/:event', (req, res) => {
     if (!byRoundId.has(key)) byRoundId.set(key, { roundId: r.roundId, roundName: r.roundName, ballots: [] });
     byRoundId.get(key).ballots.push(r);
   }
-  const COUNT_TO_DEPTH = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octas', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
-  const DEPTH_ORDER = { Triples: 0, Doubles: 1, Octas: 2, Quarters: 3, Semis: 4, Finals: 5 };
+  const COUNT_TO_DEPTH = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+  const DEPTH_ORDER = { Triples: 0, Doubles: 1, Octos: 2, Quarters: 3, Semis: 4, Finals: 5 };
   const rounds = [...byRoundId.values()].map(r => {
     const entries = new Set(r.ballots.map(b => b.entryId));
     const name = COUNT_TO_DEPTH[entries.size] || r.roundName || `Elim`;

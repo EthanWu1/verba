@@ -3,7 +3,7 @@
 const K_BASE_ELIM = {
   Triples:  35,
   Doubles:  45,
-  Octas:    60,
+  Octos:    60,
   Quarters: 75,
   Semis:    90,
   Finals:   120,
@@ -12,7 +12,7 @@ const K_BASE_ELIM = {
 const K_MULT_BY_BID = {
   Triples:  1.00,
   Doubles:  0.90,
-  Octas:    0.75,
+  Octos:    0.75,
   Quarters: 0.60,
   Semis:    0.45,
   Finals:   0.30,
@@ -60,8 +60,8 @@ function aggregateBallotsToResult(ballots) {
   return w > l ? 'W' : 'L';
 }
 
-const ELIM_LABELS = new Set(['Triples', 'Doubles', 'Octas', 'Quarters', 'Semis', 'Finals']);
-const COUNT_TO_DEPTH = { 64: 'Triples', 32: 'Doubles', 16: 'Octas', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+const ELIM_LABELS = new Set(['Triples', 'Doubles', 'Octos', 'Quarters', 'Semis', 'Finals']);
+const COUNT_TO_DEPTH = { 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
 
 function inferElimDepth(roundName, uniqueEntryCount) {
   if (roundName && ELIM_LABELS.has(roundName)) return roundName;

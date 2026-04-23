@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const rdb = require('../services/rankingsDb');
+const { shortenDisplayName, withShortenedName } = require('../services/nameUtil');
 
 const VALID_EVENTS = new Set(['LD', 'PF', 'CX']);
 
@@ -24,7 +25,9 @@ router.get('/', (req, res) => {
   const q = String(req.query.q || '');
   const sort = String(req.query.sort || 'rating');
   try {
-    return res.json(rdb.leaderboard({ season, event: ev, page, q, sort }));
+    const out = rdb.leaderboard({ season, event: ev, page, q, sort });
+    out.rows = (out.rows || []).map(withShortenedName);
+    return res.json(out);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -37,6 +40,7 @@ router.get('/:teamKey', (req, res) => {
   try {
     const p = rdb.profile(decodeURIComponent(req.params.teamKey), season, ev);
     if (!p) return res.status(404).json({ error: 'not_found' });
+    p.displayName = shortenDisplayName(p.displayName, p.schoolName);
     return res.json(p);
   } catch (err) {
     return res.status(500).json({ error: err.message });

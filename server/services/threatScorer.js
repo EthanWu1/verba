@@ -1,7 +1,7 @@
 'use strict';
 
 const BID_LEVEL_WEIGHT = {
-  Triples: 1.0, Doubles: 0.9, Octas: 0.75, Quarters: 0.6, Semis: 0.45, Finals: 0.3,
+  Triples: 1.0, Doubles: 0.9, Octos: 0.75, Quarters: 0.6, Semis: 0.45, Finals: 0.3,
 };
 
 function placementScore(placements) {

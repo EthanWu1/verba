@@ -162,13 +162,9 @@
       const { threats } = await res.json();
       body.innerHTML = renderThreats(threats, abbr);
     } else {
-      const [resultsRes, bracketRes] = await Promise.all([
-        fetch(`/api/toc/tournaments/${t.tourn_id}/results/${abbr}`),
-        fetch(`/api/toc/tournaments/${t.tourn_id}/bracket/${abbr}`),
-      ]);
-      const { results, speakers } = await resultsRes.json();
-      const { rounds } = await bracketRes.json();
-      body.innerHTML = renderResultsSubtabs() + renderResultsBody(results, speakers, abbr) + renderBracket(rounds);
+      const res = await fetch(`/api/toc/tournaments/${t.tourn_id}/results/${abbr}`);
+      const { results, speakers } = await res.json();
+      body.innerHTML = renderResultsSubtabs() + renderResultsBody(results, speakers, abbr);
       body.querySelectorAll('.toc-sub-tab').forEach(b => b.addEventListener('click', () => {
         _resultsSubview = b.dataset.sub;
         body.querySelectorAll('.toc-sub-tab').forEach(x => x.classList.toggle('active', x === b));
@@ -225,24 +221,6 @@
       </tr>`;
     }).join('');
     return `<table class="toc-table"><thead><tr><th>#</th><th>Team</th><th>Season Bids (${esc(abbr)})</th><th>Wiki</th></tr></thead><tbody>${body}</tbody></table>`;
-  }
-
-  function renderBracket(rounds) {
-    if (!rounds || !rounds.length) return '';
-    const cols = rounds.map(r => {
-      const winners = (r.ballots || []).filter(b => b.result === 'W');
-      const items = winners.map(w => `
-        <div class="bracket-cell">
-          <div class="bracket-name">${esc(w.displayName || '—')}</div>
-          <div class="bracket-school">${esc(w.schoolCode || '')}</div>
-        </div>
-      `).join('');
-      return `<div class="bracket-col">
-        <div class="bracket-col-head">${esc(r.name)}</div>
-        ${items || '<div class="toc-muted">—</div>'}
-      </div>`;
-    }).join('');
-    return `<div class="toc-section-title">Bracket</div><div class="bracket-grid">${cols}</div>`;
   }
 
   function attachEntryClicks(root) {

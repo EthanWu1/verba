@@ -1860,7 +1860,8 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
   .wiki-panel-detail { transform: none; max-height: 60vh; }
 }
 /* ── Tournament page ─────────────────────────── */
-.toc-shell { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.toc-shell { display: flex; flex-direction: column; height: 100%; overflow: hidden; padding: 16px 24px; box-sizing: border-box; }
+.toc-grid { overflow-y: auto; }
 .toc-topbar {
   display: flex; align-items: center; gap: 16px;
   padding: 10px 16px; border-bottom: 1px solid var(--border, #e5e5e5);
@@ -1966,21 +1967,19 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .toc-view-tab { background: none; border: 0; padding: 8px 16px; font: 500 13px var(--font-display); color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
 .toc-view-tab:hover { color: var(--ink-2); }
 .toc-view-tab.active { color: var(--ink); border-bottom-color: var(--lilac-3, #a78bfa); }
-.bracket-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(140px, 1fr); gap: 12px; overflow-x: auto; padding: 4px 0 12px; }
-.bracket-col { display: flex; flex-direction: column; gap: 6px; min-width: 140px; }
-.bracket-col-head { font: 600 12px var(--font-display); color: var(--muted); text-transform: uppercase; letter-spacing: .5px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
-.bracket-cell { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 500 12.5px var(--font-ui); transition: transform .15s, border-color .15s; }
-.bracket-cell:hover { transform: translateX(2px); border-color: var(--lilac-3, #a78bfa); }
-.bracket-name { color: var(--ink); }
-.bracket-school { color: var(--muted); font-size: 11px; margin-top: 2px; }
 .toc-list { display: flex; flex-direction: column; padding: 0; width: 100%; }
-.toc-list-row { display: flex; align-items: center; gap: 16px; padding: 12px 4px; border-bottom: 1px solid var(--line); cursor: pointer; background: transparent; transition: background-color .12s; }
+.toc-list-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 16px 8px; border-bottom: 1px solid var(--line); cursor: pointer; background: transparent; transition: background-color .12s; }
 .toc-list-row:hover { background: var(--panel); }
-.toc-list-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.toc-list-name { font: 600 14px var(--font-display); color: var(--ink); }
-.toc-list-meta { font: 12px var(--font-ui); color: var(--muted); }
-.toc-list-events { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; flex-shrink: 0; }
-.toc-list-events > span { font: 500 11.5px var(--font-mono); color: var(--muted); padding: 3px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+.toc-list-main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.toc-list-name { font: 600 15.5px var(--font-display); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toc-list-meta { font: 13px var(--font-ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toc-list-events { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 360px; }
+.toc-list-events > span { font: 500 12.5px var(--font-mono); color: var(--muted); padding: 4px 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); white-space: nowrap; }
+@media (max-width: 640px) {
+  .toc-list-row { grid-template-columns: 1fr; }
+  .toc-list-events { justify-content: flex-start; max-width: 100%; }
+  .toc-list-name { white-space: normal; }
+}
 .toc-event-select { background: var(--bg); border: 1px solid var(--line); color: var(--ink); padding: 6px 10px; border-radius: 6px; font: 13px var(--font-ui); min-width: 200px; }
 .toc-sub-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 8px 0 12px; }
 .toc-sub-tab { background: none; border: 0; padding: 8px 14px; font: 500 13px var(--font-display); color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }

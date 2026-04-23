@@ -135,7 +135,7 @@ function clearBallotsForTournament(tournId) {
   getDb().prepare(`DELETE FROM toc_ballots WHERE tournId = ?`).run(Number(tournId));
 }
 
-const COUNT_TO_DEPTH = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octas', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+const COUNT_TO_DEPTH = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
 
 function getPairingsForEntry(entryId) {
   const db = getDb();

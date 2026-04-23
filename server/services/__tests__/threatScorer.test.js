@@ -8,7 +8,7 @@ test('scoreEntries returns sorted desc by hybrid score, capped at 30', () => {
     entryId: i + 1,
     teamKey: 'T' + i,
     seasonBids: 50 - i,
-    recentPlacements: [{ place: i + 1, bidLevel: 'Octas' }],
+    recentPlacements: [{ place: i + 1, bidLevel: 'Octos' }],
   }));
   const out = scoreEntries(entries, '2025-2026');
   assert.equal(out.length, 30);

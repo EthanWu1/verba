@@ -5,7 +5,21 @@ const db      = require('./tocDb');
 const parser  = require('./tocParser');
 const rankings = require('./rankingsEngine');
 
-const DEBATE_ABBRS = new Set(['LD', 'PF', 'CX']);
+// Tabroom uses category abbrs like VLD (Varsity LD), VPF, JVLD etc. We normalize
+// to canonical LD/PF/CX and skip non-varsity divisions entirely.
+const ABBR_CANON = {
+  LD: 'LD', VLD: 'LD', SLD: 'LD', OLD: 'LD',
+  PF: 'PF', VPF: 'PF', SPF: 'PF',
+  CX: 'CX', VCX: 'CX', POL: 'CX',
+};
+function _canonicalAbbr(rawAbbr) {
+  return ABBR_CANON[String(rawAbbr || '').toUpperCase()] || null;
+}
+const NON_VARSITY_RE = /novice|junior varsity|\bjv\b|\bms\b|middle school/i;
+function _isNonVarsityEvent(ev) {
+  const blob = `${ev && ev.name || ''} ${ev && ev.abbr || ''}`;
+  return NON_VARSITY_RE.test(blob);
+}
 
 let _seeding = false;
 const _inflight = new Map();
@@ -70,7 +84,11 @@ async function indexTournament(tournId, opts = {}) {
   const { skipRecompute = false } = opts;
   const json = await crawler.fetchTournamentJson(tournId);
 
-  const debateCats = (json.categories || []).filter(c => DEBATE_ABBRS.has((c.abbr || '').toUpperCase()));
+  // Consider any category whose abbr or whose event.abbr canonicalizes to LD/PF/CX
+  const debateCats = (json.categories || []).filter(c => {
+    if (_canonicalAbbr(c.abbr)) return true;
+    return (c.events || []).some(ev => _canonicalAbbr(ev.abbr));
+  });
   if (!debateCats.length) return null;
 
   const season = parser.seasonFor(json.start);
@@ -88,15 +106,17 @@ async function indexTournament(tournId, opts = {}) {
 
   const entryEventMap = new Map();
   for (const cat of debateCats) {
-    const abbr = cat.abbr.toUpperCase();
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
+      if (_isNonVarsityEvent(ev)) continue;
+      const canon = _canonicalAbbr(ev.abbr) || _canonicalAbbr(cat.abbr);
+      if (!canon) continue;
       const bid = parser.inferBidLevel(ev);
-      db.upsertEvent(tournId, { eventId: Number(ev.id), abbr, name: ev.name, ...bid });
+      db.upsertEvent(tournId, { eventId: Number(ev.id), abbr: canon, name: ev.name, ...bid });
       for (const school of (json.schools || [])) {
         for (const entry of (school.entries || [])) {
           if (Number(entry.event) === Number(ev.id) && !entry.dropped) {
-            entryEventMap.set(Number(entry.id), { abbr, school });
+            entryEventMap.set(Number(entry.id), { abbr: canon, school });
           }
         }
       }
@@ -107,6 +127,8 @@ async function indexTournament(tournId, opts = {}) {
   for (const cat of debateCats) {
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
+      if (_isNonVarsityEvent(ev)) continue;
+      if (!_canonicalAbbr(ev.abbr) && !_canonicalAbbr(cat.abbr)) continue;
       const map = parser.parseEarnedBids(ev);
       for (const [eid, val] of map) earnedByEvent.set(eid, val);
     }
@@ -133,22 +155,26 @@ async function indexTournament(tournId, opts = {}) {
 
   db.clearBallotsForTournament(tournId);
   for (const cat of debateCats) {
-    const abbr = cat.abbr.toUpperCase();
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
+      if (_isNonVarsityEvent(ev)) continue;
+      const canon = _canonicalAbbr(ev.abbr) || _canonicalAbbr(cat.abbr);
+      if (!canon) continue;
       for (const ballot of parser.parseBallots(ev)) {
-        db.insertBallot({ ...ballot, tournId: Number(tournId), eventAbbr: abbr });
+        db.insertBallot({ ...ballot, tournId: Number(tournId), eventAbbr: canon });
       }
     }
   }
 
   db.clearResultsForTournament(tournId);
   for (const cat of debateCats) {
-    const abbr = cat.abbr.toUpperCase();
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
+      if (_isNonVarsityEvent(ev)) continue;
+      const canon = _canonicalAbbr(ev.abbr) || _canonicalAbbr(cat.abbr);
+      if (!canon) continue;
       for (const r of parser.parseResults(ev)) {
-        db.upsertResult({ tournId: Number(tournId), eventAbbr: abbr, ...r });
+        db.upsertResult({ tournId: Number(tournId), eventAbbr: canon, ...r });
       }
     }
   }

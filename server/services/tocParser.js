@@ -27,18 +27,27 @@ function teamKeyFor(entry, school) {
   return `${sid}:e${entry.id ?? ('c:' + fnv1a(String(entry.code || entry.name || '')))}`;
 }
 
-const BID_MAP = { 64: 'Triples', 32: 'Doubles', 16: 'Octas', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+const BID_MAP = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+const BID_RANK = { Triples: 0, Doubles: 1, Octos: 2, Quarters: 3, Semis: 4, Finals: 5 };
 
 function inferBidLevel(event) {
-  const rs = (event.result_sets || []).find(r => /bid/i.test(r.label || ''));
-  if (!rs) return { bidLevel: null, fullBids: 0, partialBids: 0 };
+  const bidSets = (event.result_sets || []).filter(r => /bid/i.test(r.label || ''));
+  if (!bidSets.length) return { bidLevel: null, fullBids: 0, partialBids: 0 };
   let full = 0, partial = 0;
-  for (const result of (rs.results || [])) {
-    const vals = result.values || [];
-    if (vals.some(v => v.value === 'Full')) full++;
-    else if (vals.some(v => v.value === 'Partial')) partial++;
+  let bestLevel = null;
+  for (const rs of bidSets) {
+    let rsFull = 0, rsPartial = 0;
+    for (const result of (rs.results || [])) {
+      const vals = result.values || [];
+      if (vals.some(v => v.value === 'Full')) rsFull++;
+      else if (vals.some(v => v.value === 'Partial')) rsPartial++;
+    }
+    full += rsFull;
+    partial += rsPartial;
+    const lvl = BID_MAP[rsFull];
+    if (lvl && (!bestLevel || BID_RANK[lvl] > BID_RANK[bestLevel])) bestLevel = lvl;
   }
-  return { bidLevel: BID_MAP[full] || null, fullBids: full, partialBids: partial };
+  return { bidLevel: bestLevel, fullBids: full, partialBids: partial };
 }
 
 function _side(side) {
@@ -125,14 +134,19 @@ function parseResults(event) {
 }
 
 function parseEarnedBids(event) {
-  const bids = (event.result_sets || []).find(r => /bid/i.test(r.label || ''));
   const map = new Map();
-  if (!bids) return map;
-  for (const r of (bids.results || [])) {
-    if (!r.entry) continue;
-    const vals = r.values || [];
-    if (vals.some(v => v.value === 'Full')) map.set(Number(r.entry), 'Full');
-    else if (vals.some(v => v.value === 'Partial')) map.set(Number(r.entry), 'Partial');
+  const bidSets = (event.result_sets || []).filter(r => /bid/i.test(r.label || ''));
+  for (const bids of bidSets) {
+    for (const r of (bids.results || [])) {
+      if (!r.entry) continue;
+      const vals = r.values || [];
+      const entryId = Number(r.entry);
+      if (vals.some(v => v.value === 'Full')) {
+        map.set(entryId, 'Full'); // Full supersedes Partial if multiple bid sets exist
+      } else if (vals.some(v => v.value === 'Partial') && map.get(entryId) !== 'Full') {
+        map.set(entryId, 'Partial');
+      }
+    }
   }
   return map;
 }
