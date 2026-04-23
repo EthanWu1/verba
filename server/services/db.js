@@ -902,7 +902,10 @@ function saveMeta(meta) {
   `);
   const save = db.transaction(obj => {
     for (const [key, val] of Object.entries(obj)) {
-      stmt.run(key, JSON.stringify(val));
+      if (val === undefined) continue;
+      const json = JSON.stringify(val);
+      if (json === undefined) continue;
+      stmt.run(key, json);
     }
   });
   save(meta);

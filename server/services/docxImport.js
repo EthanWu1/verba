@@ -31,8 +31,22 @@ function normalizeWhitespace(text) {
 
 function normalizeShortCite(text) {
   const value = normalizeWhitespace(text).replace(/[’]/g, "'");
-  const match = value.match(/^([A-Z][A-Za-z.\-]+)\s*'(\d{2})\b/);
-  return match ? `${match[1]} '${match[2]}` : '';
+  // Canonical: Smith '24
+  let m = value.match(/^([A-Z][A-Za-z.\-]+)\s*'(\d{2})\b/);
+  if (m) return `${m[1]} '${m[2]}`;
+  // Fallback: Smith 24 or Smith 2024 (no apostrophe)
+  m = value.match(/^([A-Z][A-Za-z.\-]+)\s+(\d{2}|\d{4})\b/);
+  if (m) {
+    const yy = m[2].length === 4 ? m[2].slice(-2) : m[2];
+    return `${m[1]} '${yy}`;
+  }
+  // Month-day-year: Smith 6-13-2025 or Smith 6-13 -2025
+  m = value.match(/^([A-Z][A-Za-z.\-]+)\s+\d{1,2}\s*[-\/]\s*\d{1,2}\s*[-\/]\s*(\d{2}|\d{4})\b/);
+  if (m) {
+    const yy = m[2].length === 4 ? m[2].slice(-2) : m[2];
+    return `${m[1]} '${yy}`;
+  }
+  return '';
 }
 
 function inferTopicBucket(cardText) {
