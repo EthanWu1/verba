@@ -80,7 +80,7 @@
   /* ──────────────────────────────────────────
      ROUTER — 2 pages: home (Card Cutter), library
      ────────────────────────────────────────── */
-  const PAGES = ['home', 'library', 'tournament', 'teams', 'rankings'];
+  const PAGES = ['home', 'library', 'tournament', 'rankings'];
   const LEGACY = {
     community: 'library', saved: 'library', history: 'library', mine: 'library',
     research: 'home', chatbot: 'home', assistant: 'library',
