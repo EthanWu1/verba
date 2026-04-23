@@ -266,8 +266,8 @@ function rebuildSeasonBids(season) {
     db.prepare(`
       INSERT INTO toc_season_bids (season, teamKey, eventAbbr, fullBids, partialBids, displayName, schoolCode)
       SELECT t.season, e.teamKey, e.eventAbbr,
-             SUM(CASE WHEN e.earnedBid = 'Full'    THEN 1 ELSE 0 END),
-             SUM(CASE WHEN e.earnedBid = 'Partial' THEN 1 ELSE 0 END),
+             SUM(CASE WHEN e.earnedBid = 'Full' THEN 1 ELSE 0 END),
+             SUM(CASE WHEN e.earnedBid IS NOT NULL AND e.earnedBid != 'Full' THEN 1 ELSE 0 END),
              MAX(e.displayName), MAX(e.schoolCode)
       FROM toc_entries e
       JOIN toc_tournaments t ON t.tourn_id = e.tournId
@@ -276,6 +276,77 @@ function rebuildSeasonBids(season) {
     `).run(s);
   });
   tx(season);
+}
+
+// Infer final places for a tournament from toc_ballots when toc_results is empty.
+// Each entry's place is the depth label of the deepest elim round they played, with
+// winners of the final receiving "1st" and the final losers "2nd".
+function inferResultsFromBallots(tournId, eventAbbr) {
+  const db = getDb();
+  const ballots = db.prepare(`
+    SELECT b.roundId, b.roundName, b.entryId, b.result,
+           e.displayName, e.schoolName, e.schoolCode, e.earnedBid
+    FROM toc_ballots b
+    JOIN toc_entries e ON e.tournId = b.tournId AND e.entryId = b.entryId AND e.eventAbbr = b.eventAbbr
+    WHERE b.tournId = ? AND b.eventAbbr = ? AND b.roundType != 'prelim'
+  `).all(Number(tournId), eventAbbr);
+  if (!ballots.length) return [];
+
+  // Count unique entries per roundId (to infer depth).
+  const entriesPerRound = new Map();
+  for (const b of ballots) {
+    if (!entriesPerRound.has(b.roundId)) entriesPerRound.set(b.roundId, new Set());
+    entriesPerRound.get(b.roundId).add(b.entryId);
+  }
+
+  // Aggregate per (entry, round) → majority result.
+  const key = (e, r) => `${e}|${r}`;
+  const agg = new Map();
+  for (const b of ballots) {
+    const k = key(b.entryId, b.roundId);
+    if (!agg.has(k)) agg.set(k, { wins: 0, losses: 0, roundId: b.roundId, entryId: b.entryId, meta: b });
+    const a = agg.get(k);
+    if (b.result === 'W') a.wins++;
+    else if (b.result === 'L') a.losses++;
+  }
+
+  // For each entry, find the deepest round they appeared in (fewest entries in the round).
+  const perEntry = new Map();
+  for (const { roundId, entryId, wins, losses, meta } of agg.values()) {
+    const size = entriesPerRound.get(roundId).size;
+    if (!perEntry.has(entryId) || perEntry.get(entryId).size > size) {
+      perEntry.set(entryId, { size, roundId, wins, losses, meta });
+    }
+  }
+
+  // Determine champion: if an entry WON their deepest round and that round size === 2, they're 1st.
+  // The opponent in the same round with L → 2nd.
+  const results = [];
+  for (const [entryId, info] of perEntry.entries()) {
+    let place;
+    const depth = COUNT_TO_DEPTH[info.size];
+    const won = info.wins > info.losses;
+    if (info.size === 2) {
+      place = won ? '1st' : '2nd';
+    } else {
+      place = depth || ('Round ' + info.meta.roundName);
+    }
+    results.push({
+      tournId: Number(tournId),
+      eventAbbr,
+      entryId,
+      place,
+      rank: null,
+      displayName: info.meta.displayName,
+      schoolName: info.meta.schoolName,
+      schoolCode: info.meta.schoolCode,
+      earnedBid: info.meta.earnedBid,
+    });
+  }
+  // Sort: 1st, 2nd, 3rd, Semis, Quarters, Octos, ...
+  const PLACE_ORDER = { '1st': 0, '2nd': 1, '3rd': 2, Semis: 3, Quarters: 4, Octos: 5, Doubles: 6, Triples: 7, Partials: 8 };
+  results.sort((a, b) => (PLACE_ORDER[a.place] ?? 99) - (PLACE_ORDER[b.place] ?? 99));
+  return results;
 }
 
 function listThreats(tournId, eventAbbr, season) {
@@ -335,6 +406,6 @@ module.exports = {
   upsertEvent, listEvents,
   upsertEntry, clearEntriesForTournament, getEntry, listEntriesForEvent,
   insertBallot, clearBallotsForTournament, getPairingsForEntry,
-  upsertResult, clearResultsForTournament, listResults, listSpeakerAwards,
+  upsertResult, clearResultsForTournament, listResults, listSpeakerAwards, inferResultsFromBallots,
   rebuildSeasonBids, listThreats, listEnrichedThreats, listElimRounds,
 };

@@ -71,8 +71,12 @@ router.get('/tournaments/:id/threats/:event', (req, res) => {
 router.get('/tournaments/:id/results/:event', (req, res) => {
   const ev = _validateEvent(req, res); if (!ev) return;
   const id = Number(req.params.id);
+  let results = db.listResults(id, ev);
+  if (!results.length) {
+    results = db.inferResultsFromBallots(id, ev);
+  }
   return res.json({
-    results:  db.listResults(id, ev).map(withShortenedName),
+    results:  results.map(withShortenedName),
     speakers: db.listSpeakerAwards(id, ev, 20).map(withShortenedName),
   });
 });

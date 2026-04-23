@@ -30,7 +30,7 @@ function _isNonVarsityEvent(ev) {
 function _canonicalAbbrFromText(text) {
   const s = String(text || '').toUpperCase();
   if (!s) return null;
-  if (NON_VARSITY_RE.test(s)) return null;
+  if (NON_VARSITY_NAME_RE.test(s)) return null;
   if (/\bLD\b|LINCOLN[-\s]?DOUGLAS/.test(s)) return 'LD';
   if (/\bPF\b|PUBLIC\s*FORUM/.test(s))        return 'PF';
   if (/\bCX\b|POLICY(?!\s*DEBATE.*SPEAKER)/.test(s)) return 'CX';
