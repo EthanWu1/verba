@@ -63,34 +63,59 @@ async function crawlTeamDetail(teamId) {
       crawler.fetchCites(caselist, school, code),
     ]);
 
-    const roundById = new Map();
-    (rounds || []).forEach(r => roundById.set(r.round_id, r));
+    // Index cites by round_id for quick lookup
+    const citesByRound = new Map();
+    for (const cite of (cites || [])) {
+      if (!citesByRound.has(cite.round_id)) citesByRound.set(cite.round_id, []);
+      citesByRound.get(cite.round_id).push(cite);
+    }
 
     db.clearRoundReports(teamId);
 
-    const sortedCites = [...(cites || [])].sort((a, b) => {
-      const rA = roundById.get(a.round_id);
-      const rB = roundById.get(b.round_id);
-      const tA = rA?.created_at ? Date.parse(rA.created_at) : a.round_id || 0;
-      const tB = rB?.created_at ? Date.parse(rB.created_at) : b.round_id || 0;
+    // Build arg groups from rounds (authoritative) + match cites when available
+    const sorted = [...(rounds || [])].sort((a, b) => {
+      const tA = a.created_at ? Date.parse(a.created_at) : a.round_id || 0;
+      const tB = b.created_at ? Date.parse(b.created_at) : b.round_id || 0;
       return tA - tB;
     });
 
     const groups = new Map();
-    for (const cite of sortedCites) {
-      const name = _stripTournamentPrefix(cite.title || 'Untitled');
-      const round = roundById.get(cite.round_id);
-      const side = _inferSide(cite.title || '', round?.side);
-      const key = `${side}::${name}`;
+    for (const round of sorted) {
+      const matchedCites = citesByRound.get(round.round_id) || [];
+      const baseSide = round.side === 'A' ? 'aff' : round.side === 'N' ? 'neg' : null;
 
-      let g = groups.get(key);
-      if (!g) {
-        g = { name, side, fullText: cite.cites || '', reads: [] };
-        groups.set(key, g);
+      if (matchedCites.length) {
+        for (const cite of matchedCites) {
+          const name = _stripTournamentPrefix(cite.title || `${round.tournament} ${round.round}`);
+          const side = _inferSide(cite.title || '', round.side) || baseSide;
+          const key = `${side}::${name.toLowerCase()}`;
+          let g = groups.get(key);
+          if (!g) {
+            g = { name, side, fullText: cite.cites || '', reads: [] };
+            groups.set(key, g);
+          } else if (!g.fullText && cite.cites) {
+            g.fullText = cite.cites;
+          }
+          g.reads.push({ round });
+        }
       } else {
-        g.fullText = cite.cites || g.fullText;
+        // No cite — still record the round so UI shows the arg/download
+        const name = `${round.tournament || 'Round'} ${round.round || ''}`.trim();
+        const side = baseSide;
+        const key = `${side}::${name.toLowerCase()}`;
+        let g = groups.get(key);
+        if (!g) {
+          const docxLink = round.opensource ? `https://opencaselist.com/openev/${round.opensource}.docx` : null;
+          const body = round.report
+            ? round.report
+            : docxLink
+              ? `Open-source docx: ${docxLink}`
+              : '';
+          g = { name, side, fullText: body, reads: [] };
+          groups.set(key, g);
+        }
+        g.reads.push({ round });
       }
-      g.reads.push({ round, originalTitle: cite.title });
     }
 
     for (const g of groups.values()) {
