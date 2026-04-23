@@ -104,15 +104,28 @@
       const topArg = (p.topArguments || [])[0] || null;
 
       const chart = renderEloChart(h.history || []);
-      const tournRows = tournaments.map(t => `
-        <tr>
+      const isPrelim = (s) => /^prelim/i.test(String(s || ''));
+      const shortBid = (b) => {
+        if (!b) return '';
+        const s = String(b);
+        if (/^full/i.test(s)) return 'Full';
+        if (/^silver/i.test(s)) return 'Silver';
+        if (/^ghost/i.test(s)) return 'Ghost';
+        if (/^partial/i.test(s)) return 'Partial';
+        return s;
+      };
+      const bidCls = (b) => 'toc-bid toc-bid-' + (shortBid(b).toLowerCase() || 'other');
+      const tournRows = tournaments.map(t => {
+        const placeCell = (!t.place || isPrelim(t.place)) ? '<span class="rk-muted">—</span>' : esc(t.place);
+        const bidCell = t.earnedBid ? `<span class="${bidCls(t.earnedBid)}">${esc(shortBid(t.earnedBid))}</span>` : '<span class="rk-muted">—</span>';
+        return `<tr>
           <td>${esc(t.name || '')}</td>
           <td>${esc(t.startDate || '')}</td>
           <td>${t.wins || 0}-${t.losses || 0}</td>
-          <td>${t.place ? esc(t.place) : '<span class="rk-muted">—</span>'}</td>
-          <td>${t.earnedBid ? `<span class="rk-bid-badge">${esc(t.earnedBid)}</span>` : '<span class="rk-muted">—</span>'}</td>
-        </tr>
-      `).join('') || `<tr><td colspan="5" style="padding:16px;color:var(--muted)">No tournaments yet.</td></tr>`;
+          <td>${placeCell}</td>
+          <td>${bidCell}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="5" style="padding:16px;color:var(--muted)">No tournaments yet.</td></tr>`;
 
       const favBlock = topArg
         ? `<div class="rk-stat-card rk-arg-card">

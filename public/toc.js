@@ -91,6 +91,11 @@
       grid.innerHTML = `<div class="toc-muted" style="padding:12px">No ${_when} tournaments for ${esc(_season)}.</div>`;
       return;
     }
+    const head = document.createElement('div');
+    head.className = 'toc-list-head';
+    head.innerHTML = `<div>Tournament</div><div>Dates</div><div>Location</div><div style="text-align:right">Events</div>`;
+    grid.appendChild(head);
+
     const list = document.createElement('div');
     list.className = 'toc-list';
     tournaments.forEach(t => {
@@ -100,10 +105,9 @@
       const row = document.createElement('div');
       row.className = 'toc-list-row';
       row.innerHTML = `
-        <div class="toc-list-main">
-          <div class="toc-list-name">${esc(t.name)}</div>
-          <div class="toc-list-meta">${esc(t.startDate)} → ${esc(t.endDate)}${loc ? ' · ' + esc(loc) : ''}</div>
-        </div>
+        <div class="toc-list-name">${esc(t.name)}</div>
+        <div class="toc-list-dates">${esc(t.startDate)} → ${esc(t.endDate)}</div>
+        <div class="toc-list-loc">${esc(loc) || '<span class="toc-muted">—</span>'}</div>
         <div class="toc-list-events">${eventBadges}</div>`;
       row.addEventListener('click', () => openDetail(t));
       list.appendChild(row);
@@ -134,7 +138,7 @@
       events.forEach(ev => {
         const opt = document.createElement('option');
         opt.value = ev.abbr;
-        opt.textContent = eventLabel(ev);
+        opt.textContent = ev.abbr; // just LD / PF / CX in selector
         select.appendChild(opt);
       });
       select.addEventListener('change', () => loadEventBody(t, select.value));
@@ -220,12 +224,38 @@
     const match = s.match(/^(\d+)(st|nd|rd|th)$/i);
     if (match) return match[1] + match[2].toLowerCase();
     const key = s.toUpperCase();
-    return PLACE_ALIASES[key] || s;
+    if (PLACE_ALIASES[key]) return PLACE_ALIASES[key];
+    // Fuzzy prefix match (semifina, quarterf, octafina, triplef, etc.)
+    if (/^SEMIFINA/.test(key))    return 'Semis';
+    if (/^QUARTERF/.test(key))    return 'Quarters';
+    if (/^OCTAFINA|^OCTOFINA/.test(key)) return 'Octos';
+    if (/^DOUBLEOCT|^DOUBLE-OCT|^DOUBLES/.test(key)) return 'Doubles';
+    if (/^TRIPLE/.test(key))      return 'Triples';
+    if (/^FINAL/.test(key))       return 'Finals';
+    if (/^PARTIAL/.test(key))     return 'Partials';
+    return s;
+  }
+
+  function normalizeBid(raw) {
+    if (!raw) return '';
+    const s = String(raw).trim();
+    if (/^full/i.test(s))    return 'Full';
+    if (/^silver/i.test(s))  return 'Silver';
+    if (/^ghost/i.test(s))   return 'Ghost';
+    if (/^partial/i.test(s)) return 'Partial';
+    return s;
+  }
+  function bidClass(raw) {
+    const b = normalizeBid(raw);
+    return 'toc-bid-' + (b.toLowerCase() || 'other');
   }
 
   function placesTable(results, abbr) {
-    const places = (results || []).filter(r => r.place || r.rank);
-    if (!places.length) return '<div class="toc-muted" style="padding:24px 0">No final places recorded.</div>';
+    const all = (results || []).filter(r => r.place || r.rank);
+    if (!all.length) return '<div class="toc-muted" style="padding:24px 0">No final places recorded.</div>';
+    const nonPrelim = all.filter(r => !/^prelim/i.test(String(r.place || '')));
+    const prelim = all.filter(r => /^prelim/i.test(String(r.place || '')));
+    const places = [...nonPrelim, ...prelim];
     const rows = places.map((r, i) => {
       let placeCell;
       if (r.rank === 1) placeCell = '1st';
@@ -234,10 +264,14 @@
       else if (r.place) placeCell = normalizePlace(r.place);
       else if (r.rank) placeCell = ordinal(r.rank);
       else placeCell = ordinal(i + 1);
+      const bidTxt = normalizeBid(r.earnedBid);
+      const bidHtml = bidTxt
+        ? `<span class="toc-bid ${bidClass(r.earnedBid)}">${esc(bidTxt)}</span>`
+        : '<span class="toc-muted">—</span>';
       return `<tr data-entry="${r.entryId}">
         <td>${esc(placeCell)}</td>
         <td><strong>${esc(r.displayName || '')}</strong></td>
-        <td>${r.earnedBid ? `<span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span>` : '<span class="toc-muted">—</span>'}</td>
+        <td>${bidHtml}</td>
       </tr>`;
     }).join('');
     return `<table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>Bid</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -280,7 +314,8 @@
     if (p.roundType === 'prelim' || p.roundType === 'highlow') {
       return Number.isFinite(n) ? 'R' + n : p.roundName;
     }
-    return Number.isFinite(n) ? 'Elim ' + n : p.roundName;
+    // Elim round without inferred depth — default to Partials rather than "Elim N".
+    return 'Partials';
   }
 
   async function showPairings(entryId) {
@@ -301,7 +336,7 @@
           <td>${esc((p.side || '—').toUpperCase())}</td>
           <td>${oppCell}</td>
           <td>${esc(p.judgeName || '—')}</td>
-          <td><strong>${esc(p.result || '—')}</strong></td>
+          <td><strong>${esc((p.ballotResults && p.ballotResults.length) ? p.ballotResults.join('') : (p.result || '—'))}</strong></td>
           <td>${p.speakerPoints != null ? p.speakerPoints.toFixed(1) : '—'}</td>
         </tr>`;
       }).join('');

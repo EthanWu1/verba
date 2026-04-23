@@ -182,7 +182,8 @@ function getPairingsForEntry(entryId) {
         opponentEntryId: r.opponentEntryId,
         opponentName: r.opponentName,
         opponentSchool: r.opponentSchool,
-        judgeNames: new Set(),
+        judgeNames: [],
+        ballotResults: [],
         wins: 0,
         losses: 0,
         speakerPointsTotal: 0,
@@ -190,7 +191,8 @@ function getPairingsForEntry(entryId) {
       });
     }
     const agg = byRound.get(key);
-    if (r.judgeName) agg.judgeNames.add(r.judgeName);
+    if (r.judgeName && !agg.judgeNames.includes(r.judgeName)) agg.judgeNames.push(r.judgeName);
+    if (r.result === 'W' || r.result === 'L') agg.ballotResults.push(r.result);
     if (r.result === 'W') agg.wins++;
     else if (r.result === 'L') agg.losses++;
     if (r.speakerPoints != null) {
@@ -206,7 +208,8 @@ function getPairingsForEntry(entryId) {
     opponentEntryId: r.opponentEntryId,
     opponentName: r.opponentName,
     opponentSchool: r.opponentSchool,
-    judgeName: [...r.judgeNames].join(', ') || null,
+    judgeName: r.judgeNames.join(', ') || null,
+    ballotResults: r.ballotResults,
     result: r.wins > r.losses ? 'W' : r.losses > r.wins ? 'L' : null,
     ballotCount: r.wins + r.losses,
     speakerPoints: r.speakerPointsCount ? r.speakerPointsTotal / r.speakerPointsCount : null,
