@@ -215,6 +215,7 @@
   function normalizePlace(raw) {
     const s = String(raw == null ? '' : raw).trim();
     if (!s) return '';
+    if (/^prelim/i.test(s)) return '—';
     if (/^\d+$/.test(s)) return ordinal(Number(s));
     const match = s.match(/^(\d+)(st|nd|rd|th)$/i);
     if (match) return match[1] + match[2].toLowerCase();
