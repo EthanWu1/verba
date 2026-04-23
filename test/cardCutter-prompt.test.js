@@ -13,8 +13,9 @@ test('prompt allows partial-word highlights', () => {
 test('prompt still enforces PARAGRAPH INTEGRITY', () => {
   assert.match(SYSTEM_PROMPT, /PARAGRAPH INTEGRITY/);
 });
-test('prompt emphasizes efficiency / shorter spans', () => {
-  assert.match(SYSTEM_PROMPT, /EFFICIENCY|shortest/i);
+test('prompt requires complete-thought highlights with subject+verb+object', () => {
+  assert.match(SYSTEM_PROMPT, /complete thought|complete clause|complete sentences?/i);
+  assert.match(SYSTEM_PROMPT, /subject \+ verb \+ object|subject,? verb,? (and |&|\+)?object/i);
 });
 test('prompt contains BAD bulleted-noun-phrase vs GOOD subject+verb example', () => {
   assert.match(SYSTEM_PROMPT, /BAD\b[\s\S]*GOOD\b/);
