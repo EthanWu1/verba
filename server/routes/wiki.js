@@ -38,13 +38,19 @@ router.get('/teams/:id', async (req, res) => {
   return res.json({ team, arguments: args });
 });
 
-// GET /api/wiki/teams/:id/full  — team + arguments (no crawl trigger)
+// GET /api/wiki/teams/:id/full  — team + arguments, triggers crawl if stale
 router.get('/teams/:id/full', (req, res) => {
   const id = String(req.params.id);
   const team = db.getTeam(id);
   if (!team) return res.status(404).json({ error: 'not_found' });
+  if (db.isTeamStale(team) && team.crawlStatus !== 'crawling') {
+    db.setTeamCrawlStatus(team.id, 'crawling');
+    indexer.crawlTeamDetail(team.id).catch(err =>
+      console.error('[wiki] crawl error:', err.message)
+    );
+  }
   const args = db.getTeamArguments(id);
-  res.json({ team, arguments: args });
+  res.json({ team, arguments: args, crawling: team.crawlStatus === 'crawling' || db.isTeamStale(team) });
 });
 
 // GET /api/wiki/teams/:id/refresh  — force re-crawl

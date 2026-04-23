@@ -79,18 +79,19 @@
     inner.innerHTML = '<div class="wk-empty" style="padding:8px 0">Loading…</div>';
     try {
       const res = await fetch(`/api/wiki/teams/${encodeURIComponent(id)}/full`);
-      const { team, arguments: args } = await res.json();
-      inner.dataset.loaded = '1';
-      inner.innerHTML = renderArgs(team, args);
+      const { team, arguments: args, crawling } = await res.json();
+      inner.dataset.loaded = args && args.length ? '1' : '0';
+      inner.innerHTML = renderArgs(team, args, crawling);
     } catch (e) {
       inner.innerHTML = `<div class="wk-empty" style="padding:8px 0">Failed: ${esc(e.message)}</div>`;
     }
   }
 
-  function renderArgs(team, args) {
+  function renderArgs(team, args, crawling) {
     const link = team && team.pageUrl ? `<a class="wk-link-out" href="${esc(team.pageUrl)}" target="_blank" rel="noopener">Open wiki page ↗</a>` : '';
     if (!args || !args.length) {
-      return `<div class="wk-empty" style="padding:8px 0">No arguments indexed yet.</div>${link}`;
+      const msg = crawling ? 'Fetching arguments from caselist… check back in ~30s.' : 'No arguments indexed yet.';
+      return `<div class="wk-empty" style="padding:8px 0">${esc(msg)}</div>${link}`;
     }
     const items = args.map(a => `
       <div class="wk-arg">
