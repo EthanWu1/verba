@@ -52,16 +52,46 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
     const like = '%' + qTrim.toLowerCase() + '%';
     rankedArgs.push(like, like);
   }
-  const rows = db.prepare(`
+  const rawRows = db.prepare(`
     ${rankedCte}
     SELECT * FROM ranked
     ${filter}
     ORDER BY rank ASC
     LIMIT ? OFFSET ?
   `).all(...rankedArgs, PAGE_SIZE, offset);
+
+  // Merge rows at the same school where one code is a prefix of another (same lead debater).
+  const codeOf = (s) => {
+    const m = String(s || '').trim().match(/([A-Z][A-Za-z]{1,4})$/);
+    return m ? m[1].toUpperCase() : '';
+  };
+  const merged = [];
+  const used = new Set();
+  for (let i = 0; i < rawRows.length; i++) {
+    if (used.has(i)) continue;
+    const a = { ...rawRows[i] };
+    const aCode = codeOf(a.displayName);
+    for (let j = i + 1; j < rawRows.length; j++) {
+      if (used.has(j)) continue;
+      const b = rawRows[j];
+      if (!a.schoolName || b.schoolName !== a.schoolName) continue;
+      const bCode = codeOf(b.displayName);
+      if (!aCode || !bCode) continue;
+      if (aCode.startsWith(bCode) || bCode.startsWith(aCode)) {
+        a.wins       = (a.wins || 0) + (b.wins || 0);
+        a.losses     = (a.losses || 0) + (b.losses || 0);
+        a.roundCount = (a.roundCount || 0) + (b.roundCount || 0);
+        if ((b.peakRating || 0) > (a.peakRating || 0)) a.peakRating = b.peakRating;
+        used.add(j);
+      }
+    }
+    merged.push(a);
+  }
+  merged.forEach((r, i) => { r.rank = offset + i + 1; });
+
   return {
-    season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount, sort,
-    rows,
+    season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount: merged.length, sort,
+    rows: merged,
   };
 }
 
