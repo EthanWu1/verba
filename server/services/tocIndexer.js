@@ -9,6 +9,9 @@ const rankings = require('./rankingsEngine');
 // PF, VPF, PF-O, PF-INP, PF-ONL; CX, VCX, CX-INP, POL. Match by pattern on
 // both abbr and event name; skip non-varsity (novice / JV / middle school).
 const NON_VARSITY_NAME_RE = /novice|junior\s*varsity|\bjv\b|\bms\b|middle\s*school/i;
+// Side events that are not the main competitive draw: round robins, challenge/invite
+// sub-brackets, exhibitions. These often share abbrs like PFRR, LDRR, CXRR, PFCh, etc.
+const SIDE_EVENT_NAME_RE = /round\s*robin|challenge|showcase|exhibit|invitational\s*round/i;
 const NON_VARSITY_ABBR_EXACT = new Set([
   'JVLD', 'JVPF', 'JVCX', 'JVPOL', 'JVPOLICY',
   'NLD', 'NPF', 'NCX', 'NPOL', 'NPOLICY',
@@ -20,11 +23,13 @@ function _isNonVarsityEvent(ev) {
   const name = String(ev && ev.name || '');
   const abbr = String(ev && ev.abbr || '').toUpperCase();
   if (NON_VARSITY_NAME_RE.test(name)) return true;
+  if (SIDE_EVENT_NAME_RE.test(name)) return true;
   if (NON_VARSITY_ABBR_EXACT.has(abbr)) return true;
   if (/^JV/.test(abbr)) return true;                 // JVLD, JV-LD, JV_PF…
   if (/^MS[A-Z]/.test(abbr)) return true;            // MSLD, etc.
   if (/^NOV/.test(abbr)) return true;                // NOVLD
   if (/^N(LD|PF|CX|POL)/.test(abbr)) return true;    // NLD, NPF, NCX, NPOL
+  if (/RR$/.test(abbr)) return true;                 // PFRR, LDRR, CXRR (Round Robin)
   return false;
 }
 function _canonicalAbbrFromText(text) {
