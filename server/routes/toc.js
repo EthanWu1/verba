@@ -122,8 +122,8 @@ router.get('/tournaments/:id/bracket/:event', (req, res) => {
     if (!byRoundId.has(key)) byRoundId.set(key, { roundId: r.roundId, roundName: r.roundName, ballots: [] });
     byRoundId.get(key).ballots.push(r);
   }
-  const COUNT_TO_DEPTH = { 256: 'Partials', 128: 'Partials', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
-  const DEPTH_ORDER = { Partials: -1, Triples: 0, Doubles: 1, Octos: 2, Quarters: 3, Semis: 4, Finals: 5 };
+  const COUNT_TO_DEPTH = { 256: 'Sextos', 128: 'Sextos', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+  const DEPTH_ORDER = { Sextos: -1, Triples: 0, Doubles: 1, Octos: 2, Quarters: 3, Semis: 4, Finals: 5 };
   const rounds = [...byRoundId.values()].map(r => {
     const entries = new Set(r.ballots.map(b => b.entryId));
     const name = COUNT_TO_DEPTH[entries.size] || r.roundName || `Elim`;

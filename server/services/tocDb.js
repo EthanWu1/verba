@@ -36,6 +36,7 @@ function listTournaments({ season, when }) {
   let sql = `
     SELECT t.* FROM toc_tournaments t
     WHERE t.season = ?
+      AND (t.country IS NULL OR UPPER(t.country) IN ('US', 'USA', 'UNITED STATES'))
       AND EXISTS (
         SELECT 1 FROM toc_tournament_events te
         WHERE te.tournId = t.tourn_id AND te.bidLevel IS NOT NULL
@@ -139,7 +140,7 @@ function clearBallotsForTournament(tournId) {
   getDb().prepare(`DELETE FROM toc_ballots WHERE tournId = ?`).run(Number(tournId));
 }
 
-const COUNT_TO_DEPTH = { 256: 'Partials', 128: 'Partials', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
+const COUNT_TO_DEPTH = { 256: 'Sextos', 128: 'Sextos', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
 
 function getPairingsForEntry(entryId) {
   const db = getDb();
@@ -379,7 +380,7 @@ function inferResultsFromBallots(tournId, eventAbbr) {
       ...rec,
     });
   }
-  const PLACE_ORDER = { '1st': 0, '2nd': 1, '3rd': 2, Semis: 3, Quarters: 4, Octos: 5, Doubles: 6, Triples: 7, Partials: 8, Prelim: 99 };
+  const PLACE_ORDER = { '1st': 0, '2nd': 1, Semis: 3, Quarters: 4, Octos: 5, Doubles: 6, Triples: 7, Sextos: 8, Prelim: 99 };
   results.sort((a, b) => (PLACE_ORDER[a.place] ?? 50) - (PLACE_ORDER[b.place] ?? 50));
   return results;
 }

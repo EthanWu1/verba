@@ -121,15 +121,15 @@
         switch (k % 10) { case 1: return n+'st'; case 2: return n+'nd'; case 3: return n+'rd'; default: return n+'th'; }
       };
       const PLACE_ALIASES = {
-        RUNOFF:'Partials', PARTIAL:'Partials', PARTIALS:'Partials',
-        TRIPLE:'Triples', TRIPLES:'Triples', '3X':'Triples', '1ST TUTORIAL':'Triples',
+        RUNOFF:'Sextos', PARTIAL:'Sextos', PARTIALS:'Sextos', SEXTO:'Sextos', SEXTOS:'Sextos',
+        TRIPLE:'Triples', TRIPLES:'Triples', TRIPES:'Triples', '3X':'Triples', '1ST TUTORIAL':'Triples',
         DOUBLE:'Doubles', DOUBLES:'Doubles', '2X':'Doubles', WAU:'Doubles', DKB:'Doubles',
         OCTO:'Octos', OCTOS:'Octos', OCTA:'Octos', OCTAS:'Octos', OCTAFINALS:'Octos', OCTAFINAL:'Octos', OF:'Octos', RKR:'Octos', '3RD TUTORIAL':'Octos',
-        QUARTER:'Quarters', QUARTERS:'Quarters', QUARTE:'Quarters', QTRS:'Quarters', QUARTERFINALS:'Quarters', QF:'Quarters', PB:'Quarters', '4TH TUTORIAL':'Quarters',
-        SEMI:'Semis', SEMIS:'Semis', S:'Semis', SEMIFINALS:'Semis', SEMIFINAL:'Semis', SF:'Semis', MD:'Semis', '5TH TUTORIAL':'Semis',
+        QUARTER:'Quarters', QUARTERS:'Quarters', QUARTE:'Quarters', QUAR:'Quarters', QTRS:'Quarters', QRT:'Quarters', Q:'Quarters', QUARTERFINALS:'Quarters', QF:'Quarters', PB:'Quarters', '4TH TUTORIAL':'Quarters',
+        SEMI:'Semis', SEMIS:'Semis', SEMS:'Semis', SEM:'Semis', S:'Semis', SEMIFINALS:'Semis', SEMIFINAL:'Semis', SF:'Semis', MD:'Semis', '5TH TUTORIAL':'Semis',
         FINAL:'Finals', FINALS:'Finals', F:'Finals', 'PF EXHIBITION':'Finals',
         CHAMPION:'1st', CHAMP:'1st', WINNER:'1st', '1ST':'1st', FIRST:'1st',
-        '2ND':'2nd', SECOND:'2nd', '3RD':'3rd', THIRD:'3rd',
+        '2ND':'2nd', SECOND:'2nd', '3RD':'Semis', THIRD:'Semis',
       };
       const normalizePlace = (raw) => {
         const s = String(raw == null ? '' : raw).trim();
