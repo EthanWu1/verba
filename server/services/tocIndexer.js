@@ -5,20 +5,33 @@ const db      = require('./tocDb');
 const parser  = require('./tocParser');
 const rankings = require('./rankingsEngine');
 
-// Tabroom uses category abbrs like VLD (Varsity LD), VPF, JVLD etc. We normalize
-// to canonical LD/PF/CX and skip non-varsity divisions entirely.
-const ABBR_CANON = {
-  LD: 'LD', VLD: 'LD', SLD: 'LD', OLD: 'LD',
-  PF: 'PF', VPF: 'PF', SPF: 'PF',
-  CX: 'CX', VCX: 'CX', POL: 'CX',
-};
-function _canonicalAbbr(rawAbbr) {
-  return ABBR_CANON[String(rawAbbr || '').toUpperCase()] || null;
-}
+// Tabroom uses many abbr variants: LD, VLD, LD-O, LD-INP, OLD (Open LD),
+// PF, VPF, PF-O, PF-INP, PF-ONL; CX, VCX, CX-INP, POL. Match by pattern on
+// both abbr and event name; skip non-varsity (novice / JV / middle school).
 const NON_VARSITY_RE = /novice|junior varsity|\bjv\b|\bms\b|middle school/i;
 function _isNonVarsityEvent(ev) {
   const blob = `${ev && ev.name || ''} ${ev && ev.abbr || ''}`;
   return NON_VARSITY_RE.test(blob);
+}
+function _canonicalAbbrFromText(text) {
+  const s = String(text || '').toUpperCase();
+  if (!s) return null;
+  if (NON_VARSITY_RE.test(s)) return null;
+  if (/\bLD\b|LINCOLN[-\s]?DOUGLAS/.test(s)) return 'LD';
+  if (/\bPF\b|PUBLIC\s*FORUM/.test(s))        return 'PF';
+  if (/\bCX\b|POLICY(?!\s*DEBATE.*SPEAKER)/.test(s)) return 'CX';
+  return null;
+}
+function _canonicalAbbr(rawAbbr) {
+  return _canonicalAbbrFromText(rawAbbr);
+}
+function _canonicalFromEvent(ev, cat) {
+  if (!ev) return null;
+  if (_isNonVarsityEvent(ev)) return null;
+  return _canonicalAbbrFromText(ev.abbr)
+      || _canonicalAbbrFromText(ev.name)
+      || _canonicalAbbrFromText(cat && cat.abbr)
+      || _canonicalAbbrFromText(cat && cat.name);
 }
 
 let _seeding = false;
@@ -86,8 +99,8 @@ async function indexTournament(tournId, opts = {}) {
 
   // Consider any category whose abbr or whose event.abbr canonicalizes to LD/PF/CX
   const debateCats = (json.categories || []).filter(c => {
-    if (_canonicalAbbr(c.abbr)) return true;
-    return (c.events || []).some(ev => _canonicalAbbr(ev.abbr));
+    if (_canonicalAbbrFromText(c.abbr) || _canonicalAbbrFromText(c.name)) return true;
+    return (c.events || []).some(ev => _canonicalFromEvent(ev, c));
   });
   if (!debateCats.length) return null;
 
@@ -109,7 +122,7 @@ async function indexTournament(tournId, opts = {}) {
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
       if (_isNonVarsityEvent(ev)) continue;
-      const canon = _canonicalAbbr(ev.abbr) || _canonicalAbbr(cat.abbr);
+      const canon = _canonicalFromEvent(ev, cat);
       if (!canon) continue;
       const bid = parser.inferBidLevel(ev);
       db.upsertEvent(tournId, { eventId: Number(ev.id), abbr: canon, name: ev.name, ...bid });
@@ -128,7 +141,7 @@ async function indexTournament(tournId, opts = {}) {
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
       if (_isNonVarsityEvent(ev)) continue;
-      if (!_canonicalAbbr(ev.abbr) && !_canonicalAbbr(cat.abbr)) continue;
+      if (!_canonicalFromEvent(ev, cat)) continue;
       const map = parser.parseEarnedBids(ev);
       for (const [eid, val] of map) earnedByEvent.set(eid, val);
     }
@@ -158,7 +171,7 @@ async function indexTournament(tournId, opts = {}) {
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
       if (_isNonVarsityEvent(ev)) continue;
-      const canon = _canonicalAbbr(ev.abbr) || _canonicalAbbr(cat.abbr);
+      const canon = _canonicalFromEvent(ev, cat);
       if (!canon) continue;
       for (const ballot of parser.parseBallots(ev)) {
         db.insertBallot({ ...ballot, tournId: Number(tournId), eventAbbr: canon });
@@ -171,7 +184,7 @@ async function indexTournament(tournId, opts = {}) {
     for (const ev of (cat.events || [])) {
       if (ev.type !== 'debate') continue;
       if (_isNonVarsityEvent(ev)) continue;
-      const canon = _canonicalAbbr(ev.abbr) || _canonicalAbbr(cat.abbr);
+      const canon = _canonicalFromEvent(ev, cat);
       if (!canon) continue;
       for (const r of parser.parseResults(ev)) {
         db.upsertResult({ tournId: Number(tournId), eventAbbr: canon, ...r });

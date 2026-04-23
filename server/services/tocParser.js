@@ -43,8 +43,10 @@ function inferBidLevel(event) {
     let rsFull = 0, rsPartial = 0;
     for (const result of (rs.results || [])) {
       const vals = result.values || [];
-      if (vals.some(v => v.value === 'Full')) rsFull++;
-      else if (vals.some(v => v.value === 'Partial')) rsPartial++;
+      const label = vals.map(v => String(v.value || '').trim()).find(Boolean);
+      if (!label) continue;
+      if (label === 'Full') rsFull++;
+      else rsPartial++; // Silver Bid / Ghost Bid / Partial all count as secondary
     }
     full += rsFull;
     partial += rsPartial;
@@ -137,19 +139,25 @@ function parseResults(event) {
   return [...out.entries()].map(([entryId, row]) => ({ entryId, ...row }));
 }
 
+const BID_TIER_RANK = { 'Full': 3, 'Silver Bid': 2, 'Ghost Bid': 1, 'Partial': 0 };
+function _tierOf(label) {
+  return BID_TIER_RANK[label] != null ? BID_TIER_RANK[label] : -1;
+}
+
 function parseEarnedBids(event) {
   const map = new Map();
   const bidSets = (event.result_sets || []).filter(r => /bid/i.test(r.label || ''));
   for (const bids of bidSets) {
     for (const r of (bids.results || [])) {
       if (!r.entry) continue;
-      const vals = r.values || [];
       const entryId = Number(r.entry);
-      if (vals.some(v => v.value === 'Full')) {
-        map.set(entryId, 'Full'); // Full supersedes Partial if multiple bid sets exist
-      } else if (vals.some(v => v.value === 'Partial') && map.get(entryId) !== 'Full') {
-        map.set(entryId, 'Partial');
-      }
+      const vals = r.values || [];
+      // Pick first non-empty cell. Tabroom stores the bid tier as a string
+      // like "Full", "Silver Bid", "Ghost Bid", "Partial".
+      const label = vals.map(v => String(v.value || '').trim()).find(Boolean);
+      if (!label) continue;
+      const prev = map.get(entryId);
+      if (!prev || _tierOf(label) > _tierOf(prev)) map.set(entryId, label);
     }
   }
   return map;
