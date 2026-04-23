@@ -20,11 +20,15 @@ function seasonFor(isoDate) {
 }
 
 function teamKeyFor(entry, school) {
-  const sid = school?.id != null ? String(school.id) : ('h:' + fnv1a(String(school?.name || '').toLowerCase()));
+  // Student IDs are globally unique in tabroom. Key on them (not schoolId) so the
+  // same team merges across tournaments even when tabroom assigns different
+  // schoolIds to the same school at different sites.
   const students = Array.isArray(entry.students) ? [...entry.students].map(String).filter(Boolean).sort() : [];
-  if (students.length) return `${sid}:${students.join(',')}`;
-  // Fallback: no student ids on the entry. Use entry.id (globally unique) to keep entries distinct.
-  return `${sid}:e${entry.id ?? ('c:' + fnv1a(String(entry.code || entry.name || '')))}`;
+  if (students.length) return 's:' + students.join(',');
+  // Fallback when no student ids: hash school name + entry code for a stable key.
+  const sHash = 'h:' + fnv1a(String(school?.name || '').toLowerCase());
+  const eHash = 'c:' + fnv1a(String(entry.code || entry.name || ''));
+  return `${sHash}:${eHash}`;
 }
 
 const BID_MAP = { 128: 'Triples', 64: 'Triples', 32: 'Doubles', 16: 'Octos', 8: 'Quarters', 4: 'Semis', 2: 'Finals' };
