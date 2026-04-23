@@ -71,6 +71,7 @@ async function crawlTeamDetail(teamId) {
     }
 
     db.clearRoundReports(teamId);
+    db.clearTeamArguments(teamId);
 
     // Build arg groups from rounds (authoritative) + match cites when available
     const sorted = [...(rounds || [])].sort((a, b) => {

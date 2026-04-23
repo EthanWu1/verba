@@ -109,6 +109,10 @@ function getArgument(id) {
 
 // ── Round reports ─────────────────────────────────────────────
 
+function clearTeamArguments(teamId) {
+  getDb().prepare(`DELETE FROM wiki_arguments WHERE teamId = ?`).run(teamId);
+}
+
 function insertRoundReport({ teamId, argumentId, tournament, round, opponent, side }) {
   getDb().prepare(`
     INSERT INTO wiki_round_reports (teamId, argumentId, tournament, round, opponent, side)
@@ -144,6 +148,6 @@ module.exports = {
   upsertTeam, rebuildTeamsFts, searchTeams, getTeam,
   setTeamCrawlStatus, setTeamCrawled, isTeamStale, countTeams,
   upsertArgument, rebuildArgumentsFts, getTeamArguments, getArgument,
-  insertRoundReport, clearRoundReports,
+  insertRoundReport, clearRoundReports, clearTeamArguments,
   listTeamsByEvent,
 };
