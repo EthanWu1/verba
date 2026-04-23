@@ -199,13 +199,40 @@
     }
   }
 
+  const PLACE_ALIASES = {
+    RUNOFF: 'Partials',
+    PARTIAL: 'Partials', PARTIALS: 'Partials',
+    TRIPLE: 'Triples', TRIPLES: 'Triples',
+    DOUBLE: 'Doubles', DOUBLES: 'Doubles',
+    OCTO: 'Octos', OCTOS: 'Octos', OCTA: 'Octos', OCTAS: 'Octos', OCTAFINALS: 'Octos', OCTAFINAL: 'Octos',
+    QUARTER: 'Quarters', QUARTERS: 'Quarters', QUARTE: 'Quarters', QUARTERFINALS: 'Quarters', QF: 'Quarters',
+    SEMI: 'Semis', SEMIS: 'Semis', S: 'Semis', SEMIFINALS: 'Semis', SEMIFINAL: 'Semis', SF: 'Semis',
+    FINAL: 'Finals', FINALS: 'Finals', F: 'Finals',
+    CHAMPION: '1st', CHAMP: '1st', WINNER: '1st', '1ST': '1st', FIRST: '1st',
+    '2ND': '2nd', SECOND: '2nd',
+    '3RD': '3rd', THIRD: '3rd',
+  };
+  function normalizePlace(raw) {
+    const s = String(raw == null ? '' : raw).trim();
+    if (!s) return '';
+    if (/^\d+$/.test(s)) return ordinal(Number(s));
+    const match = s.match(/^(\d+)(st|nd|rd|th)$/i);
+    if (match) return match[1] + match[2].toLowerCase();
+    const key = s.toUpperCase();
+    return PLACE_ALIASES[key] || s;
+  }
+
   function placesTable(results, abbr) {
     const places = (results || []).filter(r => r.place || r.rank);
     if (!places.length) return '<div class="toc-muted" style="padding:24px 0">No final places recorded.</div>';
     const rows = places.map((r, i) => {
-      let placeCell = r.place || '';
-      if (!placeCell) placeCell = ordinal(r.rank || (i + 1));
-      else if (/^\d+$/.test(String(placeCell))) placeCell = ordinal(Number(placeCell));
+      let placeCell;
+      if (r.rank === 1) placeCell = '1st';
+      else if (r.rank === 2) placeCell = '2nd';
+      else if (r.rank === 3) placeCell = '3rd';
+      else if (r.place) placeCell = normalizePlace(r.place);
+      else if (r.rank) placeCell = ordinal(r.rank);
+      else placeCell = ordinal(i + 1);
       return `<tr data-entry="${r.entryId}">
         <td>${esc(placeCell)}</td>
         <td><strong>${esc(r.displayName || '')}</strong></td>
