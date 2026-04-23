@@ -194,7 +194,7 @@
           </div>
           <div class="rk-stat-grid">
             <div class="rk-stat-card"><div class="rk-stat-label">Elo</div><div class="rk-stat-value">${Math.round(rating.current || 0)}</div></div>
-            <div class="rk-stat-card"><div class="rk-stat-label">Peak</div><div class="rk-stat-value">${Math.round(rating.peak || rating.current || 0)}</div></div>
+            <div class="rk-stat-card"><div class="rk-stat-label">Avg Speaks</div><div class="rk-stat-value">${rating.avgSpeakerPoints != null ? Number(rating.avgSpeakerPoints).toFixed(2) : '<span class="rk-muted">—</span>'}</div></div>
             <div class="rk-stat-card"><div class="rk-stat-label">Prelim</div><div class="rk-stat-value">${record.prelimWins || 0}-${record.prelimLosses || 0}</div></div>
             <div class="rk-stat-card"><div class="rk-stat-label">Elim</div><div class="rk-stat-value">${record.elimWins || 0}-${record.elimLosses || 0}</div></div>
             <div class="rk-stat-card"><div class="rk-stat-label">Bids</div><div class="rk-stat-value">${bids.fullBids || 0}${(bids.partialBids || 0) > 0 ? ` <span class="rk-muted">+${bids.partialBids}P</span>` : ''}</div></div>

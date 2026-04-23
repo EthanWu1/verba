@@ -197,10 +197,19 @@ function profile(teamKey, season, event) {
   const rank  = rankOf(teamKey, season, event);
   const winPct = (rating.wins + rating.losses) > 0 ? rating.wins / (rating.wins + rating.losses) : 0;
 
+  const avgSpk = db.prepare(`
+    SELECT AVG(b.speakerPoints) AS avg, COUNT(b.speakerPoints) AS n
+    FROM toc_ballots b
+    JOIN toc_entries e ON e.tournId = b.tournId AND e.entryId = b.entryId AND e.eventAbbr = b.eventAbbr
+    JOIN toc_tournaments t ON t.tourn_id = b.tournId
+    WHERE e.teamKey = ? AND b.eventAbbr = ? AND t.season = ? AND b.speakerPoints IS NOT NULL
+  `).get(teamKey, event, season);
+  const avgSpeakerPoints = avgSpk && avgSpk.n ? avgSpk.avg : null;
+
   return {
     teamKey, season, event,
     displayName: rating.displayName, schoolName: rating.schoolName, schoolCode: rating.schoolCode,
-    rating: { current: rating.rating, peak: rating.peakRating, rank, outOf: total },
+    rating: { current: rating.rating, peak: rating.peakRating, avgSpeakerPoints, rank, outOf: total },
     record: {
       wins: rating.wins, losses: rating.losses, winPct, roundCount: rating.roundCount,
       prelimWins: seasonPW, prelimLosses: seasonPL,
