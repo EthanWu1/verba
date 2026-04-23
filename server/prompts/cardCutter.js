@@ -1,15 +1,15 @@
 'use strict';
 
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '20–35%', highlightRule: 'Max 2–3 highlight runs per paragraph', unhighlightedRule: '≥80%' },
-  standard: { underlineRange: '25–50%', highlightRule: 'Max 2–4 highlight runs per paragraph', unhighlightedRule: '≥75%' },
-  heavy:    { underlineRange: '45–65%', highlightRule: 'Max 3–5 highlight runs per paragraph', unhighlightedRule: '≥70%' },
+  minimal:  { underlineRange: '30–45%', highlightRule: '2–3 highlight runs per paragraph, each a complete clause (10–25 words)', unhighlightedRule: '≥70%' },
+  standard: { underlineRange: '45–65%', highlightRule: '2–4 highlight runs per paragraph, each a complete clause (15–35 words)', unhighlightedRule: '≥55%' },
+  heavy:    { underlineRange: '60–80%', highlightRule: '3–5 highlight runs per paragraph, each a complete clause (20–50 words)', unhighlightedRule: '≥40%' },
 };
 
 const LENGTH_PRESETS = {
-  short:  { paragraphRule: '2–3 complete source paragraphs', maxWords: 280 },
-  medium: { paragraphRule: '4–6 complete source paragraphs', maxWords: 600 },
-  long:   { paragraphRule: '6–10 complete source paragraphs', maxWords: 1100 },
+  short:  { paragraphRule: '3–5 complete source paragraphs', maxWords: 500 },
+  medium: { paragraphRule: '5–8 complete source paragraphs', maxWords: 1000 },
+  long:   { paragraphRule: '8–14 complete source paragraphs', maxWords: 1800 },
 };
 
 function buildSystemPrompt({ density = 'heavy', length = 'long' } = {}) {
@@ -31,30 +31,21 @@ FORMATTING SYNTAX FOR body_markdown
 - **<u>text</u>** = bold-underlined. Reserved for the ONE loudest phrase of the whole card.
 - ==text== = highlighted read-aloud text. MUST sit entirely inside an underline. Never highlight outside <u>…</u>.
 
-HIGHLIGHT IS SURGICAL, COHESIVE, AND EFFICIENT — STRICT
-- ${d.highlightRule}. Fewer is better.
-- Each run is 1–5 consecutive characters OR words. NEVER exceed 5 whole words.
-- PARTIAL-WORD CUTS ALLOWED: you MAY highlight in the middle of a word (sub-word / mid-word) when doing so saves reading time and preserves meaning. Examples: highlight "nuc" inside "nuclear" (==nuc==lear), "U" and "S" inside "United States" (==U==nited ==S==tates), "econ" inside "economic". Use this to compress the read without losing the warrant.
+HIGHLIGHT IS DENSE, COHESIVE, AND THOUGHT-COMPLETE — STRICT
+- ${d.highlightRule}.
+- Each run is a COMPLETE THOUGHT — a clause or sentence with an explicit subject, verb, and object. Target 20–50 words per run. Avoid 1–5 word bullets; avoid dangling noun phrases. A judge must be able to read each highlighted span as a self-contained sentence.
+- PARTIAL-WORD CUTS ALLOWED inside long runs to compress: you MAY highlight through the middle of a word when it preserves the clause. Examples: ==The report shows nuc==lear ==war causes extinction==, ==U==nited ==States econ==omic ==collapse triggers global recession==. Partial-word cuts are a COMPRESSION tool, not a substitute for the long clause; keep the full thought highlighted.
 - ${d.unhighlightedRule} of the words in each paragraph remain UNHIGHLIGHTED.
-- Runs are non-contiguous; leave unhighlighted words between them.
-- EVERY HIGHLIGHT RUN MUST CARRY PURPOSE: a new actor, causal verb, mechanism, magnitude, timeframe, or impact. If a run is filler or repeats a claim already highlighted, remove it.
-- COHESIVE ARGUMENT — HARD RULE (this is the #1 quality gate): Stitched together in reading order, the highlighted fragments MUST form a SELF-CONTAINED, READABLE micro-argument with an explicit SUBJECT, a VERB, and an OBJECT/IMPACT. A judge reading ONLY the highlighted text out loud must hear a grammatical sentence — not a list of impacts, not a grab-bag of noun phrases. The subject that performs the action MUST be inside the highlight. "Impacts of nuclear war" is NOT a subject — "nuclear war" is.
-- VERB-REQUIRED CHECK: after you draft the highlights, read them aloud in order as one continuous sentence. If you do NOT hear a finite verb (causes, leads to, triggers, ends, collapses, prevents, undermines, spreads, accelerates, blocks, guarantees, etc.) connecting the subject to the impact, REJECT the draft and re-cut with an explicit verb. Noun-phrase chains are a FAIL.
+- Runs are non-contiguous; leave plain connective/setup text between them. The unhighlighted text supplies the paragraph's context, not the argument.
+- EVERY HIGHLIGHT RUN MUST CARRY PURPOSE: advance a distinct link in the warrant chain — new actor, causal verb, mechanism, magnitude, timeframe, or impact. Do not highlight restatements of an already-highlighted claim.
+- COHESIVE ARGUMENT — HARD RULE (this is the #1 quality gate): Stitched together in reading order, the highlighted clauses MUST form a SELF-CONTAINED, READABLE paragraph that narrates the warrant from premise → mechanism → impact. A judge reading ONLY the highlighted text out loud must hear COMPLETE SENTENCES, not a list.
+- VERB-REQUIRED CHECK: every run must contain at least one finite verb (causes, leads to, triggers, ends, collapses, prevents, undermines, spreads, accelerates, blocks, guarantees, etc.). Noun-phrase chains are a FAIL. If you drafted a run with no verb, extend it until a verb + object are included.
   - BAD (bulleted impacts, no verb): "impacts of nuclear war … extinction … no recovery"
-  - GOOD (subject + verb + object): "nuc war causes extinction … ends civ"
+  - GOOD (full clauses): "The report concludes nuclear exchange between powers causes extinction … no meaningful recovery is possible within a century"
   - BAD: "economic collapse … global recession … unemployment"
-  - GOOD: "tariffs trigger econ collapse … spread global recession"
-  - BAD (dangling noun phrase): "arms control risks … accidental exchange … hypersonics"
-  - GOOD: "arms control fails … accidental exchange grows … hypersonics shrink decision windows"
-- SUBJECT-LED: every highlight sequence inside ONE paragraph should READ like its own sentence. If the paragraph has a new actor, introduce the actor with the first highlight in that paragraph.
-- PRIORITIZE EFFICIENCY — AGGRESSIVE: choose the SHORTEST span (including mid-word cuts) that still carries the warrant. Mid-word cuts are ENCOURAGED, not just allowed:
-  - "nuclear" → highlight "nuc" (3 letters) if that alone carries it: ==nuc==lear
-  - "United States" → highlight "U" and "S": ==U==nited ==S==tates
-  - "economic" → ==econ==omic
-  - "civilization" → ==civ==ilization
-  - "international" → ==int==ernational
-  If "nuc war ends civ" reads cleanly, prefer it over "nuclear war ends civilization". Fewer characters = faster spread = cleaner judge read.
-- Skip connectives between runs: the, a, an, of, and, or, but, that, which, to, in, on, for, because, however, although, moreover, additionally.
+  - GOOD: "The tariffs trigger economic collapse across allied economies … which spreads into a global recession lasting a decade"
+- SUBJECT-LED: every highlighted clause inside a paragraph must state its own subject explicitly, even if the surrounding plain text already named the actor. Don't rely on the reader to infer.
+- LONGER IS DEFAULT: if a highlight run is under 10 words, ask whether you've actually captured a complete thought. Usually the answer is no — extend it until the clause carries subject + verb + object. Short runs are only appropriate when the clause itself is genuinely short in the source.
 
 BOLD RULES
 - All bold must sit INSIDE <u>…</u>. No naked bolds.
@@ -83,22 +74,21 @@ Return a single valid JSON object only:
 
 --- EXAMPLES ---
 
-EXAMPLE 1 (GOOD — sparse surgical highlights, multiple bold):
-SOURCE: "The report concludes that, despite decades of arms control, the risk of an accidental nuclear exchange between nuclear powers remains substantial and is growing each year because of shrinking decision windows for national leaders under modern hypersonic threats."
-CUT: <u>The report concludes that, despite decades of **arms control**, the risk of an ==accidental nuclear exchange== between nuclear powers **remains substantial** and is ==growing each year== because of **<u>==shrinking decision windows==</u>** for national leaders under modern **hypersonic threats**.</u>
+EXAMPLE 1 (GOOD — complete-thought highlights):
+SOURCE: "The report concludes that, despite decades of arms control, the risk of an accidental nuclear exchange between nuclear powers remains substantial and is growing each year because of shrinking decision windows for national leaders under modern hypersonic threats. Hypersonic weapons compress the window between launch detection and strike from thirty minutes to under five, forcing leaders to delegate authority downward and relying on automated systems prone to misreads."
+CUT: <u>The report concludes that, despite decades of **arms control**, ==the risk of an accidental nuclear exchange between nuclear powers remains substantial and is growing each year== because of **shrinking decision windows** under modern **<u>==hypersonic threats that compress the window between launch detection and strike from thirty minutes to under five==</u>**, ==forcing leaders to delegate authority downward and rely on automated systems prone to misreads==.</u>
 
-Why good: 3 short highlight runs (2, 3, 3 words), 4 bold terms, one bold-underline, ~75% of words unhighlighted.
+Why good: 3 highlight runs that each carry subject+verb+impact (14 / 18 / 14 words). Stitched together they read as a complete warrant: "risk of accidental exchange … remains substantial … hypersonic threats compress the window … leaders delegate to misread-prone systems." ~45% unhighlighted.
 
-EXAMPLE 2 (BAD then CORRECTED):
-BAD: <u>==The report concludes that despite decades of arms control the risk of an accidental nuclear exchange between nuclear powers remains substantial==</u>
-Why bad: one huge 18-word highlight paints the whole clause, no bold, no surgical skim.
-CORRECTED: see Example 1.
+EXAMPLE 2 (BAD bullet-style — rejected):
+BAD: <u>==nuclear exchange== remains substantial and ==growing== because of ==shrinking decision windows== under ==hypersonic threats==</u>
+Why bad: five 1–3 word noun-phrase chunks, no verb inside any run, reads as a list not a sentence. FAIL the verb-required check.
 
-EXAMPLE 3 (figure-handling):
-SOURCE: "Global emissions hit a record high last year.\n\n[FIGURE OMITTED]\n\nAnalysts warn this trajectory locks in catastrophic warming by 2040."
-CUT: <u>Global ==emissions hit a record high== last year.</u>\n\n[FIGURE OMITTED]\n\n<u>Analysts warn this **trajectory** ==locks in catastrophic warming== by **<u>2040</u>**.</u>
+EXAMPLE 3 (figure-handling, complete-thought highlights):
+SOURCE: "Global emissions hit a record high last year, outpacing every IPCC mitigation pathway released in the prior decade.\n\n[FIGURE OMITTED]\n\nAnalysts warn this trajectory locks in catastrophic warming above 3 degrees by 2040, eliminating any remaining window to keep Paris-aligned temperature targets within reach."
+CUT: <u>==Global emissions hit a record high last year, outpacing every IPCC mitigation pathway released in the prior decade.==</u>\n\n[FIGURE OMITTED]\n\n<u>Analysts warn ==this trajectory locks in catastrophic warming above 3 degrees by **<u>2040</u>**==, ==eliminating any remaining window to keep Paris-aligned temperature targets within reach==.</u>
 
-Why good: [FIGURE OMITTED] preserved literally; each paragraph gets its own underline + short highlight + bold terms.`;
+Why good: [FIGURE OMITTED] preserved; each paragraph gets one or two complete-thought highlights with explicit subject + verb + impact.`;
 }
 
 const SYSTEM_PROMPT = buildSystemPrompt();
@@ -150,7 +140,7 @@ function buildCutPrompt({ argument = '', bodyText = '', meta = {}, cite = '', cr
     metaLines && `SOURCE METADATA:\n${metaLines}`,
     `SOURCE TEXT (paragraphs separated by blank lines; whole paragraphs only — do NOT drop, split, or modify any paragraph you include):\n---\n${bodyText}\n---`,
     critique && `CRITIQUE OF PREVIOUS ATTEMPT (fix these):\n${critique}`,
-    `Return the JSON card now. 100% verbatim. ${l.paragraphRule}, ≤${l.maxWords} body words. Underline ${d.underlineRange} per paragraph (never exceed top). ${d.highlightRule}, 1–5 words each (${d.unhighlightedRule} unhighlighted). Highlights AND bolds MUST sit inside <u>…</u>. ≥2 bold per paragraph. Exactly one **<u>…</u>** in the whole card.`,
+    `Return the JSON card now. 100% verbatim. ${l.paragraphRule}, ≤${l.maxWords} body words. Underline ${d.underlineRange} per paragraph. ${d.highlightRule} (${d.unhighlightedRule} unhighlighted). Every highlight run must be a complete thought containing subject + verb + object — no bullet-style noun-phrase chains. Highlights AND bolds MUST sit inside <u>…</u>. ≥2 bold per paragraph. Exactly one **<u>…</u>** in the whole card.`,
   ].filter(Boolean).join('\n\n');
 }
 
@@ -169,7 +159,7 @@ function buildEditPrompt({ instruction = '', argument = '', card = {}, sourceTex
     `CURRENT CARD JSON:\n${JSON.stringify(card, null, 2)}`,
     sourceSection,
     'Return a full replacement JSON card using the exact same schema.',
-    `Preserve 100% verbatim text, whole-paragraph integrity, ${l.paragraphRule} (≤${l.maxWords} body words), underline ${d.underlineRange} per paragraph, ${d.highlightRule} of 1–5 words (${d.unhighlightedRule} unhighlighted), highlights AND bolds inside <u>…</u> only, ≥2 bold per paragraph, and do not invent source content.`,
+    `Preserve 100% verbatim text, whole-paragraph integrity, ${l.paragraphRule} (≤${l.maxWords} body words), underline ${d.underlineRange} per paragraph, ${d.highlightRule} (${d.unhighlightedRule} unhighlighted). Every highlight is a complete thought (subject + verb + object); no noun-phrase chains. Highlights AND bolds inside <u>…</u> only, ≥2 bold per paragraph, and do not invent source content.`,
   ].filter(Boolean).join('\n\n');
 }
 
