@@ -299,6 +299,7 @@ function listRecordsForTournament(tournId, eventAbbr) {
     const isPrelim = r.roundType === 'prelim' || r.roundType === 'highlow';
     if (r.w > r.l)      (isPrelim ? rec.prelimWins++ : rec.elimWins++);
     else if (r.l > r.w) (isPrelim ? rec.prelimLosses++ : rec.elimLosses++);
+    else                (isPrelim ? rec.prelimWins++ : rec.elimWins++); // BYE counts as win
   }
   return out;
 }

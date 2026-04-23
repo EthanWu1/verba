@@ -330,6 +330,17 @@
       body.innerHTML = `${backHTML}<div class="toc-section-title">${esc(entry.displayName || 'Entry')}</div><div class="toc-muted">No pairings recorded.</div>`;
     } else {
       const rows = pairings.map(p => {
+        const noResult = !p.result && (!p.ballotResults || !p.ballotResults.length);
+        if (noResult) {
+          return `<tr>
+            <td><strong>${esc(roundLabel(p))}</strong></td>
+            <td>—</td>
+            <td><span class="toc-muted" style="font-style:italic">BYE</span></td>
+            <td>—</td>
+            <td><strong>W</strong></td>
+            <td>—</td>
+          </tr>`;
+        }
         const oppCell = p.opponentEntryId
           ? `<a href="#" class="toc-link" data-opp="${p.opponentEntryId}">${esc(p.opponentName || '#' + p.opponentEntryId)}${p.opponentSchool ? ' <span class="toc-muted">· ' + esc(p.opponentSchool) + '</span>' : ''}</a>`
           : '<span class="toc-muted">bye</span>';

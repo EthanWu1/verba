@@ -159,6 +159,10 @@ function profile(teamKey, season, event) {
     } else if (r.l > r.w) {
       if (isPrelim) { rec.prelimLosses++; seasonPL++; }
       else          { rec.elimLosses++;   seasonEL++; }
+    } else {
+      // BYE (no recorded W/L) counts as a win.
+      if (isPrelim) { rec.prelimWins++; seasonPW++; }
+      else          { rec.elimWins++;   seasonEW++; }
     }
   }
   for (const t of tournaments) {
