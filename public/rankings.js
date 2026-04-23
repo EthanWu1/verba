@@ -135,6 +135,8 @@
         const s = String(raw == null ? '' : raw).trim();
         if (!s) return '';
         if (/^prelim/i.test(s)) return '—';
+        const keyEarly = s.toUpperCase();
+        if (PLACE_ALIASES[keyEarly]) return PLACE_ALIASES[keyEarly];
         if (/^\d+$/.test(s)) return ordinalFn(Number(s));
         const m = s.match(/^(\d+)(st|nd|rd|th)$/i);
         if (m) return m[1] + m[2].toLowerCase();
@@ -152,7 +154,8 @@
         return s;
       };
       const tournRows = tournaments.map(t => {
-        const normPlace = normalizePlace(t.place);
+        let normPlace = normalizePlace(t.place);
+        if (normPlace === 'Finals') normPlace = (t.rank === 1) ? '1st' : '2nd';
         const placeCell = (!normPlace || normPlace === '—') ? '<span class="rk-muted">—</span>' : esc(normPlace);
         const bidCell = t.earnedBid ? `<span class="${bidCls(t.earnedBid)}">${esc(shortBid(t.earnedBid))}</span>` : '<span class="rk-muted">—</span>';
         const pw = t.prelimWins || 0, pl = t.prelimLosses || 0;

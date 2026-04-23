@@ -215,6 +215,9 @@
     const s = String(raw == null ? '' : raw).trim();
     if (!s) return '';
     if (/^prelim/i.test(s)) return '—';
+    // Check aliases first so "3rd"→Semis etc. wins over ordinal pass-through.
+    const keyEarly = s.toUpperCase();
+    if (PLACE_ALIASES[keyEarly]) return PLACE_ALIASES[keyEarly];
     if (/^\d+$/.test(s)) return ordinal(Number(s));
     const match = s.match(/^(\d+)(st|nd|rd|th)$/i);
     if (match) return match[1] + match[2].toLowerCase();
@@ -257,10 +260,14 @@
     const places = [...nonPrelim, ...prelim];
     const rows = places.map((r, i) => {
       let placeCell;
-      if (r.rank === 1) placeCell = '1st';
+      const rawNorm = r.place ? normalizePlace(r.place) : '';
+      if (rawNorm === 'Finals') {
+        // Split finalists into 1st/2nd, default unresolved to 2nd.
+        placeCell = r.rank === 1 ? '1st' : '2nd';
+      } else if (r.rank === 1) placeCell = '1st';
       else if (r.rank === 2) placeCell = '2nd';
-      else if (r.rank === 3) placeCell = '3rd';
-      else if (r.place) placeCell = normalizePlace(r.place);
+      else if (r.rank === 3) placeCell = 'Semis';
+      else if (rawNorm) placeCell = rawNorm;
       else if (r.rank) placeCell = ordinal(r.rank);
       else placeCell = ordinal(i + 1);
       const bidTxt = normalizeBid(r.earnedBid);
