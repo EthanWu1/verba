@@ -115,14 +115,50 @@
         return s;
       };
       const bidCls = (b) => 'toc-bid toc-bid-' + (shortBid(b).toLowerCase() || 'other');
+      const ordinalFn = (n) => {
+        const k = Math.abs(n) % 100;
+        if (k >= 11 && k <= 13) return n + 'th';
+        switch (k % 10) { case 1: return n+'st'; case 2: return n+'nd'; case 3: return n+'rd'; default: return n+'th'; }
+      };
+      const PLACE_ALIASES = {
+        RUNOFF:'Partials', PARTIAL:'Partials', PARTIALS:'Partials',
+        TRIPLE:'Triples', TRIPLES:'Triples', '3X':'Triples', '1ST TUTORIAL':'Triples',
+        DOUBLE:'Doubles', DOUBLES:'Doubles', '2X':'Doubles', WAU:'Doubles', DKB:'Doubles',
+        OCTO:'Octos', OCTOS:'Octos', OCTA:'Octos', OCTAS:'Octos', OCTAFINALS:'Octos', OCTAFINAL:'Octos', OF:'Octos', RKR:'Octos', '3RD TUTORIAL':'Octos',
+        QUARTER:'Quarters', QUARTERS:'Quarters', QUARTE:'Quarters', QTRS:'Quarters', QUARTERFINALS:'Quarters', QF:'Quarters', PB:'Quarters', '4TH TUTORIAL':'Quarters',
+        SEMI:'Semis', SEMIS:'Semis', S:'Semis', SEMIFINALS:'Semis', SEMIFINAL:'Semis', SF:'Semis', MD:'Semis', '5TH TUTORIAL':'Semis',
+        FINAL:'Finals', FINALS:'Finals', F:'Finals', 'PF EXHIBITION':'Finals',
+        CHAMPION:'1st', CHAMP:'1st', WINNER:'1st', '1ST':'1st', FIRST:'1st',
+        '2ND':'2nd', SECOND:'2nd', '3RD':'3rd', THIRD:'3rd',
+      };
+      const normalizePlace = (raw) => {
+        const s = String(raw == null ? '' : raw).trim();
+        if (!s) return '';
+        if (/^prelim/i.test(s)) return '—';
+        if (/^\d+$/.test(s)) return ordinalFn(Number(s));
+        const m = s.match(/^(\d+)(st|nd|rd|th)$/i);
+        if (m) return m[1] + m[2].toLowerCase();
+        const key = s.toUpperCase();
+        if (PLACE_ALIASES[key]) return PLACE_ALIASES[key];
+        if (/^SEMIFINA/.test(key))    return 'Semis';
+        if (/^QUARTERF/.test(key))    return 'Quarters';
+        if (/^OCTAFINA|^OCTOFINA/.test(key)) return 'Octos';
+        if (/^DOUBLE/.test(key))      return 'Doubles';
+        if (/^TRIPLE/.test(key))      return 'Triples';
+        if (/^FINAL/.test(key))       return 'Finals';
+        if (/^PARTIAL/.test(key))     return 'Partials';
+        return s;
+      };
       const tournRows = tournaments.map(t => {
-        const placeCell = (!t.place || isPrelim(t.place)) ? '<span class="rk-muted">—</span>' : esc(t.place);
+        const normPlace = normalizePlace(t.place);
+        const placeCell = (!normPlace || normPlace === '—') ? '<span class="rk-muted">—</span>' : esc(normPlace);
         const bidCell = t.earnedBid ? `<span class="${bidCls(t.earnedBid)}">${esc(shortBid(t.earnedBid))}</span>` : '<span class="rk-muted">—</span>';
         const pw = t.prelimWins || 0, pl = t.prelimLosses || 0;
         const ew = t.elimWins || 0, el = t.elimLosses || 0;
         const prelimCell = (pw + pl) ? `${pw}-${pl}` : '<span class="rk-muted">—</span>';
         const elimCell   = (ew + el) ? `${ew}-${el}` : '<span class="rk-muted">—</span>';
-        return `<tr>
+        const entryId = t.entryId || '';
+        return `<tr data-entry="${esc(entryId)}" data-tname="${esc(t.name || '')}" style="cursor:${entryId ? 'pointer' : 'default'}">
           <td>${esc(t.name || '')}</td>
           <td>${esc(t.startDate || '')}</td>
           <td>${prelimCell}</td>
@@ -173,6 +209,56 @@
           </table>
         </div>`;
       document.getElementById('rk-back-btn')?.addEventListener('click', () => restoreTable());
+      main.querySelectorAll('tr[data-entry]').forEach(tr => {
+        const eid = tr.dataset.entry;
+        if (!eid) return;
+        tr.addEventListener('click', () => openPairingsForEntry(teamKey, eid, tr.dataset.tname));
+      });
+    } catch (e) {
+      main.innerHTML = `<div style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</div>`;
+    }
+  }
+
+  async function openPairingsForEntry(teamKey, entryId, tournName) {
+    const main = document.querySelector('.rk-main');
+    main.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading pairings…</div>';
+    try {
+      const res = await fetch(`/api/toc/entries/${encodeURIComponent(entryId)}/pairings`);
+      const data = await res.json();
+      const entry = data.entry || {};
+      const pairings = data.pairings || [];
+      const roundLabel = (p) => {
+        if (p.depth) return p.depth;
+        const n = parseInt(p.roundName, 10);
+        if (p.roundType === 'prelim' || p.roundType === 'highlow') return Number.isFinite(n) ? 'R' + n : p.roundName;
+        return 'Partials';
+      };
+      const rows = pairings.map(p => {
+        const noResult = !p.result && (!p.ballotResults || !p.ballotResults.length);
+        if (noResult) return `<tr><td><strong>${esc(roundLabel(p))}</strong></td><td>—</td><td><span style="font-style:italic">BYE</span></td><td>—</td><td><strong>W</strong></td><td>—</td></tr>`;
+        const opp = p.opponentEntryId
+          ? `<a href="#" class="toc-link" data-opp="${p.opponentEntryId}">${esc(p.opponentName || '#' + p.opponentEntryId)}</a>`
+          : '<span class="rk-muted">bye</span>';
+        const bResult = (p.ballotResults && p.ballotResults.length) ? p.ballotResults.join('') : (p.result || '—');
+        return `<tr>
+          <td><strong>${esc(roundLabel(p))}</strong></td>
+          <td>${esc((p.side || '—').toUpperCase())}</td>
+          <td>${opp}</td>
+          <td>${esc(p.judgeName || '—')}</td>
+          <td><strong>${esc(bResult)}</strong></td>
+          <td>${p.speakerPoints != null ? p.speakerPoints.toFixed(1) : '—'}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="6" style="padding:16px;color:var(--muted)">No pairings recorded.</td></tr>';
+      main.innerHTML = `
+        <button class="rk-btn-sm rk-back-btn" id="rk-back-to-profile">← Back</button>
+        <h2 class="rk-profile-title">${esc(entry.displayName || '—')}</h2>
+        <div class="rk-profile-sub">${esc(tournName || '')} · ${esc(entry.eventAbbr || '')}</div>
+        <table class="rk-inner-table">
+          <thead><tr><th>Round</th><th>Side</th><th>Opponent</th><th>Judge</th><th>Result</th><th>Pts</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      document.getElementById('rk-back-to-profile')?.addEventListener('click', () => openProfile(teamKey));
+      main.querySelectorAll('a[data-opp]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); /* stub — could fetch opponent pairings */ }));
     } catch (e) {
       main.innerHTML = `<div style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</div>`;
     }

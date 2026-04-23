@@ -123,6 +123,8 @@ function profile(teamKey, season, event) {
     SELECT t.tourn_id AS tournId, t.name, t.startDate, t.endDate,
            SUM(CASE WHEN h.result = 'W' THEN 1 ELSE 0 END) AS wins,
            SUM(CASE WHEN h.result = 'L' THEN 1 ELSE 0 END) AS losses,
+           (SELECT entryId FROM toc_entries
+              WHERE tournId = t.tourn_id AND teamKey = ? AND eventAbbr = ? LIMIT 1) AS entryId,
            (SELECT earnedBid FROM toc_entries
               WHERE tournId = t.tourn_id AND teamKey = ? AND eventAbbr = ? LIMIT 1) AS earnedBid,
            (SELECT place FROM toc_results
@@ -134,7 +136,7 @@ function profile(teamKey, season, event) {
     WHERE h.season = ? AND h.eventAbbr = ? AND h.teamKey = ?
     GROUP BY t.tourn_id
     ORDER BY t.startDate ASC
-  `).all(teamKey, event, event, teamKey, event, season, event, teamKey);
+  `).all(teamKey, event, teamKey, event, event, teamKey, event, season, event, teamKey);
 
   // Prelim vs elim records per tournament, majority-voted across panel ballots.
   const ballotRecs = db.prepare(`
