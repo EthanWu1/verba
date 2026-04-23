@@ -201,11 +201,11 @@
 
   const PLACE_ALIASES = {
     RUNOFF: 'Doubles', PARTIAL: 'Doubles', PARTIALS: 'Doubles', SEXTO: 'Doubles', SEXTOS: 'Doubles',
-    TRIPLE: 'Triples', TRIPLES: 'Triples', TRIPES: 'Triples', TRIPS: 'Triples', '3X': 'Triples', '1ST TUTORIAL': 'Triples',
-    DOUBLE: 'Doubles', DOUBLES: 'Doubles', DOUBL: 'Doubles', DOUB: 'Doubles', '2X': 'Doubles', WAU: 'Doubles', DKB: 'Doubles',
-    OCTO: 'Octos', OCTOS: 'Octos', OCT: 'Octos', OCTA: 'Octos', OCTAS: 'Octos', OCTAFINALS: 'Octos', OCTAFINAL: 'Octos', OF: 'Octos', RKR: 'Octos', '3RD TUTORIAL': 'Octos',
-    QUARTER: 'Quarters', QUARTERS: 'Quarters', QUARTE: 'Quarters', QUAR: 'Quarters', QRT: 'Quarters', Q: 'Quarters', QUARTERFINALS: 'Quarters', QF: 'Quarters', PB: 'Quarters', '4TH TUTORIAL': 'Quarters',
-    SEMI: 'Semis', SEMIS: 'Semis', SEMS: 'Semis', SEM: 'Semis', S: 'Semis', SEMIFINALS: 'Semis', SEMIFINAL: 'Semis', SF: 'Semis', MD: 'Semis', '5TH TUTORIAL': 'Semis',
+    TRIPLE: 'Triples', TRIPLES: 'Triples', TRIPES: 'Triples', TRIPS: 'Triples', '3X': 'Triples', '1ST TUTORIAL': 'Triples', '1ST TUTO': 'Triples', AWT: 'Triples',
+    DOUBLE: 'Doubles', DOUBLES: 'Doubles', DOUBL: 'Doubles', DOUB: 'Doubles', '2X': 'Doubles', WAU: 'Doubles', DKB: 'Doubles', 'DKB TUTO': 'Doubles', 'DKB TUTORIAL': 'Doubles',
+    OCTO: 'Octos', OCTOS: 'Octos', OCT: 'Octos', OCTA: 'Octos', OCTAS: 'Octos', OCTAFINALS: 'Octos', OCTAFINAL: 'Octos', OF: 'Octos', RKR: 'Octos', '3RD TUTORIAL': 'Octos', '3RD TUTO': 'Octos',
+    QUARTER: 'Quarters', QUARTERS: 'Quarters', QUARTE: 'Quarters', QUAR: 'Quarters', QRT: 'Quarters', Q: 'Quarters', QUARTERFINALS: 'Quarters', QF: 'Quarters', PB: 'Quarters', '4TH TUTORIAL': 'Quarters', '4TH TUTO': 'Quarters',
+    SEMI: 'Semis', SEMIS: 'Semis', SEMS: 'Semis', SEM: 'Semis', S: 'Semis', SEMIFINALS: 'Semis', SEMIFINAL: 'Semis', SF: 'Semis', MD: 'Semis', '5TH TUTORIAL': 'Semis', '5TH TUTO': 'Semis',
     FINAL: 'Finals', FINALS: 'Finals', F: 'Finals', 'PF EXHIBITION': 'Finals',
     CHAMPION: '1st', CHAMP: '1st', WINNER: '1st', '1ST': '1st', FIRST: '1st',
     '2ND': '2nd', SECOND: '2nd',
