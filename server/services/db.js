@@ -390,6 +390,27 @@ function _runMigrations(db) {
   if (needHighlightBackfill) _backfillHasHighlight(db);
   if (needWordCountBackfill) _backfillHighlightWordCount(db);
   _setupCardsFts(db);
+  _ensureAnalyzed(db);
+}
+
+function _ensureAnalyzed(db) {
+  try {
+    const statTblRows = db.prepare(
+      "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='sqlite_stat1'"
+    ).get();
+    const hasStatTable = statTblRows && statTblRows.n > 0;
+    const row = hasStatTable
+      ? db.prepare("SELECT COUNT(*) AS n FROM sqlite_stat1").get()
+      : { n: 0 };
+    if (!row.n) {
+      console.log('[db] ANALYZE (first run, may take a few seconds)...');
+      const t = Date.now();
+      db.exec('ANALYZE');
+      console.log(`[db] ANALYZE done (${Date.now() - t}ms)`);
+    }
+  } catch (err) {
+    console.warn('[db] ANALYZE skipped:', err.message);
+  }
 }
 
 function _setupCardsFts(db) {
