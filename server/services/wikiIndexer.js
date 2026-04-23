@@ -119,6 +119,9 @@ async function crawlTeamDetail(teamId) {
     }
 
     for (const g of groups.values()) {
+      const sampleRound = g.reads[0] && g.reads[0].round;
+      if (_isJunkArg({ name: g.name, fullText: g.fullText, round: sampleRound })) continue;
+
       const argId = db.upsertArgument({
         teamId,
         name:      g.name,
@@ -145,6 +148,49 @@ async function crawlTeamDetail(teamId) {
     db.setTeamCrawlStatus(teamId, 'error');
     throw err;
   }
+}
+
+// Strip markdown images + base64 blobs + non-text noise, return what's left.
+function _visibleTextLength(s) {
+  if (!s) return 0;
+  let t = String(s);
+  // remove markdown images of every kind including data URIs
+  t = t.replace(/!\[[^\]]*\]\([^)]*\)/g, ' ');
+  t = t.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, ' ');
+  // strip markdown link syntax, keeping text
+  t = t.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+  // strip html tags
+  t = t.replace(/<[^>]+>/g, ' ');
+  // strip markdown bullets/headings/pipes
+  t = t.replace(/[#>*_`|~-]/g, ' ');
+  t = t.replace(/\s+/g, ' ').trim();
+  return t.length;
+}
+
+const NON_ARG_NAME_PATTERNS = [
+  /^contacts?$/i,
+  /^(email|phone|contact|reach|dm|text|instagram|snap|discord|misdisclos)/i,
+  /^team\s*info$/i,
+  /^notes?$/i,
+  /^read\s*me$/i,
+  /^test$/i,
+];
+
+function _isJunkArg({ name, fullText, round }) {
+  const n = String(name || '').trim();
+  if (!n) return true;
+  if (NON_ARG_NAME_PATTERNS.some(rx => rx.test(n))) return true;
+  const visLen = _visibleTextLength(fullText);
+  // If there is no opensource link AND no meaningful text, skip
+  if (!round || !round.opensource) {
+    if (visLen < 30) return true;
+  }
+  // Titles with no words (e.g. "---" or "***")
+  if (!/[A-Za-z0-9]/.test(n)) return true;
+  // Tournament names that are obviously placeholder
+  const tn = String(round && round.tournament || '').trim().toLowerCase();
+  if (['test', 'n/a', 'na', 'none', 'x', 'tbd'].includes(tn)) return true;
+  return false;
 }
 
 // Side inference: prefer explicit title markers; fall back to round.side ('A'/'N').
