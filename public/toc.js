@@ -95,7 +95,7 @@
     list.className = 'toc-list';
     tournaments.forEach(t => {
       const deduped = dedupeEvents(t.events || []);
-      const eventBadges = deduped.map(ev => `<span>${esc(eventLabel(ev))}</span>`).join('');
+      const eventBadges = deduped.map(ev => `<span>${esc(ev.abbr)}</span>`).join('');
       const loc = [t.city, t.state].filter(Boolean).join(', ');
       const row = document.createElement('div');
       row.className = 'toc-list-row';
@@ -188,14 +188,30 @@
     return `<div class="toc-results-pane">${pane}</div>`;
   }
 
+  function ordinal(n) {
+    const k = Math.abs(n) % 100;
+    if (k >= 11 && k <= 13) return `${n}th`;
+    switch (k % 10) {
+      case 1: return `${n}st`;
+      case 2: return `${n}nd`;
+      case 3: return `${n}rd`;
+      default: return `${n}th`;
+    }
+  }
+
   function placesTable(results, abbr) {
     const places = (results || []).filter(r => r.place || r.rank);
     if (!places.length) return '<div class="toc-muted" style="padding:24px 0">No final places recorded.</div>';
-    const rows = places.map((r, i) => `<tr data-entry="${r.entryId}">
-      <td>${esc(r.place || (i + 1))}</td>
-      <td><strong>${esc(r.displayName || '')}</strong></td>
-      <td>${r.earnedBid ? `<span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span>` : '<span class="toc-muted">—</span>'}</td>
-    </tr>`).join('');
+    const rows = places.map((r, i) => {
+      let placeCell = r.place || '';
+      if (!placeCell) placeCell = ordinal(r.rank || (i + 1));
+      else if (/^\d+$/.test(String(placeCell))) placeCell = ordinal(Number(placeCell));
+      return `<tr data-entry="${r.entryId}">
+        <td>${esc(placeCell)}</td>
+        <td><strong>${esc(r.displayName || '')}</strong></td>
+        <td>${r.earnedBid ? `<span class="toc-badge-${abbr.toLowerCase()}">${esc(r.earnedBid)}</span>` : '<span class="toc-muted">—</span>'}</td>
+      </tr>`;
+    }).join('');
     return `<table class="toc-table"><thead><tr><th>Place</th><th>Team</th><th>Bid</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 

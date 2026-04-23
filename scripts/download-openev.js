@@ -50,10 +50,12 @@ async function download(year) {
   return dest;
 }
 
-function importZip(zipPath) {
-  console.log(`  importing ${path.basename(zipPath)}…`);
+function importZip(zipPath, { append }) {
+  console.log(`  importing ${path.basename(zipPath)}${append ? ' (append)' : ''}…`);
   const t0 = Date.now();
-  const r = spawnSync('node', ['scripts/import-zip.js', zipPath], { stdio: 'inherit', cwd: path.join(__dirname, '..') });
+  const argv = ['scripts/import-zip.js', zipPath, '500', '4'];
+  if (append) argv.push('--append');
+  const r = spawnSync('node', argv, { stdio: 'inherit', cwd: path.join(__dirname, '..') });
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
   if (r.status === 0) console.log(`  imported in ${elapsed}s`);
   else console.log(`  import failed (exit ${r.status}) after ${elapsed}s`);
@@ -75,6 +77,6 @@ function importZip(zipPath) {
   if (NO_IMPORT) { console.log('Skipping import step (--no-import).'); return; }
 
   console.log('\nStarting imports…');
-  for (const p of paths) importZip(p);
+  for (let i = 0; i < paths.length; i++) importZip(paths[i], { append: i > 0 });
   console.log('\nAll done.');
 })().catch(e => { console.error('FATAL:', e.message); process.exit(1); });

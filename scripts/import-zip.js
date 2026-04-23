@@ -1,34 +1,34 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-
 const {
   listDocxEntries,
   importDocxEntry,
   chooseCanonicals,
 } = require('../server/services/docxImport');
-const { saveCards, saveMeta, loadMeta, loadCards } = require('../server/services/libraryStore');
+const { saveCards, saveMeta, loadMeta } = require('../server/services/libraryStore');
 
 async function main() {
-  const zipPath = process.argv[2];
-  const batchSize = Number(process.argv[3] || 500);
-  const concurrency = Number(process.argv[4] || 4);
+  const args = process.argv.slice(2);
+  const filtered = args.filter(a => a !== '--append');
+  const zipPath = filtered[0];
+  const batchSize = Number(filtered[1] || 500);
+  const concurrency = Number(filtered[2] || 4);
 
   if (!zipPath) {
-    throw new Error('Usage: node scripts/import-zip.js <zipPath> [batchSize]');
+    throw new Error('Usage: node scripts/import-zip.js <zipPath> [batchSize] [concurrency] [--append]');
   }
 
-  const entries = listDocxEntries(zipPath);
+  const entries = await listDocxEntries(zipPath);
   const existingMeta = loadMeta();
   const resumeCount = existingMeta?.importedZip === zipPath
     ? Number(existingMeta?.importProgress?.processedDocs || 0)
     : 0;
-  const allCards = resumeCount > 0 ? loadCards() : [];
   let processedDocs = resumeCount;
+  let totalCardsImported = 0;
 
   for (let start = resumeCount; start < entries.length; start += batchSize) {
     const batch = entries.slice(start, start + batchSize);
+    let batchCards = [];
 
     for (let cursor = 0; cursor < batch.length; cursor += concurrency) {
       const group = batch.slice(cursor, cursor + concurrency);
@@ -40,24 +40,19 @@ async function main() {
         }
       }));
 
-      results.forEach(cards => allCards.push(...cards));
+      results.forEach(cards => batchCards.push(...cards));
       processedDocs += group.length;
     }
 
-    const canonicalized = chooseCanonicals(allCards);
-    saveCards(canonicalized);
-
-    const citationGroups = new Set(canonicalized.map(card => card.shortCite || card.cite)).size;
-    const canonicalGroups = canonicalized.filter(card => card.isCanonical).length;
+    chooseCanonicals(batchCards);
+    saveCards(batchCards);
+    totalCardsImported += batchCards.length;
 
     saveMeta({
       ...loadMeta(),
       lastImport: new Date().toISOString(),
       importedZip: zipPath,
-      totalCards: canonicalized.length,
       totalDocs: processedDocs,
-      citationGroups,
-      canonicalGroups,
       importProgress: {
         processedDocs,
         totalDocs: entries.length,
@@ -65,23 +60,16 @@ async function main() {
       },
     });
 
-    console.log(`[import] batch complete: ${processedDocs}/${entries.length} docs, ${canonicalized.length} cards`);
+    console.log(`[import] batch complete: ${processedDocs}/${entries.length} docs, +${batchCards.length} cards (total added: ${totalCardsImported})`);
+    batchCards = null;
+    if (global.gc) global.gc();
   }
-
-  const finalCards = chooseCanonicals(allCards);
-  saveCards(finalCards);
-
-  const finalCitationGroups = new Set(finalCards.map(card => card.shortCite || card.cite)).size;
-  const finalCanonicalGroups = finalCards.filter(card => card.isCanonical).length;
 
   saveMeta({
     ...loadMeta(),
     lastImport: new Date().toISOString(),
     importedZip: zipPath,
-    totalCards: finalCards.length,
     totalDocs: entries.length,
-    citationGroups: finalCitationGroups,
-    canonicalGroups: finalCanonicalGroups,
     importProgress: {
       processedDocs: entries.length,
       totalDocs: entries.length,
@@ -93,9 +81,7 @@ async function main() {
   console.log(JSON.stringify({
     zipPath,
     totalDocs: entries.length,
-    totalCards: finalCards.length,
-    citationGroups: finalCitationGroups,
-    canonicalGroups: finalCanonicalGroups,
+    cardsAdded: totalCardsImported,
   }, null, 2));
 }
 

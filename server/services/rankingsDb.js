@@ -87,10 +87,10 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
     }
     merged.push(a);
   }
-  merged.forEach((r, i) => { r.rank = offset + i + 1; });
-
+  // Keep original ROW_NUMBER rank (absolute) so search / dedup don't renumber.
   return {
-    season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount: merged.length, sort,
+    season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount, sort,
+    hasMore: rawRows.length >= PAGE_SIZE,
     rows: merged,
   };
 }

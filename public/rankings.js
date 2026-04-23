@@ -2,6 +2,7 @@
 (function () {
   let _event = 'LD', _season = '';
   let _searchTimer = null;
+  let _page = 1, _allRows = [], _totalCount = 0, _hasMore = false;
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -24,43 +25,61 @@
     }
   }
 
-  async function load() {
+  function renderRows() {
     const tbody = $('rk-rows');
     const meta = $('rk-meta');
+    if (meta) meta.textContent = `${_allRows.length} of ${_totalCount} · season ${_season}`;
+    if (!_allRows.length) {
+      tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">No ratings yet for this event.</td></tr>';
+      return;
+    }
+    const rowsHtml = _allRows.map(r => {
+      const rank = r.rank || '?';
+      const cls = rank === 1 ? 'rk-row-1' : rank === 2 ? 'rk-row-2' : rank === 3 ? 'rk-row-3' : (rank <= 10 ? 'rk-row-top10' : '');
+      const code = r.displayName || '—';
+      const schoolFull = r.schoolName || r.schoolCode || '';
+      return `<tr class="${cls}" data-team="${esc(r.teamKey || '')}">
+        <td><span class="rk-rank-badge">${rank}</span></td>
+        <td>
+          <div class="rk-team-text">
+            <span class="rk-school-name">${esc(code)}</span>
+            <span class="rk-debaters">${esc(schoolFull)}</span>
+          </div>
+        </td>
+        <td class="rk-col-num"><span class="rk-rating">${Math.round(r.rating)}</span></td>
+      </tr>`;
+    }).join('');
+    const moreBtn = _hasMore
+      ? `<tr><td colspan="3" style="text-align:center;padding:12px 0"><button class="rk-btn-sm" id="rk-more-btn">Show more</button></td></tr>`
+      : '';
+    tbody.innerHTML = rowsHtml + moreBtn;
+    tbody.querySelectorAll('tr[data-team]').forEach(tr => {
+      tr.style.cursor = 'pointer';
+      tr.addEventListener('click', () => openProfile(tr.dataset.team));
+    });
+    document.getElementById('rk-more-btn')?.addEventListener('click', () => { _page++; load({ append: true }); });
+  }
+
+  async function load(opts) {
+    const append = opts && opts.append;
+    const tbody = $('rk-rows');
     const q = encodeURIComponent(($('rk-search')?.value || '').trim());
-    tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;color:var(--muted)">Loading…</td></tr>';
+    if (!append) {
+      _page = 1;
+      _allRows = [];
+      tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">Loading…</td></tr>';
+    }
     if (!_season) {
-      tbody.innerHTML = '<tr><td colspan="4" style="padding:24px;color:var(--muted)">No season available.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">No season available.</td></tr>';
       return;
     }
     try {
-      const res = await fetch(`/api/rankings?season=${encodeURIComponent(_season)}&event=${_event}&q=${q}`);
-      const { rows } = await res.json();
-      if (meta) meta.textContent = `${rows.length} ranked · season ${_season}`;
-      if (!rows.length) {
-        tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">No ratings yet for this event.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = rows.map(r => {
-        const rank = r.rank || '?';
-        const cls = rank === 1 ? 'rk-row-1' : rank === 2 ? 'rk-row-2' : rank === 3 ? 'rk-row-3' : (rank <= 10 ? 'rk-row-top10' : '');
-        const code = r.displayName || '—';
-        const schoolFull = r.schoolName || r.schoolCode || '';
-        return `<tr class="${cls}" data-team="${esc(r.teamKey || '')}">
-          <td><span class="rk-rank-badge">${rank}</span></td>
-          <td>
-            <div class="rk-team-text">
-              <span class="rk-school-name">${esc(code)}</span>
-              <span class="rk-debaters">${esc(schoolFull)}</span>
-            </div>
-          </td>
-          <td class="rk-col-num"><span class="rk-rating">${Math.round(r.rating)}</span></td>
-        </tr>`;
-      }).join('');
-      tbody.querySelectorAll('tr[data-team]').forEach(tr => {
-        tr.style.cursor = 'pointer';
-        tr.addEventListener('click', () => openProfile(tr.dataset.team));
-      });
+      const res = await fetch(`/api/rankings?season=${encodeURIComponent(_season)}&event=${_event}&q=${q}&page=${_page}`);
+      const data = await res.json();
+      _totalCount = data.totalCount || (data.rows || []).length;
+      _hasMore = !!data.hasMore;
+      _allRows = _allRows.concat(data.rows || []);
+      renderRows();
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="3" style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</td></tr>`;
     }
