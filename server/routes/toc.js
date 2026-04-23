@@ -72,7 +72,8 @@ router.get('/tournaments/:id/results/:event', (req, res) => {
   const ev = _validateEvent(req, res); if (!ev) return;
   const id = Number(req.params.id);
   let results = db.listResults(id, ev);
-  if (!results.length) {
+  const hasUsablePlaces = results.some(r => r.place || r.rank);
+  if (!hasUsablePlaces) {
     results = db.inferResultsFromBallots(id, ev);
   }
   return res.json({
