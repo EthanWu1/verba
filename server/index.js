@@ -125,25 +125,18 @@ app.get('*', (req, res) => {
 });
 
 /* ── Start ── */
-// Warm DB BEFORE listen so first request isn't blocked on migrations/FTS rebuild.
+// Open DB + run migrations before listen, but defer facet/analytics warmup so server
+// responds to requests immediately. First facet/analytics call pays the cold-cache cost once.
 (function warmAndStart() {
   const tBoot = Date.now();
+  const db = require('./services/db');
   try {
-    const db = require('./services/db');
-    const { getLibraryAnalytics } = require('./services/libraryQuery');
     console.log('[warm] opening DB...');
     const t1 = Date.now();
     db.getDb();
-    console.log(`[warm] DB open (${Date.now() - t1}ms)`);
-    const t2 = Date.now();
-    db.facetCounts(null, 20);
-    console.log(`[warm] facet cache (${Date.now() - t2}ms)`);
-    const t3 = Date.now();
-    getLibraryAnalytics();
-    console.log(`[warm] analytics cache (${Date.now() - t3}ms)`);
-    console.log(`[warm] total ${Date.now() - tBoot}ms, ${db.countCards()} cards`);
+    console.log(`[warm] DB open (${Date.now() - t1}ms, ${db.countCards()} cards)`);
   } catch (err) {
-    console.error('[warm] boot warmup FAILED:', err.stack || err.message);
+    console.error('[warm] DB open FAILED:', err.stack || err.message);
   }
 
   app.listen(PORT, () => {
@@ -154,6 +147,27 @@ app.get('*', (req, res) => {
     console.log(`║   Model: ${(process.env.MODEL || 'llama-3.3-70b').padEnd(30)}║`);
     console.log('╚════════════════════════════════════════╝');
     console.log('');
+
+    // Background warmup: populate facet + analytics caches without blocking the listener.
+    // First request that needs them waits if still running; everything else is unblocked.
+    setImmediate(() => {
+      (async () => {
+        try {
+          const bw = Date.now();
+          const { getLibraryAnalytics } = require('./services/libraryQuery');
+          const dbm = require('./services/db');
+          const t2 = Date.now();
+          dbm.facetCounts(null, 20);
+          console.log(`[warm] facet cache (${Date.now() - t2}ms) [bg]`);
+          const t3 = Date.now();
+          getLibraryAnalytics();
+          console.log(`[warm] analytics cache (${Date.now() - t3}ms) [bg]`);
+          console.log(`[warm] bg total ${Date.now() - bw}ms`);
+        } catch (err) {
+          console.error('[warm] bg warmup failed:', err.message);
+        }
+      })();
+    });
 
     // Auto-seed wiki team index if empty
     try {
