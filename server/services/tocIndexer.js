@@ -8,10 +8,24 @@ const rankings = require('./rankingsEngine');
 // Tabroom uses many abbr variants: LD, VLD, LD-O, LD-INP, OLD (Open LD),
 // PF, VPF, PF-O, PF-INP, PF-ONL; CX, VCX, CX-INP, POL. Match by pattern on
 // both abbr and event name; skip non-varsity (novice / JV / middle school).
-const NON_VARSITY_RE = /novice|junior varsity|\bjv\b|\bms\b|middle school/i;
+const NON_VARSITY_NAME_RE = /novice|junior\s*varsity|\bjv\b|\bms\b|middle\s*school/i;
+const NON_VARSITY_ABBR_EXACT = new Set([
+  'JVLD', 'JVPF', 'JVCX', 'JVPOL', 'JVPOLICY',
+  'NLD', 'NPF', 'NCX', 'NPOL', 'NPOLICY',
+  'MSLD', 'MSPF', 'MSCX',
+  'NOVLD', 'NOVPF', 'NOVCX',
+  'JRVLD', 'JRVPF', 'JRVCX',
+]);
 function _isNonVarsityEvent(ev) {
-  const blob = `${ev && ev.name || ''} ${ev && ev.abbr || ''}`;
-  return NON_VARSITY_RE.test(blob);
+  const name = String(ev && ev.name || '');
+  const abbr = String(ev && ev.abbr || '').toUpperCase();
+  if (NON_VARSITY_NAME_RE.test(name)) return true;
+  if (NON_VARSITY_ABBR_EXACT.has(abbr)) return true;
+  if (/^JV/.test(abbr)) return true;                 // JVLD, JV-LD, JV_PF…
+  if (/^MS[A-Z]/.test(abbr)) return true;            // MSLD, etc.
+  if (/^NOV/.test(abbr)) return true;                // NOVLD
+  if (/^N(LD|PF|CX|POL)/.test(abbr)) return true;    // NLD, NPF, NCX, NPOL
+  return false;
 }
 function _canonicalAbbrFromText(text) {
   const s = String(text || '').toUpperCase();
