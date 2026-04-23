@@ -121,10 +121,10 @@
         switch (k % 10) { case 1: return n+'st'; case 2: return n+'nd'; case 3: return n+'rd'; default: return n+'th'; }
       };
       const PLACE_ALIASES = {
-        RUNOFF:'Sextos', PARTIAL:'Sextos', PARTIALS:'Sextos', SEXTO:'Sextos', SEXTOS:'Sextos',
-        TRIPLE:'Triples', TRIPLES:'Triples', TRIPES:'Triples', '3X':'Triples', '1ST TUTORIAL':'Triples',
-        DOUBLE:'Doubles', DOUBLES:'Doubles', '2X':'Doubles', WAU:'Doubles', DKB:'Doubles',
-        OCTO:'Octos', OCTOS:'Octos', OCTA:'Octos', OCTAS:'Octos', OCTAFINALS:'Octos', OCTAFINAL:'Octos', OF:'Octos', RKR:'Octos', '3RD TUTORIAL':'Octos',
+        RUNOFF:'Doubles', PARTIAL:'Doubles', PARTIALS:'Doubles', SEXTO:'Doubles', SEXTOS:'Doubles',
+        TRIPLE:'Triples', TRIPLES:'Triples', TRIPES:'Triples', TRIPS:'Triples', '3X':'Triples', '1ST TUTORIAL':'Triples',
+        DOUBLE:'Doubles', DOUBLES:'Doubles', DOUBL:'Doubles', DOUB:'Doubles', '2X':'Doubles', WAU:'Doubles', DKB:'Doubles',
+        OCTO:'Octos', OCTOS:'Octos', OCT:'Octos', OCTA:'Octos', OCTAS:'Octos', OCTAFINALS:'Octos', OCTAFINAL:'Octos', OF:'Octos', RKR:'Octos', '3RD TUTORIAL':'Octos',
         QUARTER:'Quarters', QUARTERS:'Quarters', QUARTE:'Quarters', QUAR:'Quarters', QTRS:'Quarters', QRT:'Quarters', Q:'Quarters', QUARTERFINALS:'Quarters', QF:'Quarters', PB:'Quarters', '4TH TUTORIAL':'Quarters',
         SEMI:'Semis', SEMIS:'Semis', SEMS:'Semis', SEM:'Semis', S:'Semis', SEMIFINALS:'Semis', SEMIFINAL:'Semis', SF:'Semis', MD:'Semis', '5TH TUTORIAL':'Semis',
         FINAL:'Finals', FINALS:'Finals', F:'Finals', 'PF EXHIBITION':'Finals',
@@ -143,10 +143,12 @@
         if (/^SEMIFINA/.test(key))    return 'Semis';
         if (/^QUARTERF/.test(key))    return 'Quarters';
         if (/^OCTAFINA|^OCTOFINA/.test(key)) return 'Octos';
-        if (/^DOUBLE/.test(key))      return 'Doubles';
-        if (/^TRIPLE/.test(key))      return 'Triples';
+        if (/^DOUBL/.test(key))       return 'Doubles';
+        if (/^TRIP/.test(key))        return 'Triples';
+        if (/^OCT/.test(key))         return 'Octos';
         if (/^FINAL/.test(key))       return 'Finals';
-        if (/^PARTIAL/.test(key))     return 'Partials';
+        if (/^PARTIAL/.test(key))     return 'Doubles';
+        if (/^SEXTO/.test(key))       return 'Doubles';
         return s;
       };
       const tournRows = tournaments.map(t => {
