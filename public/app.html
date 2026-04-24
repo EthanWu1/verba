@@ -2521,7 +2521,15 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
       <section class="page" id="page-files">
         <div id="files-tree-view"></div>
-        <div id="files-editor-view" hidden></div>
+        <div id="files-editor-view" hidden>
+          <div class="files-editor">
+            <aside class="files-outline" id="files-outline"></aside>
+            <div style="display:flex;flex-direction:column;min-width:0;height:100%">
+              <div class="files-toolbar files-topbar" id="files-topbar"></div>
+              <div class="files-surface"><div id="files-quill"></div></div>
+            </div>
+          </div>
+        </div>
       </section>
 
     </div>
@@ -3067,5 +3075,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 <script src="/rankings.js"></script>
 <script src="https://cdn.quilljs.com/2.0.0/quill.js"></script>
 <script src="lib/filesTree.js"></script>
+<script src="lib/filesEditor.js"></script>
 <script src="lib/filesApp.js"></script>
 </body></html>
