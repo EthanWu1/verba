@@ -1,129 +1,165 @@
 'use strict';
-
 const express = require('express');
-const router = express.Router();
-const { complete } = require('../services/llm');
-const { getRelevantAnalytics, buildChatContext } = require('../services/libraryQuery');
+const multer = require('multer');
 const requireUser = require('../middleware/requireUser');
-const enforceLimit = require('../middleware/enforceLimit');
-const { pickChatMaxTokens, SHORT_BRIEF, BLOCK_INTENT } = require('../prompts/chatBrevity');
-const CHAT_DAILY_LIMIT = Number(process.env.FREE_CHAT_DAILY || 10);
+const store = require('../services/chatStore');
+
+const router = express.Router();
 router.use(requireUser);
 
-const SYSTEM_PROMPT = `You are a circuit LD debate coach. Direct claims only. No greetings, filler, hedging, or offers to tailor further.
+const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } });
 
-OUTPUT FORMAT — STRICT:
-- Plain text only. No markdown. No **bold**, no *italic*, no _underline_, no backticks, no headings.
-- Separate ideas with a blank line. Each labeled response is its own paragraph.
-- Never end with a question, offer, or "want me to...". Just stop.
+// Threads
+router.get('/threads', (req, res) => {
+  const includeArchived = req.query.archived === '1';
+  res.json({ threads: store.listThreads(req.user.id, { includeArchived }) });
+});
+router.post('/threads', (req, res) => {
+  const t = store.createThread(req.user.id, (req.body && req.body.title) || 'New thread');
+  res.json({ thread: t });
+});
+router.patch('/threads/:id', (req, res) => {
+  const t = store.updateThread(req.params.id, req.user.id, req.body || {});
+  if (!t) return res.status(404).json({ error: 'not_found' });
+  res.json({ thread: t });
+});
+router.delete('/threads/:id', (req, res) => {
+  store.deleteThread(req.params.id, req.user.id);
+  res.json({ ok: true });
+});
 
-BLOCK WRITING:
-- First line of a block is: "AT: <argument name>" (e.g. "AT: Moral Skepticism", "AT: Econ DA").
-- Then blank line.
-- Then labeled responses, one per paragraph. Label starts the paragraph, followed by a period:
-    Turn. <1-3 sentences>
-    Non-unique. <...>
-    Perm. <...>  (only CPs / Ks)
-    Link turn. <...>  (K)
-    Framework preempt. <...>  (phil)
-    Collapse. <...>  (phil)
-    Counterinterp. Fairness. Clash. Predictability. Reasonability. (theory only)
+// Messages (list only; POST is Task 6)
+router.get('/threads/:id/messages', (req, res) => {
+  const t = store.getThread(req.params.id, req.user.id);
+  if (!t) return res.status(404).json({ error: 'not_found' });
+  res.json({ messages: store.listMessages(req.params.id) });
+});
 
-Valid labels per type:
-  DA:     Turn. Non-unique. No link. No internal link. Impact defense. Timeframe.
-  CP:     Perm. Non-unique. Solvency deficit. Net benefit turns.
-  K:      Perm. Link turn. No impact. Alt fails. Framework.
-  Theory: Counterinterp. Fairness. Clash. Predictability. Reasonability. Drop the arg.
-  Phil:   Turn. Collapse. Framework preempt.
+// Context
+router.get('/context', (req, res) => {
+  res.json({ context: store.listContext(req.user.id) });
+});
+router.post('/context', upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'no_file' });
+  try {
+    const text = await extractDocxText(req.file.buffer);
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const row = store.addContext({
+      userId: req.user.id,
+      name: req.file.originalname,
+      kind: 'docx',
+      wordCount,
+      content: text,
+    });
+    res.json({ context: row });
+  } catch (err) {
+    res.status(500).json({ error: 'extract_failed', message: err.message });
+  }
+});
+router.delete('/context/:id', (req, res) => {
+  store.deleteContext(req.params.id, req.user.id);
+  res.json({ ok: true });
+});
 
-Lead with offense (Turn. or Perm.). Each label 1-3 sentences, no padding.
+// Helper: extract plain text from docx Buffer using inline minimal extraction
+async function extractDocxText(buffer) {
+  const JSZip = require('jszip');
+  const zip = await JSZip.loadAsync(buffer);
+  const xmlFile = zip.file('word/document.xml');
+  if (!xmlFile) throw new Error('no_document_xml');
+  const xml = await xmlFile.async('text');
+  const texts = [];
+  const re = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
+  let m;
+  while ((m = re.exec(xml)) !== null) {
+    texts.push(decodeXml(m[1]));
+  }
+  return texts.join(' ');
+}
 
-CARD REFERENCES:
-When you want to cite evidence, do NOT paste the card text into the response. Emit a card token instead:
-  [[CARD|<id>|Author 'YY|QualShort|One-line preview of the warrant]]
-Example: [[CARD|a3f9b21c|Korsgaard '96|Harvard Phil|Reflective consciousness makes normativity inescapable]]
-The UI renders these as chips the user can click to save. Never quote card body text inline. Never write <u>...</u> or ==...==.
+function decodeXml(s) {
+  return s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
 
-STYLE:
-- Short sentences. Warrant > claim > impact in that order when laying out a response.
-- No preamble. No "Here's a block on...". Start with the "AT:" line.
-- No closing summary. No "let me know if...".
+const { parseCommand, buildExplainPrompt, buildAnalyticPrompt, buildBlockPrompt } = require('../services/chatCommands');
+const retrieval = require('../services/chatRetrieval');
+const { complete, completeStream, parseJSON } = require('../services/llm');
 
-${SHORT_BRIEF}`;
+const MODEL_FAST  = 'google/gemini-2.5-flash-lite';
+const MODEL_BLOCK = 'deepseek/deepseek-chat';
 
-router.post('/', enforceLimit('chat', CHAT_DAILY_LIMIT), async (req, res) => {
-  const { messages, fileContext } = req.body;
-  if (!Array.isArray(messages) || !messages.length) {
-    return res.status(400).json({ error: 'messages array required' });
+router.post('/threads/:id/messages', async (req, res) => {
+  const userId = req.user.id;
+  const threadId = req.params.id;
+  const thread = store.getThread(threadId, userId);
+  if (!thread) return res.status(404).json({ error: 'not_found' });
+
+  const content = String((req.body && req.body.content) || '').trim();
+  if (!content) return res.status(400).json({ error: 'content_required' });
+
+  const parsed = parseCommand(content);
+  const userMsg = store.addMessage(threadId, 'user', content, { command: parsed.command });
+
+  // /block → non-streaming JSON
+  if (parsed.command === '/block') {
+    try {
+      const [cards, analytics, userCtx] = await Promise.all([
+        retrieval.retrieveCards(parsed.intent, 10),
+        retrieval.retrieveAnalytics(parsed.intent, 5),
+        retrieval.retrieveUserContext(userId, parsed.intent, 3),
+      ]);
+      const prompt = buildBlockPrompt({ intent: parsed.intent, cards, analytics, contextDocs: userCtx });
+      const raw = await complete({ prompt, forceModel: MODEL_BLOCK });
+      const block = parseJSON(raw) || {};
+      const asstMsg = store.addMessage(threadId, 'assistant', 'Block generated.', {
+        command: '/block',
+        blockJson: { ...block, candidateCards: cards },
+      });
+      return res.json({ userMessage: userMsg, assistantMessage: asstMsg });
+    } catch (err) {
+      const errMsg = store.addMessage(threadId, 'assistant', 'Block generation failed: ' + err.message);
+      return res.status(500).json({ userMessage: userMsg, assistantMessage: errMsg });
+    }
   }
 
+  // /explain or /analytic or plain → SSE stream
+  const isAnalytic = parsed.command === '/analytic';
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
   try {
-    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
-    let systemContent = SYSTEM_PROMPT;
+    const [analytics, userCtx] = await Promise.all([
+      retrieval.retrieveAnalytics(parsed.intent, isAnalytic ? 8 : 10),
+      retrieval.retrieveUserContext(userId, parsed.intent, 3),
+    ]);
+    const prompt = isAnalytic
+      ? buildAnalyticPrompt({ intent: parsed.intent, analytics, contextDocs: userCtx })
+      : buildExplainPrompt({ intent: parsed.intent, context: analytics, contextDocs: userCtx });
 
-    if (BLOCK_INTENT.test(lastUserMsg)) {
-      const refs = getRelevantAnalytics(lastUserMsg, 3);
-      if (refs.length) {
-        systemContent += '\n\nREFERENCE BACKFILES (inspiration only — adapt and reword to fit this specific argument; skip anything that does not directly address it; do not quote verbatim):\n' +
-          refs.map(r => `--- ${r.title} ---\n${String(r.content_plain || '').slice(0, 1500)}`).join('\n\n');
-      }
-    }
+    res.write('event: start\ndata: ' + JSON.stringify({ userMessageId: userMsg.id }) + '\n\n');
 
-    if (fileContext) {
-      systemContent += '\n\nUPLOADED FILE CONTEXT (user attached this for reference):\n' +
-        String(fileContext).slice(0, 4000);
-    }
-
-    let contextCards = [];
-    try {
-      const ctx = await buildChatContext(lastUserMsg, {}, 24);
-      const all = Array.isArray(ctx && ctx.cards) ? ctx.cards : [];
-      // Only surface cards that actually have highlights/underlines — unhighlighted cards read poorly.
-      const hasMarkup = (c) => {
-        if (c.hasHighlight === 1 || c.hasHighlight === true) return true;
-        const body = String(c.body_markdown || c.body_html || '');
-        return /<u[>\s]|==|\*\*/.test(body);
-      };
-      const highlighted = all.filter(hasMarkup);
-      contextCards = (highlighted.length ? highlighted : all).slice(0, 8);
-    } catch (e) {
-      contextCards = [];
-    }
-
-    if (contextCards.length) {
-      systemContent += '\n\nAVAILABLE CARDS (cite by ID using the [[CARD|<id>|...]] token; only use IDs listed here):\n' +
-        contextCards.map(c => {
-          const preview = String(c.body_plain || c.body_markdown || '').slice(0, 400);
-          return `ID: ${c.id}\nTag: ${c.tag || ''}\nCite: ${c.cite || ''}\nBody: ${preview}`;
-        }).join('\n---\n') +
-        '\n\nCARD STANCE MATCHING — HARD RULE:\n' +
-        '- Read the USER REQUEST and determine the exact stance/claim asked for (e.g. "nukes good for earth" vs "nukes bad for earth").\n' +
-        '- Before emitting a [[CARD|...]] token, verify that the card BODY actually argues the requested stance. Skim the Tag AND Body preview — do not rely on keyword overlap. A card about "nukes bad" does NOT support "nukes good".\n' +
-        '- If NO card in the list supports the requested stance, say so in plain text: "No matching card in library." Do not emit a chip. Do not substitute an opposite-stance card.\n' +
-        '- Never cite a card whose warrant contradicts the user\'s requested claim.';
-    }
-
-    const result = await complete({
-      messages: [
-        { role: 'system', content: systemContent },
-        ...messages.slice(-20),
-      ],
-      temperature: 0.4,
-      maxTokens: pickChatMaxTokens(lastUserMsg),
-      forceModel: process.env.CHAT_MODEL || 'anthropic/claude-opus-4-7',
+    let full = '';
+    await completeStream({
+      prompt,
+      forceModel: MODEL_FAST,
+      onToken: (tok) => {
+        full += tok;
+        res.write('event: token\ndata: ' + JSON.stringify({ t: tok }) + '\n\n');
+      },
     });
-    const cardsPayload = contextCards.map(c => ({
-      id: c.id,
-      tag: c.tag,
-      cite: c.cite,
-      shortCite: c.shortCite,
-      body_markdown: c.body_markdown,
-      body_plain: c.body_plain,
-      body_html: c.body_html,
-    }));
-    res.json({ reply: result.content, model: result.model, cards: cardsPayload });
+    const asstMsg = store.addMessage(threadId, 'assistant', full, { command: parsed.command });
+    res.write('event: done\ndata: ' + JSON.stringify({ assistantMessageId: asstMsg.id }) + '\n\n');
+    res.end();
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    res.write('event: error\ndata: ' + JSON.stringify({ message: err.message }) + '\n\n');
+    res.end();
   }
 });
 
