@@ -774,32 +774,76 @@ async function importZipToLibrary(zipPath, options = {}) {
   };
 }
 
+let _dashCache = { at: 0, data: null, limit: 0 };
+const DASH_TTL_MS = 10 * 60 * 1000;
+
 function getLibraryDashboard(limit = 12) {
-  const cards = loadCards().map(enrichCard);
+  const now = Date.now();
+  if (_dashCache.data && _dashCache.limit === limit && (now - _dashCache.at) < DASH_TTL_MS) {
+    return _dashCache.data;
+  }
+  const { getDb } = require('./db');
+  const db = getDb();
   const meta = loadMeta();
 
-  const recent = [...cards]
-    .sort((a, b) => new Date(b.importedAt) - new Date(a.importedAt))
-    .slice(0, limit);
+  const stats = db.prepare(`
+    SELECT
+      COUNT(*) AS totalCards,
+      SUM(CASE WHEN isCanonical=1 THEN 1 ELSE 0 END) AS canonicalCards,
+      COUNT(DISTINCT school) AS totalSchools,
+      COUNT(DISTINCT school || '/' || COALESCE(squad,'')) AS totalTeams
+    FROM cards
+  `).get();
 
-  const canonicals = cards.filter(card => card.isCanonical);
-  const topicBreakdown = countBreakdown(cards, 'topicBucket', 8);
-  const argumentBreakdown = countArgumentBreakdown(cards, 8);
+  const recentRaw = db.prepare(`
+    SELECT * FROM cards
+    WHERE importedAt IS NOT NULL
+    ORDER BY importedAt DESC
+    LIMIT ?
+  `).all(limit);
 
-  return {
+  const canonicalsRaw = db.prepare(`
+    SELECT * FROM cards
+    WHERE isCanonical = 1
+    ORDER BY importedAt DESC
+    LIMIT ?
+  `).all(limit);
+
+  const topicBreakdown = db.prepare(`
+    SELECT COALESCE(topicBucket,'Uncategorized') AS label, COUNT(*) AS count
+    FROM cards GROUP BY label ORDER BY count DESC LIMIT 8
+  `).all();
+
+  // argumentTypes is JSON TEXT; aggregate via json_each.
+  let argumentBreakdown = [];
+  try {
+    argumentBreakdown = db.prepare(`
+      SELECT j.value AS label, COUNT(*) AS count
+      FROM cards c, json_each(COALESCE(c.argumentTypes, '["none"]')) j
+      GROUP BY j.value
+      ORDER BY count DESC
+      LIMIT 8
+    `).all();
+  } catch (e) {
+    argumentBreakdown = [];
+  }
+
+  const data = {
     meta,
     stats: {
-      totalCards: cards.length,
-      canonicalCards: canonicals.length,
-      totalSchools: new Set(cards.map(card => card.school).filter(Boolean)).size,
-      totalTeams: new Set(cards.map(card => `${card.school}/${card.squad}`).filter(Boolean)).size,
+      totalCards: stats.totalCards || 0,
+      canonicalCards: stats.canonicalCards || 0,
+      totalSchools: stats.totalSchools || 0,
+      totalTeams: stats.totalTeams || 0,
     },
     topicBreakdown,
     argumentBreakdown,
-    communityRecent: canonicals.slice(0, limit),
-    wikiRecent: recent,
-    recent,
+    communityRecent: canonicalsRaw.map(enrichCard),
+    wikiRecent: recentRaw.map(enrichCard),
+    recent: recentRaw.map(enrichCard),
   };
+  _dashCache = { at: now, data, limit };
+  return data;
 }
 
 function countArgumentBreakdown(cards, limit) {
