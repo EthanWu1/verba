@@ -28,10 +28,11 @@ Not included:
 
 ## Architecture
 
-**Client:** vanilla JS single-page Chat tab with three regions:
-- **Left column** (240px) — Thread list with `+ New thread`, archive toggle
-- **Center column** (flex) — Active message thread + composer
-- **Right column (conditional, 50% width when present)** — Split-view display pane for `/block` output, collapsible
+**Client:** vanilla JS single-page Chat tab, single-column by default with on-demand overlays:
+- **Main column** (flex, centered, max 780px) — active message thread + composer
+- **Top-left History button** (like Claude Code) — click opens floating thread-list dropdown; click thread to switch; archive toggle inside dropdown
+- **Top-left Context button** — opens floating panel listing user's uploaded docx context; `+ Import docx` inside. Context is universal across threads (not per-thread).
+- **Inline block file cards** — when `/block` output arrives, chat shows a clickable "file" card (tag + cite snippet + "Open" affordance). Clicking opens **split-view** on the right (50% width). Clicking X or the same file card again closes split-view.
 
 **Server:** new Express router `server/routes/chat.js` replacing the old (or reuse file, rewrite handlers). Reuses:
 - `server/services/llm.js` (`complete`, `parseJSON`) — OpenRouter wrapper
@@ -131,8 +132,10 @@ Auth: all routes behind `requireUser` middleware.
 - Builds a full block (1-3 cards + tag + optional analytic glue) — same as Files-tab design
 - Retrieval: top 10 canonicals (cards FTS + vector rerank) + top 5 analytics/context passages
 - Model: **DeepSeek V3.1** (better reasoning for structured output)
-- Response NOT streamed — arrives as JSON: `{ tag, cardIds, analyticBefore, glueBetween[], analyticAfter }`
-- On arrival: assistant message bubble says "Block generated — see split view"; split-view pane opens on right with fully formatted block (tag as H4, cite bold 13pt + 11pt, body with underlines + highlights). Pane has a **Copy all** button (reuses existing `clipboard.js` serializer) and a **Close** button.
+- Response NOT streamed — arrives as JSON: `{ tag, cardIds, analyticBefore, glueBetween[], analyticAfter }` (and inline candidate-card payloads)
+- Server persists to `chat_messages.blockJson`.
+- On arrival: assistant message renders as an inline **file card** in the chat thread (icon + tag + short cite preview + `[Open ▸]`). Clicking the card opens split-view on the right; clicking it again (or ✕/Esc in split-view) closes it.
+- Split-view pane shows fully formatted block (tag as H4, cite bold 13pt + 11pt, body with underlines + highlights). Pane has **Copy all** button (reuses existing `clipboard.js` serializer) and **Close** button. Read-only display — no editor.
 
 ## Context import
 
@@ -158,26 +161,59 @@ Techniques:
 ### Chat tab structure
 
 ```
-┌─ Chat Tab ───────────────────────────────────────────────────────┐
-│ ┌──────────┐ ┌─────────────────────┐ ┌──────────────────────────┐│
-│ │ Context  │ │                     │ │  Split View              ││
-│ │ (top)    │ │  Message list       │ │  (/block output)         ││
-│ │ +Import  │ │  (scroll)           │ │                          ││
-│ │ • doc1   │ │                     │ │  [tag]                   ││
-│ │ • doc2   │ │                     │ │  [cite]                  ││
-│ ├──────────┤ │                     │ │  [body]                  ││
-│ │ Threads  │ │                     │ │                          ││
-│ │ +New     │ │                     │ │  [Copy all] [Close]      ││
-│ │ • thread │ │                     │ │                          ││
-│ │ • thread │ │                     │ │                          ││
-│ │ • thread │ ├─────────────────────┤ │                          ││
-│ │ Archive  │ │  Composer + slash   │ │                          ││
-│ │          │ │  [Send]             │ │                          ││
-│ └──────────┘ └─────────────────────┘ └──────────────────────────┘│
-└───────────────────────────────────────────────────────────────────┘
+Default (no block open):
+┌─ Chat Tab ─────────────────────────────────────────────────────┐
+│ [History] [Context] [+New]                                     │
+│                                                                │
+│             ┌──────────────────────────────────┐               │
+│             │  Message list (scroll, centered) │               │
+│             │                                  │               │
+│             │  user: /block China uniqueness   │               │
+│             │  assistant: 📄 block-2026-04-24   │<── click card │
+│             │             Tag: X Y Z           │   to open     │
+│             │             Cite: Smith 24       │   split-view  │
+│             │             [Open ▸]             │               │
+│             │                                  │               │
+│             ├──────────────────────────────────┤               │
+│             │  /  Composer              [Send] │               │
+│             └──────────────────────────────────┘               │
+└────────────────────────────────────────────────────────────────┘
+
+Block file open (split-view on right):
+┌─ Chat Tab ─────────────────────────────────────────────────────┐
+│ [History] [Context] [+New]                                     │
+│ ┌──────────────────────┐ ┌────────────────────────────────────┐│
+│ │  Message list        │ │ block-2026-04-24         [Copy][✕] ││
+│ │                      │ │                                    ││
+│ │  ...                 │ │  [H4 Tag]                          ││
+│ │  📄 block-2026-04-24  │ │  [Cite 13pt bold / 11pt]           ││
+│ │     [Open ▸] (active)│ │  [Body with u + hl]                ││
+│ │                      │ │                                    ││
+│ │  Composer      [Send]│ │                                    ││
+│ └──────────────────────┘ └────────────────────────────────────┘│
+└────────────────────────────────────────────────────────────────┘
+
+History dropdown (from top-left button, floating overlay):
+┌───────────────────────────┐
+│ Threads          [Archive]│
+│ + New thread              │
+│ ─────                     │
+│ • China DA work  ← active │
+│ • Framework ideas         │
+│ • Topicality research     │
+└───────────────────────────┘
+
+Context panel (from top-left button, floating overlay):
+┌───────────────────────────┐
+│ Context (universal)       │
+│ + Import docx             │
+│ ─────                     │
+│ • 2024 Camp Notes.docx    │
+│ • China Backfile.docx  [✕]│
+└───────────────────────────┘
 ```
 
-Default: split view hidden. When `/block` response arrives → open + scroll assistant message into view + focus Copy button.
+Split-view opens by clicking a block file card in the message list. Close by X, Esc, or clicking the same card again. Context + History are floating dropdowns dismissed by outside-click or Esc.
 
 ### Composer
 
