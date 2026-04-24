@@ -133,4 +133,5 @@
   };
 
   global.VerbaAPI = api;
+  global.API = api;
 })(window);
