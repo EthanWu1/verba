@@ -81,6 +81,13 @@ function _cachePut(k, v) {
 router.get('/semantic-search', async (req, res) => {
   const q = String(req.query.q || '').trim();
   const k = Math.min(100, Number(req.query.k) || 25);
+  const diag = req.query.diag === '1';
+
+  if (diag) {
+    const { extensionStatus } = require('../services/semanticIndex');
+    return res.json({ ok: true, extension: extensionStatus(), cacheSize: _qCache.size });
+  }
+
   if (q.length < 3) return res.json({ results: [] });
 
   try {

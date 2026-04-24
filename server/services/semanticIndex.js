@@ -1,24 +1,28 @@
 'use strict';
 
-const path = require('path');
 const { getDb } = require('./db');
 const { DIM } = require('./embedder');
 
 let _loaded = false;
+let _loadFailed = false;
 function _loadVecExt(db) {
-  if (_loaded) return;
+  if (_loaded) return true;
+  if (_loadFailed) return false;
   try {
     const sqliteVec = require('sqlite-vec');
     sqliteVec.load(db);
     _loaded = true;
+    return true;
   } catch (err) {
-    throw new Error('sqlite-vec extension not installed or failed to load: ' + err.message);
+    _loadFailed = true;
+    console.warn('[semanticIndex] sqlite-vec unavailable:', err.message);
+    return false;
   }
 }
 
 function ensureSchema() {
   const db = getDb();
-  _loadVecExt(db);
+  if (!_loadVecExt(db)) return false;
   db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS cards_vec USING vec0(
       card_id INTEGER PRIMARY KEY,
@@ -32,11 +36,12 @@ function ensureSchema() {
     );
     CREATE INDEX IF NOT EXISTS idx_cards_embed_hash ON cards_embed_meta(textHash);
   `);
+  return true;
 }
 
 function upsertEmbedding(cardId, textHash, embedding) {
   const db = getDb();
-  _loadVecExt(db);
+  if (!_loadVecExt(db)) return;
   const buf = Buffer.from(new Float32Array(embedding).buffer);
   db.prepare(`DELETE FROM cards_vec WHERE card_id = ?`).run(cardId);
   db.prepare(`INSERT INTO cards_vec(card_id, embedding) VALUES (?, ?)`).run(cardId, buf);
@@ -52,15 +57,20 @@ function upsertEmbedding(cardId, textHash, embedding) {
 
 function knn(queryEmbedding, k = 25) {
   const db = getDb();
-  _loadVecExt(db);
+  if (!_loadVecExt(db)) return [];
   const buf = Buffer.from(new Float32Array(queryEmbedding).buffer);
-  return db.prepare(`
-    SELECT card_id, distance
-    FROM cards_vec
-    WHERE embedding MATCH ?
-    ORDER BY distance ASC
-    LIMIT ?
-  `).all(buf, k);
+  try {
+    return db.prepare(`
+      SELECT card_id, distance
+      FROM cards_vec
+      WHERE embedding MATCH ?
+      ORDER BY distance ASC
+      LIMIT ?
+    `).all(buf, k);
+  } catch (err) {
+    console.warn('[semanticIndex] knn failed:', err.message);
+    return [];
+  }
 }
 
 function alreadyEmbedded(cardId, textHash) {
@@ -69,4 +79,8 @@ function alreadyEmbedded(cardId, textHash) {
   return row && row.textHash === textHash;
 }
 
-module.exports = { ensureSchema, upsertEmbedding, knn, alreadyEmbedded };
+function extensionStatus() {
+  return { loaded: _loaded, loadFailed: _loadFailed };
+}
+
+module.exports = { ensureSchema, upsertEmbedding, knn, alreadyEmbedded, extensionStatus };
