@@ -51,6 +51,7 @@ async function main() {
     FROM cards
     WHERE body_markdown IS NOT NULL
       AND body_markdown LIKE '%==%'
+      AND isCanonical = 1
   `).all();
 
   if (LIMIT > 0) rows = rows.slice(0, LIMIT);
