@@ -1950,7 +1950,7 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .toc-table th { font: 500 10px var(--font-ui); color: var(--muted); text-transform: uppercase; }
 .toc-table tr { cursor: pointer; }
 .toc-table tr:hover td { background: var(--hover-bg, #f5f5f5); }
-.toc-link { color: #2563eb; text-decoration: none; }
+.toc-link { color: #111; text-decoration: none; }
 .toc-link.disabled { color: #aaa; pointer-events: none; }
 .toc-section-title { font: 600 13px var(--font-ui); color: var(--ink); margin: 18px 0 6px; }
 .toc-modal {
@@ -2069,9 +2069,9 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .rk-team-line { display: flex; align-items: center; gap: 10px; }
 .rk-team-initials { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 28px; padding: 0 8px; background: var(--lilac-soft, #ede9fe); color: #4c1d95; border-radius: 5px; font: 700 11px var(--font-mono); letter-spacing: .5px; }
 .rk-team-text { display: flex; flex-direction: column; line-height: 1.3; }
-.rk-school-name { font: 600 13.5px var(--font-display); color: var(--ink); }
-.rk-debaters { font: 12px var(--font-ui); color: var(--muted); }
-.rk-rating { font: 700 13px var(--font-mono); color: var(--ink); }
+.rk-school-name { font: 600 15px var(--font-display); color: var(--ink); }
+.rk-debaters { font: 12.5px var(--font-ui); color: var(--muted); }
+.rk-rating { font: 700 14px var(--font-mono); color: var(--ink); }
 .rk-row-1 { box-shadow: inset 4px 0 0 #d4af37; background: linear-gradient(90deg, rgba(212,175,55,.06), transparent 30%); }
 .rk-row-2 { box-shadow: inset 4px 0 0 #c0c0c0; background: linear-gradient(90deg, rgba(192,192,192,.06), transparent 30%); }
 .rk-row-3 { box-shadow: inset 4px 0 0 #cd7f32; background: linear-gradient(90deg, rgba(205,127,50,.06), transparent 30%); }
@@ -2089,8 +2089,8 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 .rk-back-btn:hover { border-color: var(--lilac-3, #a78bfa); color: var(--ink); }
 .rk-profile-head { display: flex; align-items: center; gap: 16px; padding: 12px 0 4px; border-bottom: 1px solid var(--line); }
 .rk-profile-rank { font: 800 34px var(--font-mono); color: #4c1d95; background: var(--lilac-soft, #ede9fe); padding: 6px 14px; border-radius: 8px; letter-spacing: -.5px; }
-.rk-profile-title { font: 700 24px var(--font-display); color: var(--ink); margin: 0; }
-.rk-profile-sub { font: 13px var(--font-ui); color: var(--muted); margin-top: 2px; }
+.rk-profile-title { font: 700 26px var(--font-display); color: var(--ink); margin: 0; }
+.rk-profile-sub { font: 14px var(--font-ui); color: var(--muted); margin-top: 2px; }
 .rk-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .rk-stat-card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; transition: transform .15s, border-color .15s, box-shadow .15s; }
 .rk-stat-card:hover { transform: translateY(-2px); border-color: var(--lilac-3, #a78bfa); box-shadow: 0 4px 12px rgba(0,0,0,.05); }
@@ -2123,11 +2123,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 }
 
 /* Carousel nav (anchored to #card-pane) */
-#card-pane{position:relative;min-height:480px}
+#card-pane{position:relative;min-height:480px;max-width:920px;margin:0 auto;padding:0 60px;box-sizing:border-box;width:100%}
 .carousel-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--line,#e5e7eb);display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:16px;cursor:pointer;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,0.06);transition:opacity .18s ease,color .15s,border-color .15s}
 .carousel-nav:disabled{opacity:0.3;cursor:not-allowed}
-.carousel-prev{left:-18px}
-.carousel-next{right:-18px}
+.carousel-prev{left:12px}
+.carousel-next{right:12px}
 .carousel-nav:not(:disabled):hover{color:#111;border-color:#d1d5db}
 
 .carousel-dots{display:flex;justify-content:center;gap:6px;padding:10px 0 6px}
@@ -2165,6 +2165,11 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
 
 .toast-undo button{background:rgba(255,255,255,0.15);color:#fff;border:0;padding:4px 10px;border-radius:6px;font:600 12px var(--font-display,system-ui);cursor:pointer}
 .toast-undo button:hover{background:rgba(255,255,255,0.25)}
+
+/* Cutter toolbar: bottom when empty, top when card present */
+#page-home{display:flex;flex-direction:column}
+body.cutter-empty #page-home .research-bar-wrap{order:2}
+body.cutter-empty #page-home #cutter-progress{order:3}
 
 /* Research-bar polish */
 .research-bar{transition:box-shadow .18s ease,border-color .18s ease}
@@ -2310,11 +2315,6 @@ body.accent-sage{--lilac:#BBF7D0;--lilac-2:#86EFAC;--lilac-3:#4ADE80;--lilac-ink
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"></path></svg>
             </button>
           </div>
-        </div>
-
-        <div id="cutter-progress" class="cutter-progress" hidden>
-          <div class="cutter-progress-label">Idle</div>
-          <div class="cutter-progress-track"><div class="cutter-progress-fill"></div></div>
         </div>
 
         <div class="workbench" id="workbench">

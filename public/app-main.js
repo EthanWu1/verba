@@ -286,6 +286,7 @@
 
     if (empty) empty.hidden = items.length !== 0;
     if (wbBody) wbBody.hidden = items.length === 0;
+    document.body.classList.toggle('cutter-empty', items.length === 0);
     if (prevBtn) prevBtn.disabled = items.length === 0 || carouselState.activeIndex <= 0;
     if (nextBtn) nextBtn.disabled = items.length === 0 || carouselState.activeIndex >= items.length - 1;
 
@@ -526,7 +527,7 @@
     let streamCite = '';
 
     const watchdog = setTimeout(() => {
-      applyState(Carousel.updateItem(carouselState, id, { status: 'error', error: 'Timed out' }));
+      applyState(Carousel.removeItem(carouselState, id));
       finishProgress(false);
       toast({ variant: 'destructive', title: 'Cutter timed out', description: 'Try again', duration: 4000 });
       try { es.close(); } catch {}
@@ -599,7 +600,7 @@
       try {
         const d = e.data ? JSON.parse(e.data) : null;
         if (d?.error) {
-          applyState(Carousel.updateItem(carouselState, id, { status: 'error', error: d.error }));
+          applyState(Carousel.removeItem(carouselState, id));
           finishProgress(false);
           toast({ variant: 'destructive', title: 'Cut failed', description: d.error, duration: 5000 });
         }
