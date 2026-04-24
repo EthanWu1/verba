@@ -1225,11 +1225,13 @@
     state.evShown = 50;
     state.evDone = false;
     try {
-      const params = { limit: 50, page: 1, sort: 'relevance', canonical: 1 };
+      const params = { limit: 200, page: 1, sort: 'relevance', canonical: 1, hasHighlight: 1 };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       const raw = data.items || data.results || [];
-      state.evidenceCards = raw.filter(c => c && (c.isCanonical === 1 || c.isCanonical === true));
+      const isCanon = (c) => c && (c.isCanonical === 1 || c.isCanonical === true);
+      const isHl = (c) => !!c && (c.hasHighlight === 1 || c.hasHighlight === true || /==[^=]+==/.test(String(c.body_markdown || '')) || /==[^=]+==/.test(String(c.body_plain || '')));
+      state.evidenceCards = raw.filter(c => isCanon(c) && isHl(c)).slice(0, 50);
       state.evidenceTotal = data.total || 0;
       if (!state.evidenceCards.length) state.evDone = true;
       if (list) renderEvidence();
