@@ -151,6 +151,23 @@ function _initSchema(db) {
     );
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS docs (
+      id         TEXT PRIMARY KEY,
+      userId     TEXT NOT NULL,
+      parentId   TEXT NULL,
+      kind       TEXT NOT NULL CHECK (kind IN ('folder','file')),
+      name       TEXT NOT NULL,
+      contentHtml TEXT,
+      sortOrder  INTEGER NOT NULL DEFAULT 0,
+      createdAt  INTEGER NOT NULL,
+      updatedAt  INTEGER NOT NULL,
+      FOREIGN KEY (parentId) REFERENCES docs(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_docs_parent  ON docs(userId, parentId);
+    CREATE INDEX IF NOT EXISTS idx_docs_updated ON docs(userId, updatedAt DESC);
+  `);
+
   // Idempotent column adds for older DB files.
   for (const col of [
     { name: 'lastSeenAt', type: 'TEXT' },
