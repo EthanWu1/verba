@@ -83,13 +83,8 @@ function recomputeRatings(season) {
     FROM toc_ballots b
     JOIN toc_tournaments t ON t.tourn_id = b.tournId
     JOIN toc_entries e     ON e.tournId = b.tournId AND e.entryId = b.entryId
-    JOIN toc_tournament_events te ON te.tournId = b.tournId AND te.abbr = b.eventAbbr
+    LEFT JOIN toc_tournament_events te ON te.tournId = b.tournId AND te.abbr = b.eventAbbr
     WHERE t.season = ? AND b.eventAbbr IN ('LD','PF','CX')
-      AND EXISTS (
-        SELECT 1 FROM toc_tournament_events te2
-        WHERE te2.tournId = b.tournId AND te2.abbr = b.eventAbbr
-          AND te2.bidLevel IS NOT NULL
-      )
     ORDER BY t.startDate ASC,
              CASE b.roundType WHEN 'prelim' THEN 0 ELSE 1 END ASC,
              CASE WHEN b.roundName GLOB '[0-9]*' THEN CAST(b.roundName AS INTEGER) ELSE 9999 END ASC,
