@@ -1231,7 +1231,7 @@
     state.evShown = 50;
     state.evDone = false;
     try {
-      const params = { limit: 200, page: 1, sort: 'relevance', canonical: 1, hasHighlight: 1 };
+      const params = { limit: 200, page: 1, sort: 'relevance', canonical: 'true', minHighlight: 1 };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       const raw = data.items || data.results || [];
@@ -1371,7 +1371,7 @@
     state.evLoading = true;
     try {
       const next = state.evPage + 1;
-      const params = { limit: 50, page: next, sort: 'relevance' };
+      const params = { limit: 50, page: next, sort: 'relevance', canonical: 'true', minHighlight: 1 };
       if (state.activeType && state.activeType !== 'all') params.type = state.activeType;
       const data = await API.libraryCards(params);
       const have = new Set(state.evidenceCards.map(c => c.id));
