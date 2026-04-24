@@ -86,4 +86,81 @@ function decodeXml(s) {
     .replace(/&apos;/g, "'");
 }
 
+const { parseCommand, buildExplainPrompt, buildAnalyticPrompt, buildBlockPrompt } = require('../services/chatCommands');
+const retrieval = require('../services/chatRetrieval');
+const { complete, completeStream, parseJSON } = require('../services/llm');
+
+const MODEL_FAST  = 'google/gemini-2.5-flash-lite';
+const MODEL_BLOCK = 'deepseek/deepseek-chat';
+
+router.post('/threads/:id/messages', async (req, res) => {
+  const userId = req.user.id;
+  const threadId = req.params.id;
+  const thread = store.getThread(threadId, userId);
+  if (!thread) return res.status(404).json({ error: 'not_found' });
+
+  const content = String((req.body && req.body.content) || '').trim();
+  if (!content) return res.status(400).json({ error: 'content_required' });
+
+  const parsed = parseCommand(content);
+  const userMsg = store.addMessage(threadId, 'user', content, { command: parsed.command });
+
+  // /block → non-streaming JSON
+  if (parsed.command === '/block') {
+    try {
+      const [cards, analytics, userCtx] = await Promise.all([
+        retrieval.retrieveCards(parsed.intent, 10),
+        retrieval.retrieveAnalytics(parsed.intent, 5),
+        retrieval.retrieveUserContext(userId, parsed.intent, 3),
+      ]);
+      const prompt = buildBlockPrompt({ intent: parsed.intent, cards, analytics, contextDocs: userCtx });
+      const raw = await complete({ prompt, forceModel: MODEL_BLOCK });
+      const block = parseJSON(raw) || {};
+      const asstMsg = store.addMessage(threadId, 'assistant', 'Block generated.', {
+        command: '/block',
+        blockJson: { ...block, candidateCards: cards },
+      });
+      return res.json({ userMessage: userMsg, assistantMessage: asstMsg });
+    } catch (err) {
+      const errMsg = store.addMessage(threadId, 'assistant', 'Block generation failed: ' + err.message);
+      return res.status(500).json({ userMessage: userMsg, assistantMessage: errMsg });
+    }
+  }
+
+  // /explain or /analytic or plain → SSE stream
+  const isAnalytic = parsed.command === '/analytic';
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  try {
+    const [analytics, userCtx] = await Promise.all([
+      retrieval.retrieveAnalytics(parsed.intent, isAnalytic ? 8 : 10),
+      retrieval.retrieveUserContext(userId, parsed.intent, 3),
+    ]);
+    const prompt = isAnalytic
+      ? buildAnalyticPrompt({ intent: parsed.intent, analytics, contextDocs: userCtx })
+      : buildExplainPrompt({ intent: parsed.intent, context: analytics, contextDocs: userCtx });
+
+    res.write('event: start\ndata: ' + JSON.stringify({ userMessageId: userMsg.id }) + '\n\n');
+
+    let full = '';
+    await completeStream({
+      prompt,
+      forceModel: MODEL_FAST,
+      onToken: (tok) => {
+        full += tok;
+        res.write('event: token\ndata: ' + JSON.stringify({ t: tok }) + '\n\n');
+      },
+    });
+    const asstMsg = store.addMessage(threadId, 'assistant', full, { command: parsed.command });
+    res.write('event: done\ndata: ' + JSON.stringify({ assistantMessageId: asstMsg.id }) + '\n\n');
+    res.end();
+  } catch (err) {
+    res.write('event: error\ndata: ' + JSON.stringify({ message: err.message }) + '\n\n');
+    res.end();
+  }
+});
+
 module.exports = router;
