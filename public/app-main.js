@@ -80,7 +80,7 @@
   /* ──────────────────────────────────────────
      ROUTER — 2 pages: home (Card Cutter), library
      ────────────────────────────────────────── */
-  const PAGES = ['home', 'library', 'tournament', 'rankings'];
+  const PAGES = ['home', 'library', 'tournament', 'rankings', 'files'];
   const LEGACY = {
     community: 'library', saved: 'library', history: 'library', mine: 'library',
     research: 'home', chatbot: 'home', assistant: 'library',
@@ -101,6 +101,9 @@
     if (page === 'library') {
       loadLibrary();
       if (libTab) switchLibTab(libTab);
+    }
+    if (page === 'files') {
+      if (typeof window.FilesApp !== 'undefined') window.FilesApp.show();
     }
     return page;
   }

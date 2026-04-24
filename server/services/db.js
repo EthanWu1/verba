@@ -16,6 +16,7 @@ function getDb() {
   _db = new Database(DB_PATH);
   _db.pragma('journal_mode = WAL');
   _db.pragma('synchronous = NORMAL');
+  _db.pragma('foreign_keys = ON');
   _initSchema(_db);
   _runMigrations(_db);
   return _db;
@@ -149,6 +150,23 @@ function _initSchema(db) {
       usedAt     TEXT,
       FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
     );
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS docs (
+      id         TEXT PRIMARY KEY,
+      userId     TEXT NOT NULL,
+      parentId   TEXT NULL,
+      kind       TEXT NOT NULL CHECK (kind IN ('folder','file')),
+      name       TEXT NOT NULL,
+      contentHtml TEXT,
+      sortOrder  INTEGER NOT NULL DEFAULT 0,
+      createdAt  INTEGER NOT NULL,
+      updatedAt  INTEGER NOT NULL,
+      FOREIGN KEY (parentId) REFERENCES docs(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_docs_parent  ON docs(userId, parentId);
+    CREATE INDEX IF NOT EXISTS idx_docs_updated ON docs(userId, updatedAt DESC);
   `);
 
   // Idempotent column adds for older DB files.
