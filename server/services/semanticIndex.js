@@ -42,8 +42,7 @@ function upsertEmbedding(cardId, textHash, embedding) {
   const db = getDb();
   if (!_loadVecExt(db)) return;
   const buf = Buffer.from(new Float32Array(embedding).buffer);
-  db.prepare(`DELETE FROM cards_vec WHERE rowid = ?`).run(cardId);
-  db.prepare(`INSERT INTO cards_vec(rowid, embedding) VALUES (?, ?)`).run(cardId, buf);
+  db.prepare(`INSERT OR REPLACE INTO cards_vec(rowid, embedding) VALUES (?, ?)`).run(cardId, buf);
   db.prepare(`
     INSERT INTO cards_embed_meta(card_id, textHash, embedded, updatedAt)
     VALUES (?, ?, 1, datetime('now'))
