@@ -46,30 +46,30 @@ async function main() {
   const db = getDb();
 
   // Only cards with non-empty highlights. Skip raw imports that never got cut.
-  let rows = db.prepare(`
+  // Stream rows instead of .all() to stay under memory on large DBs.
+  const stmt = db.prepare(`
     SELECT rowid AS rowid, id, body_markdown
     FROM cards
     WHERE body_markdown IS NOT NULL
       AND body_markdown LIKE '%==%'
       AND isCanonical = 1
-  `).all();
-
-  if (LIMIT > 0) rows = rows.slice(0, LIMIT);
-
-  // Extract highlights; dedupe by highlight hash (skip duplicate highlight strings across cards)
+  `);
   const seenHash = new Set();
   const queue = [];
-  for (const r of rows) {
+  let scanned = 0;
+  for (const r of stmt.iterate()) {
+    scanned++;
+    if (LIMIT > 0 && scanned > LIMIT) break;
     const hl = extractHighlights(r.body_markdown);
-    if (hl.length < 20) continue;       // skip near-empty highlights
+    if (hl.length < 20) continue;
     const h = hashText(hl);
-    if (seenHash.has(h)) continue;      // skip exact highlight duplicate (same text → same embedding)
+    if (seenHash.has(h)) continue;
     seenHash.add(h);
     if (!FORCE && alreadyEmbedded(r.rowid, h)) continue;
     queue.push({ rowid: r.rowid, id: r.id, text: hl, hash: h });
   }
 
-  console.log(`[embed] ${rows.length} highlighted cards · ${queue.length} need embedding (force=${FORCE})`);
+  console.log(`[embed] ${scanned} highlighted canonical cards · ${queue.length} need embedding (force=${FORCE})`);
 
   const BATCH = 64;
   let done = 0;
