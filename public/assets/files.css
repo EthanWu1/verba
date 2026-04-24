@@ -38,3 +38,8 @@
 .files-swap-strip { display:flex; gap:6px; flex-wrap:wrap; padding:6px 10px; background:#fffef4; border:1px solid #eee; border-radius:8px; margin:6px 0; align-items:center; }
 .files-swap-pill { font:500 11px/1 var(--font-sans); border:1px solid #ccc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer; }
 .files-swap-pill:hover { background:#f2f2f5; }
+
+/* Hide main app sidebar + expand shell when in editor mode */
+body.files-editing aside.sidebar { display: none !important; }
+body.files-editing .shell { grid-template-columns: 1fr !important; }
+body.files-editing .topbar .nav { display: none !important; }
