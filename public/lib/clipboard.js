@@ -156,6 +156,17 @@
   }
 
   function serializeSelectionHtmlFromString(rawHtml, context) {
+    // Support { entire: true } opts object — unwrap card-embeds and return html string directly.
+    const entireMode = context && typeof context === 'object' && context.entire === true;
+    if (entireMode) {
+      // Unwrap files-card-embed divs so their children become top-level blocks.
+      let src = String(rawHtml == null ? '' : rawHtml);
+      src = src.replace(/<div[^>]*class="[^"]*\bfiles-card-embed\b[^"]*"[^>]*>([\s\S]*?)<\/div>/gi, '$1');
+      const normalized2 = normalizeSpanStyles(src);
+      const cleaned2 = stripDangerousAttrs(normalized2);
+      const flat2 = flattenInlineStyles(cleaned2);
+      return `<div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#000">${flat2}</div>`;
+    }
     // Normalize semantic classes BEFORE class stripping so .warrant / .hl survive.
     const normalized = normalizeSpanStyles(rawHtml);
     const cleaned = stripDangerousAttrs(normalized);
