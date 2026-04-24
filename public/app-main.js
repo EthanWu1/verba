@@ -716,15 +716,18 @@
   function askArgument(url) {
     return new Promise((resolve) => {
       const wrap = document.createElement('div');
-      wrap.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:9999;display:flex;align-items:center;justify-content:center;font-family:var(--font-ui)';
+      wrap.style.cssText = 'position:fixed;inset:0;background:var(--scrim);z-index:var(--z-modal);display:flex;align-items:center;justify-content:center;font-family:var(--font-ui)';
+      wrap.setAttribute('role', 'dialog');
+      wrap.setAttribute('aria-modal', 'true');
+      wrap.setAttribute('aria-label', 'Argument for this article');
       wrap.innerHTML = `
-        <div style="background:#fff;border-radius:10px;padding:20px;min-width:420px;box-shadow:0 10px 40px rgba(0,0,0,.25)">
-          <div style="font:600 14px var(--font-display);color:#000;margin-bottom:6px">Argument for this article?</div>
-          <div style="font-size:12.5px;color:#444;margin-bottom:12px;word-break:break-all">${esc(url)}</div>
-          <input id="arg-input" type="text" placeholder="e.g. Nuclear deterrence is stable" style="width:100%;padding:10px;font:14px var(--font-ui);border:1px solid #ccc;border-radius:6px;color:#000;box-sizing:border-box">
+        <div style="background:var(--bg);border-radius:var(--radius-lg);padding:20px;min-width:420px;box-shadow:var(--shadow-lg);border:1px solid var(--line)">
+          <div style="font:600 var(--fs-md) var(--font-display);color:var(--ink);margin-bottom:6px">Argument for this article?</div>
+          <div style="font-size:var(--fs-sm);color:var(--muted);margin-bottom:12px;word-break:break-all">${esc(url)}</div>
+          <input id="arg-input" type="text" placeholder="e.g. Nuclear deterrence is stable" style="width:100%;padding:10px;font:var(--fs-md) var(--font-ui);border:1px solid var(--line-2);border-radius:var(--radius);color:var(--ink);box-sizing:border-box">
           <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px">
-            <button id="arg-cancel" style="padding:8px 14px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer">Cancel</button>
-            <button id="arg-ok" style="padding:8px 14px;border-radius:6px;border:1px solid #000;background:#000;color:#fff;cursor:pointer">Cut</button>
+            <button id="arg-cancel" style="padding:8px 14px;border-radius:var(--radius);border:1px solid var(--line-2);background:var(--bg);color:var(--ink);cursor:pointer">Cancel</button>
+            <button id="arg-ok" style="padding:8px 14px;border-radius:var(--radius);border:1px solid var(--lilac);background:var(--lilac);color:var(--lilac-ink);cursor:pointer">Cut</button>
           </div>
         </div>`;
       document.body.appendChild(wrap);
