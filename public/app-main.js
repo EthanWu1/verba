@@ -1488,28 +1488,18 @@
     state.evShown = 50;
     if (!q) { state.evSearchResults = null; renderEvidence(); return; }
 
-    // Fire FTS + semantic in parallel; paint FTS first, merge semantic on top.
-    const ftsP = API.libraryCards({ q, limit: 200, sort: 'relevance' }).catch(() => ({ items: [] }));
-    const semP = (q.length >= 3 ? API.librarySemantic(q, 50).catch(() => ({ results: [] })) : Promise.resolve({ results: [] }));
-    const keepQuality = (c) => !!c && (c.isCanonical === 1 || c.isCanonical === true);
-
-    ftsP.then(data => {
+    // Semantic-only (FTS on 832k rows is too slow; embed filter already canonical+highlighted).
+    if (q.length < 3) { state.evSearchResults = []; renderEvidence(); return; }
+    try {
+      const sem = await API.librarySemantic(q, 50);
       if (myTok !== evSearchTok) return;
-      const raw = (data.items || data.results || []).filter(keepQuality);
-      state.evSearchResults = rankByKeyword(raw, q);
+      state.evSearchResults = sem.results || [];
       renderEvidence();
-    });
-
-    Promise.all([ftsP, semP]).then(([fts, sem]) => {
+    } catch {
       if (myTok !== evSearchTok) return;
-      const ftsItems = (fts.items || fts.results || []).filter(keepQuality);
-      const semItems = sem.results || [];
-      if (!semItems.length) return; // FTS result already rendered
-      const seen = new Set(semItems.map(r => r.id).filter(Boolean));
-      const merged = [...semItems, ...ftsItems.filter(c => !seen.has(c.id))];
-      state.evSearchResults = merged;
+      state.evSearchResults = [];
       renderEvidence();
-    });
+    }
   }
   $('#ev-search')?.addEventListener('input', (e) => {
     const q = e.target.value.trim();
