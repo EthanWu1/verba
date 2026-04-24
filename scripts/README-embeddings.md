@@ -38,9 +38,9 @@ node scripts/embed-library.js --force       # re-embed everything
 ## Env vars
 
 Optional overrides:
-- `EMBED_MODEL` (default `voyage/voyage-3-lite`)
+- `EMBED_MODEL` (default `openai/text-embedding-3-small`)
 - `EMBED_API_URL` (default `https://openrouter.ai/api/v1/embeddings`)
-- `EMBED_DIM` (default `768`; must match model)
+- `EMBED_DIM` (default `1536`; must match model)
 - `EMBED_BATCH` (default `64`)
 
 Required: `OPENROUTER_API_KEY` (already in .env).

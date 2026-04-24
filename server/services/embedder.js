@@ -4,8 +4,8 @@ const axios = require('axios');
 
 const API_URL = process.env.EMBED_API_URL || 'https://openrouter.ai/api/v1/embeddings';
 const API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL   = process.env.EMBED_MODEL || 'voyage/voyage-3-lite';
-const DIM     = Number(process.env.EMBED_DIM || 768);
+const MODEL   = process.env.EMBED_MODEL || 'openai/text-embedding-3-small';
+const DIM     = Number(process.env.EMBED_DIM || 1536);
 const BATCH   = Number(process.env.EMBED_BATCH || 64);
 
 async function embedTexts(texts) {
