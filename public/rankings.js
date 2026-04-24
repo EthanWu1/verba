@@ -242,7 +242,7 @@
         const noResult = !p.result && (!p.ballotResults || !p.ballotResults.length);
         if (noResult) return `<tr><td><strong>${esc(roundLabel(p))}</strong></td><td>—</td><td><span style="font-style:italic">BYE</span></td><td>—</td><td><strong>W</strong></td><td>—</td></tr>`;
         const opp = p.opponentEntryId
-          ? `<a href="#" class="toc-link" data-opp="${p.opponentEntryId}">${esc(p.opponentName || '#' + p.opponentEntryId)}</a>`
+          ? `<a href="#" style="color:#111;text-decoration:none" data-opp="${p.opponentEntryId}">${esc(p.opponentName || '#' + p.opponentEntryId)}</a>`
           : '<span class="rk-muted">bye</span>';
         const bResult = (p.ballotResults && p.ballotResults.length) ? p.ballotResults.join('') : (p.result || '—');
         return `<tr>
