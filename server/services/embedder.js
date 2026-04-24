@@ -1,12 +1,20 @@
 'use strict';
 
 const axios = require('axios');
+const https = require('https');
 
 const API_URL = process.env.EMBED_API_URL || 'https://openrouter.ai/api/v1/embeddings';
 const API_KEY = process.env.OPENROUTER_API_KEY;
 const MODEL   = process.env.EMBED_MODEL || 'openai/text-embedding-3-small';
 const DIM     = Number(process.env.EMBED_DIM || 1536);
 const BATCH   = Number(process.env.EMBED_BATCH || 64);
+
+const keepAliveAgent = new https.Agent({
+  keepAlive: true,
+  keepAliveMsecs: 30000,
+  maxSockets: 16,
+  maxFreeSockets: 8,
+});
 
 async function embedTexts(texts) {
   if (!API_KEY) throw new Error('OPENROUTER_API_KEY not set');
@@ -23,6 +31,7 @@ async function embedTexts(texts) {
         'Content-Type': 'application/json',
       },
       timeout: 60000,
+      httpsAgent: keepAliveAgent,
     });
     const rows = res.data?.data || [];
     for (const r of rows) out.push(r.embedding);

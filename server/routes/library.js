@@ -66,7 +66,7 @@ router.get('/analytics', (req, res) => {
 });
 
 const _qCache = new Map();
-const Q_CACHE_MAX = 256;
+const Q_CACHE_MAX = 4096;
 function _cacheGet(k) {
   const v = _qCache.get(k);
   if (!v) return null;

@@ -10,8 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
-<link href="https://cdn.quilljs.com/2.0.0/quill.snow.css" rel="stylesheet">
-<link href="./assets/files.css" rel="stylesheet">
 
 <script>
 const TWEAKS = /*EDITMODE-BEGIN*/{
@@ -2228,10 +2226,6 @@ body.cutter-empty #page-home #cutter-progress{order:3}
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg>
           <span>Rankings</span>
         </button>
-        <button class="nav-item" data-page="files" data-screen-label="04 Files">
-          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h6l2 3h8v13H4z"/></svg>
-          <span>Files</span>
-        </button>
       </nav>
     </div>
 
@@ -2511,18 +2505,6 @@ body.cutter-empty #page-home #cutter-progress{order:3}
         </div>
       </section>
 
-      <section class="page" id="page-files">
-        <div id="files-tree-view"></div>
-        <div id="files-editor-view" hidden>
-          <div class="files-editor">
-            <aside class="files-outline" id="files-outline"></aside>
-            <div style="display:flex;flex-direction:column;min-width:0;height:100%">
-              <div class="files-toolbar files-topbar" id="files-topbar"></div>
-              <div class="files-surface"><div id="files-quill"></div></div>
-            </div>
-          </div>
-        </div>
-      </section>
 
     </div>
   </main>
@@ -3058,7 +3040,6 @@ body.cutter-empty #page-home #cutter-progress{order:3}
 <script src="lib/isDirty.js?v=20260422b"></script>
 <script src="lib/alertToast.js?v=20260422b"></script>
 <script src="lib/clipboard.js?v=20260422b"></script>
-<script src="./lib/filesClipboard.js"></script>
 <script src="lib/wordSnap.js?v=20260422b"></script>
 <script src="lib/cmdPalette.js?v=20260422b" defer></script>
 <script src="app-main.search.js?v=20260422b"></script>
@@ -3066,11 +3047,4 @@ body.cutter-empty #page-home #cutter-progress{order:3}
 <script src="app-main.js?v=20260422b"></script>
 <script src="/toc.js"></script>
 <script src="/rankings.js"></script>
-<script src="https://cdn.quilljs.com/2.0.0/quill.js"></script>
-<script src="lib/filesTree.js"></script>
-<script src="lib/filesEditor.js"></script>
-<script src="lib/filesOutline.js"></script>
-<script src="./lib/filesAIPalette.js"></script>
-<script src="./lib/filesSwapStrip.js"></script>
-<script src="lib/filesApp.js"></script>
 </body></html>

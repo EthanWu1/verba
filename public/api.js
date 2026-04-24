@@ -43,17 +43,6 @@
     libraryCard: (id) => jsonFetch(`/api/library/cards/${encodeURIComponent(id)}`),
     libraryAnalytics: () => jsonFetch('/api/library/analytics'),
 
-    // --- docs ---
-    docsList: () => jsonFetch('/api/docs'),
-    docsGet: (id) => jsonFetch(`/api/docs/${encodeURIComponent(id)}`),
-    docsCreate: (body) => jsonFetch('/api/docs', { method: 'POST', body: JSON.stringify(body) }),
-    docsUpdate: (id, body) => jsonFetch(`/api/docs/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) }),
-    docsDelete: (id) => jsonFetch(`/api/docs/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    docsExport: (id) => fetch(`/api/docs/${encodeURIComponent(id)}/export`, { method: 'POST', credentials: 'include' }).then(r => r.blob()),
-    docsAiBlock: (body) => jsonFetch('/api/docs/ai/block', { method: 'POST', body: JSON.stringify(body) }),
-    docsAiAnalytic: (body) => jsonFetch('/api/docs/ai/analytic', { method: 'POST', body: JSON.stringify(body) }),
-    docsAiCardSearch: (body) => jsonFetch('/api/docs/ai/card-search', { method: 'POST', body: JSON.stringify(body) }),
-
     // --- scrape ---
     scrape: (url, inferQuals = true) => jsonFetch('/api/scrape', { method: 'POST', body: JSON.stringify({ url, inferQuals }) }),
 
