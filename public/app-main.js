@@ -80,7 +80,7 @@
   /* ──────────────────────────────────────────
      ROUTER — 2 pages: home (Card Cutter), library
      ────────────────────────────────────────── */
-  const PAGES = ['home', 'library', 'tournament', 'rankings'];
+  const PAGES = ['home', 'library', 'tournament', 'rankings', 'chat'];
   const LEGACY = {
     community: 'library', saved: 'library', history: 'library', mine: 'library',
     research: 'home', chatbot: 'home', assistant: 'library',
@@ -98,6 +98,9 @@
     try { localStorage.setItem('verba.page', page); } catch {}
     const crumb = $('#crumb-page');
     if (page === 'home' && crumb) crumb.textContent = 'Cutter';
+    if (page === 'chat') {
+      if (typeof window.ChatApp !== 'undefined') window.ChatApp.show();
+    }
     if (page === 'library') {
       loadLibrary();
       if (libTab) switchLibTab(libTab);
