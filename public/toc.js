@@ -91,24 +91,20 @@
       grid.innerHTML = `<div class="toc-muted" style="padding:12px">No ${_when} tournaments for ${esc(_season)}.</div>`;
       return;
     }
-    const list = document.createElement('div');
-    list.className = 'toc-list';
-    list.innerHTML = `<div class="toc-list-head"><div>Tournament</div><div>Dates</div><div>Location</div><div style="text-align:right">Events</div></div>`;
     tournaments.forEach(t => {
       const deduped = dedupeEvents(t.events || []);
-      const eventBadges = deduped.map(ev => `<span>${esc(ev.abbr)}</span>`).join('');
+      const eventBadges = deduped.map(ev => `<span class="toc-badge toc-badge-${esc(ev.abbr.toLowerCase())}">${esc(ev.abbr)}</span>`).join('');
       const loc = [t.city, t.state].filter(Boolean).join(', ');
-      const row = document.createElement('div');
-      row.className = 'toc-list-row';
-      row.innerHTML = `
-        <div class="toc-list-name">${esc(t.name)}</div>
-        <div class="toc-list-dates">${esc(t.startDate)} → ${esc(t.endDate)}</div>
-        <div class="toc-list-loc">${esc(loc) || '<span class="toc-muted">—</span>'}</div>
-        <div class="toc-list-events">${eventBadges}</div>`;
-      row.addEventListener('click', () => openDetail(t));
-      list.appendChild(row);
+      const card = document.createElement('div');
+      card.className = 'toc-card';
+      card.innerHTML = `
+        <div class="toc-card-name">${esc(t.name)}</div>
+        <div class="toc-card-dates">${esc(t.startDate)} → ${esc(t.endDate)}</div>
+        ${loc ? `<div class="toc-card-loc">${esc(loc)}</div>` : ''}
+        <div class="toc-card-events">${eventBadges}</div>`;
+      card.addEventListener('click', () => openDetail(t));
+      grid.appendChild(card);
     });
-    grid.appendChild(list);
   }
 
   function showGrid() {
