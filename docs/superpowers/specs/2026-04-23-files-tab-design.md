@@ -142,12 +142,16 @@ Palette options:
 
 1. **Insert card** — text input, live query against library (FTS + optional vector rerank), top 10 results listed with tag + short cite + body-snippet preview. Arrow keys navigate, Enter inserts, `Esc` closes. Also triggerable as `/card <query>`.
 2. **Generate block** — text input describes intent ("China DA uniqueness"). On submit:
-   - Gemini 2.5 Flash-Lite retrieves top 10 candidate cards via semantic search + FTS over canonicals (filters: `isCanonical=1`; scoring uses classifier metadata — `argumentTypes`, `argumentTags`, `typeLabel`, `topicLabel` — to bias toward cards matching inferred type/topic from intent and surrounding headings)
-   - Candidate payloads sent to DeepSeek include each card's `tag`, `shortCite`, `body_plain` (trimmed), `argumentTypes`, `argumentTags`, `typeLabel`, `topicLabel` so the picker reasons over metadata
-   - DeepSeek V3.1 reads intent + up to 10 candidate cards with metadata + surrounding headings + picks 1-3 cards + writes H4 tag + optional analytic glue (1-3 sentences between/after cards)
+   - **Card retrieval**: Gemini 2.5 Flash-Lite retrieves top 10 candidate cards via semantic search + FTS over canonicals (filters: `isCanonical=1`; scoring uses classifier metadata — `argumentTypes`, `argumentTags`, `typeLabel`, `topicLabel` — to bias toward cards matching inferred type/topic from intent and surrounding headings)
+   - **Analytics retrieval**: same pass also pulls top 5 relevant passages from the `analytics` FTS table (39k+ imported uncited prose paragraphs, ~776M words of debate-domain writing). These serve as style and domain grounding for DeepSeek.
+   - Candidate cards sent to DeepSeek include each card's `tag`, `shortCite`, `body_plain` (trimmed), `argumentTypes`, `argumentTags`, `typeLabel`, `topicLabel`. Retrieved analytics passages are sent as a separate reference block.
+   - DeepSeek V3.1 reads intent + 10 candidate cards + 5 analytics passages + surrounding headings, picks 1-3 cards, writes H4 tag and 1-3 sentences of analytic glue. The prompt instructs DeepSeek to ground prose in both the retrieved analytics (for voice and domain detail) and its own trained debate knowledge (for reasoning when the corpus lacks coverage).
    - Result inserted at cursor as H4 tag + card embeds (formatted Verbatim) + analytic paragraphs
    - Below inserted block: "More like this" strip with 4-5 alt candidate cards. Click any card → swap with the currently-selected inserted card. Click `X` to dismiss strip (commits block).
-3. **Generate analytic** — text input describes intent. DeepSeek V3.1 writes 1-3 short sentences or short paragraph. No card pull. Inferred topic from intent + surrounding headings is passed as context; stored uncited-paragraph analytics (from `maybeStoreAnalytic` imports) may be injected as additional reference material when topic matches. Inserted at cursor as plain paragraph (no heading).
+3. **Generate analytic** — text input describes intent. DeepSeek V3.1 writes 1-3 short sentences or short paragraph. No card insertion.
+   - **Analytics retrieval**: top 5-10 relevant analytics passages pulled from the `analytics` FTS table by Gemini 2.5 Flash-Lite, matched against intent + surrounding headings.
+   - DeepSeek receives: intent, surrounding heading context, retrieved analytics passages. Prompt instructs it to synthesize a short, on-voice analytic paragraph grounded in the retrieved corpus evidence while leaning on its own trained debate knowledge when the corpus is sparse.
+   - Inserted at cursor as plain paragraph (no heading).
 4. **Insert heading** — Pocket / Hat / Block / Tag shortcuts. Inserts empty heading at cursor ready to type into. Redundant with toolbar buttons but keyboard-friendly.
 
 **AI context:** For options 2 and 3, the nearest preceding H1, H2, H3 headings found by scanning upward from cursor are bundled as `headingContext` into the prompt so AI stays on-topic. (Nearest one of each level; if a level has no preceding occurrence, that field is empty.)
