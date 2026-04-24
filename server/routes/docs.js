@@ -2,6 +2,7 @@
 const express = require('express');
 const store = require('../services/docsStore');
 const requireUser = require('../middleware/requireUser');
+const { htmlToDocxBuffer } = require('../services/docsExport');
 
 const router = express.Router();
 router.use(requireUser);
@@ -34,6 +35,20 @@ router.patch('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   store.deleteDoc(req.params.id, req.user.id);
   res.json({ ok: true });
+});
+
+router.post('/:id/export', async (req, res) => {
+  const doc = store.getDoc(req.params.id, req.user.id);
+  if (!doc || doc.kind !== 'file') return res.status(404).json({ error: 'not_found' });
+  try {
+    const buf = await htmlToDocxBuffer(doc.contentHtml || '');
+    const safeName = (doc.name || 'doc').replace(/[^\w.-]+/g, '_');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.docx"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.send(buf);
+  } catch (err) {
+    res.status(500).json({ error: 'export_failed', message: err.message });
+  }
 });
 
 module.exports = router;
