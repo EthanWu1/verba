@@ -43,8 +43,9 @@ function upsertEmbedding(cardId, textHash, embedding) {
   const db = getDb();
   if (!_loadVecExt(db)) return;
   const buf = Buffer.from(new Float32Array(embedding).buffer);
-  const id = Number(cardId);
-  if (!Number.isInteger(id)) return;
+  const n = Number(cardId);
+  if (!Number.isInteger(n)) return;
+  const id = BigInt(n); // sqlite-vec vec0 requires BigInt binding for integer PK
   db.prepare(`DELETE FROM cards_vec WHERE card_id = ?`).run(id);
   db.prepare(`INSERT INTO cards_vec(card_id, embedding) VALUES (?, ?)`).run(id, buf);
   db.prepare(`
