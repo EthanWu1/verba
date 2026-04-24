@@ -332,6 +332,55 @@ function _initSchema(db) {
     CREATE INDEX IF NOT EXISTS idx_toc_rating_history_scope ON toc_rating_history(teamKey, eventAbbr, season, occurredAt);
     CREATE INDEX IF NOT EXISTS idx_toc_rating_history_tourn ON toc_rating_history(teamKey, tournId);
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS chat_threads (
+      id         TEXT PRIMARY KEY,
+      userId     TEXT NOT NULL,
+      title      TEXT NOT NULL,
+      archived   INTEGER NOT NULL DEFAULT 0,
+      createdAt  INTEGER NOT NULL,
+      updatedAt  INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_threads_user
+      ON chat_threads(userId, archived, updatedAt DESC);
+
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id         TEXT PRIMARY KEY,
+      threadId   TEXT NOT NULL,
+      role       TEXT NOT NULL CHECK (role IN ('user','assistant','system')),
+      content    TEXT NOT NULL,
+      command    TEXT NULL,
+      blockJson  TEXT NULL,
+      createdAt  INTEGER NOT NULL,
+      FOREIGN KEY (threadId) REFERENCES chat_threads(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_thread
+      ON chat_messages(threadId, createdAt);
+
+    CREATE TABLE IF NOT EXISTS chat_context (
+      id          TEXT PRIMARY KEY,
+      userId      TEXT NOT NULL,
+      name        TEXT NOT NULL,
+      kind        TEXT NOT NULL,
+      wordCount   INTEGER NOT NULL,
+      content     TEXT NOT NULL,
+      createdAt   INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_context_user
+      ON chat_context(userId, createdAt DESC);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS chat_context_fts USING fts5(
+      content, name,
+      content='chat_context', content_rowid='rowid'
+    );
+    CREATE TRIGGER IF NOT EXISTS chat_context_ai AFTER INSERT ON chat_context BEGIN
+      INSERT INTO chat_context_fts(rowid, content, name) VALUES (new.rowid, new.content, new.name);
+    END;
+    CREATE TRIGGER IF NOT EXISTS chat_context_ad AFTER DELETE ON chat_context BEGIN
+      INSERT INTO chat_context_fts(chat_context_fts, rowid, content, name) VALUES ('delete', old.rowid, old.content, old.name);
+    END;
+  `);
 }
 
 function _runMigrations(db) {
