@@ -87,6 +87,7 @@
 
   async function openProfile(teamKey) {
     if (!teamKey) return;
+    document.body.classList.add('rk-profile-view');
     const main = document.querySelector('.rk-main');
     main.innerHTML = '<div style="padding:24px;color:var(--muted)">Loading profile…</div>';
     try {
@@ -299,6 +300,7 @@
   }
 
   function restoreTable() {
+    document.body.classList.remove('rk-profile-view');
     const main = document.querySelector('.rk-main');
     main.innerHTML = `
       <table class="rk-table">
