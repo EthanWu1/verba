@@ -53,7 +53,22 @@ Required: `OPENROUTER_API_KEY` (already in .env).
 
 ## UI integration
 
-Frontend not wired yet. When ready:
-- Replace/augment existing FTS search with `/api/library/semantic-search`
-- Debounce input 300ms
-- Fall back to FTS if query < 3 words (keyword intent)
+Library evidence search in `public/app-main.js` fires both `API.libraryCards` (FTS) and `API.librarySemantic` in parallel. FTS paints instantly; semantic result replaces when it comes back.
+
+## Rollback
+
+If semantic search misbehaves:
+
+1. **Kill the UI hybrid path** (surgical): revert the semantic block in `runEvidenceSearch` in `public/app-main.js` — FTS-only path is the first promise.
+
+2. **Kill the endpoint**: in `server/routes/library.js`, short-circuit `/semantic-search` to always return `{results:[]}`. Leaves vec data on disk.
+
+3. **Nuke the extension + data** (last resort):
+   ```bash
+   pm2 stop verba
+   cp ~/backups/library-pre-vec-<TIMESTAMP>.db ~/verba/server/data/library.db
+   rm -f ~/verba/server/data/library.db-wal ~/verba/server/data/library.db-shm
+   pm2 start verba
+   ```
+
+Fail-safe load in `semanticIndex.js` means a broken `sqlite-vec` install won't 500 regular queries — KNN returns empty, hybrid collapses to FTS.

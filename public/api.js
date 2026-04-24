@@ -34,6 +34,7 @@
     // --- library ---
     libraryDashboard: (limit = 12) => jsonFetch(`/api/library/dashboard?limit=${limit}`),
     librarySearch: (q, limit = 50) => jsonFetch(`/api/library/search?q=${encodeURIComponent(q)}&limit=${limit}`),
+    librarySemantic: (q, k = 25) => jsonFetch(`/api/library/semantic-search?q=${encodeURIComponent(q)}&k=${k}`),
     libraryCards: (params = {}) => {
       const qs = new URLSearchParams();
       Object.entries(params).forEach(([k, v]) => { if (v != null && v !== '') qs.set(k, String(v)); });

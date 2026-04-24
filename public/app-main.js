@@ -1484,17 +1484,28 @@
     state.evSearch = q;
     state.evShown = 50;
     if (!q) { state.evSearchResults = null; renderEvidence(); return; }
-    try {
-      const data = await API.libraryCards({ q, limit: 200, sort: 'relevance' });
+
+    // Fire FTS + semantic in parallel; paint FTS first, merge semantic on top.
+    const ftsP = API.libraryCards({ q, limit: 200, sort: 'relevance' }).catch(() => ({ items: [] }));
+    const semP = (q.length >= 3 ? API.librarySemantic(q, 50).catch(() => ({ results: [] })) : Promise.resolve({ results: [] }));
+
+    ftsP.then(data => {
       if (myTok !== evSearchTok) return;
       const raw = data.items || data.results || [];
       state.evSearchResults = rankByKeyword(raw, q);
-    } catch (err) {
+      renderEvidence();
+    });
+
+    Promise.all([ftsP, semP]).then(([fts, sem]) => {
       if (myTok !== evSearchTok) return;
-      console.error('[library search error]', err);
-      state.evSearchResults = [];
-    }
-    renderEvidence();
+      const ftsItems = fts.items || fts.results || [];
+      const semItems = sem.results || [];
+      if (!semItems.length) return; // FTS result already rendered
+      const seen = new Set(semItems.map(r => r.id).filter(Boolean));
+      const merged = [...semItems, ...ftsItems.filter(c => !seen.has(c.id))];
+      state.evSearchResults = merged;
+      renderEvidence();
+    });
   }
   $('#ev-search')?.addEventListener('input', (e) => {
     const q = e.target.value.trim();
