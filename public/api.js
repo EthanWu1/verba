@@ -29,7 +29,22 @@
     chatLibrarySummary: (payload) => jsonFetch('/api/chat-library-summary', { method: 'POST', body: JSON.stringify(payload) }),
 
     // --- chat ---
-    chat: (payload) => jsonFetch('/api/chat', { method: 'POST', body: JSON.stringify(payload) }),
+    chat: {
+      listThreads:    (includeArchived = false) => jsonFetch('/api/chat/threads' + (includeArchived ? '?archived=1' : '')),
+      createThread:   (title) => jsonFetch('/api/chat/threads', { method: 'POST', body: JSON.stringify({ title }) }),
+      updateThread:   (id, patch) => jsonFetch(`/api/chat/threads/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+      deleteThread:   (id) => jsonFetch(`/api/chat/threads/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+      listMessages:   (id) => jsonFetch(`/api/chat/threads/${encodeURIComponent(id)}/messages`),
+      sendMessage:    (id, body) => jsonFetch(`/api/chat/threads/${encodeURIComponent(id)}/messages`, { method: 'POST', body: JSON.stringify(body) }),
+      listContext:    () => jsonFetch('/api/chat/context'),
+      deleteContext:  (id) => jsonFetch(`/api/chat/context/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+      uploadContext:  async (file) => {
+        const fd = new FormData(); fd.append('file', file);
+        const res = await fetch('/api/chat/context', { method: 'POST', body: fd, credentials: 'include' });
+        if (!res.ok) throw new Error((await res.text()) || 'upload failed');
+        return res.json();
+      },
+    },
 
     // --- library ---
     libraryDashboard: (limit = 12) => jsonFetch(`/api/library/dashboard?limit=${limit}`),
