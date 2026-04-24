@@ -72,6 +72,26 @@
     catch (e) { alert('Failed to load: ' + e.message); return; }
     buildToolbar(onBack);
     if (!quill) {
+      // Register custom card-embed blot (once, on first Quill instantiation)
+      if (!global.Quill.imports['formats/card-embed']) {
+        const BlockEmbed = global.Quill.import('blots/block/embed');
+        class CardEmbed extends BlockEmbed {
+          static create(value) {
+            const node = super.create();
+            node.setAttribute('data-card-id', (value && value.id) || '');
+            node.innerHTML = (value && value.html) || '';
+            node.setAttribute('contenteditable', 'false');
+            return node;
+          }
+          static value(node) {
+            return { id: node.getAttribute('data-card-id') || '', html: node.innerHTML };
+          }
+        }
+        CardEmbed.blotName = 'card-embed';
+        CardEmbed.tagName = 'DIV';
+        CardEmbed.className = 'files-card-embed';
+        global.Quill.register(CardEmbed);
+      }
       quill = new Quill('#files-quill', { theme: 'snow', modules: { toolbar: false, history: { userOnly: true } } });
       quill.on('text-change', (delta, old, src) => {
         if (src !== 'user') return;
