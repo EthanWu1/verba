@@ -9,7 +9,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{
   --bg:#FFFFFF;
@@ -20,12 +21,16 @@
   --line-soft:#F1F2F4;
   --ink:#000000;
   --ink-2:#1A1A1A;
-  --muted:#6B7280;
-  --muted-2:#9CA3AF;
+  --muted:#4B5563;
+  --muted-2:#6B7280;
 
+  /* Landing accent is intentionally black; "lilac" name kept for cross-page parity with app.html */
   --lilac:#000000;
   --lilac-ink:#FFFFFF;
   --lilac-soft:#F4F4F5;
+  --accent:var(--lilac);
+  --accent-ink:var(--lilac-ink);
+  --accent-soft:var(--lilac-soft);
 
   --hl-yellow:#FFEB3B;
   --hl-yellow-soft:#FFF59D;
@@ -420,6 +425,12 @@ footer{padding:32px 0;color:var(--muted);font-size:13px;border-top:1px solid var
   }
   .cut-tool{flex:0 0 auto}
   .key-hud{display:none}
+  /* Collapse multi-col grids that overflow on phones */
+  .three,.threeup,.price-table,.asst-grid{grid-template-columns:1fr !important;gap:20px}
+  .lib-meta{grid-template-columns:1fr !important}
+  .faq-item{grid-template-columns:1fr auto;gap:8px}
+  .asst-input .ph{font-size:15px}
+  .ap-card-chip .ap-cc-tag{max-width:min(260px,60vw)}
 }
 @media (max-width:480px){
   .wrap{padding:0 16px}

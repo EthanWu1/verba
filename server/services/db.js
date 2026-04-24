@@ -17,6 +17,9 @@ function getDb() {
   _db.pragma('journal_mode = WAL');
   _db.pragma('synchronous = NORMAL');
   _db.pragma('foreign_keys = ON');
+  _db.pragma('cache_size = -40000');     // 40MB page cache (negative = KB)
+  _db.pragma('mmap_size = 67108864');    // 64MB memory-mapped I/O
+  _db.pragma('temp_store = MEMORY');     // temp tables/indexes in RAM
   _initSchema(_db);
   _runMigrations(_db);
   return _db;

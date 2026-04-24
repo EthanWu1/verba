@@ -12,6 +12,9 @@
   --safe-r:env(safe-area-inset-right,0px);
 }
 
+/* Prevent iOS Safari rescaling text on landscape rotation */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
 /* Never allow sideways scroll from a stray wide element */
 html,body{max-width:100vw;overflow-x:hidden}
 
@@ -20,12 +23,22 @@ html,body{max-width:100vw;overflow-x:hidden}
   input,select,textarea,button{font-size:16px !important}
 }
 
-/* 44x44 minimum tap target for interactive pills, icons */
+/* 44x44 minimum tap target for interactive pills, icons, CTAs */
 @media (max-width:768px){
-  .icon-btn,.nav-item,.soc-btn,.submit,.mode-tab,.back,.brand,button[type="submit"]{
+  .icon-btn,.nav-item,.soc-btn,.submit,.mode-tab,.back,.brand,
+  button[type="submit"],.btn,.btn-lg,.hero-ctas > *{
     min-height:44px;
   }
   .icon-btn{min-width:44px}
+  .hero-ctas > *{display:inline-flex;align-items:center;justify-content:center}
+  .checkrow{font-size:15px;min-height:44px;padding:6px 0}
+}
+
+/* Disable :hover on touch devices to avoid sticky-hover state on iOS */
+@media (hover:none){
+  .lib-chip:hover,.btn:hover,.btn-primary:hover,.cut-tool:hover{
+    background:inherit;transform:none;
+  }
 }
 
 /* Respect notch / home indicator */

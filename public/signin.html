@@ -20,8 +20,8 @@
   --line-2:#D1D5DB;
   --ink:#000000;
   --ink-2:#1A1A1A;
-  --muted:#6B7280;
-  --muted-2:#9CA3AF;
+  --muted:#4B5563;
+  --muted-2:#6B7280;
 
   --hl-yellow:#FFEB3B;
 
@@ -314,7 +314,7 @@ form{display:flex;flex-direction:column;gap:14px}
     <div class="divider">or with email</div>
 
     <form id="auth-form">
-      <p class="err" id="auth-err" style="display:none;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font:500 13px/1.4 var(--font-display);margin:0"></p>
+      <p class="err" id="auth-err" role="alert" aria-live="assertive" style="display:none;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 12px;font:500 13px/1.4 var(--font-display);margin:0"></p>
       <div class="field" id="name-field" style="display:none">
         <label>Name</label>
         <input type="text" placeholder="Jordan Reyes" autocomplete="name">

@@ -13,7 +13,7 @@
 <style>
 :root{
   --bg:#FFFFFF; --panel:#F9FAFB; --line:#E5E7EB; --line-2:#D1D5DB;
-  --ink:#000000; --ink-2:#1A1A1A; --muted:#6B7280; --muted-2:#9CA3AF;
+  --ink:#000000; --ink-2:#1A1A1A; --muted:#4B5563; --muted-2:#6B7280;
   --hl-yellow:#FFEB3B;
   --shadow-sm:0 1px 2px rgba(16,24,40,0.04),0 1px 1px rgba(16,24,40,0.03);
   --shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -2px rgba(0,0,0,0.04);
@@ -120,8 +120,8 @@ form{display:flex;flex-direction:column;gap:14px}
           <span>Set password</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </button>
-        <p id="msg" class="msg" style="display:none">Password updated. <a href="/signin">Sign in →</a></p>
-        <p id="err" class="err" style="display:none"></p>
+        <p id="msg" class="msg" role="status" aria-live="polite" style="display:none">Password updated. <a href="/signin">Sign in →</a></p>
+        <p id="err" class="err" role="alert" aria-live="assertive" style="display:none"></p>
       </form>
     </div>
   </main>

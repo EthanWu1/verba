@@ -12,6 +12,7 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const cookieParser = require('cookie-parser');
+const compression  = require('compression');
 
 const aiRoutes          = require('./routes/ai');
 const importRoutes      = require('./routes/import');
@@ -32,6 +33,7 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 /* ── Middleware ── */
+app.use(compression({ level: 6, threshold: 1024 }));
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -105,7 +107,7 @@ app.use(express.static(PUBLIC, {
     } else if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
       res.set('Cache-Control', 'no-cache, must-revalidate');
     } else {
-      res.set('Cache-Control', 'public, max-age=86400');
+      res.set('Cache-Control', 'public, max-age=31536000, immutable');
     }
   },
 }));

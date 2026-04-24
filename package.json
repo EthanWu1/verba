@@ -15,9 +15,9 @@
     "axios": "^1.7.2",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0",
-    "sqlite-vec": "^0.1.5",
     "cheerio": "^1.0.0",
     "cohere-ai": "^8.0.0",
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "docx": "^8.5.0",
@@ -28,6 +28,7 @@
     "multer": "^2.1.1",
     "nodemailer": "^8.0.5",
     "pdf-parse": "^1.1.1",
+    "sqlite-vec": "^0.1.5",
     "tiktoken": "^1.0.15",
     "unzipper": "^0.12.3"
   },

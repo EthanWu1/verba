@@ -94,6 +94,7 @@
     $$('.nav-item[data-page]').forEach((n) => {
       const isActive = n.dataset.page === page && (!libTab || n.dataset.libGo === libTab || (!n.dataset.libGo && page !== 'library'));
       n.classList.toggle('active', isActive);
+      if (isActive) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
     });
     try { localStorage.setItem('verba.page', page); } catch {}
     const crumb = $('#crumb-page');
@@ -2951,5 +2952,80 @@
 
   document.addEventListener('keydown', function(e){
     if (e.key === 'Escape') close();
+  });
+})();
+
+/* ── Modal focus trap + focus return ─────────────────────────
+   Every [role="dialog"] gets:
+   - focus moved inside on visibility (first focusable, else self)
+   - Tab / Shift+Tab cycled within
+   - focus returned to the trigger element on close
+   Visibility detected via MutationObserver on style/attributes. */
+(function modalFocusTrap(){
+  const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const triggers = new WeakMap(); // dialog -> last focused element before open
+  const visible = new WeakSet();
+
+  function isVisible(el){
+    if (!el || !el.isConnected) return false;
+    if (el.hidden) return false;
+    if (el.getAttribute('aria-hidden') === 'true') return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== 'none' && cs.visibility !== 'hidden';
+  }
+  function focusables(dlg){
+    return Array.from(dlg.querySelectorAll(FOCUSABLE)).filter(el => isVisible(el));
+  }
+  function onOpen(dlg){
+    triggers.set(dlg, document.activeElement);
+    const list = focusables(dlg);
+    const target = list[0] || dlg;
+    if (target === dlg && !dlg.hasAttribute('tabindex')) dlg.setAttribute('tabindex', '-1');
+    setTimeout(() => { try { target.focus(); } catch{} }, 0);
+  }
+  function onClose(dlg){
+    const last = triggers.get(dlg);
+    triggers.delete(dlg);
+    if (last && document.contains(last)) { try { last.focus(); } catch{} }
+  }
+  function check(dlg){
+    const v = isVisible(dlg);
+    const was = visible.has(dlg);
+    if (v && !was) { visible.add(dlg); onOpen(dlg); }
+    else if (!v && was) { visible.delete(dlg); onClose(dlg); }
+  }
+
+  const dialogs = () => document.querySelectorAll('[role="dialog"]');
+  const obs = new MutationObserver((records) => {
+    const seen = new Set();
+    for (const r of records) {
+      const el = r.target.closest && r.target.closest('[role="dialog"]');
+      if (el && !seen.has(el)) { seen.add(el); check(el); }
+    }
+    // also handle newly added dialogs
+    for (const r of records) {
+      r.addedNodes && r.addedNodes.forEach(n => {
+        if (n.nodeType !== 1) return;
+        const list = n.matches && n.matches('[role="dialog"]') ? [n] : (n.querySelectorAll ? n.querySelectorAll('[role="dialog"]') : []);
+        list.forEach(d => { obs.observe(d, { attributes:true, attributeFilter:['style','class','hidden','aria-hidden'] }); check(d); });
+      });
+    }
+  });
+  function init(){
+    dialogs().forEach(d => { obs.observe(d, { attributes:true, attributeFilter:['style','class','hidden','aria-hidden'] }); check(d); });
+    obs.observe(document.body, { childList:true, subtree:true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const dlg = document.activeElement && document.activeElement.closest('[role="dialog"]');
+    if (!dlg || !visible.has(dlg)) return;
+    const list = focusables(dlg);
+    if (!list.length) { e.preventDefault(); dlg.focus(); return; }
+    const first = list[0], last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 })();
