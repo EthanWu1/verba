@@ -16,6 +16,7 @@ function getDb() {
   _db = new Database(DB_PATH);
   _db.pragma('journal_mode = WAL');
   _db.pragma('synchronous = NORMAL');
+  _db.pragma('foreign_keys = ON');
   _initSchema(_db);
   _runMigrations(_db);
   return _db;
