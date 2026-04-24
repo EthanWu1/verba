@@ -1491,17 +1491,18 @@
     // Fire FTS + semantic in parallel; paint FTS first, merge semantic on top.
     const ftsP = API.libraryCards({ q, limit: 200, sort: 'relevance' }).catch(() => ({ items: [] }));
     const semP = (q.length >= 3 ? API.librarySemantic(q, 50).catch(() => ({ results: [] })) : Promise.resolve({ results: [] }));
+    const keepQuality = (c) => !!c && (c.isCanonical === 1 || c.isCanonical === true);
 
     ftsP.then(data => {
       if (myTok !== evSearchTok) return;
-      const raw = data.items || data.results || [];
+      const raw = (data.items || data.results || []).filter(keepQuality);
       state.evSearchResults = rankByKeyword(raw, q);
       renderEvidence();
     });
 
     Promise.all([ftsP, semP]).then(([fts, sem]) => {
       if (myTok !== evSearchTok) return;
-      const ftsItems = fts.items || fts.results || [];
+      const ftsItems = (fts.items || fts.results || []).filter(keepQuality);
       const semItems = sem.results || [];
       if (!semItems.length) return; // FTS result already rendered
       const seen = new Set(semItems.map(r => r.id).filter(Boolean));
