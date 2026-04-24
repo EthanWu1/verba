@@ -14,6 +14,25 @@
     await loadGrid();
   };
 
+  // Called by rankings.js to deep-link directly into a tournament detail view.
+  window.tocOpenById = async function (tournId) {
+    // Fast path: already have this tournament loaded
+    if (_currentTourn && Number(_currentTourn.tourn_id) === Number(tournId)) {
+      return openDetail(_currentTourn);
+    }
+    try {
+      const r = await fetch(`/api/toc/tournaments/${encodeURIComponent(tournId)}`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      const t = data.tournament || data;
+      if (data.events) t.events = data.events;
+      openDetail(t);
+    } catch {
+      // Fallback: just show the grid so user lands on tournament page
+      showGrid();
+    }
+  };
+
   function bindStatic() {
     $('toc-season').addEventListener('change', async e => {
       _season = e.target.value;

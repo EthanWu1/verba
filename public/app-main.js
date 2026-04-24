@@ -120,6 +120,7 @@
       }
     }
   }
+  window.__verbaGo = go;
   window.addEventListener('popstate', (e) => {
     const s = e.state;
     if (s && s.verba) {

@@ -163,7 +163,8 @@
         const prelimCell = (pw + pl) ? `${pw}-${pl}` : '<span class="rk-muted">—</span>';
         const elimCell   = (ew + el) ? `${ew}-${el}` : '<span class="rk-muted">—</span>';
         const entryId = t.entryId || '';
-        return `<tr data-entry="${esc(entryId)}" data-tname="${esc(t.name || '')}" style="cursor:${entryId ? 'pointer' : 'default'}">
+        const tournId = t.tournId || '';
+        return `<tr data-entry="${esc(entryId)}" data-tname="${esc(t.name || '')}" data-tournid="${esc(String(tournId))}" style="cursor:${tournId ? 'pointer' : 'default'}">
           <td>${esc(t.name || '')}</td>
           <td>${esc(t.startDate || '')}</td>
           <td>${prelimCell}</td>
@@ -214,10 +215,17 @@
           </table>
         </div>`;
       document.getElementById('rk-back-btn')?.addEventListener('click', () => restoreTable());
-      main.querySelectorAll('tr[data-entry]').forEach(tr => {
-        const eid = tr.dataset.entry;
-        if (!eid) return;
-        tr.addEventListener('click', () => openPairingsForEntry(teamKey, eid, tr.dataset.tname));
+      main.querySelectorAll('tr[data-tournid]').forEach(tr => {
+        const tid = tr.dataset.tournid;
+        if (!tid) return;
+        tr.addEventListener('click', () => {
+          // Navigate to the Tournament page then open this tournament's detail view.
+          const goFn = window.__verbaGo;
+          if (goFn) goFn('tournament');
+          else document.querySelector('.nav-item[data-page="tournament"]')?.click();
+          // Give the page activation a tick to fire initTocPage if needed.
+          setTimeout(() => { if (window.tocOpenById) window.tocOpenById(tid); }, 80);
+        });
       });
     } catch (e) {
       main.innerHTML = `<div style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</div>`;
