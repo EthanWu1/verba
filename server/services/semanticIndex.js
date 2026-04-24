@@ -25,6 +25,7 @@ function ensureSchema() {
   if (!_loadVecExt(db)) return false;
   db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS cards_vec USING vec0(
+      card_id INTEGER PRIMARY KEY,
       embedding float[${DIM}]
     );
     CREATE TABLE IF NOT EXISTS cards_embed_meta (
@@ -42,7 +43,10 @@ function upsertEmbedding(cardId, textHash, embedding) {
   const db = getDb();
   if (!_loadVecExt(db)) return;
   const buf = Buffer.from(new Float32Array(embedding).buffer);
-  db.prepare(`INSERT OR REPLACE INTO cards_vec(rowid, embedding) VALUES (?, ?)`).run(cardId, buf);
+  const id = Number(cardId);
+  if (!Number.isInteger(id)) return;
+  db.prepare(`DELETE FROM cards_vec WHERE card_id = ?`).run(id);
+  db.prepare(`INSERT INTO cards_vec(card_id, embedding) VALUES (?, ?)`).run(id, buf);
   db.prepare(`
     INSERT INTO cards_embed_meta(card_id, textHash, embedded, updatedAt)
     VALUES (?, ?, 1, datetime('now'))
@@ -59,7 +63,7 @@ function knn(queryEmbedding, k = 25) {
   const buf = Buffer.from(new Float32Array(queryEmbedding).buffer);
   try {
     return db.prepare(`
-      SELECT rowid AS card_id, distance
+      SELECT card_id, distance
       FROM cards_vec
       WHERE embedding MATCH ?
       ORDER BY distance ASC
