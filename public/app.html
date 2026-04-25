@@ -1824,10 +1824,8 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
         </div>
 
         <div class="workbench" id="workbench">
-          <!-- CARD PANE (hosts carousel) -->
+          <!-- CARD PANE -->
           <div class="pane" id="card-pane">
-            <button class="carousel-nav carousel-prev" aria-label="Previous card" type="button">‹</button>
-            <button class="carousel-nav carousel-next" aria-label="Next card" type="button">›</button>
             <div class="card-hover-actions">
               <button type="button" id="wb-addto" title="Add to project" aria-label="Add to project">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
@@ -1851,7 +1849,6 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
               </div>
               <div class="body" contenteditable="true" data-field="body" data-placeholder="Body will appear here after a cut. You can edit inline, then Copy or Add to a project."><p><br></p></div>
             </div>
-            <div id="carousel-dots" class="carousel-dots" aria-hidden="true"></div>
             <div class="pane-foot-tools" id="wb-foot-tools">
               <button class="tool-btn icon-only" data-fmt="highlight" title="Highlight" aria-label="Highlight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button>
               <button class="tool-btn icon-only" data-fmt="underline" title="Underline" aria-label="Underline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
