@@ -119,24 +119,19 @@ function profile(teamKey, season, event) {
   `).get(season, event, teamKey);
   if (!rating) return null;
 
+  // Drive from toc_entries so EVERY tournament the debater entered shows up,
+  // not just the ones with paired rating-history rows.
   const tournaments = db.prepare(`
     SELECT t.tourn_id AS tournId, t.name, t.startDate, t.endDate,
-           SUM(CASE WHEN h.result = 'W' THEN 1 ELSE 0 END) AS wins,
-           SUM(CASE WHEN h.result = 'L' THEN 1 ELSE 0 END) AS losses,
-           (SELECT entryId FROM toc_entries
-              WHERE tournId = t.tourn_id AND teamKey = ? AND eventAbbr = ? LIMIT 1) AS entryId,
-           (SELECT earnedBid FROM toc_entries
-              WHERE tournId = t.tourn_id AND teamKey = ? AND eventAbbr = ? LIMIT 1) AS earnedBid,
-           (SELECT place FROM toc_results
-              WHERE tournId = t.tourn_id AND eventAbbr = ? AND entryId =
-                 (SELECT entryId FROM toc_entries WHERE tournId = t.tourn_id AND teamKey = ? AND eventAbbr = ? LIMIT 1)
-              LIMIT 1) AS place
-    FROM toc_rating_history h
-    JOIN toc_tournaments t ON t.tourn_id = h.tournId
-    WHERE h.season = ? AND h.eventAbbr = ? AND h.teamKey = ?
-    GROUP BY t.tourn_id
+           e.entryId, e.earnedBid,
+           r.place, r.rank
+    FROM toc_entries e
+    JOIN toc_tournaments t ON t.tourn_id = e.tournId
+    LEFT JOIN toc_results r
+      ON r.tournId = e.tournId AND r.eventAbbr = e.eventAbbr AND r.entryId = e.entryId
+    WHERE t.season = ? AND e.eventAbbr = ? AND e.teamKey = ?
     ORDER BY t.startDate ASC
-  `).all(teamKey, event, teamKey, event, event, teamKey, event, season, event, teamKey);
+  `).all(season, event, teamKey);
 
   // Prelim vs elim records per tournament, majority-voted across panel ballots.
   const ballotRecs = db.prepare(`
