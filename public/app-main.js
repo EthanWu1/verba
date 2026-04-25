@@ -2529,23 +2529,27 @@
 
 /* ── Settings data-sec sidebar nav ────────────────────────── */
 (function () {
-  // Settings sidebar: data-sec switching
+  // Settings sidebar: data-sec smooth-scroll nav (all sections always visible)
   var navBtns = document.querySelectorAll('#set-nav button[data-sec]');
+  document.querySelectorAll('.set-section[data-sec]').forEach(function (s) { s.hidden = false; });
   navBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
       var sec = btn.dataset.sec;
       navBtns.forEach(function (b) { b.classList.toggle('on', b === btn); });
-      document.querySelectorAll('.set-section[data-sec]').forEach(function (s) {
-        s.hidden = s.dataset.sec !== sec;
-      });
+      var target = document.querySelector('.set-section[data-sec="' + sec + '"]');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
-  // Initialize: show only the section whose button has class "on"
-  var initSec = (document.querySelector('#set-nav button[data-sec].on') || {}).dataset || {};
-  var initialSec = initSec.sec || 'profile';
-  document.querySelectorAll('.set-section[data-sec]').forEach(function (s) {
-    s.hidden = s.dataset.sec !== initialSec;
-  });
+  // Highlight nav item as user scrolls (IntersectionObserver)
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        var sec = e.target.dataset.sec;
+        navBtns.forEach(function (b) { b.classList.toggle('on', b.dataset.sec === sec); });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px', threshold: 0 });
+  document.querySelectorAll('.set-section[data-sec]').forEach(function (s) { io.observe(s); });
 
   // Rank-tab segmented toggles within their group
   document.querySelectorAll('.rank-tabs').forEach(function (group) {
