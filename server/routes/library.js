@@ -102,21 +102,23 @@ router.get('/semantic-search', async (req, res) => {
     }
     if (!vec) return res.json({ results: [] });
 
-    const hits = knn(vec, k);
+    // Over-fetch from KNN so the post-filter (canonical + real highlights +
+    // non-empty tag) still yields ~k useful results.
+    const hits = knn(vec, k * 4);
     if (!hits.length) return res.json({ results: [] });
 
     const db = getDb();
     const placeholders = hits.map(() => '?').join(',');
     // Defensive filter: vec0 contains stale embeddings for cards that have
     // since been demoted (isCanonical=0) or had highlights stripped. Also
-    // mirror the embed-time rule (extractHighlights joined length >= 20)
-    // so cards with stray `==` but no real highlight content are dropped.
+    // require a non-empty tag — untagged cards are not useful in the UI.
     const rows = db.prepare(`
       SELECT rowid, id, tag, cite, shortCite, body_plain, body_markdown
       FROM cards
       WHERE rowid IN (${placeholders})
         AND isCanonical = 1
         AND body_markdown LIKE '%==%'
+        AND tag IS NOT NULL AND TRIM(tag) != ''
     `).all(...hits.map(h => h.card_id));
     const HL_RE = /==([^=]+)==/g;
     // Strip markdown emphasis + html tags so we measure REAL highlighted
@@ -151,7 +153,7 @@ router.get('/semantic-search', async (req, res) => {
     const results = hits.map(h => {
       const r = byRowid.get(h.card_id);
       return r ? { ...r, score: 1 - h.distance } : null;
-    }).filter(Boolean);
+    }).filter(Boolean).slice(0, k);
     res.json({ results });
   } catch (err) {
     res.status(500).json({ error: err.message });
