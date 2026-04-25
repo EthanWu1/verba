@@ -80,25 +80,33 @@
   /* ──────────────────────────────────────────
      ROUTER — 2 pages: home (Card Cutter), library
      ────────────────────────────────────────── */
-  const PAGES = ['home', 'library', 'tournament', 'rankings', 'chat'];
+  const PAGES = ['home', 'library', 'tournament', 'rankings', 'chat', 'today', 'settings'];
   const LEGACY = {
     community: 'library', saved: 'library', history: 'library', mine: 'library',
     research: 'home', chatbot: 'home', assistant: 'library',
     contentions: 'library', projects: 'library',
+    // new-design aliases
+    cutter: 'home', tournaments: 'tournament', 'settings-page': 'settings',
   };
 
   function applyRoute(page, libTab) {
     if (LEGACY[page]) page = LEGACY[page];
     if (!PAGES.includes(page)) page = 'home';
     $$('.page').forEach((p) => p.classList.toggle('active', p.id === 'page-' + page));
-    $$('.nav-item[data-page]').forEach((n) => {
-      const isActive = n.dataset.page === page && (!libTab || n.dataset.libGo === libTab || (!n.dataset.libGo && page !== 'library'));
+    // wire both old .nav-item and new .rail-btn selectors
+    $$('.nav-item[data-page], .rail-btn[data-page]').forEach((n) => {
+      const np = LEGACY[n.dataset.page] || n.dataset.page;
+      const isActive = np === page && (!libTab || n.dataset.libGo === libTab || (!n.dataset.libGo && page !== 'library'));
+      n.classList.toggle('on', isActive);
       n.classList.toggle('active', isActive);
       if (isActive) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
     });
     try { localStorage.setItem('verba.page', page); } catch {}
     const crumb = $('#crumb-page');
-    if (page === 'home' && crumb) crumb.textContent = 'Cutter';
+    if (crumb) {
+      const labels = { home: 'Cutter', today: 'Today', library: 'Library', tournament: 'Tournaments', rankings: 'Rankings', chat: 'Assistant', settings: 'Settings' };
+      crumb.textContent = labels[page] || page;
+    }
     if (page === 'chat') {
       if (typeof window.ChatApp !== 'undefined') window.ChatApp.show();
     }
@@ -133,7 +141,7 @@
       history.replaceState({ verba: true, page: 'home', libTab: null }, '');
     }
   });
-  $$('.nav-item[data-page]').forEach((n) => n.addEventListener('click', () => go(n.dataset.page, n.dataset.libGo)));
+  $$('.nav-item[data-page], .rail-btn[data-page]').forEach((n) => n.addEventListener('click', () => go(n.dataset.page, n.dataset.libGo)));
   $$('.cmd-item[data-go]').forEach((c) => c.addEventListener('click', () => go(c.dataset.go)));
   window.VerbaGo = go;
 
