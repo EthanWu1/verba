@@ -219,8 +219,8 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
   font:500 11px/1 var(--font-mono);color:var(--muted);
   text-transform:uppercase;letter-spacing:.16em;margin-bottom:18px;
 }
-.kicker .d{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft);animation:dot 2.4s ease-in-out infinite}
-@keyframes dot{0%,100%{opacity:1}50%{opacity:.4}}
+.kicker .d{width:6px;height:6px;border-radius:50%;background:#0F172A;box-shadow:none;animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
 .today-h1{
   font-family:var(--font-serif);font-style:italic;font-weight:500;
   font-size:clamp(40px,5vw,64px);line-height:1.04;letter-spacing:-0.025em;
@@ -336,32 +336,33 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 
 /* Tournament countdown — softer */
 .tourn-card{
-  background:linear-gradient(165deg, #1F1A2E, #0F172A);color:#fff;
-  border:1px solid #1F1A2E;
+  background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);box-shadow:var(--shadow-sm);
 }
-.tourn-card h3{color:rgba(255,255,255,0.5)}
-.tourn-card h3 .extra{color:rgba(255,255,255,0.85)}
-.tourn-name{font:700 22px/1.1 var(--font-display);letter-spacing:-0.02em;margin:0 0 6px}
-.tourn-where{font:500 12px/1 var(--font-display);color:rgba(255,255,255,0.6)}
+.tourn-card h3{color:var(--muted)}
+.tourn-card h3 .extra{color:var(--ink)}
+.tourn-name{font:700 22px/1.1 var(--font-display);letter-spacing:-0.02em;margin:0 0 6px;color:var(--ink)}
+.tourn-where{font:500 12px/1 var(--font-display);color:var(--muted)}
 .tourn-counter{
   display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;padding-top:16px;
-  border-top:1px solid rgba(255,255,255,0.08);
+  border-top:1px solid var(--line);
 }
 .tc{display:flex;flex-direction:column;align-items:center;gap:3px}
 .tc b{
-  font:700 24px/1 var(--font-mono);color:#fff;letter-spacing:-0.02em;
+  font:700 clamp(24px,4vw,64px)/1 var(--font-mono);color:var(--ink);letter-spacing:-0.02em;
   font-variant-numeric:tabular-nums;font-feature-settings:"tnum";
 }
-.tc span{font:500 9.5px/1 var(--font-mono);color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.12em}
+.tc span{font:500 9.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+@media(min-width:1400px){.tc b{font-size:clamp(48px,5vw,72px)}}
 .tourn-cta{display:flex;gap:8px;margin-top:18px}
 .tourn-cta button{
   flex:1;padding:9px 12px;border-radius:6px;font:500 12.5px/1 var(--font-display);
-  background:rgba(255,255,255,0.10);color:#fff;border:1px solid rgba(255,255,255,0.14);
+  background:var(--paper);color:var(--ink);border:1px solid var(--line);
   transition:background .14s;
 }
-.tourn-cta button:hover{background:rgba(255,255,255,0.18)}
-.tourn-cta button.primary{background:#fff;color:var(--ink);border-color:#fff}
-.tourn-cta button.primary:hover{background:#F3F4F6}
+.tourn-cta button:hover{background:var(--panel)}
+.tourn-cta button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tourn-cta button.primary:hover{background:#374151}
 
 .pulse-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .pulse{padding:12px 14px;background:#fff}
@@ -1761,33 +1762,8 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
       <!-- ── TODAY (new page) ── -->
             <section class="page on" id="page-today">
         <div class="today-hero">
-          <div class="kicker"><span class="d"></span>Friday · April 25 · 9:42 am · Berkeley opens in 2 days</div>
-          <p class="today-sub">You're <b>62%</b> through your Iran neg block — <b>Mahbubani '24</b> is still your strongest link card. Two cuts queued from yesterday.</p>
-        </div>
-
-        <div class="qa-row">
-          <div class="qa">
-            <div class="qa-head">
-              <div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
-              <h3>Cut from URL</h3>
-              <span class="kbd">⌘V</span>
-            </div>
-            <p>Paste an article — Verba reads it, picks the strongest passage, and tags it.</p>
-          </div>
-          <div class="qa">
-            <div class="qa-head">
-              <div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg></div>
-              <h3>Upload PDF</h3>
-            </div>
-            <p>Whole-document parse. Author-year detected automatically.</p>
-          </div>
-          <div class="qa">
-            <div class="qa-head">
-              <div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-              <h3>Ask Verba</h3>
-            </div>
-            <p>"Best link turn against the sanctions DA?" — grounded in your library.</p>
-          </div>
+          <div class="kicker"><span class="d"></span><span id="today-date-line">—</span></div>
+          <h1 class="today-h1" id="today-greeting">Good morning, <span class="roman" id="today-name">there</span></h1>
         </div>
 
         <div class="today-grid">
@@ -1795,61 +1771,10 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
             <div class="section">
               <div class="section-h">
                 <h2>Continue cutting</h2>
-                <span class="meta"><a href="#" data-go="cutter">All workspaces ↗</a></span>
+                <span class="meta"><a href="#" data-go="home">Open cutter ↗</a></span>
               </div>
-              <div class="continue-list">
-                <div class="cont-item" data-go="cutter">
-                  <div class="cont-time"><b>2m</b><span>ago</span></div>
-                  <div class="cont-body">
-                    <div class="head"><span class="badge neg">Neg</span><span class="badge topic">Iran</span></div>
-                    <div class="tag">Pressure without an exit ramp produces the behavior it claims to deter</div>
-                    <div class="cite">Mahbubani · Foreign Affairs · 3/24 · 284 words</div>
-                  </div>
-                </div>
-                <div class="cont-item">
-                  <div class="cont-time"><b>09:15</b><span>today</span></div>
-                  <div class="cont-body">
-                    <div class="head"><span class="badge neg">Neg</span><span class="badge topic">Iran</span></div>
-                    <div class="tag">Sanctions coincided with expanded enrichment between 2018 and 2023</div>
-                    <div class="cite">Manual draft — 156 words · 3 highlights</div>
-                  </div>
-                </div>
-                <div class="cont-item">
-                  <div class="cont-time"><b>21:07</b><span>yest.</span></div>
-                  <div class="cont-body">
-                    <div class="head"><span class="badge aff">Aff</span><span class="badge topic">China</span></div>
-                    <div class="tag">US-PRC competition makes Taiwan war inevitable absent de-escalation</div>
-                    <div class="cite">Glaser · International Security · 412 words</div>
-                  </div>
-                </div>
-                <div class="cont-item">
-                  <div class="cont-time"><b>15:22</b><span>yest.</span></div>
-                  <div class="cont-body">
-                    <div class="head"><span class="badge k">K</span><span class="badge topic">Cap</span></div>
-                    <div class="tag">Abstraction of sanctions masks the material violence of the dollar system</div>
-                    <div class="cite">Ali · New Left Review · 356 words</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="section">
-              <div class="section-h">
-                <h2>Topics in your library</h2>
-                <span class="meta">78,142 cards across 11 topics</span>
-              </div>
-              <div class="topic-list">
-                <a class="topic-chip" href="#">Iran <span class="ct">12,421</span></a>
-                <a class="topic-chip" href="#">China <span class="ct">9,908</span></a>
-                <a class="topic-chip" href="#">Climate <span class="ct">8,712</span></a>
-                <a class="topic-chip" href="#">War Powers <span class="ct">6,544</span></a>
-                <a class="topic-chip" href="#">Cap K <span class="ct">5,221</span></a>
-                <a class="topic-chip" href="#">Security K <span class="ct">4,891</span></a>
-                <a class="topic-chip" href="#">Topicality <span class="ct">3,312</span></a>
-                <a class="topic-chip" href="#">Theory <span class="ct">2,887</span></a>
-                <a class="topic-chip" href="#">Econ <span class="ct">2,710</span></a>
-                <a class="topic-chip" href="#">Politics DA <span class="ct">2,109</span></a>
-                <a class="topic-chip" href="#">Procedurals <span class="ct">1,944</span></a>
+              <div class="continue-list" id="today-history-list">
+                <div class="cont-item cont-empty" style="padding:16px;color:var(--muted);font-size:13px">Loading…</div>
               </div>
             </div>
           </div>
@@ -1866,21 +1791,11 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
                 <div class="tc"><b id="cd-s">—</b><span>sec</span></div>
               </div>
               <div class="tourn-cta">
-                <button data-go="tournaments" data-go-section="threats" id="today-threat-btn">Threat list</button>
-                <a class="primary" href="https://www.tabroom.com/index/index.mhtml" target="_blank" rel="noopener" data-tabroom-link id="today-tabroom-link">Open tournament ↗</a>
+                <button data-go="tournament" id="today-threat-btn" type="button">Threat list</button>
+                <button class="primary" id="today-tabroom-link" data-tabroom-tourn-id="" type="button">Open tournament ↗</button>
               </div>
               <div id="today-tourn-no-link" style="display:none;margin-top:8px;font-size:12px;color:var(--muted)">
                 <a href="#" data-go="settings" data-go-sec="account" style="color:var(--accent)">Connect Tabroom in Settings</a> to see your next tournament.
-              </div>
-            </div>
-
-            <div class="aside-card">
-              <h3><span>This week</span><span class="extra">+47 cards</span></h3>
-              <div class="pulse-grid">
-                <div class="pulse"><div class="lab">Cards cut</div><div class="val">47</div><div class="delta">▲ 12 vs last wk</div></div>
-                <div class="pulse"><div class="lab">Avg time / card</div><div class="val">4.2<span style="font-size:14px;color:var(--muted);font-weight:500">s</span></div><div class="delta">▲ 0.4s faster</div></div>
-                <div class="pulse"><div class="lab">Library size</div><div class="val">78,142</div><div class="delta">▲ 1.2k</div></div>
-                <div class="pulse"><div class="lab">Win rate · 30d</div><div class="val">68<span style="font-size:14px;color:var(--muted);font-weight:500">%</span></div><div class="delta down">▼ 4 pts</div></div>
               </div>
             </div>
           </div>
@@ -3460,30 +3375,91 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
 })();
 </script>
 
-<!-- ── Today page: upcoming tournament from Tabroom ── -->
+<!-- ── Today page: greeting, history list, upcoming tournament ── -->
 <script>
 (function () {
   'use strict';
 
-  function padTwo(n) { return n < 10 ? '0' + n : String(n); }
+  // ── Greeting headline ──────────────────────────────────────────
+  function initGreeting() {
+    var h = new Date().getHours();
+    var word = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    var el = document.getElementById('today-greeting');
+    var nameEl = document.getElementById('today-name');
+    if (!el) return;
+    // try to fill name from cached user; API.auth.me() resolves later
+    function setName(n) { if (nameEl) nameEl.textContent = n || 'there'; }
+    if (window.__verbaUser && window.__verbaUser.name) {
+      setName(window.__verbaUser.name.split(' ')[0]);
+    } else if (window.API && API.auth && API.auth.me) {
+      API.auth.me().then(function (u) { setName((u && (u.name || u.email || '').split(/[@\s]/)[0]) || 'there'); }).catch(function(){});
+    }
+    // replace full text preserving the <span> child
+    var prefix = el.firstChild;
+    if (prefix && prefix.nodeType === Node.TEXT_NODE) prefix.textContent = word + ', ';
+    else el.insertBefore(document.createTextNode(word + ', '), el.firstChild);
+  }
 
+  // ── Date line ─────────────────────────────────────────────────
+  function initDateLine() {
+    var el = document.getElementById('today-date-line');
+    if (!el) return;
+    var d = new Date();
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var hh = d.getHours(), mm = d.getMinutes();
+    var ampm = hh >= 12 ? 'pm' : 'am';
+    var h12 = hh % 12 || 12;
+    el.textContent = days[d.getDay()] + ' · ' + months[d.getMonth()] + ' ' + d.getDate() + ' · ' + h12 + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ampm;
+  }
+
+  // ── History / Continue cutting ────────────────────────────────
+  function initHistory() {
+    var list = document.getElementById('today-history-list');
+    if (!list || !window.API || !API.history) return;
+    API.history.get().then(function (items) {
+      items = (items || []).filter(function (i) { return i.type === 'cut' || i.type === 'save'; }).slice(0, 8);
+      if (!items.length) {
+        list.innerHTML = '<div class="cont-item cont-empty" style="padding:16px;color:var(--muted);font-size:13px">No recent cuts yet — paste a URL in the Cutter to get started.</div>';
+        return;
+      }
+      list.innerHTML = items.map(function (item) {
+        var tag = item.tag || '(untitled)';
+        var cite = item.cite || '';
+        return '<div class="cont-item" data-go="home" style="cursor:pointer">' +
+          '<div class="cont-body">' +
+            '<div class="tag">' + escHtml(tag) + '</div>' +
+            (cite ? '<div class="cite">' + escHtml(cite) + '</div>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+      list.querySelectorAll('.cont-item[data-go]').forEach(function (el) {
+        el.addEventListener('click', function () { if (window.VerbaGo) VerbaGo('home'); });
+      });
+    }).catch(function () {
+      list.innerHTML = '<div class="cont-item cont-empty" style="padding:16px;color:var(--muted);font-size:13px">Could not load history.</div>';
+    });
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Countdown ─────────────────────────────────────────────────
+  function padTwo(n) { return n < 10 ? '0' + n : String(n); }
   var _cdInterval = null;
 
   function startCountdown(targetDateStr) {
     if (_cdInterval) clearInterval(_cdInterval);
     var target = new Date(targetDateStr).getTime();
     function tick() {
-      var now  = Date.now();
-      var diff = target - now;
-      if (diff < 0) diff = 0;
+      var diff = Math.max(0, target - Date.now());
       var days  = Math.floor(diff / 86400000);
       var hours = Math.floor((diff % 86400000) / 3600000);
       var mins  = Math.floor((diff % 3600000)  / 60000);
       var secs  = Math.floor((diff % 60000)    / 1000);
-      var dEl = document.getElementById('cd-d');
-      var hEl = document.getElementById('cd-h');
-      var mEl = document.getElementById('cd-m');
-      var sEl = document.getElementById('cd-s');
+      var dEl = document.getElementById('cd-d'), hEl = document.getElementById('cd-h');
+      var mEl = document.getElementById('cd-m'), sEl = document.getElementById('cd-s');
       if (dEl) dEl.textContent = days;
       if (hEl) hEl.textContent = padTwo(hours);
       if (mEl) mEl.textContent = padTwo(mins);
@@ -3493,23 +3469,26 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
     _cdInterval = setInterval(tick, 1000);
   }
 
+  // ── Tabroom "Open tournament" button ─────────────────────────
+  function initTabroomBtn() {
+    var btn = document.getElementById('today-tabroom-link');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var id = btn.dataset.tabroomTournId;
+      if (id) window.open('https://www.tabroom.com/index/tourn/index.mhtml?tourn_id=' + id, '_blank', 'noopener');
+    });
+  }
+
   function populateTournCard(tourn) {
-    var extraEl = document.getElementById('today-tourn-extra');
-    var nameEl  = document.getElementById('today-tourn-name');
-    var linkEl  = document.getElementById('today-tabroom-link');
-    var threatBtn = document.getElementById('today-threat-btn');
-    var noLinkEl  = document.getElementById('today-tourn-no-link');
+    var extraEl  = document.getElementById('today-tourn-extra');
+    var nameEl   = document.getElementById('today-tourn-name');
+    var linkBtn  = document.getElementById('today-tabroom-link');
+    var noLinkEl = document.getElementById('today-tourn-no-link');
 
     if (extraEl) extraEl.textContent = tourn.name || '';
     if (nameEl)  nameEl.textContent  = tourn.name || '—';
-    if (linkEl) {
-      linkEl.href = 'https://www.tabroom.com/index/tourn/index.mhtml?tourn_id=' + tourn.tournId;
-    }
-    if (threatBtn) {
-      threatBtn.dataset.goTournId = tourn.tournId;
-    }
+    if (linkBtn) linkBtn.dataset.tabroomTournId = tourn.tournId || '';
     if (noLinkEl) noLinkEl.style.display = 'none';
-
     if (tourn.startDate) startCountdown(tourn.startDate);
   }
 
@@ -3527,19 +3506,23 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
     API.tabroom.upcoming()
       .then(function (data) {
         var tourns = data.tournaments || [];
-        if (tourns.length) {
-          populateTournCard(tourns[0]);
-        } else {
-          showNoLink();
-        }
+        if (tourns.length) populateTournCard(tourns[0]); else showNoLink();
       })
       .catch(function () { showNoLink(); });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadUpcoming);
-  } else {
+  function init() {
+    initGreeting();
+    initDateLine();
+    initHistory();
+    initTabroomBtn();
     loadUpcoming();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();
 </script>
