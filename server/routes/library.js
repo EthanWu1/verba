@@ -108,16 +108,32 @@ router.get('/semantic-search', async (req, res) => {
     const db = getDb();
     const placeholders = hits.map(() => '?').join(',');
     // Defensive filter: vec0 contains stale embeddings for cards that have
-    // since been demoted (isCanonical=0) or had highlights stripped. The
-    // embed script never deletes vec0 rows, so we re-check live state here.
+    // since been demoted (isCanonical=0) or had highlights stripped. Also
+    // mirror the embed-time rule (extractHighlights joined length >= 20)
+    // so cards with stray `==` but no real highlight content are dropped.
     const rows = db.prepare(`
-      SELECT rowid, id, tag, cite, shortCite, body_plain
+      SELECT rowid, id, tag, cite, shortCite, body_plain, body_markdown
       FROM cards
       WHERE rowid IN (${placeholders})
         AND isCanonical = 1
         AND body_markdown LIKE '%==%'
     `).all(...hits.map(h => h.card_id));
-    const byRowid = new Map(rows.map(r => [r.rowid, r]));
+    const HL_RE = /==([^=]+)==/g;
+    const hasRealHighlights = (md) => {
+      if (!md) return false;
+      let total = 0;
+      let m;
+      HL_RE.lastIndex = 0;
+      while ((m = HL_RE.exec(md)) !== null) total += m[1].trim().length;
+      return total >= 20;
+    };
+    const byRowid = new Map();
+    for (const r of rows) {
+      if (!hasRealHighlights(r.body_markdown)) continue;
+      // Don't ship raw body_markdown to the client (already had body_plain).
+      const { body_markdown, ...rest } = r;
+      byRowid.set(r.rowid, rest);
+    }
     const results = hits.map(h => {
       const r = byRowid.get(h.card_id);
       return r ? { ...r, score: 1 - h.distance } : null;
