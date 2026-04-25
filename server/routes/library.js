@@ -78,6 +78,34 @@ function _cachePut(k, v) {
   if (_qCache.size > Q_CACHE_MAX) _qCache.delete(_qCache.keys().next().value);
 }
 
+// Hybrid search: FTS5 first (fast keyword recall), then semantic to fill the
+// rest with synonym/concept matches. FTS handles short queries that semantic
+// can't ('nuclear' alone), semantic handles paraphrases that FTS misses.
+const HL_RE = /==([^=]+)==/g;
+const stripFmt = (s) => s
+  .replace(/<\/?[a-zA-Z][^>]*>/g, '')
+  .replace(/\*+/g, '')
+  .replace(/_+/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
+function hasRealHighlights(md) {
+  if (!md) return false;
+  let total = 0, longest = 0, m;
+  HL_RE.lastIndex = 0;
+  while ((m = HL_RE.exec(md)) !== null) {
+    const t = stripFmt(m[1]);
+    total += t.length;
+    if (t.length > longest) longest = t.length;
+  }
+  return total >= 50 && longest >= 15;
+}
+function sanitizeFtsQuery(q) {
+  // strip FTS5 special chars + tokenize, AND across tokens
+  const tokens = String(q).replace(/["'\\\-:()*]/g, ' ').split(/\s+/).filter(Boolean);
+  if (!tokens.length) return null;
+  return tokens.map(t => `"${t}"`).join(' AND ');
+}
+
 router.get('/semantic-search', async (req, res) => {
   const q = String(req.query.q || '').trim();
   const k = Math.min(100, Number(req.query.k) || 25);
@@ -91,76 +119,80 @@ router.get('/semantic-search', async (req, res) => {
   if (q.length < 3) return res.json({ results: [] });
 
   try {
-    const { embedOne } = require('../services/embedder');
-    const { knn } = require('../services/semanticIndex');
     const { getDb } = require('../services/db');
-
-    let vec = _cacheGet(q);
-    if (!vec) {
-      vec = await embedOne(q);
-      if (vec) _cachePut(q, vec);
-    }
-    if (!vec) return res.json({ results: [] });
-
-    // Over-fetch from KNN so the post-filter (canonical + real highlights +
-    // non-empty tag) still yields ~k useful results.
-    const hits = knn(vec, k * 4);
-    if (!hits.length) return res.json({ results: [] });
-
     const db = getDb();
-    const placeholders = hits.map(() => '?').join(',');
-    // Defensive filter: vec0 contains stale embeddings for cards that have
-    // since been demoted (isCanonical=0) or had highlights stripped. Also
-    // require a non-empty tag — untagged cards are not useful in the UI.
-    const rows = db.prepare(`
-      SELECT rowid, id, tag, cite, shortCite, body_plain, body_markdown
-      FROM cards
-      WHERE rowid IN (${placeholders})
-        AND isCanonical = 1
-        AND body_markdown LIKE '%==%'
-        AND tag IS NOT NULL AND TRIM(tag) != ''
-    `).all(...hits.map(h => h.card_id));
-    const HL_RE = /==([^=]+)==/g;
-    // Strip markdown emphasis + html tags so we measure REAL highlighted
-    // text content, not formatting noise. Cards like
-    //   ==**<u>N</u>**==  ==**<u> is </u>**==
-    // would otherwise pass a length check despite carrying ~2 chars of text.
-    const stripFmt = (s) => s
-      .replace(/<\/?[a-zA-Z][^>]*>/g, '')   // <u>, </u>, <em>, etc.
-      .replace(/\*+/g, '')                  // ** bold, * italic
-      .replace(/_+/g, '')                   // _emphasis_
-      .replace(/\s+/g, ' ')
-      .trim();
-    const hasRealHighlights = (md) => {
-      if (!md) return false;
-      let total = 0, longest = 0;
-      let m;
-      HL_RE.lastIndex = 0;
-      while ((m = HL_RE.exec(md)) !== null) {
-        const t = stripFmt(m[1]);
-        total += t.length;
-        if (t.length > longest) longest = t.length;
+
+    // ── Stage 1: FTS5 keyword search ──────────────────────────
+    const results = [];
+    const seenIds = new Set();
+    const ftsQuery = sanitizeFtsQuery(q);
+    if (ftsQuery) {
+      let ftsRows = [];
+      try {
+        ftsRows = db.prepare(`
+          SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain, c.body_markdown,
+                 bm25(cards_fts) AS rank
+          FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid
+          WHERE cards_fts MATCH ?
+            AND c.isCanonical = 1
+            AND c.body_markdown LIKE '%==%'
+            AND c.tag IS NOT NULL AND TRIM(c.tag) != ''
+          ORDER BY rank ASC
+          LIMIT ?
+        `).all(ftsQuery, k * 4);
+      } catch (e) {
+        // Bad FTS query syntax; just fall through to semantic
       }
-      return total >= 50 && longest >= 15;
-    };
-    const byRowid = new Map();
-    for (const r of rows) {
-      if (!hasRealHighlights(r.body_markdown)) continue;
-      // Don't ship raw body_markdown to the client (already had body_plain).
-      const { body_markdown, ...rest } = r;
-      byRowid.set(r.rowid, rest);
+      for (const r of ftsRows) {
+        if (results.length >= k) break;
+        if (seenIds.has(r.id)) continue;
+        if (!hasRealHighlights(r.body_markdown)) continue;
+        const { body_markdown, rank, ...rest } = r;
+        // Higher rank = better in our scale; bm25 is lower-is-better, invert.
+        results.push({ ...rest, score: 1 / (1 + Math.abs(rank)), _src: 'fts' });
+        seenIds.add(r.id);
+      }
     }
-    // Relevance threshold: cosine similarity below this is essentially noise.
-    // Single-word queries like "nuclear" surface dozens of cards with score
-    // near 0 — drop them rather than show a wall of irrelevant matches.
-    const MIN_SCORE = 0.05;
-    const results = hits.map(h => {
-      const r = byRowid.get(h.card_id);
-      if (!r) return null;
-      const score = 1 - h.distance;
-      if (score < MIN_SCORE) return null;
-      return { ...r, score };
-    }).filter(Boolean).slice(0, k);
+
+    // ── Stage 2: semantic fill (only if FTS short of k) ───────
+    if (results.length < k) {
+      const { embedOne } = require('../services/embedder');
+      const { knn } = require('../services/semanticIndex');
+
+      let vec = _cacheGet(q);
+      if (!vec) {
+        vec = await embedOne(q);
+        if (vec) _cachePut(q, vec);
+      }
+      if (vec) {
+        const hits = knn(vec, k * 4);
+        if (hits.length) {
+          const placeholders = hits.map(() => '?').join(',');
+          const rows = db.prepare(`
+            SELECT rowid, id, tag, cite, shortCite, body_plain, body_markdown
+            FROM cards
+            WHERE rowid IN (${placeholders})
+              AND isCanonical = 1
+              AND body_markdown LIKE '%==%'
+              AND tag IS NOT NULL AND TRIM(tag) != ''
+          `).all(...hits.map(h => h.card_id));
+          const byRowid = new Map(rows.map(r => [r.rowid, r]));
+          const MIN_SCORE = 0.05;
+          for (const h of hits) {
+            if (results.length >= k) break;
+            const r = byRowid.get(h.card_id);
+            if (!r || seenIds.has(r.id)) continue;
+            const score = 1 - h.distance;
+            if (score < MIN_SCORE) continue;
+            if (!hasRealHighlights(r.body_markdown)) continue;
+            const { body_markdown, ...rest } = r;
+            results.push({ ...rest, score, _src: 'semantic' });
+            seenIds.add(r.id);
+          }
+        }
+      }
+    }
+
     res.json({ results });
   } catch (err) {
     res.status(500).json({ error: err.message });
