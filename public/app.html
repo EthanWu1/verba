@@ -2454,7 +2454,31 @@ body.cutter-empty #page-home #cutter-progress{order:3}
       </section>
 
       <section class="page" id="page-chat">
-        <div id="chat-root" style="height:100%;display:flex;flex-direction:column"></div>
+        <div id="chat-root" class="chat-tab" style="height:100%;display:flex;flex-direction:column">
+          <div class="chat-topbar">
+            <button id="chat-btn-history" class="chat-chip">History</button>
+            <button id="chat-btn-context" class="chat-chip">Context</button>
+            <button id="chat-btn-new"     class="chat-chip">+ New</button>
+            <span id="chat-thread-title" class="chat-thread-title"></span>
+          </div>
+          <div class="chat-body">
+            <div class="chat-main">
+              <div id="chat-messages" class="chat-messages"></div>
+              <div class="chat-composer">
+                <textarea id="chat-input" placeholder="Message or /explain /analytic /block" rows="1"></textarea>
+                <button id="chat-send" class="chat-send">Send</button>
+              </div>
+            </div>
+            <aside class="chat-split" id="chat-split" hidden>
+              <div class="chat-split-header">
+                <span id="chat-split-title">Block</span>
+                <button id="chat-split-copy">Copy all</button>
+                <button id="chat-split-close">✕</button>
+              </div>
+              <div id="chat-split-body" class="chat-split-body"></div>
+            </aside>
+          </div>
+        </div>
       </section>
 
     </div>
