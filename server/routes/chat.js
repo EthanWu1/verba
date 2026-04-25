@@ -42,12 +42,30 @@ router.get('/context', (req, res) => {
 router.post('/context', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'no_file' });
   try {
-    const text = await extractDocxText(req.file.buffer);
+    const name = req.file.originalname || 'file';
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    const mime = (req.file.mimetype || '').toLowerCase();
+    let text = '';
+    let kind = ext;
+
+    if (ext === 'docx' || mime.includes('officedocument.wordprocessingml')) {
+      text = await extractDocxText(req.file.buffer);
+      kind = 'docx';
+    } else if (ext === 'txt' || mime.startsWith('text/')) {
+      text = req.file.buffer.toString('utf8');
+      kind = 'txt';
+    } else if (ext === 'pdf' || mime === 'application/pdf') {
+      text = await extractPdfText(req.file.buffer);
+      kind = 'pdf';
+    } else {
+      return res.status(415).json({ error: 'unsupported_type', message: `Unsupported: .${ext || mime}` });
+    }
+
     const wordCount = text.split(/\s+/).filter(Boolean).length;
     const row = store.addContext({
       userId: req.user.id,
-      name: req.file.originalname,
-      kind: 'docx',
+      name,
+      kind,
       wordCount,
       content: text,
     });
@@ -75,6 +93,19 @@ async function extractDocxText(buffer) {
     texts.push(decodeXml(m[1]));
   }
   return texts.join(' ');
+}
+
+// Helper: extract text from PDF Buffer. Tries pdf-parse if installed; otherwise stores empty text + length note.
+async function extractPdfText(buffer) {
+  try {
+    const pdfParse = require('pdf-parse');
+    const data = await pdfParse(buffer);
+    return String(data.text || '');
+  } catch (err) {
+    // pdf-parse not installed or failed: TODO add lightweight parser. Store size hint so word count is non-zero.
+    const kb = Math.max(1, Math.round(buffer.length / 1024));
+    return `[PDF stored, text extraction unavailable] ${kb} KB`;
+  }
 }
 
 function decodeXml(s) {

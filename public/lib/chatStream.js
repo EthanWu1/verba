@@ -1,12 +1,13 @@
 // public/lib/chatStream.js
 (function(global){
   'use strict';
-  async function stream(threadId, content, { onStart, onToken, onDone, onError }) {
+  async function stream(threadId, content, { onStart, onToken, onDone, onError, extra }) {
+    const body = Object.assign({ content }, extra || {});
     const res = await fetch(`/api/chat/threads/${encodeURIComponent(threadId)}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify(body),
     });
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.startsWith('text/event-stream')) {

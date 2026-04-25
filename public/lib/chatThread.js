@@ -76,7 +76,11 @@
     scrollBottom();
 
     let streamed = '';
+    const contextIds = (global.ChatContext && global.ChatContext.getSelectedIds)
+      ? Array.from(global.ChatContext.getSelectedIds())
+      : [];
     await global.ChatStream.stream(currentThreadId, text, {
+      extra: { contextIds },
       onStart: () => {},
       onToken: (t) => { streamed += t; asstEl.textContent = streamed; scrollBottom(); },
       onDone: async (payload) => {

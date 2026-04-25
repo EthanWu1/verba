@@ -2587,6 +2587,69 @@ body.cutter-empty #page-home #cutter-progress{order:3}
   </div>
 </div>
 
+<!-- CHAT CONTEXT MODAL -->
+<div class="modal-backdrop" id="chat-context-modal">
+  <div class="modal cc-modal" role="dialog" aria-modal="true" aria-label="Chat sources">
+    <div class="modal-head">
+      <h3>Chat sources</h3>
+      <button class="close" id="cc-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="cc-drop" id="cc-drop" tabindex="0" role="button" aria-label="Drop files or click to browse">
+        <div class="cc-drop-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6"></path><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"></path></svg>
+        </div>
+        <div class="cc-drop-text">Drop files or click to browse</div>
+        <div class="cc-drop-sub">pdf, docx, txt</div>
+        <input type="file" id="cc-file-input" accept=".pdf,.docx,.txt" multiple hidden>
+      </div>
+      <div class="cc-pills">
+        <button class="cc-pill" data-action="upload" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 16V4M6 10l6-6 6 6"></path><path d="M4 20h16"></path></svg>
+          <span>Upload files</span>
+        </button>
+        <button class="cc-pill" data-action="paste" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="4" width="12" height="16" rx="2"></rect><path d="M9 4h6"></path></svg>
+          <span>Paste text</span>
+        </button>
+        <button class="cc-pill" data-action="library" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 5h12a3 3 0 013 3v12H7a3 3 0 01-3-3V5z"></path><path d="M4 5v12a3 3 0 003 3"></path></svg>
+          <span>From library</span>
+        </button>
+        <button class="cc-pill is-disabled" data-action="url" type="button" title="Coming soon" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"></path><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"></path></svg>
+          <span>URL</span>
+        </button>
+      </div>
+      <div class="cc-paste" id="cc-paste" hidden>
+        <textarea id="cc-paste-text" placeholder="Paste text here…" rows="5"></textarea>
+        <div class="cc-paste-foot">
+          <input id="cc-paste-name" type="text" placeholder="Name (optional)">
+          <button class="cc-paste-cancel" type="button" id="cc-paste-cancel">Cancel</button>
+          <button class="cc-paste-add" type="button" id="cc-paste-add">Add as source</button>
+        </div>
+      </div>
+      <div class="cc-library" id="cc-library" hidden>
+        <input id="cc-library-q" type="search" placeholder="Search evidence library…">
+        <div class="cc-library-results" id="cc-library-results"></div>
+      </div>
+      <div class="cc-list-head">
+        <span class="cc-list-label">Sources</span>
+        <span class="cc-list-count" id="cc-list-count"></span>
+      </div>
+      <div class="cc-list" id="cc-list" role="list">
+        <div class="cc-empty" id="cc-empty">No sources yet. Upload a file or add text to get started.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="cc-foot-hint" id="cc-foot-hint"></span>
+      <button class="apply" id="cc-done" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- OLD TWEAKS (hidden) -->
 <button class="tweak-toggle hidden" id="tweak-toggle" title="Tweaks" style="display:none">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"></path></svg>
