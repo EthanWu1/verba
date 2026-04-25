@@ -228,4 +228,4 @@ async function indexTournament(tournId, opts = {}) {
   return { entries: entryEventMap.size };
 }
 
-module.exports = { seedTocIndex, crawlTournament };
+module.exports = { seedTocIndex, crawlTournament, indexTournament };
