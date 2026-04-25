@@ -107,9 +107,15 @@ router.get('/semantic-search', async (req, res) => {
 
     const db = getDb();
     const placeholders = hits.map(() => '?').join(',');
+    // Defensive filter: vec0 contains stale embeddings for cards that have
+    // since been demoted (isCanonical=0) or had highlights stripped. The
+    // embed script never deletes vec0 rows, so we re-check live state here.
     const rows = db.prepare(`
       SELECT rowid, id, tag, cite, shortCite, body_plain
-      FROM cards WHERE rowid IN (${placeholders})
+      FROM cards
+      WHERE rowid IN (${placeholders})
+        AND isCanonical = 1
+        AND body_markdown LIKE '%==%'
     `).all(...hits.map(h => h.card_id));
     const byRowid = new Map(rows.map(r => [r.rowid, r]));
     const results = hits.map(h => {
