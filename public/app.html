@@ -3416,4 +3416,178 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
 <script src="app-main.js?v=20260422b"></script>
 <script src="/toc.js"></script>
 <script src="/rankings.js"></script>
+
+<!-- ── Tabroom link UI (Settings account section) ── -->
+<script>
+(function () {
+  'use strict';
+
+  function renderLinks(links) {
+    var list = document.getElementById('tabroom-linked-list');
+    if (!list) return;
+    if (!links || !links.length) {
+      list.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:4px 0">No team codes linked yet.</div>';
+      return;
+    }
+    list.innerHTML = links.map(function (l) {
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px">' +
+        '<span style="font-weight:600">' + escHtml(l.teamCode) + '</span>' +
+        (l.schoolName ? '<span style="color:var(--muted)">· ' + escHtml(l.schoolName) + '</span>' : '') +
+        '<button class="btn btn-sm" data-remove-id="' + escHtml(l.id) + '" style="margin-left:auto;padding:2px 8px;font-size:11px">Remove</button>' +
+        '</div>';
+    }).join('');
+    list.querySelectorAll('[data-remove-id]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.dataset.removeId;
+        API.tabroom.remove(id).then(function () { loadLinks(); }).catch(console.error);
+      });
+    });
+  }
+
+  function renderSearchResults(matches) {
+    var el = document.getElementById('tabroom-search-results');
+    if (!el) return;
+    if (!matches || !matches.length) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--muted)">No matches found. Try a different code or check your spelling.</div>';
+      return;
+    }
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Select to confirm:</div>' +
+      matches.map(function (m) {
+        return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px">' +
+          '<span style="font-weight:600">' + escHtml(m.teamCode) + '</span>' +
+          '<span style="color:var(--muted)">· ' + escHtml(m.schoolName) + '</span>' +
+          '<span style="color:var(--muted);font-size:11px">[' + (m.events || []).map(function (e) { return e.abbr; }).join(', ') + ']</span>' +
+          '<button class="btn btn-sm" data-code="' + escHtml(m.teamCode) + '" data-school="' + escHtml(m.schoolName) + '" style="margin-left:auto;padding:2px 8px;font-size:11px">Link</button>' +
+          '</div>';
+      }).join('');
+    el.querySelectorAll('[data-code]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        API.tabroom.confirm(btn.dataset.code, btn.dataset.school)
+          .then(function () { loadLinks(); el.innerHTML = ''; })
+          .catch(console.error);
+      });
+    });
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function loadLinks() {
+    if (!window.API || !API.tabroom) return;
+    API.tabroom.list().then(function (data) { renderLinks(data.links || []); }).catch(console.error);
+  }
+
+  var searchBtn = document.getElementById('tabroom-search-btn');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', function () {
+      var code   = (document.getElementById('tabroom-code-input') || {}).value || '';
+      var school = (document.getElementById('tabroom-school-input') || {}).value || '';
+      if (!code.trim()) return;
+      searchBtn.disabled = true;
+      API.tabroom.search(code.trim(), school.trim() || undefined)
+        .then(function (data) { renderSearchResults(data.matches || []); })
+        .catch(function (err) { console.error(err); })
+        .finally(function () { searchBtn.disabled = false; });
+    });
+  }
+
+  // Load links when the account section becomes visible
+  var accountBtn = document.querySelector('#set-nav button[data-sec="account"]');
+  if (accountBtn) {
+    accountBtn.addEventListener('click', function () { loadLinks(); });
+  }
+
+  // Also load on page load (in case account section is initial)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadLinks);
+  } else {
+    loadLinks();
+  }
+})();
+</script>
+
+<!-- ── Today page: upcoming tournament from Tabroom ── -->
+<script>
+(function () {
+  'use strict';
+
+  function padTwo(n) { return n < 10 ? '0' + n : String(n); }
+
+  var _cdInterval = null;
+
+  function startCountdown(targetDateStr) {
+    if (_cdInterval) clearInterval(_cdInterval);
+    var target = new Date(targetDateStr).getTime();
+    function tick() {
+      var now  = Date.now();
+      var diff = target - now;
+      if (diff < 0) diff = 0;
+      var days  = Math.floor(diff / 86400000);
+      var hours = Math.floor((diff % 86400000) / 3600000);
+      var mins  = Math.floor((diff % 3600000)  / 60000);
+      var secs  = Math.floor((diff % 60000)    / 1000);
+      var dEl = document.getElementById('cd-d');
+      var hEl = document.getElementById('cd-h');
+      var mEl = document.getElementById('cd-m');
+      var sEl = document.getElementById('cd-s');
+      if (dEl) dEl.textContent = days;
+      if (hEl) hEl.textContent = padTwo(hours);
+      if (mEl) mEl.textContent = padTwo(mins);
+      if (sEl) sEl.textContent = padTwo(secs);
+    }
+    tick();
+    _cdInterval = setInterval(tick, 1000);
+  }
+
+  function populateTournCard(tourn) {
+    var extraEl = document.getElementById('today-tourn-extra');
+    var nameEl  = document.getElementById('today-tourn-name');
+    var linkEl  = document.getElementById('today-tabroom-link');
+    var threatBtn = document.getElementById('today-threat-btn');
+    var noLinkEl  = document.getElementById('today-tourn-no-link');
+
+    if (extraEl) extraEl.textContent = tourn.name || '';
+    if (nameEl)  nameEl.textContent  = tourn.name || '—';
+    if (linkEl) {
+      linkEl.href = 'https://www.tabroom.com/index/tourn/index.mhtml?tourn_id=' + tourn.tournId;
+    }
+    if (threatBtn) {
+      threatBtn.dataset.goTournId = tourn.tournId;
+    }
+    if (noLinkEl) noLinkEl.style.display = 'none';
+
+    if (tourn.startDate) startCountdown(tourn.startDate);
+  }
+
+  function showNoLink() {
+    var nameEl   = document.getElementById('today-tourn-name');
+    var extraEl  = document.getElementById('today-tourn-extra');
+    var noLinkEl = document.getElementById('today-tourn-no-link');
+    if (nameEl)  nameEl.textContent  = 'No upcoming tournament';
+    if (extraEl) extraEl.textContent = '';
+    if (noLinkEl) noLinkEl.style.display = '';
+  }
+
+  function loadUpcoming() {
+    if (!window.API || !API.tabroom) return;
+    API.tabroom.upcoming()
+      .then(function (data) {
+        var tourns = data.tournaments || [];
+        if (tourns.length) {
+          populateTournCard(tourns[0]);
+        } else {
+          showNoLink();
+        }
+      })
+      .catch(function () { showNoLink(); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadUpcoming);
+  } else {
+    loadUpcoming();
+  }
+})();
+</script>
 </body></html>
