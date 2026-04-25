@@ -33,15 +33,20 @@ function getTournament(id) {
 function listTournaments({ season, when }) {
   const db = getDb();
   const nowIso = new Date().toISOString().slice(0, 10);
-  // Show every US tournament that has at least one indexed varsity event.
-  // Previously required bidLevel IS NOT NULL, which silently dropped ~44% of
-  // tournaments (every non-bid local/regional event).
+  // Show US tournaments that have at least one event with a bidLevel
+  // (drops local/regional non-bid tournaments like Round Rock, Clear Falcon,
+  // Chapel Hill). Exception: keep the Tournament of Champions itself, which
+  // has no bidLevel because it IS the championship. Also explicitly drop
+  // the "International Initiative TOC Test" placeholder tournament.
   let sql = `
     SELECT t.* FROM toc_tournaments t
     WHERE t.season = ?
       AND (t.country IS NULL OR UPPER(t.country) IN ('US', 'USA', 'UNITED STATES'))
-      AND EXISTS (
-        SELECT 1 FROM toc_tournament_events te WHERE te.tournId = t.tourn_id
+      AND t.name NOT LIKE '%International Initiative TOC Test%'
+      AND (
+        EXISTS (SELECT 1 FROM toc_tournament_events te
+                WHERE te.tournId = t.tourn_id AND te.bidLevel IS NOT NULL)
+        OR (t.name LIKE '%Tournament of Champions%' AND t.name NOT LIKE '%Middle School%')
       )
   `;
   const args = [season];
