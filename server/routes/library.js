@@ -81,24 +81,15 @@ function _cachePut(k, v) {
 // Hybrid search: FTS5 first (fast keyword recall), then semantic to fill the
 // rest with synonym/concept matches. FTS handles short queries that semantic
 // can't ('nuclear' alone), semantic handles paraphrases that FTS misses.
-const HL_RE = /==([^=]+)==/g;
-const stripFmt = (s) => s
-  .replace(/<\/?[a-zA-Z][^>]*>/g, '')
-  .replace(/\*+/g, '')
-  .replace(/_+/g, '')
-  .replace(/\s+/g, ' ')
-  .trim();
-function hasRealHighlights(md) {
-  if (!md) return false;
-  let total = 0, longest = 0, m;
-  HL_RE.lastIndex = 0;
-  while ((m = HL_RE.exec(md)) !== null) {
-    const t = stripFmt(m[1]);
-    total += t.length;
-    if (t.length > longest) longest = t.length;
-  }
-  return total >= 50 && longest >= 15;
-}
+//
+// Highlight filter: trust the DB-maintained hasHighlight + highlightWordCount
+// columns (set during ingestion + backfill from any of ==…==, <u>…</u>, **…**).
+// Don't re-parse body_markdown here — it diverged from ingestion in the past
+// and silently dropped underline-highlighted cards. See server/services/db.js
+// (_countHighlightWords + insert hasHighlight regex).
+const MIN_HL_WORDS = 6;       // ~1 short sentence's worth of highlighted text
+const SEM_MIN_SCORE = 0.05;   // cosine floor — below this is essentially noise
+
 function sanitizeFtsQuery(q) {
   // strip FTS5 special chars + tokenize, AND across tokens
   const tokens = String(q).replace(/["'\\\-:()*]/g, ' ').split(/\s+/).filter(Boolean);
@@ -116,20 +107,25 @@ router.get('/semantic-search', async (req, res) => {
     return res.json({ ok: true, extension: extensionStatus(), cacheSize: _qCache.size });
   }
 
-  if (q.length < 3) return res.json({ results: [] });
+  if (q.length < 1) return res.json({ results: [] });
+  // Short queries (1-2 chars like "K", "AI", "CP") skip semantic — embedding
+  // a 1-token vector is meaningless. FTS still serves keyword matches.
+  const allowSemantic = q.length >= 3;
 
   try {
     const { getDb } = require('../services/db');
     const db = getDb();
 
-    // Reciprocal Rank Fusion (RRF): merge FTS and semantic into a single
-    // ranked list. Each card's combined score is the sum of 1/(60+rank) over
-    // every list it appears in. Cards in BOTH get boosted; cards in one
-    // still get a partial score. Standard hybrid-search ranking technique.
+    // Reciprocal Rank Fusion (RRF) merges FTS + semantic positionally; we then
+    // ADD normalized match strength so a barely-above-threshold semantic hit
+    // can't outrank a strong textual match purely because it's earlier in
+    // its list. Strength is normalized per-list to [0,1] so neither signal
+    // can dominate by absolute scale (bm25 magnitudes vary widely).
     const RRF_K = 60;
-    const merged = new Map(); // id -> { row, ftsRank, semRank, ftsScore, semScore }
+    const STRENGTH_WEIGHT = 0.04; // bump up to ~the magnitude of an RRF top hit
+    const merged = new Map(); // id -> { row, ftsRank, semRank, ftsRaw, semRaw }
     const upsert = (id, patch, row) => {
-      const cur = merged.get(id) || { row, ftsRank: null, semRank: null, ftsScore: 0, semScore: 0 };
+      const cur = merged.get(id) || { row, ftsRank: null, semRank: null, ftsRaw: 0, semRaw: 0 };
       Object.assign(cur, patch);
       if (row && !cur.row) cur.row = row;
       merged.set(id, cur);
@@ -141,70 +137,84 @@ router.get('/semantic-search', async (req, res) => {
       let ftsRows = [];
       try {
         ftsRows = db.prepare(`
-          SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain, c.body_markdown,
+          SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain,
                  bm25(cards_fts) AS bm25_rank
           FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid
           WHERE cards_fts MATCH ?
             AND c.isCanonical = 1
-            AND c.body_markdown LIKE '%==%'
+            AND c.hasHighlight = 1
+            AND c.highlightWordCount >= ?
             AND c.tag IS NOT NULL AND TRIM(c.tag) != ''
           ORDER BY bm25_rank ASC
           LIMIT ?
-        `).all(ftsQuery, k * 4);
+        `).all(ftsQuery, MIN_HL_WORDS, k * 4);
       } catch (e) { /* bad FTS query — skip stage */ }
       let rank = 0;
       for (const r of ftsRows) {
-        if (!hasRealHighlights(r.body_markdown)) continue;
         rank++;
-        const { body_markdown, bm25_rank, ...rest } = r;
-        upsert(r.id, { ftsRank: rank, ftsScore: 1 / (1 + Math.abs(bm25_rank)) }, rest);
+        const { bm25_rank, ...rest } = r;
+        // bm25 is lower=better, magnitudes vary; transform to a [0,1]-ish
+        // raw strength via 1/(1+|bm25|). Per-list min-max comes after merge.
+        upsert(r.id, { ftsRank: rank, ftsRaw: 1 / (1 + Math.abs(bm25_rank)) }, rest);
       }
     }
 
-    // ── Semantic KNN ─────────────────────────────────────────
-    const { embedOne } = require('../services/embedder');
-    const { knn } = require('../services/semanticIndex');
-    let vec = _cacheGet(q);
-    if (!vec) {
-      vec = await embedOne(q);
-      if (vec) _cachePut(q, vec);
-    }
-    if (vec) {
-      const hits = knn(vec, k * 4);
-      if (hits.length) {
-        const placeholders = hits.map(() => '?').join(',');
-        const rows = db.prepare(`
-          SELECT rowid, id, tag, cite, shortCite, body_plain, body_markdown
-          FROM cards
-          WHERE rowid IN (${placeholders})
-            AND isCanonical = 1
-            AND body_markdown LIKE '%==%'
-            AND tag IS NOT NULL AND TRIM(tag) != ''
-        `).all(...hits.map(h => h.card_id));
-        const byRowid = new Map(rows.map(r => [r.rowid, r]));
-        const MIN_SCORE = 0.05;
-        let rank = 0;
-        for (const h of hits) {
-          const r = byRowid.get(h.card_id);
-          if (!r) continue;
-          const semScore = 1 - h.distance;
-          if (semScore < MIN_SCORE) continue;
-          if (!hasRealHighlights(r.body_markdown)) continue;
-          rank++;
-          const { body_markdown, ...rest } = r;
-          upsert(r.id, { semRank: rank, semScore }, rest);
+    // ── Semantic KNN (skipped for very short queries) ────────
+    if (allowSemantic) {
+      const { embedOne } = require('../services/embedder');
+      const { knn } = require('../services/semanticIndex');
+      let vec = _cacheGet(q);
+      if (!vec) {
+        vec = await embedOne(q);
+        if (vec) _cachePut(q, vec);
+      }
+      if (vec) {
+        const hits = knn(vec, k * 4);
+        if (hits.length) {
+          const placeholders = hits.map(() => '?').join(',');
+          const rows = db.prepare(`
+            SELECT rowid, id, tag, cite, shortCite, body_plain
+            FROM cards
+            WHERE rowid IN (${placeholders})
+              AND isCanonical = 1
+              AND hasHighlight = 1
+              AND highlightWordCount >= ?
+              AND tag IS NOT NULL AND TRIM(tag) != ''
+          `).all(...hits.map(h => h.card_id), MIN_HL_WORDS);
+          const byRowid = new Map(rows.map(r => [r.rowid, r]));
+          let rank = 0;
+          for (const h of hits) {
+            const r = byRowid.get(h.card_id);
+            if (!r) continue;
+            const semScore = 1 - h.distance;
+            if (semScore < SEM_MIN_SCORE) continue;
+            rank++;
+            upsert(r.id, { semRank: rank, semRaw: semScore }, r);
+          }
         }
       }
     }
 
-    // Compute RRF combined score, sort, trim
+    // Per-list min-max normalize raw strengths so neither signal dominates
+    // by absolute scale, then combine RRF position + normalized strength.
+    const ftsRaws = [...merged.values()].map(x => x.ftsRaw).filter(v => v > 0);
+    const semRaws = [...merged.values()].map(x => x.semRaw).filter(v => v > 0);
+    const ftsMin = ftsRaws.length ? Math.min(...ftsRaws) : 0;
+    const ftsMax = ftsRaws.length ? Math.max(...ftsRaws) : 1;
+    const semMin = semRaws.length ? Math.min(...semRaws) : 0;
+    const semMax = semRaws.length ? Math.max(...semRaws) : 1;
+    const norm = (v, lo, hi) => (v <= 0 || hi <= lo) ? 0 : (v - lo) / (hi - lo);
+
     const results = [...merged.values()]
       .map(x => {
-        const fts = x.ftsRank ? 1 / (RRF_K + x.ftsRank) : 0;
-        const sem = x.semRank ? 1 / (RRF_K + x.semRank) : 0;
+        const rrfFts = x.ftsRank ? 1 / (RRF_K + x.ftsRank) : 0;
+        const rrfSem = x.semRank ? 1 / (RRF_K + x.semRank) : 0;
+        const normFts = norm(x.ftsRaw, ftsMin, ftsMax);
+        const normSem = norm(x.semRaw, semMin, semMax);
+        const strength = Math.max(normFts, normSem);
         return {
           ...x.row,
-          score: fts + sem,
+          score: rrfFts + rrfSem + STRENGTH_WEIGHT * strength,
           _src: x.ftsRank && x.semRank ? 'both' : (x.ftsRank ? 'fts' : 'semantic'),
         };
       })

@@ -1497,8 +1497,9 @@
     state.evShown = 50;
     if (!q) { state.evSearchResults = null; renderEvidence(); return; }
 
-    // Semantic-only (FTS on 832k rows is too slow; embed filter already canonical+highlighted).
-    if (q.length < 3) { state.evSearchResults = []; renderEvidence(); return; }
+    // Hybrid (FTS + semantic) on the server. Server handles 1-2 char queries
+    // via FTS-only; only block truly empty input here.
+    if (q.length < 1) { state.evSearchResults = []; renderEvidence(); return; }
     try {
       const sem = await API.librarySemantic(q, 50);
       if (myTok !== evSearchTok) return;
