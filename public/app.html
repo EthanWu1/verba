@@ -3409,7 +3409,7 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
         return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px">' +
           '<span style="font-weight:600">' + escHtml(m.teamCode) + '</span>' +
           '<span style="color:var(--muted)">· ' + escHtml(m.schoolName) + '</span>' +
-          '<span style="color:var(--muted);font-size:11px">[' + (m.events || []).map(function (e) { return e.abbr; }).join(', ') + ']</span>' +
+          '<span style="color:var(--muted);font-size:11px">[' + (m.events || []).map(function (e) { return escHtml(e && e.abbr || ''); }).join(', ') + ']</span>' +
           '<button class="btn btn-sm" data-code="' + escHtml(m.teamCode) + '" data-school="' + escHtml(m.schoolName) + '" style="margin-left:auto;padding:2px 8px;font-size:11px">Link</button>' +
           '</div>';
       }).join('');
