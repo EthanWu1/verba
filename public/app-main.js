@@ -2566,25 +2566,25 @@
     else if (!v && was) { visible.delete(dlg); onClose(dlg); }
   }
 
-  const dialogs = () => document.querySelectorAll('[role="dialog"]');
+  // Per-dialog attribute observer ONLY (no body subtree watcher — that fired
+  // on every DOM mutation and was the dominant page-slowdown cost). Dynamic
+  // dialogs added later won't auto-trap, but that's acceptable; static
+  // dialogs cover ~all of them. The Tab cycler below works even when a
+  // dialog wasn't tracked, because it walks closest('[role="dialog"]') live.
   const obs = new MutationObserver((records) => {
     const seen = new Set();
     for (const r of records) {
-      const el = r.target.closest && r.target.closest('[role="dialog"]');
-      if (el && !seen.has(el)) { seen.add(el); check(el); }
-    }
-    // also handle newly added dialogs
-    for (const r of records) {
-      r.addedNodes && r.addedNodes.forEach(n => {
-        if (n.nodeType !== 1) return;
-        const list = n.matches && n.matches('[role="dialog"]') ? [n] : (n.querySelectorAll ? n.querySelectorAll('[role="dialog"]') : []);
-        list.forEach(d => { obs.observe(d, { attributes:true, attributeFilter:['style','class','hidden','aria-hidden'] }); check(d); });
-      });
+      const el = r.target;
+      if (el && !seen.has(el) && el.getAttribute && el.getAttribute('role') === 'dialog') {
+        seen.add(el); check(el);
+      }
     }
   });
   function init(){
-    dialogs().forEach(d => { obs.observe(d, { attributes:true, attributeFilter:['style','class','hidden','aria-hidden'] }); check(d); });
-    obs.observe(document.body, { childList:true, subtree:true });
+    document.querySelectorAll('[role="dialog"]').forEach(d => {
+      obs.observe(d, { attributes:true, attributeFilter:['style','class','hidden','aria-hidden'] });
+      check(d);
+    });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
