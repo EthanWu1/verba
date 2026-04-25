@@ -2480,9 +2480,39 @@ body.cutter-empty #page-home #cutter-progress{order:3}
           <div class="chat-body">
             <div class="chat-main">
               <div id="chat-messages" class="chat-messages"></div>
-              <div class="chat-composer">
-                <textarea id="chat-input" placeholder="Message or /explain /analytic /block" rows="1"></textarea>
-                <button id="chat-send" class="chat-send">Send</button>
+              <div class="chat-composer-wrap">
+                <div class="chat-composer">
+                  <textarea id="chat-input" class="chat-input" placeholder="Message or /explain /analytic /block" rows="1"></textarea>
+                  <div class="chat-composer-bar">
+                    <div class="chat-composer-tools" aria-hidden="true"></div>
+                    <button id="chat-send" class="chat-send" type="button" aria-label="Send message">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                      <span>Send</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="chat-suggested" role="toolbar" aria-label="Suggested actions">
+                  <button type="button" class="chat-pill" data-prefill="/explain ">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
+                    <span>/explain</span>
+                  </button>
+                  <button type="button" class="chat-pill" data-prefill="/analytic ">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+                    <span>/analytic</span>
+                  </button>
+                  <button type="button" class="chat-pill" data-prefill="/block ">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="11" width="18" height="5" rx="1.5"/><rect x="3" y="18" width="18" height="3" rx="1.5"/></svg>
+                    <span>/block</span>
+                  </button>
+                  <button type="button" class="chat-pill" data-prefill="Find evidence about ">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                    <span>Find evidence</span>
+                  </button>
+                  <button type="button" class="chat-pill" data-prefill="Summarize ">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
+                    <span>Summarize</span>
+                  </button>
+                </div>
               </div>
             </div>
             <aside class="chat-split" id="chat-split" hidden>
