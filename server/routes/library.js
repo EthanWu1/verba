@@ -119,13 +119,27 @@ router.get('/semantic-search', async (req, res) => {
         AND body_markdown LIKE '%==%'
     `).all(...hits.map(h => h.card_id));
     const HL_RE = /==([^=]+)==/g;
+    // Strip markdown emphasis + html tags so we measure REAL highlighted
+    // text content, not formatting noise. Cards like
+    //   ==**<u>N</u>**==  ==**<u> is </u>**==
+    // would otherwise pass a length check despite carrying ~2 chars of text.
+    const stripFmt = (s) => s
+      .replace(/<\/?[a-zA-Z][^>]*>/g, '')   // <u>, </u>, <em>, etc.
+      .replace(/\*+/g, '')                  // ** bold, * italic
+      .replace(/_+/g, '')                   // _emphasis_
+      .replace(/\s+/g, ' ')
+      .trim();
     const hasRealHighlights = (md) => {
       if (!md) return false;
-      let total = 0;
+      let total = 0, longest = 0;
       let m;
       HL_RE.lastIndex = 0;
-      while ((m = HL_RE.exec(md)) !== null) total += m[1].trim().length;
-      return total >= 20;
+      while ((m = HL_RE.exec(md)) !== null) {
+        const t = stripFmt(m[1]);
+        total += t.length;
+        if (t.length > longest) longest = t.length;
+      }
+      return total >= 50 && longest >= 15;
     };
     const byRowid = new Map();
     for (const r of rows) {
