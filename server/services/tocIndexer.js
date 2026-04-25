@@ -39,9 +39,12 @@ function _canonicalAbbrFromText(text) {
   const s = String(text || '').toUpperCase();
   if (!s) return null;
   if (NON_VARSITY_NAME_RE.test(s)) return null;
-  if (/\bLD\b|LINCOLN[-\s]?DOUGLAS/.test(s)) return 'LD';
-  if (/\bPF\b|PUBLIC\s*FORUM/.test(s))        return 'PF';
-  if (/\bCX\b|POLICY(?!\s*DEBATE.*SPEAKER)/.test(s)) return 'CX';
+  // Allow optional "V" varsity prefix (VLD, VPF, VCX) — Tabroom uses these
+  // for tournaments like Heart of Texas. JV/N/MS prefixes are caught earlier
+  // by NON_VARSITY_ABBR_EXACT and the ^JV/^MS/^N regexes in _isNonVarsityEvent.
+  if (/\bV?LD\b|LINCOLN[-\s]?DOUGLAS/.test(s)) return 'LD';
+  if (/\bV?PF\b|PUBLIC\s*FORUM/.test(s))        return 'PF';
+  if (/\bV?CX\b|POLICY(?!\s*DEBATE.*SPEAKER)/.test(s)) return 'CX';
   return null;
 }
 function _canonicalAbbr(rawAbbr) {
