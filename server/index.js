@@ -99,6 +99,9 @@ function sendHtmlNoCache(res, file) {
 app.get(['/app.html', '/app', '/app/*'], requireAuthPage, (_req, res) => {
   sendHtmlNoCache(res, 'app.html');
 });
+app.get(['/app-legacy', '/app-legacy.html'], requireAuthPage, (_req, res) => {
+  sendHtmlNoCache(res, 'app-legacy.html');
+});
 
 app.use(express.static(PUBLIC, {
   index: false,
