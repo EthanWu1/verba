@@ -2025,9 +2025,24 @@ body.rk-profile-view .rk-sidebar { display: none; }
 .rk-row-2 .rk-rank-badge { background: #c0c0c0; color: #fff; }
 .rk-row-3 .rk-rank-badge { background: #cd7f32; color: #fff; }
 .rk-row-top10 { background: rgba(167,139,250,.04); }
+/* Leaderboard pagination */
+.rk-pagination-host { padding: 16px 0 8px; display: flex; justify-content: center; }
+.rk-pagination { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.rk-page-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 34px; height: 34px; padding: 0 10px; background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: var(--radius); font: 500 13px var(--font-ui); cursor: pointer; transition: background-color .15s, border-color .15s, color .15s; }
+.rk-page-btn:hover:not(:disabled):not(.is-active) { background: var(--lilac-soft); }
+.rk-page-btn.is-active { background: var(--lilac); color: var(--lilac-ink); border-color: var(--lilac); }
+.rk-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.rk-page-btn:focus-visible { outline: 2px solid var(--lilac-2); outline-offset: 2px; }
+.rk-page-nav { padding: 0 12px; gap: 6px; color: var(--muted); }
+.rk-page-nav:hover:not(:disabled) { color: var(--ink); }
+.rk-page-ellipsis { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 34px; color: var(--muted); user-select: none; }
 @media (max-width: 768px) {
   .rk-shell { flex-direction: column; }
   .rk-sidebar { width: 100%; flex: 0 0 auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  .rk-page-btn { min-width: 44px; height: 44px; font-size: 14px; }
+  .rk-page-ellipsis { min-width: 28px; height: 44px; }
+  .rk-page-nav span { display: none; }
+  .rk-page-nav { padding: 0 12px; }
 }
 .rk-profile-wrap { display: flex; flex-direction: column; gap: 18px; animation: rk-fade-in .25s ease; }
 @keyframes rk-fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -2449,6 +2464,7 @@ body.cutter-empty #page-home #cutter-progress{order:3}
               </thead>
               <tbody id="rk-rows"></tbody>
             </table>
+            <div id="rk-pagination" class="rk-pagination-host"></div>
           </main>
         </div>
       </section>

@@ -25,12 +25,66 @@
     }
   }
 
+  const PAGE_SIZE = 50;
+
+  function buildPageWindow(current, total) {
+    if (total <= 1) return [1];
+    const window = new Set([1, total, current, current - 1, current + 1, current - 2, current + 2]);
+    const sorted = [...window].filter(p => p >= 1 && p <= total).sort((a, b) => a - b);
+    const out = [];
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) out.push('…');
+      out.push(sorted[i]);
+    }
+    return out;
+  }
+
+  function chevronSvg(dir) {
+    const d = dir === 'left' ? 'M15 18l-6-6 6-6' : 'M9 6l6 6-6 6';
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+  }
+
+  function renderPagination() {
+    const totalPages = Math.max(1, Math.ceil(_totalCount / PAGE_SIZE));
+    const host = $('rk-pagination');
+    if (!host) return;
+    if (_totalCount === 0 || totalPages <= 1) { host.innerHTML = ''; return; }
+    const items = buildPageWindow(_page, totalPages);
+    const prevDisabled = _page <= 1;
+    const nextDisabled = _page >= totalPages;
+    const itemsHtml = items.map(it => {
+      if (it === '…') return `<span class="rk-page-ellipsis" aria-hidden="true">…</span>`;
+      const active = it === _page;
+      return `<button type="button" class="rk-page-btn${active ? ' is-active' : ''}" data-page="${it}" ${active ? 'aria-current="page"' : ''} aria-label="Page ${it}">${it}</button>`;
+    }).join('');
+    host.innerHTML = `
+      <nav class="rk-pagination" role="navigation" aria-label="Leaderboard pagination">
+        <button type="button" class="rk-page-btn rk-page-nav" data-nav="prev" ${prevDisabled ? 'disabled' : ''} aria-label="Previous page">${chevronSvg('left')}<span>Previous</span></button>
+        ${itemsHtml}
+        <button type="button" class="rk-page-btn rk-page-nav" data-nav="next" ${nextDisabled ? 'disabled' : ''} aria-label="Next page"><span>Next</span>${chevronSvg('right')}</button>
+      </nav>`;
+    host.querySelectorAll('button[data-page]').forEach(b => b.addEventListener('click', () => {
+      const p = parseInt(b.dataset.page, 10);
+      if (Number.isFinite(p) && p !== _page) gotoPage(p);
+    }));
+    host.querySelector('button[data-nav="prev"]')?.addEventListener('click', () => { if (_page > 1) gotoPage(_page - 1); });
+    host.querySelector('button[data-nav="next"]')?.addEventListener('click', () => { if (_page < totalPages) gotoPage(_page + 1); });
+  }
+
+  function gotoPage(p) {
+    _page = p;
+    load({ pageOnly: true });
+    const main = document.querySelector('.rk-main');
+    if (main) main.scrollTop = 0;
+  }
+
   function renderRows() {
     const tbody = $('rk-rows');
     const meta = $('rk-meta');
     if (meta) meta.textContent = `${_allRows.length} of ${_totalCount} · season ${_season}`;
     if (!_allRows.length) {
       tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">No ratings yet for this event.</td></tr>';
+      renderPagination();
       return;
     }
     const rowsHtml = _allRows.map(r => {
@@ -49,26 +103,25 @@
         <td class="rk-col-num"><span class="rk-rating">${Math.round(r.rating)}</span></td>
       </tr>`;
     }).join('');
-    const moreBtn = _hasMore
-      ? `<tr><td colspan="3" style="text-align:center;padding:12px 0"><button class="rk-btn-sm" id="rk-more-btn">Show more</button></td></tr>`
-      : '';
-    tbody.innerHTML = rowsHtml + moreBtn;
+    tbody.innerHTML = rowsHtml;
     tbody.querySelectorAll('tr[data-team]').forEach(tr => {
       tr.style.cursor = 'pointer';
       tr.addEventListener('click', () => openProfile(tr.dataset.team));
     });
-    document.getElementById('rk-more-btn')?.addEventListener('click', () => { _page++; load({ append: true }); });
+    renderPagination();
   }
 
   async function load(opts) {
-    const append = opts && opts.append;
+    const pageOnly = opts && opts.pageOnly;
     const tbody = $('rk-rows');
     const q = encodeURIComponent(($('rk-search')?.value || '').trim());
-    if (!append) {
+    if (!pageOnly) {
       _page = 1;
-      _allRows = [];
-      tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">Loading…</td></tr>';
     }
+    _allRows = [];
+    tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">Loading…</td></tr>';
+    const pagHost = $('rk-pagination');
+    if (pagHost) pagHost.innerHTML = '';
     if (!_season) {
       tbody.innerHTML = '<tr><td colspan="3" style="padding:24px;color:var(--muted)">No season available.</td></tr>';
       return;
@@ -78,7 +131,7 @@
       const data = await res.json();
       _totalCount = data.totalCount || (data.rows || []).length;
       _hasMore = !!data.hasMore;
-      _allRows = _allRows.concat(data.rows || []);
+      _allRows = data.rows || [];
       renderRows();
     } catch (e) {
       tbody.innerHTML = `<tr><td colspan="3" style="padding:24px;color:var(--muted)">Failed: ${esc(e.message)}</td></tr>`;
@@ -312,7 +365,8 @@
           </tr>
         </thead>
         <tbody id="rk-rows"></tbody>
-      </table>`;
+      </table>
+      <div id="rk-pagination" class="rk-pagination-host"></div>`;
     load();
   }
 
