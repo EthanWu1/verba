@@ -150,9 +150,16 @@ router.get('/semantic-search', async (req, res) => {
       const { body_markdown, ...rest } = r;
       byRowid.set(r.rowid, rest);
     }
+    // Relevance threshold: cosine similarity below this is essentially noise.
+    // Single-word queries like "nuclear" surface dozens of cards with score
+    // near 0 — drop them rather than show a wall of irrelevant matches.
+    const MIN_SCORE = 0.05;
     const results = hits.map(h => {
       const r = byRowid.get(h.card_id);
-      return r ? { ...r, score: 1 - h.distance } : null;
+      if (!r) return null;
+      const score = 1 - h.distance;
+      if (score < MIN_SCORE) return null;
+      return { ...r, score };
     }).filter(Boolean).slice(0, k);
     res.json({ results });
   } catch (err) {
