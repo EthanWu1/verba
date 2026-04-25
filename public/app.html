@@ -123,7 +123,9 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
   content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:2px;
   background:var(--lilac-ink);border-radius:0 2px 2px 0;
 }
-.rail-btn svg{stroke-width:1.5}
+.rail-btn svg{stroke-width:1.5;width:18px;height:18px;flex:0 0 auto}
+.rail-brand img{width:28px;height:28px;display:block}
+.rail-brand{display:flex;align-items:center;justify-content:center}
 .rail-btn .tip{
   position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%) translateX(-4px);
   background:var(--ink);color:#fff;font:500 11.5px/1 var(--font-display);
@@ -1697,7 +1699,7 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
 
   <!-- LEFT RAIL (new design) -->
   <aside class="rail">
-    <div class="rail-brand">V</div>
+    <a class="rail-brand" href="/app" aria-label="Verba home"><img src="assets/logo.png" alt="Verba" style="width:28px;height:28px;display:block"></a>
     <div class="rail-section">
       <button class="rail-btn" data-page="today" title="Today">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
@@ -3130,128 +3132,7 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
 })();
 </script>
 
-<!-- ── SETTINGS OVERLAY (kept for JS compat via settings-v2 id) ── -->
-<div class="settings-backdrop" id="settings-v2" aria-hidden="true">
-  <div class="settings-shell" role="dialog" aria-label="Settings">
-    <div class="settings-head">
-      <h3>Settings</h3>
-      <button class="settings-close" id="settings-v2-close" aria-label="Close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="settings-body">
-      <nav class="settings-tabs" role="tablist">
-        <button class="stab active" data-tab="general" role="tab">General</button>
-        <button class="stab" data-tab="account" role="tab">Account</button>
-        <button class="stab" data-tab="billing" role="tab">Billing</button>
-      </nav>
-      <div class="settings-panes">
-        <section class="spane on" data-pane="general">
-          <h4 class="spane-h">Profile</h4>
-          <div class="sfield">
-            <label class="sfield-l">Full name <span class="sfield-hint" id="name-cooldown-hint"></span></label>
-            <div class="sfield-row">
-              <input class="sfield-input" id="profile-name" maxlength="60" />
-              <button class="sfield-save" id="profile-name-save" disabled>Save</button>
-            </div>
-            <div class="sfield-err" id="profile-name-err" style="display:none"></div>
-          </div>
-          <div class="sfield">
-            <label class="sfield-l">Email</label>
-            <div class="sfield-static" id="profile-email">—</div>
-          </div>
-          <h4 class="spane-h mt">Appearance</h4>
-          <div class="sfield">
-            <label class="sfield-l">Body font</label>
-            <div class="font-cards" id="font-cards">
-              <button class="font-card on" data-val="calibri"><span style="font-family:'Calibri','Calibri MS',sans-serif">Aa</span><small>Calibri</small></button>
-              <button class="font-card" data-val="inter"><span style="font-family:'Inter',sans-serif">Aa</span><small>Inter</small></button>
-              <button class="font-card" data-val="times"><span style="font-family:'Times New Roman',serif">Aa</span><small>Times</small></button>
-              <button class="font-card" data-val="georgia"><span style="font-family:Georgia,serif">Aa</span><small>Georgia</small></button>
-              <button class="font-card" data-val="serif"><span style="font-family:'Newsreader',Georgia,serif">Aa</span><small>Newsreader</small></button>
-              <button class="font-card" data-val="mono"><span style="font-family:'JetBrains Mono',ui-monospace,monospace">Aa</span><small>Mono</small></button>
-              <button class="font-card" data-val="system"><span style="font-family:system-ui,sans-serif">Aa</span><small>System</small></button>
-            </div>
-          </div>
-          <div class="sfield">
-            <label class="sfield-l">Highlight color</label>
-            <div class="hl-cards" id="hl-cards">
-              <button class="hl-card on" data-val="yellow"><span class="hl-swatch" style="background:#FFFF00"></span><small>Yellow</small></button>
-              <button class="hl-card" data-val="cyan"><span class="hl-swatch" style="background:#00FFFF"></span><small>Cyan</small></button>
-              <button class="hl-card" data-val="green"><span class="hl-swatch" style="background:#00FF00"></span><small>Green</small></button>
-            </div>
-          </div>
-          <h4 class="spane-h mt">Card Cutter</h4>
-          <div class="sfield">
-            <label class="sfield-l">Card length</label>
-            <div class="sfield-menu" id="cut-length-menu" data-open="false">
-              <button type="button" class="sfield-menu-trigger" aria-haspopup="listbox" aria-expanded="false">
-                <span class="sfield-menu-label" data-slot="label">Medium</span>
-                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="sfield-menu-list" role="listbox" tabindex="-1">
-                <div class="sfield-menu-item" role="option" data-val="short"><div class="mi-main"><span class="mi-title">Short</span><span class="mi-sub">2–3 paragraphs (~280w)</span></div><svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div class="sfield-menu-item" role="option" data-val="medium" aria-selected="true"><div class="mi-main"><span class="mi-title">Medium</span><span class="mi-sub">3–5 paragraphs (~480w)</span></div><svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></div>
-                <div class="sfield-menu-item" role="option" data-val="long"><div class="mi-main"><span class="mi-title">Long</span><span class="mi-sub">5–8 paragraphs (~760w)</span></div><svg class="mi-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg></div>
-              </div>
-            </div>
-          </div>
-        </section>
-        <section class="spane" data-pane="account">
-          <h4 class="spane-h">Account</h4>
-          <div class="sfield sfield-row-pair">
-            <div><div class="sfield-l">Log out of all devices</div><div class="sfield-sub">Ends every active session including this one.</div></div>
-            <button class="btn-danger" id="logout-all-btn">Log out</button>
-          </div>
-          <div class="sfield sfield-row-pair">
-            <div><div class="sfield-l">Delete account</div><div class="sfield-sub">Coming soon. Contact support for now.</div></div>
-            <button class="btn-ghost" disabled>Delete account</button>
-          </div>
-          <h4 class="spane-h mt">Active sessions</h4>
-          <table class="sess-table" id="sess-table">
-            <thead><tr><th>Device</th><th>IP</th><th>Created</th><th>Last active</th><th></th></tr></thead>
-            <tbody id="sess-tbody"><tr><td colspan="5" class="sess-empty">Loading…</td></tr></tbody>
-          </table>
-        </section>
-        <section class="spane" data-pane="billing">
-          <div class="plan-card">
-            <div class="plan-head">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v6M12 8l-6 4M12 8l6 4M6 12v6M18 12v6M12 14v8"/></svg>
-              <div class="plan-head-text">
-                <div class="plan-tier" id="plan-tier">Free plan</div>
-                <div class="plan-sub" id="plan-sub">Basic usage limits</div>
-                <div class="plan-renew" id="plan-renew"></div>
-              </div>
-              <button class="btn-secondary" id="plan-adjust">Adjust plan</button>
-            </div>
-            <div class="plan-sep"></div>
-            <div class="plan-section">
-              <div class="plan-section-h">Payment</div>
-              <div class="pay-row" id="pay-row">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-                <span id="pay-mask">No payment method</span>
-                <button class="btn-ghost" id="pay-update">Update</button>
-              </div>
-            </div>
-            <div class="plan-sep"></div>
-            <div class="plan-section">
-              <div class="plan-section-h">Invoices</div>
-              <div class="invoice-empty" id="invoice-list">No invoices yet.</div>
-            </div>
-            <div class="plan-sep"></div>
-            <div class="plan-section">
-              <div class="plan-section-h">Cancellation</div>
-              <div class="pay-row">
-                <span style="flex:1">Cancel plan</span>
-                <button class="btn-danger" id="plan-cancel" disabled>Cancel</button>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- duplicate settings-v2 overlay removed (id collision) -->
 
 <!-- Hidden stubs for JS-queried elements not rendered by page sections -->
 <div id="cutter-progress" class="cutter-progress" hidden>
