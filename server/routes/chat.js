@@ -121,8 +121,10 @@ const { parseCommand, buildExplainPrompt, buildAnalyticPrompt, buildBlockPrompt 
 const retrieval = require('../services/chatRetrieval');
 const { complete, completeStream, parseJSON } = require('../services/llm');
 
-const MODEL_FAST  = 'google/gemini-2.5-flash-lite';
-const MODEL_BLOCK = 'deepseek/deepseek-chat';
+// google/gemini-2.5-flash-lite was a preview that went 400 once retired.
+// Defaults below are known-good on OpenRouter as of 2026-04; override with env.
+const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'google/gemini-2.0-flash-001';
+const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'deepseek/deepseek-chat';
 
 router.post('/threads/:id/messages', async (req, res) => {
   const userId = req.user.id;
@@ -177,14 +179,27 @@ router.post('/threads/:id/messages', async (req, res) => {
     res.write('event: start\ndata: ' + JSON.stringify({ userMessageId: userMsg.id }) + '\n\n');
 
     let full = '';
-    await completeStream({
-      prompt,
-      forceModel: MODEL_FAST,
-      onToken: (tok) => {
-        full += tok;
-        res.write('event: token\ndata: ' + JSON.stringify({ t: tok }) + '\n\n');
-      },
-    });
+    const chatChain = [MODEL_FAST, MODEL_BLOCK].filter((v, i, a) => a.indexOf(v) === i);
+    let lastErr = null;
+    for (const m of chatChain) {
+      try {
+        await completeStream({
+          prompt,
+          forceModel: m,
+          onToken: (tok) => {
+            full += tok;
+            res.write('event: token\ndata: ' + JSON.stringify({ t: tok }) + '\n\n');
+          },
+        });
+        lastErr = null;
+        break;
+      } catch (e) {
+        lastErr = e;
+        full = '';
+        console.warn(`[chat] ${m} failed, trying next:`, e.message);
+      }
+    }
+    if (lastErr) throw lastErr;
     const asstMsg = store.addMessage(threadId, 'assistant', full, { command: parsed.command });
     res.write('event: done\ndata: ' + JSON.stringify({ assistantMessageId: asstMsg.id }) + '\n\n');
     res.end();
