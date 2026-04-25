@@ -1870,8 +1870,8 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
                 <div class="tc"><b id="cd-s">08</b><span>sec</span></div>
               </div>
               <div class="tourn-cta">
-                <button>Round draw</button>
-                <button class="primary" data-go="tournaments">Open tournament ↗</button>
+                <button data-go="tournaments" data-go-section="threats">Threat list</button>
+                <a class="primary" href="https://www.tabroom.com/index/index.mhtml" target="_blank" rel="noopener" data-tabroom-link>Open tournament ↗</a>
               </div>
             </div>
 
@@ -2687,36 +2687,8 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
   </div>
 </div>
 
-<!-- OLD TWEAKS (hidden) -->
-<button class="tweak-toggle hidden" id="tweak-toggle" title="Tweaks" style="display:none">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 5a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09A1.65 1.65 0 0015 5a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09A1.65 1.65 0 0019.4 15z"></path></svg>
-</button>
-<div class="tweaks-panel" id="tweaks-panel">
-  <div class="tweaks-head">
-    <span>Tweaks</span>
-    <button class="icon-btn" id="tweaks-close" style="width:24px;height:24px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg></button>
-  </div>
-  <div class="tweaks-body">
-    <div class="tweak-field">
-      <label>Accent</label>
-      <div class="tweak-opts" data-tweak="accent">
-        <button class="tweak-opt" data-val="lilac"><span class="tweak-swatch" style="background:#DCD0FF"></span>Lilac</button>
-        <button class="tweak-opt" data-val="sky"><span class="tweak-swatch" style="background:#BAE6FD"></span>Sky</button>
-        <button class="tweak-opt" data-val="peach"><span class="tweak-swatch" style="background:#FED7AA"></span>Peach</button>
-        <button class="tweak-opt" data-val="sage"><span class="tweak-swatch" style="background:#BBF7D0"></span>Sage</button>
-      </div>
-    </div>
-    <div class="tweak-field">
-      <label>Body font</label>
-      <div class="tweak-opts" data-tweak="font">
-        <button class="tweak-opt on" data-val="calibri">Calibri</button>
-        <button class="tweak-opt" data-val="inter">Inter</button>
-        <button class="tweak-opt" data-val="times">Times</button>
-        <button class="tweak-opt" data-val="georgia">Georgia</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- OLD TWEAKS removed -->
+
 
 <!-- legacy cmd-overlay removed; lib/cmdPalette.js owns Ctrl+K now -->
 
