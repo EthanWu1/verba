@@ -33,13 +33,15 @@ function getTournament(id) {
 function listTournaments({ season, when }) {
   const db = getDb();
   const nowIso = new Date().toISOString().slice(0, 10);
+  // Show every US tournament that has at least one indexed varsity event.
+  // Previously required bidLevel IS NOT NULL, which silently dropped ~44% of
+  // tournaments (every non-bid local/regional event).
   let sql = `
     SELECT t.* FROM toc_tournaments t
     WHERE t.season = ?
       AND (t.country IS NULL OR UPPER(t.country) IN ('US', 'USA', 'UNITED STATES'))
       AND EXISTS (
-        SELECT 1 FROM toc_tournament_events te
-        WHERE te.tournId = t.tourn_id AND te.bidLevel IS NOT NULL
+        SELECT 1 FROM toc_tournament_events te WHERE te.tournId = t.tourn_id
       )
   `;
   const args = [season];

@@ -87,7 +87,11 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
     }
     merged.push(a);
   }
-  // Keep original ROW_NUMBER rank (absolute) so search / dedup don't renumber.
+  // Renumber sequentially after dedup so ranks don't have gaps. The merge
+  // loop above silently drops rows that represent the same physical pair
+  // (same school + prefix-matching code), which would otherwise leave holes
+  // like 1, 3, 4, 5 in the leaderboard.
+  merged.forEach((row, idx) => { row.rank = offset + idx + 1; });
   return {
     season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount, sort,
     hasMore: rawRows.length >= PAGE_SIZE,
