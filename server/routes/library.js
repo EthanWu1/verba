@@ -122,76 +122,94 @@ router.get('/semantic-search', async (req, res) => {
     const { getDb } = require('../services/db');
     const db = getDb();
 
-    // ── Stage 1: FTS5 keyword search ──────────────────────────
-    const results = [];
-    const seenIds = new Set();
+    // Reciprocal Rank Fusion (RRF): merge FTS and semantic into a single
+    // ranked list. Each card's combined score is the sum of 1/(60+rank) over
+    // every list it appears in. Cards in BOTH get boosted; cards in one
+    // still get a partial score. Standard hybrid-search ranking technique.
+    const RRF_K = 60;
+    const merged = new Map(); // id -> { row, ftsRank, semRank, ftsScore, semScore }
+    const upsert = (id, patch, row) => {
+      const cur = merged.get(id) || { row, ftsRank: null, semRank: null, ftsScore: 0, semScore: 0 };
+      Object.assign(cur, patch);
+      if (row && !cur.row) cur.row = row;
+      merged.set(id, cur);
+    };
+
+    // ── FTS5 keyword search ──────────────────────────────────
     const ftsQuery = sanitizeFtsQuery(q);
     if (ftsQuery) {
       let ftsRows = [];
       try {
         ftsRows = db.prepare(`
           SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain, c.body_markdown,
-                 bm25(cards_fts) AS rank
+                 bm25(cards_fts) AS bm25_rank
           FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid
           WHERE cards_fts MATCH ?
             AND c.isCanonical = 1
             AND c.body_markdown LIKE '%==%'
             AND c.tag IS NOT NULL AND TRIM(c.tag) != ''
-          ORDER BY rank ASC
+          ORDER BY bm25_rank ASC
           LIMIT ?
         `).all(ftsQuery, k * 4);
-      } catch (e) {
-        // Bad FTS query syntax; just fall through to semantic
-      }
+      } catch (e) { /* bad FTS query — skip stage */ }
+      let rank = 0;
       for (const r of ftsRows) {
-        if (results.length >= k) break;
-        if (seenIds.has(r.id)) continue;
         if (!hasRealHighlights(r.body_markdown)) continue;
-        const { body_markdown, rank, ...rest } = r;
-        // Higher rank = better in our scale; bm25 is lower-is-better, invert.
-        results.push({ ...rest, score: 1 / (1 + Math.abs(rank)), _src: 'fts' });
-        seenIds.add(r.id);
+        rank++;
+        const { body_markdown, bm25_rank, ...rest } = r;
+        upsert(r.id, { ftsRank: rank, ftsScore: 1 / (1 + Math.abs(bm25_rank)) }, rest);
       }
     }
 
-    // ── Stage 2: semantic fill (only if FTS short of k) ───────
-    if (results.length < k) {
-      const { embedOne } = require('../services/embedder');
-      const { knn } = require('../services/semanticIndex');
-
-      let vec = _cacheGet(q);
-      if (!vec) {
-        vec = await embedOne(q);
-        if (vec) _cachePut(q, vec);
-      }
-      if (vec) {
-        const hits = knn(vec, k * 4);
-        if (hits.length) {
-          const placeholders = hits.map(() => '?').join(',');
-          const rows = db.prepare(`
-            SELECT rowid, id, tag, cite, shortCite, body_plain, body_markdown
-            FROM cards
-            WHERE rowid IN (${placeholders})
-              AND isCanonical = 1
-              AND body_markdown LIKE '%==%'
-              AND tag IS NOT NULL AND TRIM(tag) != ''
-          `).all(...hits.map(h => h.card_id));
-          const byRowid = new Map(rows.map(r => [r.rowid, r]));
-          const MIN_SCORE = 0.05;
-          for (const h of hits) {
-            if (results.length >= k) break;
-            const r = byRowid.get(h.card_id);
-            if (!r || seenIds.has(r.id)) continue;
-            const score = 1 - h.distance;
-            if (score < MIN_SCORE) continue;
-            if (!hasRealHighlights(r.body_markdown)) continue;
-            const { body_markdown, ...rest } = r;
-            results.push({ ...rest, score, _src: 'semantic' });
-            seenIds.add(r.id);
-          }
+    // ── Semantic KNN ─────────────────────────────────────────
+    const { embedOne } = require('../services/embedder');
+    const { knn } = require('../services/semanticIndex');
+    let vec = _cacheGet(q);
+    if (!vec) {
+      vec = await embedOne(q);
+      if (vec) _cachePut(q, vec);
+    }
+    if (vec) {
+      const hits = knn(vec, k * 4);
+      if (hits.length) {
+        const placeholders = hits.map(() => '?').join(',');
+        const rows = db.prepare(`
+          SELECT rowid, id, tag, cite, shortCite, body_plain, body_markdown
+          FROM cards
+          WHERE rowid IN (${placeholders})
+            AND isCanonical = 1
+            AND body_markdown LIKE '%==%'
+            AND tag IS NOT NULL AND TRIM(tag) != ''
+        `).all(...hits.map(h => h.card_id));
+        const byRowid = new Map(rows.map(r => [r.rowid, r]));
+        const MIN_SCORE = 0.05;
+        let rank = 0;
+        for (const h of hits) {
+          const r = byRowid.get(h.card_id);
+          if (!r) continue;
+          const semScore = 1 - h.distance;
+          if (semScore < MIN_SCORE) continue;
+          if (!hasRealHighlights(r.body_markdown)) continue;
+          rank++;
+          const { body_markdown, ...rest } = r;
+          upsert(r.id, { semRank: rank, semScore }, rest);
         }
       }
     }
+
+    // Compute RRF combined score, sort, trim
+    const results = [...merged.values()]
+      .map(x => {
+        const fts = x.ftsRank ? 1 / (RRF_K + x.ftsRank) : 0;
+        const sem = x.semRank ? 1 / (RRF_K + x.semRank) : 0;
+        return {
+          ...x.row,
+          score: fts + sem,
+          _src: x.ftsRank && x.semRank ? 'both' : (x.ftsRank ? 'fts' : 'semantic'),
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k);
 
     res.json({ results });
   } catch (err) {
