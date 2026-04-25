@@ -2527,6 +2527,54 @@
   });
 })();
 
+/* ── Settings data-sec sidebar nav ────────────────────────── */
+(function () {
+  // Settings sidebar: data-sec switching
+  var navBtns = document.querySelectorAll('#set-nav button[data-sec]');
+  navBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var sec = btn.dataset.sec;
+      navBtns.forEach(function (b) { b.classList.toggle('on', b === btn); });
+      document.querySelectorAll('.set-section[data-sec]').forEach(function (s) {
+        s.hidden = s.dataset.sec !== sec;
+      });
+    });
+  });
+  // Initialize: show only the section whose button has class "on"
+  var initSec = (document.querySelector('#set-nav button[data-sec].on') || {}).dataset || {};
+  var initialSec = initSec.sec || 'profile';
+  document.querySelectorAll('.set-section[data-sec]').forEach(function (s) {
+    s.hidden = s.dataset.sec !== initialSec;
+  });
+
+  // Rank-tab segmented toggles within their group
+  document.querySelectorAll('.rank-tabs').forEach(function (group) {
+    group.querySelectorAll('.rank-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        if (tab.disabled) return;
+        group.querySelectorAll('.rank-tab').forEach(function (t) { t.classList.toggle('on', t === tab); });
+        var tweak = group.dataset.tweak;
+        var val   = tab.dataset.val;
+        if (tweak && val) {
+          try { localStorage.setItem('verba.tweak.' + tweak, val); } catch {}
+        }
+      });
+    });
+  });
+  // Restore saved rank-tab state on load
+  document.querySelectorAll('.rank-tabs[data-tweak]').forEach(function (group) {
+    var tweak = group.dataset.tweak;
+    try {
+      var saved = localStorage.getItem('verba.tweak.' + tweak);
+      if (saved) {
+        group.querySelectorAll('.rank-tab').forEach(function (t) {
+          t.classList.toggle('on', t.dataset.val === saved);
+        });
+      }
+    } catch {}
+  });
+})();
+
 /* ── Modal focus trap + focus return ─────────────────────────
    Every [role="dialog"] gets:
    - focus moved inside on visibility (first focusable, else self)
