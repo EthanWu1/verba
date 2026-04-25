@@ -1855,19 +1855,22 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
           </div>
 
           <div>
-            <div class="aside-card tourn-card">
-              <h3><span>Up next</span><span class="extra">UC Berkeley</span></h3>
-              <div class="tourn-name">Cal Berkeley<br>Invitational</div>
-              <div class="tourn-where">Wheeler Hall · Berkeley, CA · Apr 27 – 29</div>
+            <div class="aside-card tourn-card" id="today-tourn-card">
+              <h3><span>Up next</span><span class="extra" id="today-tourn-extra">—</span></h3>
+              <div class="tourn-name" id="today-tourn-name">—</div>
+              <div class="tourn-where" id="today-tourn-where"></div>
               <div class="tourn-counter">
-                <div class="tc"><b id="cd-d">2</b><span>days</span></div>
-                <div class="tc"><b id="cd-h">14</b><span>hr</span></div>
-                <div class="tc"><b id="cd-m">22</b><span>min</span></div>
-                <div class="tc"><b id="cd-s">08</b><span>sec</span></div>
+                <div class="tc"><b id="cd-d">—</b><span>days</span></div>
+                <div class="tc"><b id="cd-h">—</b><span>hr</span></div>
+                <div class="tc"><b id="cd-m">—</b><span>min</span></div>
+                <div class="tc"><b id="cd-s">—</b><span>sec</span></div>
               </div>
               <div class="tourn-cta">
-                <button data-go="tournaments" data-go-section="threats">Threat list</button>
-                <a class="primary" href="https://www.tabroom.com/index/index.mhtml" target="_blank" rel="noopener" data-tabroom-link>Open tournament ↗</a>
+                <button data-go="tournaments" data-go-section="threats" id="today-threat-btn">Threat list</button>
+                <a class="primary" href="https://www.tabroom.com/index/index.mhtml" target="_blank" rel="noopener" data-tabroom-link id="today-tabroom-link">Open tournament ↗</a>
+              </div>
+              <div id="today-tourn-no-link" style="display:none;margin-top:8px;font-size:12px;color:var(--muted)">
+                <a href="#" data-go="settings" data-go-sec="account" style="color:var(--accent)">Connect Tabroom in Settings</a> to see your next tournament.
               </div>
             </div>
 
@@ -2377,6 +2380,24 @@ body { min-height: 100vh; overflow: hidden; font-size: 15px; line-height: 1.5; }
                   <div class="lab">Delete account<span>Removes your library and cancels billing.</span></div>
                   <div class="val"><button class="btn btn-sm" style="color:var(--danger);border-color:#FECACA">Delete account</button></div>
                 </div>
+              </div>
+
+              <h3 style="margin-top:24px;margin-bottom:4px">Tabroom</h3>
+              <p class="desc">Link your team code to see upcoming tournaments and round results.</p>
+              <div class="set-card" id="tabroom-links-card">
+                <div id="tabroom-linked-list" style="margin-bottom:12px"></div>
+                <div class="set-row" style="align-items:flex-end;gap:8px;flex-wrap:wrap">
+                  <div class="lab" style="flex:0 0 auto;min-width:0">
+                    Team code
+                    <span>e.g. "Greenhill MA"</span>
+                  </div>
+                  <div class="val" style="display:flex;gap:6px;flex-wrap:wrap">
+                    <input class="set-input" id="tabroom-code-input" placeholder="Greenhill MA" style="width:140px">
+                    <input class="set-input" id="tabroom-school-input" placeholder="School (optional)" style="width:160px">
+                    <button class="btn btn-sm" id="tabroom-search-btn">Search</button>
+                  </div>
+                </div>
+                <div id="tabroom-search-results" style="margin-top:8px"></div>
               </div>
             </div>
 

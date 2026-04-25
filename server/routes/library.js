@@ -67,14 +67,18 @@ router.get('/analytics', (req, res) => {
 
 const _qCache = new Map();
 const Q_CACHE_MAX = 4096;
+// Normalize so "Nuclear", "nuclear ", "NUCLEAR" share one cache slot.
+function _normKey(q) { return String(q || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
 function _cacheGet(k) {
-  const v = _qCache.get(k);
+  const nk = _normKey(k);
+  const v = _qCache.get(nk);
   if (!v) return null;
-  _qCache.delete(k); _qCache.set(k, v); // LRU bump
+  _qCache.delete(nk); _qCache.set(nk, v); // LRU bump
   return v;
 }
 function _cachePut(k, v) {
-  _qCache.set(k, v);
+  const nk = _normKey(k);
+  _qCache.set(nk, v);
   if (_qCache.size > Q_CACHE_MAX) _qCache.delete(_qCache.keys().next().value);
 }
 
@@ -221,6 +225,7 @@ router.get('/semantic-search', async (req, res) => {
       .sort((a, b) => b.score - a.score)
       .slice(0, k);
 
+    res.set('Cache-Control', 'private, max-age=60');
     res.json({ results });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -28,6 +28,7 @@ const historyRoutes     = require('./routes/history');
 const wikiRoutes        = require('./routes/wiki');
 const tocRoutes         = require('./routes/toc');
 const rankingsRoutes    = require('./routes/rankings');
+const tabroomRoutes     = require('./routes/tabroom');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -64,6 +65,7 @@ app.use('/api/history',       historyRoutes);
 app.use('/api/wiki',          wikiRoutes);
 app.use('/api/toc',           tocRoutes);
 app.use('/api/rankings',      rankingsRoutes);
+app.use('/api/me',            tabroomRoutes);
 
 /* ── Health check ── */
 app.get('/api/health', (req, res) => {
@@ -202,6 +204,28 @@ app.get('*', (req, res) => {
     } catch (err) {
       console.error('[toc] Auto-seed init failed:', err.message);
     }
+
+    // Tabroom crawler: initial run after 60s, then every 6 hours
+    setTimeout(() => {
+      (async () => {
+        try {
+          const { refreshAll } = require('./services/tabroomCrawler');
+          await refreshAll();
+        } catch (err) {
+          console.error('[tabroom] Initial refresh failed:', err.message);
+        }
+      })();
+    }, 60_000);
+    setInterval(() => {
+      (async () => {
+        try {
+          const { refreshAll } = require('./services/tabroomCrawler');
+          await refreshAll();
+        } catch (err) {
+          console.error('[tabroom] Scheduled refresh failed:', err.message);
+        }
+      })();
+    }, 6 * 60 * 60 * 1000);
   });
 })();
 

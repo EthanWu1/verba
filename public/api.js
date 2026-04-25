@@ -134,6 +134,15 @@
       },
       async remove(id) { return jsonFetch('/api/mine/' + encodeURIComponent(id), { method: 'DELETE' }); },
     },
+
+    tabroom: {
+      search:   (teamCode, schoolName) => jsonFetch('/api/me/tabroom-link', { method: 'POST', body: JSON.stringify({ teamCode, schoolName }) }),
+      confirm:  (teamCode, schoolName) => jsonFetch('/api/me/tabroom-link/confirm', { method: 'POST', body: JSON.stringify({ teamCode, schoolName }) }),
+      list:     () => jsonFetch('/api/me/tabroom-link'),
+      remove:   (id) => jsonFetch(`/api/me/tabroom-link/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+      upcoming: () => jsonFetch('/api/me/tabroom/upcoming'),
+      results:  () => jsonFetch('/api/me/tabroom/results'),
+    },
   };
 
   global.VerbaAPI = api;

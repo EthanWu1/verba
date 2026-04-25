@@ -384,6 +384,42 @@ function _initSchema(db) {
       INSERT INTO chat_context_fts(chat_context_fts, rowid, content, name) VALUES ('delete', old.rowid, old.content, old.name);
     END;
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_tabroom_links (
+      id           TEXT PRIMARY KEY,
+      userId       TEXT NOT NULL,
+      teamCode     TEXT NOT NULL,
+      schoolName   TEXT,
+      schoolCode   TEXT,
+      verifiedAt   INTEGER,
+      createdAt    INTEGER NOT NULL,
+      UNIQUE(userId, teamCode, schoolName)
+    );
+    CREATE INDEX IF NOT EXISTS idx_utl_user ON user_tabroom_links(userId);
+
+    CREATE TABLE IF NOT EXISTS tabroom_tournament_cache (
+      tournId      INTEGER PRIMARY KEY,
+      name         TEXT NOT NULL,
+      startDate    TEXT,
+      endDate      TEXT,
+      fetchedAt    INTEGER NOT NULL,
+      rawJson      BLOB NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS tabroom_entry_index (
+      tournId      INTEGER NOT NULL,
+      teamCode     TEXT NOT NULL,
+      schoolName   TEXT NOT NULL,
+      entryId      INTEGER NOT NULL,
+      eventAbbr    TEXT NOT NULL,
+      eventName    TEXT NOT NULL,
+      studentNames TEXT NOT NULL,
+      dropped      INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (tournId, entryId)
+    );
+    CREATE INDEX IF NOT EXISTS idx_tei_code ON tabroom_entry_index(teamCode, eventAbbr);
+  `);
 }
 
 function _runMigrations(db) {
@@ -872,21 +908,38 @@ function queryCardsByIds(ids, filters = {}, opts = {}) {
 
 function facetCounts(scope = null, limit = 20) {
   const db = getDb();
-  const baseWhere = 'WHERE hasHighlight = 1' + (scope ? ' AND scope = ?' : '');
-  const params = scope ? [scope] : [];
-  function top(col, lim = limit) {
-    return db.prepare(`
-      SELECT ${col} AS label, COUNT(*) AS count FROM cards
-      ${baseWhere} AND ${col} IS NOT NULL AND ${col} != ''
-      GROUP BY ${col} ORDER BY count DESC, label ASC LIMIT ?
-    `).all(...params, lim);
+  // One round-trip via UNION ALL — each subquery still hits a partial index
+  // (idx_cards_hl_*) but we save 3 prepare/execute round-trips. Each subquery
+  // is wrapped in `SELECT * FROM (... LIMIT N)` because LIMIT isn't allowed
+  // on individual UNION ALL members in SQLite.
+  const scopeClause = scope ? ' AND scope = ?' : '';
+  const sub = (col, lim) => `
+    SELECT * FROM (
+      SELECT '${col}' AS kind, ${col} AS label, COUNT(*) AS count
+      FROM cards
+      WHERE hasHighlight = 1${scopeClause}
+        AND ${col} IS NOT NULL AND ${col} != ''
+      GROUP BY ${col} ORDER BY count DESC, label ASC LIMIT ${Number(lim) | 0}
+    )
+  `;
+  const params = [];
+  if (scope) params.push(scope, scope, scope, scope);
+  const sql = [
+    sub('resolutionLabel', limit),
+    sub('typeLabel',       limit),
+    sub('topicLabel',      limit),
+    sub('sourceLabel',     10),
+  ].join(' UNION ALL ');
+  const rows = db.prepare(sql).all(...params);
+  const out = { resolutions: [], types: [], topics: [], sources: [] };
+  for (const r of rows) {
+    const entry = { label: r.label, count: r.count };
+    if      (r.kind === 'resolutionLabel') out.resolutions.push(entry);
+    else if (r.kind === 'typeLabel')       out.types.push(entry);
+    else if (r.kind === 'topicLabel')      out.topics.push(entry);
+    else if (r.kind === 'sourceLabel')     out.sources.push(entry);
   }
-  return {
-    resolutions: top('resolutionLabel', 20),
-    types:       top('typeLabel', 20),
-    topics:      top('topicLabel', 20),
-    sources:     top('sourceLabel', 10),
-  };
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -932,13 +985,17 @@ function logIngestion(zipPath, cardCount, analyticsCount, docCount) {
 // Meta (key/value)
 // ---------------------------------------------------------------------------
 
+// Cache the parsed meta object at module scope. Reads parse JSON for every
+// key (~6 keys) and run on hot paths (every getLibraryCards call).
+let _metaCache = null;
 function loadMeta() {
+  if (_metaCache) return _metaCache;
   const rows = getDb().prepare('SELECT key, value FROM meta').all();
   const obj = {};
   for (const row of rows) {
     try { obj[row.key] = JSON.parse(row.value); } catch { obj[row.key] = row.value; }
   }
-  return Object.assign({
+  _metaCache = Object.assign({
     lastImport: null,
     importedZip: '',
     totalCards: 0,
@@ -946,6 +1003,7 @@ function loadMeta() {
     citationGroups: 0,
     canonicalGroups: 0,
   }, obj);
+  return _metaCache;
 }
 
 function saveMeta(meta) {
@@ -962,6 +1020,7 @@ function saveMeta(meta) {
     }
   });
   save(meta);
+  _metaCache = null; // invalidate on write
 }
 
 module.exports = {

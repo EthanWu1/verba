@@ -36,3 +36,4 @@ server/data/*.log
 # Agent / brainstorm scratch dirs
 .agent/
 .superpowers/
+server/data/.cache/
