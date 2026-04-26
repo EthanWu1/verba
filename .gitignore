@@ -37,3 +37,4 @@ server/data/*.log
 .agent/
 .superpowers/
 server/data/.cache/
+graphify-out/
