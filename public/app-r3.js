@@ -1075,6 +1075,20 @@ function shortCiteFor(card){
   return cite.slice(0, 40);
 }
 
+// Render a full cite with the "Last 'YY" prefix bolded inline (Verbatim style).
+// `full` = full cite text, `short` = the precomputed short cite to look for.
+function citeWithBoldPrefix(full, short){
+  const fullStr  = String(full || '').trim();
+  const shortStr = String(short || '').trim();
+  if(!fullStr) return '';
+  if(!shortStr) return escapeHTML(fullStr);
+  // Find the short cite at the start of the full cite — case-insensitive.
+  if(fullStr.toLowerCase().startsWith(shortStr.toLowerCase())){
+    return `<strong>${escapeHTML(fullStr.slice(0, shortStr.length))}</strong>${escapeHTML(fullStr.slice(shortStr.length))}`;
+  }
+  return escapeHTML(fullStr);
+}
+
 function sideFromCard(c){
   // Prefer typeLabel ("Aff"/"Neg"/"K"/"DA"/...). Fallback to scope/side fields.
   const t = String(c.typeLabel||c.scope||c.side||'').toLowerCase();
@@ -1142,8 +1156,10 @@ function cardToHtml(card){
   s = s.replace(/__([^_]+?)__/g,      function(_, x){ return UO + x + UC; });
   // HTML-escape everything else
   s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  // Restore real tags with INLINE styles for clipboard portability
-  s = s.split(HO).join('<span style="background-color:#FFEB3B">').split(HC).join('</span>')
+  // Restore real tags. mso-highlight is Word's *actual* highlighter directive
+  // (the marker pen), not just paragraph shading. Without it Word imports as
+  // background shading which behaves differently from highlights.
+  s = s.split(HO).join('<span style="background:yellow;mso-highlight:yellow">').split(HC).join('</span>')
        .split(UO).join('<u>').split(UC).join('</u>')
        .split(BO).join('<strong>').split(BC).join('</strong>');
   const paragraphs = s.split(/\n{2,}/).map(function(p){
@@ -1152,21 +1168,27 @@ function cardToHtml(card){
 
   const escapeAttr = function(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   // Verbatim convention:
-  //   Tag        — Heading-4 style: bold 13pt
-  //   Short cite — bold 13pt (NOT a heading)
-  //   Full cite  — regular 11pt
-  //   Body       — regular 11pt Calibri
+  //   Tag       — Heading 4: Calibri 13pt bold
+  //   Cite      — Calibri 11pt; the "Last 'YY" prefix is bold, rest normal weight, single paragraph
+  //   Body      — Calibri 11pt regular
   const short = (function(){
     if(card && card.shortCite) return card.shortCite;
     const c = (card && card.cite) || '';
     const m = c.match(/^([^\[]+?)\s*\[/);
     return m ? m[1].trim() : c;
   })();
-  const full = (card && card.cite) || '';
-  const tagHtml   = tag   ? '<h4 style="font-family:Calibri, Arial, sans-serif; font-size:13pt; font-weight:700; margin:0 0 4pt 0">' + escapeAttr(tag) + '</h4>' : '';
-  const shortHtml = short ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:13pt; font-weight:700; margin:0 0 2pt 0">' + escapeAttr(short) + '</p>' : '';
-  const fullHtml  = (full && full !== short) ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; font-weight:400; margin:0 0 8pt 0">' + escapeAttr(full) + '</p>' : '';
-  return tagHtml + shortHtml + fullHtml + paragraphs;
+  const full = (card && card.cite) || short;
+  let citeInner = '';
+  if (full) {
+    if (short && full.toLowerCase().startsWith(short.toLowerCase())) {
+      citeInner = '<strong>' + escapeAttr(full.slice(0, short.length)) + '</strong>' + escapeAttr(full.slice(short.length));
+    } else {
+      citeInner = escapeAttr(full);
+    }
+  }
+  const tagHtml  = tag  ? '<h4 style="font-family:Calibri, Arial, sans-serif; font-size:13pt; font-weight:700; margin:0 0 4pt 0">' + escapeAttr(tag) + '</h4>' : '';
+  const citeHtml = citeInner ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; margin:0 0 8pt 0">' + citeInner + '</p>' : '';
+  return tagHtml + citeHtml + paragraphs;
 }
 
 // Plain-text version for the text/plain clipboard slot.
@@ -1246,12 +1268,10 @@ async function showLibPreview(card){
   // Header always renders immediately; body text is paginated separately.
   const _short = shortCiteFor(card);
   const _full  = card.cite || '';
-  const _showFull = _full && _full !== _short;
   $('lib-pv-body').innerHTML = `
     <div style="border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:22px">
       <h4 style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.25">${escapeHTML(card.tag||'(untitled)')}</h4>
-      ${_short?`<div style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.3">${escapeHTML(_short)}</div>`:''}
-      ${_showFull?`<div style="font-family:var(--font-ui);font-size:11pt;font-weight:400;color:var(--ink-2);line-height:1.45">${escapeHTML(_full)}</div>`:''}
+      <div style="font-family:var(--font-ui);font-size:11pt;color:var(--ink-2);line-height:1.45">${citeWithBoldPrefix(_full || _short, _short)}</div>
     </div>
     <div id="lib-pv-loading" class="empty" style="padding:24px 0"><b>Loading body…</b></div>
   `;
@@ -1465,16 +1485,18 @@ function bindCutterControls(){
   $('cut-tool-hl').addEventListener('click', ()=> applyCutMarkup('hl'));
   $('cut-tool-u').addEventListener('click',  ()=> applyCutMarkup('u'));
   $('cut-tool-b').addEventListener('click',  ()=> applyCutMarkup('b'));
+  // Verbatim-style shortcuts: Ctrl+B (bold warrant), Ctrl+U (underline),
+  // Ctrl+Alt+H (highlight). These match the legacy cutter's bindings.
   document.addEventListener('keydown', (e)=>{
-    // Only when cutter page is visible AND focus is not in an input
     if(state.pageNow !== 'cutter') return;
     const tag = (e.target && e.target.tagName) || '';
     if(tag === 'INPUT' || tag === 'TEXTAREA') return;
-    if(e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    if(k === 'h'){ e.preventDefault(); applyCutMarkup('hl'); }
-    else if(k === 'u'){ e.preventDefault(); applyCutMarkup('u'); }
-    else if(k === 'b'){ e.preventDefault(); applyCutMarkup('b'); }
+    const ctrl = e.ctrlKey || e.metaKey;
+    if(!ctrl) return;
+    if(e.altKey && k === 'h'){ e.preventDefault(); applyCutMarkup('hl'); }
+    else if(!e.altKey && k === 'u'){ e.preventDefault(); applyCutMarkup('u'); }
+    else if(!e.altKey && k === 'b'){ e.preventDefault(); applyCutMarkup('b'); }
   });
 }
 
@@ -1505,30 +1527,23 @@ function stripMarkupForSearch(md){
     .replace(/__/g, '')
     .replace(/<\/?u>/gi, '');
 }
-// Compute the plain-text character offset of a (textNode, offset) pair
-// relative to a root element. Inserts "\n\n" between top-level <p> blocks
-// so the offset matches the source markdown's paragraph structure.
-function plainOffsetWithin(root, container, offset){
+// Walk ONLY the body-paragraph siblings of #cut-body (skip the cite block) and
+// compute the plain-text offset of (container, offset). Inserts "\n\n" between
+// paragraphs so offsets line up with body_markdown paragraph breaks.
+function bodyParaOffset(body, container, offset){
+  const paras = [...body.children].filter(el => el.tagName === 'P');
   let plain = 0;
-  let pCount = 0;
   let found = false;
-  function walk(node){
-    if(found) return;
-    if(node.nodeType === 3){
-      if(node === container){ plain += offset; found = true; return; }
-      plain += node.textContent.length;
-      return;
-    }
-    if(node.nodeType === 1){
-      const isP = node.tagName === 'P';
-      // Top-level <p> children of root: separate with "\n\n"
-      if(isP && node.parentNode === root && pCount > 0) plain += 2;
-      if(isP && node.parentNode === root) pCount++;
-      for(const c of node.childNodes){ walk(c); if(found) return; }
+  for (let i = 0; i < paras.length; i++) {
+    if (i > 0) plain += 2; // "\n\n" between paragraphs
+    const walker = document.createTreeWalker(paras[i], NodeFilter.SHOW_TEXT, null);
+    let n;
+    while ((n = walker.nextNode())) {
+      if (n === container) { plain += offset; found = true; return { plain, found }; }
+      plain += n.textContent.length;
     }
   }
-  walk(root);
-  return plain;
+  return { plain, found };
 }
 function applyCutMarkup(kind){
   if(!state.cutCard || !state.cutCard.body_markdown){ showToast('Run a cut first'); return; }
@@ -1537,37 +1552,21 @@ function applyCutMarkup(kind){
   const range = sel.getRangeAt(0);
   const body = $('cut-body');
   if(!body.contains(range.commonAncestorContainer)) return;
+  // Bail if the selection is inside the cite-block (don't let the user wrap
+  // their tag/cite by accident).
+  const citeBlock = body.querySelector('.cite-block');
+  if(citeBlock && citeBlock.contains(range.commonAncestorContainer)) return;
 
   const trimmed = sel.toString().trim();
   if(!trimmed) return;
 
-  // Position-based mapping. Compute the rendered plain-text offsets of the
-  // selection's start/end relative to #cut-body, accounting for paragraph
-  // breaks. Then find the markdown indices that correspond to those offsets
-  // in body_markdown after stripping markup.
-  const startPlain = plainOffsetWithin(body, range.startContainer, range.startOffset);
-  const endPlain   = plainOffsetWithin(body, range.endContainer,   range.endOffset);
-  if(endPlain <= startPlain){ return; }
-
-  // The body's rendered DOM also includes the cite-block before any <p> we
-  // care about. Subtract its plain length so offsets align with body_markdown.
-  const cite = body.querySelector('.cite-block');
-  let citeAdjust = 0;
-  if(cite){
-    // Plain length of cite-block + the implicit \n\n that sits between the
-    // cite block and the first body <p>. We replicate the same walker but
-    // bounded to the cite-block.
-    let cl = 0;
-    function walkCite(n){
-      if(n.nodeType === 3){ cl += n.textContent.length; return; }
-      for(const c of n.childNodes) walkCite(c);
-    }
-    walkCite(cite);
-    citeAdjust = cl;
-    // The body markdown does NOT contain the cite block, so we subtract.
-  }
-  const sP = Math.max(0, startPlain - citeAdjust);
-  const eP = Math.max(0, endPlain   - citeAdjust);
+  // Plain-text offset relative to body paragraphs only.
+  const startInfo = bodyParaOffset(body, range.startContainer, range.startOffset);
+  const endInfo   = bodyParaOffset(body, range.endContainer,   range.endOffset);
+  if(!startInfo.found || !endInfo.found) return;
+  const sP = startInfo.plain;
+  const eP = endInfo.plain;
+  if(eP <= sP) return;
 
   const md = state.cutCard.body_markdown;
   const mdStart = plainToMarkdownOffset(md, sP);
@@ -1594,25 +1593,24 @@ function applyCutMarkup(kind){
   if(btn){ btn.classList.add('cut-tool-flash'); setTimeout(()=>btn.classList.remove('cut-tool-flash'), 280); }
 
   // Re-select the just-wrapped span so a second toolbar press (e.g. Highlight
-  // then Bold) doesn't require re-selecting. Walk the rendered body to find
-  // the matching text and select it.
+  // then Bold) doesn't require re-selecting. Walk ONLY the body paragraphs.
   try {
     const sel = window.getSelection();
     sel.removeAllRanges();
-    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null);
-    let node, plain = 0, startNode = null, startOff = 0, endNode = null, endOff = 0;
-    while((node = walker.nextNode())){
-      const len = node.textContent.length;
-      if(startNode === null && plain + len > sP){
-        startNode = node; startOff = sP - plain;
+    const paras = [...body.children].filter(el => el.tagName === 'P');
+    let plain = 0, startNode = null, startOff = 0, endNode = null, endOff = 0;
+    for (let i = 0; i < paras.length && !endNode; i++) {
+      if (i > 0) plain += 2;
+      const walker = document.createTreeWalker(paras[i], NodeFilter.SHOW_TEXT, null);
+      let n;
+      while ((n = walker.nextNode())) {
+        const len = n.textContent.length;
+        if (startNode === null && plain + len > sP) { startNode = n; startOff = sP - plain; }
+        if (plain + len >= eP) { endNode = n; endOff = eP - plain; break; }
+        plain += len;
       }
-      if(plain + len >= eP){
-        endNode = node; endOff = eP - plain;
-        break;
-      }
-      plain += len;
     }
-    if(startNode && endNode){
+    if (startNode && endNode) {
       const range = document.createRange();
       range.setStart(startNode, Math.max(0, Math.min(startOff, startNode.textContent.length)));
       range.setEnd(endNode, Math.max(0, Math.min(endOff, endNode.textContent.length)));
@@ -1879,15 +1877,14 @@ function showCutResult(data){
     bodyHtml = '<div class="empty" style="padding:20px 0"><b>No body text</b></div>';
   }
 
-  // Verbatim header structure: tag (h4 bold 13pt) → short cite (bold 13pt) → full cite (regular 11pt)
+  // Verbatim header: tag (h4 13pt bold) → cite line (11pt with the "Last 'YY"
+  // prefix in bold, rest in normal weight — single line, not two).
   const _short = shortCiteFor(cutCard || { cite });
   const _full  = cite || '';
-  const _showFull = _full && _full !== _short;
   body.innerHTML = `
     <div class="cite-block">
       <h4 style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.25">${escapeHTML(tag)}</h4>
-      ${_short ? `<div style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.3">${escapeHTML(_short)}</div>` : ''}
-      ${_showFull ? `<div style="font-family:var(--font-ui);font-size:11pt;font-weight:400;color:var(--ink-2);line-height:1.45">${escapeHTML(_full)}</div>` : ''}
+      <div style="font-family:var(--font-ui);font-size:11pt;color:var(--ink-2);line-height:1.45">${citeWithBoldPrefix(_full || _short, _short)}</div>
       ${data.fidelity ? `<div style="margin-top:8px;font:500 11px/1 var(--font-mono);color:var(--muted)">Fidelity ${(data.fidelity.matchRate || data.fidelity.score || 0).toFixed(2)}${data.saved?.duplicate ? ' · duplicate' : ''}</div>` : ''}
     </div>
     ${bodyHtml}

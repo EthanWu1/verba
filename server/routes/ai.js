@@ -19,11 +19,11 @@ const LENGTH_BUDGETS = {
   medium: { input: 9000,  output: 4500 },
   long:   { input: 16000, output: 8000 },
 };
-// Defaults tuned by usage: 'standard' density (45–65% underline) is the
-// preferred read-aloud weight; 'long' length lets the LLM pick as many
-// complete paragraphs as the warrant requires.
+// Defaults: 'standard' density (45–65% underline) is the preferred read-aloud
+// weight; 'medium' length keeps cards focused on the operative warrant rather
+// than copying the whole article.
 function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'standard'; }
-function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'long'; }
+function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'medium'; }
 const { validateCut } = require('../services/cutValidator');
 const { buildChatContext } = require('../services/libraryQuery');
 const { buildCite, validateCiteMatchesMeta } = require('../services/autocite');
@@ -129,18 +129,21 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       catch {}
     }
 
-    // Fidelity gate: if the model dropped, paraphrased, or re-ordered words,
-    // retry once with explicit fidelity critique at temperature 0. Keep
-    // whichever version has a higher matchRate.
+    // Strict fidelity gate: every 5-word window in the output must appear in
+    // SOURCE TEXT verbatim. Retry up to 2 times with escalating critique. If
+    // we never reach 100%, fail the request rather than save a faulty card.
     let fidelity = verifyBodyFidelity(card.body_markdown, truncated);
-    if (!fidelity.ok) {
-      console.warn(`[cut-card] low fidelity ${(fidelity.matchRate || 0).toFixed(2)} — retrying`);
+    let attempts = 0;
+    const MAX_FID_RETRIES = 2;
+    while (!fidelity.ok && attempts < MAX_FID_RETRIES) {
+      attempts++;
+      console.warn(`[cut-card] fidelity ${(fidelity.matchRate || 0).toFixed(3)} — strict retry ${attempts}/${MAX_FID_RETRIES}`);
       const fidCritique =
         `FIDELITY FAIL — your previous output altered, skipped, or re-ordered source words. ` +
-        `These 5-word windows from your output were NOT found in SOURCE: ${(fidelity.missing || []).slice(0,5).map(m => '"' + m + '"').join(', ') || '(none surfaced)'}. ` +
-        `Re-emit using EXCLUSIVELY verbatim text from SOURCE TEXT — every word inside the cut, including words inside <u>…</u>, **…**, and ==…== marks, must appear in SOURCE in the EXACT same order and spelling. Drop any paragraph you cannot copy 100% verbatim. No paraphrasing, no skipping, no insertions, no synonym substitution.`;
+        `Examples missing from SOURCE: ${(fidelity.missing || []).slice(0,5).map(m => '"' + m + '"').join(', ') || '(none surfaced)'}. ` +
+        `STRICT RULES: every word inside the cut (including inside <u>…</u>, **…**, and ==…==) must appear in SOURCE in the EXACT same order and spelling. Drop any paragraph you cannot copy 100% verbatim. No paraphrasing, no skipping, no inserted connectives, no synonym substitution. If you can't find a 100%-verbatim qualifying paragraph, return a SHORTER card from fewer paragraphs.`;
       try {
-        const retry2 = await complete({
+        const retry = await complete({
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length, critique: fidCritique }) },
@@ -150,11 +153,10 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
           forceModel: CARD_CUT_MODEL,
         });
         try {
-          const retryCard = parseJSON(retry2.content);
+          const retryCard = parseJSON(retry.content);
           if (retryCard && retryCard.body_markdown) {
             const retryFid = verifyBodyFidelity(retryCard.body_markdown, truncated);
-            // Adopt the retry only if it actually improved fidelity.
-            if ((retryFid.matchRate || 0) > (fidelity.matchRate || 0)) {
+            if ((retryFid.matchRate || 0) >= (fidelity.matchRate || 0)) {
               card = retryCard;
               fidelity = retryFid;
               if (meta.url && !validateCiteMatchesMeta(card.cite, meta)) {
@@ -162,8 +164,17 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
               }
             }
           }
-        } catch { /* keep original */ }
-      } catch (e) { /* keep original */ }
+        } catch { /* keep best so far */ }
+      } catch { /* keep best so far */ }
+    }
+    if (!fidelity.ok) {
+      // We tried hard and couldn't get verbatim fidelity. Surface the failure
+      // rather than saving a card with skipped/altered words.
+      return res.status(502).json({
+        error: 'Could not produce a verbatim card after retries. The model kept altering source text.',
+        fidelity,
+        hint: 'Try again, or paste the article body directly via the paste-fallback panel.',
+      });
     }
 
     let saved = null;
