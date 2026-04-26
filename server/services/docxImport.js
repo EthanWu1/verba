@@ -593,8 +593,14 @@ function parseCardsFromParagraphs(paragraphs, entryPath, zipPath) {
 
     if (!current) return;
 
+    // The first paragraph after the tag that looks like a cite line (its first
+    // tokens parse as "Last 'YY") IS the cite. Keep the FULL paragraph text —
+    // bibliographic data after the short prefix (e.g. "[Sheikh Saaliq; AP News;
+    // 4-25-2025; URL]") was previously discarded. We only normalize-detect to
+    // confirm this paragraph is the cite line; the actual stored value is the
+    // full text, and `shortCite` is derived separately by the saver.
     if (!current.cite && normalizeShortCite(paragraph.text)) {
-      current.cite = normalizeShortCite(paragraph.text);
+      current.cite = normalizeWhitespace(paragraph.text);
       return;
     }
 
