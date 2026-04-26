@@ -382,20 +382,8 @@ function bindAllTournamentsControls(){
 }
 async function loadAllTournaments(){
   $('all-tourn-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Loading tournaments…</b></div>`;
-  // tocDb.listTournaments now treats season as optional — omit it to get all seasons.
-  let data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}`);
-  let rows = (data && data.tournaments) || [];
-  // If "upcoming" is empty (e.g. season is over), auto-fall-back to past so the
-  // page isn't blank — and update the tab UI to reflect what's actually shown.
-  if (!rows.length && state.allWhen === 'upcoming') {
-    data = await fetchJSON('/api/toc/tournaments?when=past');
-    rows = (data && data.tournaments) || [];
-    if (rows.length) {
-      state.allWhen = 'past';
-      $$('#all-when-tabs .rank-tab').forEach(b => b.classList.toggle('on', b.dataset.when === 'past'));
-    }
-  }
-  state.allTourns = rows;
+  const data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}`);
+  state.allTourns = (data && data.tournaments) || [];
   renderAllTournaments();
 }
 function renderAllTournaments(){
@@ -779,7 +767,13 @@ async function openEntryPairings(entryId, eventAbbr){
     return;
   }
   const e = data.entry;
-  const pairings = data.pairings || [];
+  // Drop rounds with no opponent unless explicitly a bye.
+  const allPairings = data.pairings || [];
+  const pairings = allPairings.filter(p => {
+    const isBye = /bye/i.test(p.opponentName||'') || p.bye === true;
+    if(isBye) return true;
+    return !!(p.opponentName || p.opponentEntryId);
+  });
   $('t-pair-name').textContent = e.displayName || 'Entry';
   const evtLbl = eventAbbr || e.eventAbbr || '';
   $('t-pair-sub').textContent = `${e.schoolName||''}${evtLbl?` · ${evtLbl}`:''}${e.schoolCode?` · ${e.schoolCode}`:''}`;
@@ -819,6 +813,11 @@ async function openEntryPairings(entryId, eventAbbr){
         const sideCls = (p.side||'').toLowerCase()==='aff' ? 'aff' : (p.side||'').toLowerCase()==='neg' ? 'neg' : '';
         const resCls  = p.result === 'W' ? 'w' : p.result === 'L' ? 'l' : '';
         const oppDbs  = debaterNames(p);
+        // Panel rendering: "WWL" / "LWW" etc. when there's more than one ballot.
+        const ballots = Array.isArray(p.ballotResults) ? p.ballotResults : [];
+        const resultDisplay = ballots.length > 1
+          ? ballots.map(b => String(b||'').toUpperCase().charAt(0) || '—').join('')
+          : (p.result || '—');
         return `
           <div class="pt-row">
             <span class="pt-round">${escapeHTML(roundLabel(p))}</span>
@@ -828,7 +827,7 @@ async function openEntryPairings(entryId, eventAbbr){
               ${oppDbs?`<div class="sch">${escapeHTML(oppDbs)}</div>`:p.opponentSchool?`<div class="sch">${escapeHTML(p.opponentSchool)}</div>`:''}
             </div>
             <span class="pt-judge">${escapeHTML(p.judgeName||'—')}</span>
-            <span class="pt-result ${resCls}">${escapeHTML(p.result||'—')}</span>
+            <span class="pt-result ${resCls}">${escapeHTML(resultDisplay)}</span>
             <span class="pt-pts">${p.speakerPoints!=null?escapeHTML(Number(p.speakerPoints).toFixed(1)):'—'}</span>
           </div>`;
       }).join('')}
@@ -938,44 +937,40 @@ async function openTeamProfile(teamKey){
     $('tp-school').textContent = (p && p.error) || `Couldn't load ${teamKey}.`;
     return;
   }
+  // The profile() endpoint returns nested objects:
+  //   rating: {current, peak, avgSpeakerPoints, rank, outOf}
+  //   bids:   {fullBids, partialBids}
+  //   tournaments: [{prelimWins, prelimLosses, elimWins, elimLosses, earnedBid, ...}]
+  const rating = p.rating || {};
+  const bids   = p.bids   || {};
   $('tp-name').textContent = p.displayName || p.shortName || teamKey;
   $('tp-school').textContent = `${p.schoolName||''} · ${evt} · ${season}`;
   $('tp-tourn-lbl').textContent = `Tournaments · ${season}`;
-  $('tp-rank').innerHTML = p.rank!=null ? `#${p.rank}<span class="of">${p.outOf?`of ${p.outOf}`:''}</span>` : '—';
+  $('tp-rank').innerHTML = rating.rank!=null
+    ? `#${rating.rank}<span class="of">${rating.outOf?`of ${rating.outOf}`:''}</span>`
+    : '—';
 
   const ts = p.tournaments || [];
-  const elo  = p.rating!=null ? Math.round(p.rating) : '—';
-  const peak = p.peakRating!=null ? Math.round(p.peakRating) : '—';
-  // Derive prelim/elim splits from tournaments list (per-tournament records).
+  const elo  = (typeof rating.current === 'number') ? Math.round(rating.current) : '—';
+  // Derive prelim/elim splits from per-tournament records.
   let prelimW = 0, prelimL = 0, elimW = 0, elimL = 0;
-  let speakSum = 0, speakCount = 0;
-  let fullBids = 0, partialBids = 0;
   for(const t of ts){
     prelimW += t.prelimWins   || 0;
     prelimL += t.prelimLosses || 0;
     elimW   += t.elimWins     || 0;
     elimL   += t.elimLosses   || 0;
-    if(t.avgSpeakerPoints!=null){ speakSum += Number(t.avgSpeakerPoints); speakCount++; }
-    else if(t.speakerPoints!=null){ speakSum += Number(t.speakerPoints); speakCount++; }
-    const bid = String(t.earnedBid||'').toLowerCase();
-    if(bid==='full' || bid==='gold') fullBids++;
-    else if(bid==='silver' || bid==='partial') partialBids++;
   }
-  if(prelimW+prelimL+elimW+elimL === 0 && p.wins!=null){
-    prelimW = p.wins; prelimL = p.losses || 0;
-  }
-  // Fallback to top-level fields when per-tournament data is missing.
-  if(speakCount===0 && p.avgSpeakerPoints!=null){ speakSum = Number(p.avgSpeakerPoints); speakCount = 1; }
-  if(fullBids===0 && p.fullBids!=null) fullBids = p.fullBids;
-  if(partialBids===0 && p.partialBids!=null) partialBids = p.partialBids;
-  const avgSpeaks = speakCount ? (speakSum/speakCount).toFixed(1) : '—';
+  const fullBids    = bids.fullBids    || 0;
+  const partialBids = bids.partialBids || 0;
+  const avgSpeaks   = (typeof rating.avgSpeakerPoints === 'number')
+    ? rating.avgSpeakerPoints.toFixed(1) : '—';
 
+  $('tp-stats').classList.remove('eight');
+  $('tp-stats').classList.add('six');
   $('tp-stats').innerHTML = `
     <div class="pp-stat"><div class="lab">Elo</div><div class="val">${elo}</div></div>
-    <div class="pp-stat"><div class="lab">Peak Elo</div><div class="val">${peak}</div></div>
     <div class="pp-stat"><div class="lab">Prelim</div><div class="val">${prelimW}–${prelimL}</div></div>
     <div class="pp-stat"><div class="lab">Elim</div><div class="val">${elimW}–${elimL}</div></div>
-    <div class="pp-stat"><div class="lab">Rank</div><div class="val">${p.rank!=null?'#'+p.rank:'—'}</div></div>
     <div class="pp-stat"><div class="lab">Tournaments</div><div class="val">${ts.length}</div></div>
     <div class="pp-stat"><div class="lab">Avg speaks</div><div class="val">${avgSpeaks}</div></div>
     <div class="pp-stat"><div class="lab">Bids</div><div class="val">${fullBids+partialBids}<span style="font:500 11px/1 var(--font-mono);color:var(--muted);margin-left:4px">${fullBids}F·${partialBids}P</span></div></div>

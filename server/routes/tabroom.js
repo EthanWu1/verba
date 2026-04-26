@@ -23,44 +23,77 @@ router.post('/tabroom-link', (req, res) => {
     return res.status(400).json({ error: 'teamCode or schoolName required' });
   }
   const db = getDb();
-  // Restrict to LD/PF/CX events only — those are the formats Verba supports.
-  // eventAbbr typically looks like "VLD", "VPF", "CX", "VCX", "Policy", etc.
-  // We match anything containing one of these tokens (case-insensitive).
-  const eventFilter = `(
-    UPPER(eventAbbr) LIKE '%LD%'
-    OR UPPER(eventAbbr) LIKE '%PF%'
-    OR UPPER(eventAbbr) LIKE '%CX%'
-    OR UPPER(eventAbbr) LIKE '%POLICY%'
-    OR UPPER(eventName) LIKE '%LINCOLN%'
+  // tabroom_entry_index has eventAbbr like "LD", "VLD", "PF", "VPF", "CX", "VCX",
+  // "Policy", but also speech ("OO-B", "HI-A") and Worlds — exclude those.
+  const tabroomEventFilter = `(
+    UPPER(eventAbbr) IN ('LD','VLD','JVLD','NLD','OLD','PF','VPF','JVPF','NPF','OPF',
+                         'CX','VCX','JVCX','NCX','OCX','POLICY','POL')
+    OR UPPER(eventName) LIKE '%LINCOLN%DOUGLAS%'
     OR UPPER(eventName) LIKE '%PUBLIC FORUM%'
-    OR UPPER(eventName) LIKE '%POLICY%'
+    OR UPPER(eventName) = 'POLICY'
+    OR UPPER(eventName) LIKE 'POLICY %'
   )`;
-  let rows;
-  if (tc && sn) {
+  // toc_ratings stores rated teams across LD/PF/CX with eventAbbr already normalized.
+  // It's a much larger pool (~11k teams) than the tabroom entry index, and is the
+  // canonical "every ranked team" source for the link search.
+  const search = (tc || sn || '').trim();
+  const like = `%${search.toLowerCase()}%`;
+  let rows = [];
+  if (search) {
     rows = db.prepare(`
-      SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
-      FROM tabroom_entry_index
-      WHERE teamCode LIKE ? AND schoolName LIKE ? AND ${eventFilter}
-      LIMIT 50
-    `).all(`%${tc}%`, `%${sn}%`);
-  } else if (tc) {
+      SELECT teamCode, schoolName, eventAbbr, eventName FROM (
+        SELECT teamCode, schoolName, eventAbbr, eventName
+        FROM tabroom_entry_index
+        WHERE (LOWER(teamCode) LIKE ? OR LOWER(schoolName) LIKE ?)
+          AND ${tabroomEventFilter}
+        UNION
+        SELECT displayName AS teamCode, schoolName, eventAbbr, NULL AS eventName
+        FROM toc_ratings
+        WHERE (LOWER(displayName) LIKE ? OR LOWER(schoolName) LIKE ?)
+          AND eventAbbr IN ('LD','PF','CX')
+      )
+      LIMIT 200
+    `).all(like, like, like, like);
+  } else if (sn) {
+    const sl = `%${sn.toLowerCase()}%`;
     rows = db.prepare(`
-      SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
-      FROM tabroom_entry_index
-      WHERE (teamCode LIKE ? OR schoolName LIKE ?) AND ${eventFilter}
-      LIMIT 50
-    `).all(`%${tc}%`, `%${tc}%`);
-  } else {
-    rows = db.prepare(`
-      SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
-      FROM tabroom_entry_index
-      WHERE schoolName LIKE ? AND ${eventFilter}
-      LIMIT 50
-    `).all(`%${sn}%`);
+      SELECT teamCode, schoolName, eventAbbr, eventName FROM (
+        SELECT teamCode, schoolName, eventAbbr, eventName
+        FROM tabroom_entry_index
+        WHERE LOWER(schoolName) LIKE ? AND ${tabroomEventFilter}
+        UNION
+        SELECT displayName AS teamCode, schoolName, eventAbbr, NULL AS eventName
+        FROM toc_ratings
+        WHERE LOWER(schoolName) LIKE ? AND eventAbbr IN ('LD','PF','CX')
+      )
+      LIMIT 200
+    `).all(sl, sl);
+  }
+
+  // ── Cleanup: drop garbage, normalize school names, convert "First Last"
+  //    teamCodes to "School FL" initials form. ────────────────────────────
+  const isPersonName = (s) => /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}$/.test(String(s||'').trim());
+  const isJunkCode   = (s) => !s || /^[\d\s\-_]+$/.test(s) || s.length > 60;
+  const stripSchoolSuffix = (sn) => String(sn||'')
+    .replace(/\s*\((?:Public|Charter|Magnet)\)\s*$/i,'')
+    .replace(/\s+(?:High\s+School|HS|Senior\s+High|Junior\s+High|Middle\s+School|School|Academy|Prep|Preparatory|Magnet|Charter)\s*$/i,'')
+    .trim();
+  const initialsOf = (s) => String(s||'').split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0,3);
+
+  const cleaned = [];
+  for (const r of rows) {
+    if (isJunkCode(r.teamCode)) continue;
+    let teamCode = String(r.teamCode || '').trim();
+    const schoolName = String(r.schoolName || '').trim();
+    if (isPersonName(teamCode) && schoolName) {
+      const base = stripSchoolSuffix(schoolName);
+      teamCode = `${base} ${initialsOf(teamCode)}`;
+    }
+    cleaned.push({ ...r, teamCode, schoolName });
   }
   // Group by (teamCode, schoolName)
   const grouped = {};
-  for (const r of rows) {
+  for (const r of cleaned) {
     const key = `${r.teamCode}||${r.schoolName}`;
     if (!grouped[key]) grouped[key] = { teamCode: r.teamCode, schoolName: r.schoolName, events: [] };
     grouped[key].events.push({ abbr: r.eventAbbr, name: r.eventName });

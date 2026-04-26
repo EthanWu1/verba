@@ -94,7 +94,11 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
   // loop above silently drops rows that represent the same physical pair
   // (same school + prefix-matching code), which would otherwise leave holes
   // like 1, 3, 4, 5 in the leaderboard.
-  merged.forEach((row, idx) => { row.rank = offset + idx + 1; });
+  // Only renumber sequentially when NOT searching. Search results must keep
+  // each team's true position in the season-wide leaderboard.
+  if (!qTrim) {
+    merged.forEach((row, idx) => { row.rank = offset + idx + 1; });
+  }
 
   // 30-day Elo delta: ratingAfter from the most recent history row at or before
   // (now - 30d). delta30d = current rating - that older rating. 0 if no prior history.
