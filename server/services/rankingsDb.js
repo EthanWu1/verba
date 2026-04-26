@@ -92,6 +92,20 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
   // (same school + prefix-matching code), which would otherwise leave holes
   // like 1, 3, 4, 5 in the leaderboard.
   merged.forEach((row, idx) => { row.rank = offset + idx + 1; });
+
+  // 30-day Elo delta: ratingAfter from the most recent history row at or before
+  // (now - 30d). delta30d = current rating - that older rating. 0 if no prior history.
+  const cutoff = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
+  const oldStmt = db.prepare(`
+    SELECT ratingAfter FROM toc_rating_history
+    WHERE season = ? AND eventAbbr = ? AND teamKey = ? AND occurredAt <= ?
+    ORDER BY occurredAt DESC, id DESC LIMIT 1
+  `);
+  for (const row of merged) {
+    const prior = oldStmt.get(season, event, row.teamKey, cutoff);
+    row.delta30d = prior ? Math.round((row.rating || 0) - (prior.ratingAfter || 0)) : 0;
+  }
+
   return {
     season, event, page: Number(page), pageSize: PAGE_SIZE, totalCount, sort,
     hasMore: rawRows.length >= PAGE_SIZE,

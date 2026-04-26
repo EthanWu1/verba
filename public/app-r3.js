@@ -14,16 +14,19 @@ const NAMES = {
 };
 
 const state = {
-  user:        null,
-  history:     [],
-  upcoming:    [],
-  pastResults: [],
-  pastShown:   10,
-  links:       [],
-  rankings:    { event: (TWEAKS.format||'cx').toUpperCase(), season: '', rows: [] },
-  libCards:    [],
-  libSelected: null,
-  pageNow:     null,
+  user:         null,
+  history:      [],
+  upcoming:     [],
+  pastResults:  [],
+  pastShown:    10,
+  links:        [],
+  rankings:     { event: (TWEAKS.format||'cx').toUpperCase(), season: '', rows: [] },
+  libCards:     [],
+  libSelected:  null,
+  pageNow:      null,
+  allTourns:    [],
+  allWhen:      'upcoming',
+  allShown:     12,
 };
 
 /* ── tiny helpers ───────────────────────────────────────── */
@@ -116,6 +119,7 @@ async function boot(){
   bindLinkModal();
   bindSettings();
   bindTournamentsControls();
+  bindAllTournamentsControls();
   bindRankingsControls();
   bindLibraryControls();
 
@@ -184,7 +188,8 @@ function renderTodaySub(){
   const h1 = $('today-h1');
   const sub = $('today-sub');
   const name = state.user?.displayName || state.user?.name || 'there';
-  h1.innerHTML = `<span class="roman">Welcome back, ${escapeHTML(name.split(' ')[0])}.</span>`;
+  const first = name.split(' ')[0];
+  h1.innerHTML = `<span class="roman">Welcome back, <span class="mark">${escapeHTML(first)}</span>.</span>`;
   const cuts = state.history.filter(h=>h.kind!=='view' && h.kind!=='search').length;
   if(cuts){
     sub.innerHTML = `You've logged <b>${cuts}</b> recent activit${cuts===1?'y':'ies'}.${state.upcoming.length?` Next tournament: <b>${escapeHTML(state.upcoming[0].name)}</b>.`:''}`;
@@ -224,8 +229,8 @@ function renderContinueList(){
 function renderTopicList(analytics){
   const root = $('topic-list');
   const meta = $('topic-meta');
-  const topics = (analytics && (analytics.topics || analytics.tags || analytics.facets)) || [];
-  const total = (analytics && (analytics.totalCards || analytics.total || analytics.count)) || 0;
+  const topics = (analytics && analytics.topTopics) || [];
+  const total  = (analytics && analytics.totals && analytics.totals.cards) || 0;
   if(!topics.length){
     root.innerHTML = `<div class="empty" style="padding:18px 0;text-align:left"><b>No topics yet</b>Tags appear after you cut cards.</div>`;
     meta.textContent = total ? `${total.toLocaleString()} cards` : '';
@@ -233,9 +238,9 @@ function renderTopicList(analytics){
   }
   meta.textContent = `${total ? total.toLocaleString()+' cards across ' : ''}${topics.length} topic${topics.length===1?'':'s'}`;
   root.innerHTML = topics.slice(0,16).map(t => {
-    const name = t.name || t.label || t.topic || t.tag || t;
-    const count = t.count || t.n || t.value || 0;
-    return `<a class="topic-chip" data-topic="${escapeHTML(name)}">${escapeHTML(name)}${count?` <span class="ct">${Number(count).toLocaleString()}</span>`:''}</a>`;
+    const label = t.label || t.name || '';
+    const count = t.count || 0;
+    return `<a class="topic-chip" data-topic="${escapeHTML(label)}">${escapeHTML(label)}${count?` <span class="ct">${Number(count).toLocaleString()}</span>`:''}</a>`;
   }).join('');
   $$('.topic-chip', root).forEach(el => el.addEventListener('click', ()=>{
     const q = el.dataset.topic||'';
@@ -287,10 +292,10 @@ function startCountdown(startDate){
 }
 function renderPulse(analytics){
   const root = $('pulse-grid');
-  const total = (analytics && (analytics.totalCards || analytics.total)) || 0;
+  const total = (analytics && analytics.totals && analytics.totals.cards) || 0;
   const week  = state.history.filter(h => h.at && (Date.now()-Date.parse(h.at) < 7*86400e3)).length;
   const today = state.history.filter(h => h.at && (Date.now()-Date.parse(h.at) < 86400e3)).length;
-  const topics = (analytics && (analytics.topics || analytics.tags) || []).length;
+  const topics = (analytics && analytics.topTopics || []).length;
   $('week-extra').textContent = week ? `+${week} activit${week===1?'y':'ies'}` : '';
   root.innerHTML = `
     <div class="pulse"><div class="lab">Activity · 7d</div><div class="val">${week.toLocaleString()}</div><div class="delta">${today} today</div></div>
@@ -324,6 +329,66 @@ async function loadTournaments(){
   state.pastResults = (past && past.tournaments) || [];
   renderUpcomingGrid();
   renderPastTournaments();
+  loadAllTournaments();
+}
+
+function bindAllTournamentsControls(){
+  $('all-search-q').addEventListener('input', debounce(()=>{
+    state.allShown = 12;
+    renderAllTournaments();
+  }, 200));
+  $$('#all-when-tabs .rank-tab').forEach(b => b.addEventListener('click', ()=>{
+    $$('#all-when-tabs .rank-tab').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    state.allWhen = b.dataset.when;
+    state.allShown = 12;
+    loadAllTournaments();
+  }));
+  $('all-show-more-btn').addEventListener('click', ()=>{
+    state.allShown += 12;
+    renderAllTournaments();
+  });
+}
+async function loadAllTournaments(){
+  $('all-tourn-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Loading tournaments…</b></div>`;
+  const data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}`);
+  state.allTourns = (data && data.tournaments) || [];
+  renderAllTournaments();
+}
+function renderAllTournaments(){
+  const grid = $('all-tourn-grid');
+  const q = ($('all-search-q').value||'').trim().toLowerCase();
+  const filtered = !q ? state.allTourns : state.allTourns.filter(t => {
+    const hay = `${t.name||''} ${t.city||''} ${t.state||''} ${(t.events||[]).map(e=>e.eventAbbr||e.eventName||'').join(' ')}`.toLowerCase();
+    return hay.includes(q);
+  });
+  $('all-tourn-lbl').textContent = `Tournaments · ${filtered.length}`;
+  if(!filtered.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No tournaments</b>${state.allTourns.length?'No matches for that search.':'Tournament index is empty — set TOC_AUTOSEED=1 or POST /api/toc/reindex.'}</div>`;
+    $('all-show-more-row').style.display='none';
+    return;
+  }
+  const visible = filtered.slice(0, state.allShown);
+  grid.innerHTML = visible.map(t => {
+    const where = [t.city, t.state].filter(Boolean).join(', ');
+    const events = [...new Set((t.events||[]).map(e => e.eventAbbr || e.eventName).filter(Boolean))];
+    const range = fmtDateRange(t.startDate || t.start_date, t.endDate || t.end_date);
+    const isUpcoming = (t.startDate || t.start_date) && (Date.parse(t.startDate||t.start_date) > Date.now());
+    return `
+      <div class="tcard ${isUpcoming?'upcoming':''}" data-toc-tid="${escapeHTML(String(t.tournId||t.tourn_id||''))}">
+        <div class="tcard-head">
+          <div>
+            <div class="name">${escapeHTML(t.name||'Tournament')}</div>
+            <div class="tcard-meta" style="margin-top:6px">
+              ${range?`<span><b>${escapeHTML(range)}</b></span>`:''}
+              ${where?`<span>${escapeHTML(where)}</span>`:''}
+              ${events.length?`<span>${escapeHTML(events.join(' · '))}</span>`:''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  $('all-show-more-row').style.display = filtered.length > state.allShown ? 'flex' : 'none';
 }
 function renderUpcomingGrid(){
   const grid = $('upcoming-grid');
@@ -491,10 +556,12 @@ function bindRankingsControls(){
 async function loadRankings(){
   // sync tab state
   $$('#format-tabs .rank-tab').forEach(x => x.classList.toggle('on', x.dataset.fmt===state.rankings.event));
-  const seasons = await fetchJSON('/api/rankings/seasons');
-  const season = seasons && seasons.seasons && seasons.seasons[0];
+  const seasonsResp = await fetchJSON('/api/rankings/seasons');
+  const seasonsList = (seasonsResp && seasonsResp.seasons) || [];
+  // listSeasons returns rows like {season, ratedCount}. Pull the string.
+  const season = seasonsList.length ? (seasonsList[0].season || seasonsList[0]) : null;
   if(!season){
-    $('lb-body').innerHTML = `<div class="empty"><b>No rankings yet</b>Rankings will appear once tournaments are indexed.</div>`;
+    $('lb-body').innerHTML = `<div class="empty"><b>No rankings yet</b>Rankings will appear once TOC ratings are computed (POST /api/toc/reindex).</div>`;
     return;
   }
   state.rankings.season = season;
@@ -507,7 +574,7 @@ async function loadRankings(){
 function renderRankings(){
   const body = $('lb-body');
   if(!state.rankings.rows.length){
-    body.innerHTML = `<div class="empty"><b>No teams ranked</b>Try a different format.</div>`;
+    body.innerHTML = `<div class="empty"><b>No teams ranked</b>Try a different format or season.</div>`;
     return;
   }
   body.innerHTML = state.rankings.rows.slice(0,50).map((r, i) => {
@@ -515,20 +582,26 @@ function renderRankings(){
     const rkClass = rk===1?'gold':rk===2?'silver':rk===3?'bronze':'';
     const name = r.displayName || r.shortName || r.teamKey || 'Team';
     const school = r.schoolName || '';
-    const elo = r.rating!=null ? Math.round(r.rating) : (r.elo||'—');
-    const delta = r.delta30d!=null ? r.delta30d : (r.delta!=null?r.delta:null);
-    const trendCls = delta>0?'':'down';
-    const trendIcon = delta>0
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l7-7 7 7M12 5v14"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l7 7 7-7M12 19V5"/></svg>';
-    const wins = r.wins!=null?r.wins:(r.w||0);
-    const losses = r.losses!=null?r.losses:(r.l||0);
+    const elo = r.rating!=null ? Math.round(r.rating) : '—';
+    const wins = r.wins!=null?r.wins:0;
+    const losses = r.losses!=null?r.losses:0;
+    const delta = r.delta30d;
+    let trendHtml = '<span class="lb-trend">—</span>';
+    if(delta != null && delta !== 0){
+      const up = delta > 0;
+      const arrow = up
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l7-7 7 7M12 5v14"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l7 7 7-7M12 19V5"/></svg>';
+      trendHtml = `<span class="lb-trend${up?'':' down'}">${arrow}${up?'+':''}${delta}</span>`;
+    } else if(delta === 0){
+      trendHtml = '<span class="lb-trend" style="color:var(--muted)">0</span>';
+    }
     return `
       <div class="lb-row" data-team="${escapeHTML(r.teamKey||'')}">
         <span class="lb-rank ${rkClass}">${String(rk).padStart(2,'0')}</span>
         <div class="lb-team"><div><div class="name">${escapeHTML(name)}</div>${school?`<div class="school">${escapeHTML(school)}</div>`:''}</div></div>
         <span class="lb-elo">${escapeHTML(String(elo))}</span>
-        <span class="lb-trend ${trendCls}">${delta!=null?`${trendIcon}${delta>0?'+':''}${delta}`:'—'}</span>
+        ${trendHtml}
         <span class="lb-record">${wins}–${losses}</span>
       </div>`;
   }).join('');
@@ -568,35 +641,52 @@ function bindLibraryControls(){
 }
 function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
 async function loadLibrary(){
-  const data = await fetchJSON('/api/library/cards?limit=80');
-  const items = (data && (data.cards||data.items||data.results)) || [];
+  const data = await fetchJSON('/api/library/cards?limit=80&hasHighlight=1');
+  const items = (data && (data.items||data.cards||data.results)) || [];
+  const total = (data && data.total) || items.length;
   state.libCards = items;
   renderLibList();
-  $('lib-sub').textContent = `${items.length.toLocaleString()} card${items.length===1?'':'s'}`;
+  $('lib-sub').textContent = `${total.toLocaleString()} card${total===1?'':'s'}`;
 }
 async function searchLibrary(q){
   $('lib-list').innerHTML = `<div class="empty"><b>Searching…</b></div>`;
-  const data = await fetchJSON(`/api/library/search?q=${encodeURIComponent(q)}&limit=80`);
-  const items = (data && (data.results||data.items||data.cards)) || [];
+  // Library cards endpoint accepts q directly and returns the same shape
+  const data = await fetchJSON(`/api/library/cards?q=${encodeURIComponent(q)}&limit=80`);
+  const items = (data && (data.items||data.cards||data.results)) || [];
   state.libCards = items;
   renderLibList();
+  const total = (data && data.total) || items.length;
+  $('lib-sub').textContent = `${total.toLocaleString()} match${total===1?'':'es'}`;
+}
+function sideFromCard(c){
+  // Prefer typeLabel ("Aff"/"Neg"/"K"/"DA"/...). Fallback to scope/side fields.
+  const t = String(c.typeLabel||c.scope||c.side||'').toLowerCase();
+  if(t.includes('aff')) return 'aff';
+  if(t.includes('neg')) return 'neg';
+  if(t==='k' || t.includes('kritik')) return 'k';
+  return '';
 }
 function renderLibList(){
   const list = $('lib-list');
   if(!state.libCards.length){
     list.innerHTML = `<div class="empty"><b>No cards</b>Try a different search or cut some cards first.</div>`;
+    $('lib-pv-body').innerHTML = `<div class="empty"><b>No card selected</b></div>`;
+    $('lib-pv-meta').textContent = '';
     return;
   }
   list.innerHTML = state.libCards.map((c, i) => {
-    const tag = c.tag || c.title || c.shortText || '(untitled)';
-    const cite = c.cite || c.author || c.source || '';
-    const date = c.createdAt || c.savedAt || c.date || '';
-    const side = (c.side||'').toLowerCase();
-    const sideBadge = side==='aff' ? `<span class="badge aff">Aff</span>` : side==='neg' ? `<span class="badge neg">Neg</span>` : '';
-    const topic = c.topic ? `<span class="badge topic">${escapeHTML(c.topic)}</span>` : '';
+    const tag  = c.tag || '(untitled)';
+    const cite = c.shortCite || c.cite || '';
+    const date = c.createdAt || c.savedAt || c.indexedAt || '';
+    const side = sideFromCard(c);
+    const sideBadge = side==='aff' ? `<span class="badge aff">Aff</span>`
+                    : side==='neg' ? `<span class="badge neg">Neg</span>`
+                    : side==='k'   ? `<span class="badge k">K</span>` : '';
+    const type = (c.typeLabel && !['aff','neg','k'].includes(c.typeLabel.toLowerCase())) ? `<span class="badge t">${escapeHTML(c.typeLabel)}</span>` : '';
+    const topic = c.topicLabel ? `<span class="badge topic">${escapeHTML(c.topicLabel)}</span>` : '';
     return `
       <div class="lib-row${i===0?' on':''}" data-idx="${i}">
-        <div class="head">${sideBadge}${topic}<span class="date">${escapeHTML(fmtRel(date))}</span></div>
+        <div class="head">${sideBadge}${type}${topic}${date?`<span class="date">${escapeHTML(fmtRel(date))}</span>`:''}</div>
         <div class="tag">${escapeHTML(tag)}</div>
         ${cite?`<div class="cite">${escapeHTML(cite)}</div>`:''}
       </div>`;
@@ -608,22 +698,49 @@ function renderLibList(){
   }));
   if(state.libCards[0]) showLibPreview(state.libCards[0]);
 }
+// Render Verbatim-style body_markdown:
+//   ==text==   → highlighted span
+//   <u>text</u> already-HTML underline (passes through)
+//   __text__   → underline
+//   **text**   → bold (warrant)
+//   blank line → paragraph break
+function renderCardBody(md){
+  if(!md) return '';
+  // Strip dangerous tags but keep <u>, <strong>, <em>, <span>, <br>, <p>
+  let s = String(md);
+  // Convert markdown markers BEFORE escaping (we use placeholders)
+  const PH = { hl:'', hlEnd:'', u:'', uEnd:'', b:'', bEnd:'' };
+  s = s.replace(/==([\s\S]+?)==/g, (_,x)=> PH.hl + x + PH.hlEnd);
+  s = s.replace(/<u>/g, PH.u).replace(/<\/u>/g, PH.uEnd);
+  s = s.replace(/__([^_]+?)__/g, (_,x)=> PH.u + x + PH.uEnd);
+  s = s.replace(/\*\*([^*]+?)\*\*/g, (_,x)=> PH.b + x + PH.bEnd);
+  // Now escape everything else
+  s = escapeHTML(s);
+  // Restore markers
+  s = s.replace(new RegExp(PH.hl,'g'),'<span class="hl">')
+       .replace(new RegExp(PH.hlEnd,'g'),'</span>')
+       .replace(new RegExp(PH.u,'g'),'<span class="u">')
+       .replace(new RegExp(PH.uEnd,'g'),'</span>')
+       .replace(new RegExp(PH.b,'g'),'<span class="warrant">')
+       .replace(new RegExp(PH.bEnd,'g'),'</span>');
+  // Paragraphs
+  return s.split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
+}
 function showLibPreview(card){
   if(!card){ $('lib-pv-body').innerHTML = `<div class="empty"><b>No card selected</b></div>`; return; }
   state.libSelected = card;
-  $('lib-pv-meta').textContent = card.cite || card.author || '';
-  const body = card.body_html || card.bodyHtml || card.html || card.body_markdown || card.body_plain || card.body || '';
-  const safeBody = card.body_html || card.bodyHtml || card.html
-    ? body /* trust server html */
-    : `<p>${escapeHTML(String(body)).replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')}</p>`;
+  $('lib-pv-meta').textContent = card.shortCite || card.cite || '';
+  const md = card.body_markdown || card.body_plain || '';
+  const bodyHtml = renderCardBody(md);
   $('lib-pv-body').innerHTML = `
     <div style="border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px">
-      <div style="font:700 22px/1.25 var(--font-display);letter-spacing:-0.02em;color:var(--ink);margin-bottom:8px">${escapeHTML(card.tag||card.title||'(untitled)')}</div>
+      <div style="font:700 22px/1.25 var(--font-display);letter-spacing:-0.02em;color:var(--ink);margin-bottom:8px">${escapeHTML(card.tag||'(untitled)')}</div>
       ${card.cite?`<div style="font:500 13px/1.5 var(--font-display);color:var(--muted)">${escapeHTML(card.cite)}</div>`:''}
     </div>
-    ${safeBody}
+    ${bodyHtml || '<div class="empty" style="padding:24px 0"><b>No body text</b>This card has no preview content stored.</div>'}
   `;
-  if(card.url){ $('lib-pv-source').style.display=''; $('lib-pv-source').onclick = ()=> window.open(card.url, '_blank'); }
+  const url = card.url || card.sourceUrl;
+  if(url){ $('lib-pv-source').style.display=''; $('lib-pv-source').onclick = ()=> window.open(url, '_blank'); }
   else $('lib-pv-source').style.display='none';
   $('lib-pv-copy').onclick = ()=>{
     const text = (card.body_plain || $('lib-pv-body').innerText || '');
@@ -714,11 +831,12 @@ function renderLinkCurrent(){
 }
 async function searchTabroom(){
   const q = $('lnk-q').value.trim();
-  if(q.length < 2){
-    $('lnk-list').innerHTML = `<div class="lnk-empty">Type at least 2 characters.</div>`;
+  if(q.length < 1){
+    $('lnk-list').innerHTML = `<div class="lnk-empty">Type a team code or school name.</div>`;
     return;
   }
   $('lnk-list').innerHTML = `<div class="lnk-empty">Searching…</div>`;
+  // Server matches against teamCode OR schoolName when only one field is given
   const data = await fetchJSON('/api/me/tabroom-link', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ teamCode: q }) });
   const matches = (data && data.matches) || [];
   if(!matches.length){

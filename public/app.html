@@ -597,7 +597,25 @@ body.density-dense .shellpad{padding-top:18px}
             <div class="empty" style="grid-column:1/-1"><b>No upcoming tournaments</b>Link a Tabroom debater to populate this list.</div>
           </div>
 
-          <div class="section-band"><span class="lbl">Past tournaments</span></div>
+          <div class="section-band"><span class="lbl" id="all-tourn-lbl">Tournaments</span></div>
+          <div class="t-toolbar">
+            <div class="t-search">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--muted)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input id="all-search-q" placeholder="Search by name or location…">
+            </div>
+            <div class="rank-tabs" id="all-when-tabs">
+              <button class="rank-tab on" data-when="upcoming">Upcoming</button>
+              <button class="rank-tab" data-when="past">Past</button>
+            </div>
+          </div>
+          <div class="tourn-grid" id="all-tourn-grid">
+            <div class="empty" style="grid-column:1/-1"><b>Loading tournaments…</b></div>
+          </div>
+          <div class="show-more-row" id="all-show-more-row" style="display:none">
+            <button class="show-more" id="all-show-more-btn">Show more</button>
+          </div>
+
+          <div class="section-band"><span class="lbl">Your past tournaments</span></div>
           <div class="t-toolbar">
             <div class="t-search">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--muted)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>

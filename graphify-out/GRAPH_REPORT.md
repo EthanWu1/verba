@@ -1,12 +1,12 @@
 # Graph Report - .  (2026-04-25)
 
 ## Corpus Check
-- 132 files · ~389,950 words
+- 132 files · ~390,557 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 861 nodes · 1766 edges · 73 communities detected
-- Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 482 edges (avg confidence: 0.8)
+- 866 nodes · 1782 edges · 73 communities detected
+- Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 483 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -89,24 +89,24 @@
 2. `get()` - 74 edges
 3. `push()` - 63 edges
 4. `run()` - 43 edges
-5. `now()` - 33 edges
-6. `$()` - 31 edges
+5. `$()` - 34 edges
+6. `now()` - 34 edges
 7. `set()` - 27 edges
 8. `$()` - 26 edges
 9. `indexTournament()` - 24 edges
 10. `importZipToLibrary()` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `fmtRelLong()` --calls--> `now()`  [INFERRED]
+  public\app-r3.js → server\services\chatStore.js
 - `push()` --calls--> `dedupeByUrl()`  [INFERRED]
   public\lib\alertToast.js → server\services\instantResearch.js
-- `now()` --calls--> `isTeamStale()`  [INFERRED]
-  server\services\chatStore.js → server\services\wikiDb.js
-- `getDb()` --calls--> `searchTeams()`  [INFERRED]
-  server\services\db.js → server\services\wikiDb.js
-- `getDb()` --calls--> `rebuildArgumentsFts()`  [INFERRED]
-  server\services\db.js → server\services\wikiDb.js
-- `getDb()` --calls--> `getTeamArguments()`  [INFERRED]
-  server\services\db.js → server\services\wikiDb.js
+- `requireAuthPage()` --calls--> `validateSession()`  [INFERRED]
+  server\index.js → server\services\auth.js
+- `get()` --calls--> `unwrapDuckDuckGoUrl()`  [INFERRED]
+  server\services\fileCache.js → server\services\sources\domainSearch.js
+- `get()` --calls--> `signupAndCookie()`  [INFERRED]
+  server\services\fileCache.js → test\user-scoping.test.js
 
 ## Hyperedges (group relationships)
 - **Core LLM Coding Principles** — claude_think_before_coding, claude_simplicity_first, claude_surgical_changes, claude_goal_driven_execution [EXTRACTED 1.00]
@@ -114,80 +114,80 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.03
-Nodes (119): set(), fmtRelLong(), search(), createSession(), createUser(), deleteAllSessionsForUser(), deleteSession(), findUserByEmail() (+111 more)
+Cohesion: 0.04
+Nodes (106): search(), createSession(), createUser(), deleteAllSessionsForUser(), deleteSession(), findUserByEmail(), findUserByGoogleSub(), findUserById() (+98 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.03
-Nodes (102): activate(), activeItem(), apply(), applyHighlightToSelection(), applyRoute(), applyState(), askArgument(), cardBodyHTML() (+94 more)
+Nodes (101): activate(), activeItem(), apply(), applyHighlightToSelection(), applyRoute(), applyState(), askArgument(), cardBodyHTML() (+93 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.11
-Nodes (47): $(), applyTweaks(), bindCommandPalette(), bindLibraryControls(), bindLinkModal(), bindRail(), bindRankingsControls(), bindSettings() (+39 more)
+Cohesion: 0.05
+Nodes (75): _backfillDerivedLabels(), _backfillHasHighlight(), _backfillHighlightWordCount(), _buildFtsMatch(), _buildWhere(), _ensureAnalyzed(), facetCounts(), getCardById() (+67 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.09
-Nodes (39): getExistingFingerprints(), recanonicalizeGroups(), upsertAnalytic(), chooseCanonicals(), computeWarrantDensity(), enrichCard(), extractDocxXmlFromZip(), extractParagraphs() (+31 more)
+Cohesion: 0.06
+Nodes (48): ensureStack(), ensureStyle(), esc(), push(), buildCutPrompt(), stripAbstractPrelude(), stripBoilerplateSections(), decodeXml() (+40 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.09
-Nodes (32): ensureStack(), ensureStyle(), esc(), push(), buildCutPrompt(), stripAbstractPrelude(), stripBoilerplateSections(), decodeXml() (+24 more)
+Cohesion: 0.1
+Nodes (52): $(), applyTweaks(), bindAllTournamentsControls(), bindCommandPalette(), bindLibraryControls(), bindLinkModal(), bindRail(), bindRankingsControls() (+44 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.08
-Nodes (28): onPhase(), safeStringify(), send(), stripFormatMarks(), verifyBodyFidelity(), callGeminiJSON(), pickBestWindow(), rankRelevance() (+20 more)
+Cohesion: 0.11
+Nodes (33): $(), closeProjModal(), openProjModal(), refreshNavCounts(), $(), load(), buildBodyParagraphsFromHtml(), buildBodyParagraphsFromMarkdown() (+25 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.09
-Nodes (35): _backfillDerivedLabels(), _buildFtsMatch(), _buildWhere(), countCards(), facetCounts(), getCardById(), _initSchema(), loadAllCards() (+27 more)
+Cohesion: 0.1
+Nodes (23): onPhase(), safeStringify(), send(), stripFormatMarks(), verifyBodyFidelity(), createKeywordMatcher(), dedupeByUrl(), extractDoi() (+15 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.11
-Nodes (32): fetchCaselists(), fetchCites(), fetchRounds(), fetchSchools(), fetchTeams(), _get(), _login(), _sleep() (+24 more)
-
-### Community 8 - "Community 8"
-Cohesion: 0.13
-Nodes (28): $(), closeProjModal(), openProjModal(), refreshNavCounts(), $(), load(), buildBodyParagraphsFromHtml(), buildBodyParagraphsFromMarkdown() (+20 more)
-
-### Community 9 - "Community 9"
-Cohesion: 0.11
 Nodes (21): bootApp(), buildCite(), cleanAuthor(), formatDate(), inferCredentials(), parseLastName(), parseYear(), normalize() (+13 more)
 
-### Community 10 - "Community 10"
+### Community 8 - "Community 8"
 Cohesion: 0.16
 Nodes (22): $(), attachEntryClicks(), bidClass(), bindStatic(), dedupeEvents(), esc(), isPastTournament(), loadEventBody() (+14 more)
 
+### Community 9 - "Community 9"
+Cohesion: 0.15
+Nodes (15): set(), cacheGet(), cacheSet(), retrieveAnalytics(), retrieveCards(), retrieveUserContext(), sanitize(), put() (+7 more)
+
+### Community 10 - "Community 10"
+Cohesion: 0.15
+Nodes (17): aggregateBallotsToResult(), applyElo(), expectedScore(), kBase(), kMult(), recomputeRatings(), fetchCircuitTournIds(), fetchTocCircuitId() (+9 more)
+
 ### Community 11 - "Community 11"
-Cohesion: 0.14
-Nodes (17): init(), initComposer(), show(), getSelectedIds(), close(), open(), outsideClose(), listThreads() (+9 more)
+Cohesion: 0.18
+Nodes (13): init(), initComposer(), show(), getSelectedIds(), stream(), autogrow(), blockCard(), escapeHtml() (+5 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.21
 Nodes (15): cardBlob(), classifyCutCard(), fingerprint(), saveCutCardForUser(), stripFormatMarks(), deriveAllLabels(), deriveResolutionLabel(), deriveScope() (+7 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.25
-Nodes (14): $(), bind(), buildPageWindow(), chevronSvg(), esc(), gotoPage(), load(), loadSeasons() (+6 more)
+Cohesion: 0.26
+Nodes (15): fetchCaselists(), fetchCites(), fetchRounds(), fetchSchools(), fetchTeams(), _get(), _login(), _sleep() (+7 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.25
-Nodes (14): addPasted(), close(), ensureWired(), escapeHtml(), iconFor(), open(), refreshList(), renderRow() (+6 more)
+Nodes (14): $(), bind(), buildPageWindow(), chevronSvg(), esc(), gotoPage(), load(), loadSeasons() (+6 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.22
-Nodes (10): extractHighlights(), hashText(), main(), embedOne(), embedTexts(), alreadyEmbedded(), ensureSchema(), knn() (+2 more)
+Cohesion: 0.25
+Nodes (14): addPasted(), close(), ensureWired(), escapeHtml(), iconFor(), open(), refreshList(), renderRow() (+6 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.38
-Nodes (11): buildCopyHtml(), buildCopyPlain(), esc(), extractAuthorYearPrefix(), flattenInlineStyles(), htmlToPlain(), normalizeSpanStyles(), serializeSelectionHtml() (+3 more)
+Cohesion: 0.23
+Nodes (9): extractHighlights(), hashText(), main(), embedOne(), embedTexts(), ensureSchema(), knn(), _loadVecExt() (+1 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.24
-Nodes (11): fnv1a(), inferBidLevel(), parseBallots(), parseEarnedBids(), parseResults(), _points(), _result(), seasonFor() (+3 more)
-
-### Community 18 - "Community 18"
 Cohesion: 0.2
 Nodes (12): CLAUDE.md Behavioral Guidelines, Goal-Driven Execution, GRAPH_REPORT.md, Graphify Knowledge Graph Integration, Rationale: Caution Over Speed Tradeoff, Rationale: No Speculative Code, Rationale: Clean Up Only Your Own Mess, Rationale: Verifiable Success Criteria (+4 more)
+
+### Community 18 - "Community 18"
+Cohesion: 0.27
+Nodes (10): fnv1a(), inferBidLevel(), parseBallots(), parseEarnedBids(), _points(), _result(), seasonFor(), _side() (+2 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.36
@@ -198,20 +198,20 @@ Cohesion: 0.36
 Nodes (5): bodyPrefix(), bodyScore(), groupKeyFor(), highlightWordCount(), normalizeCite()
 
 ### Community 21 - "Community 21"
-Cohesion: 0.32
-Nodes (5): enforceLimit(), checkAndBudget(), getCount(), hit(), nextResetAt()
+Cohesion: 0.38
+Nodes (4): enforceLimit(), checkAndBudget(), getCount(), nextResetAt()
 
 ### Community 22 - "Community 22"
-Cohesion: 0.38
-Nodes (4): _cacheGet(), _cachePut(), _normKey(), upsert()
-
-### Community 23 - "Community 23"
 Cohesion: 0.67
 Nodes (5): isWord(), snapEnd(), snapStart(), snapToWordBoundaries(), wordAt()
 
-### Community 24 - "Community 24"
+### Community 23 - "Community 23"
 Cohesion: 0.4
 Nodes (0): 
+
+### Community 24 - "Community 24"
+Cohesion: 0.83
+Nodes (3): close(), open(), outsideClose()
 
 ### Community 25 - "Community 25"
 Cohesion: 0.67
@@ -498,12 +498,12 @@ Nodes (0):
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `get()` connect `Community 0` to `Community 2`, `Community 3`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 17`, `Community 19`, `Community 21`, `Community 22`?**
-  _High betweenness centrality (0.279) - this node is a cross-community bridge._
-- **Why does `push()` connect `Community 4` to `Community 0`, `Community 1`, `Community 3`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 13`, `Community 15`, `Community 16`, `Community 17`, `Community 19`?**
-  _High betweenness centrality (0.227) - this node is a cross-community bridge._
-- **Why does `getDb()` connect `Community 0` to `Community 1`, `Community 3`, `Community 4`, `Community 6`, `Community 7`, `Community 11`, `Community 12`, `Community 15`, `Community 21`?**
-  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+- **Why does `get()` connect `Community 0` to `Community 2`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 18`, `Community 19`, `Community 21`?**
+  _High betweenness centrality (0.281) - this node is a cross-community bridge._
+- **Why does `push()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 5`, `Community 6`, `Community 10`, `Community 13`, `Community 14`, `Community 16`, `Community 18`, `Community 19`?**
+  _High betweenness centrality (0.225) - this node is a cross-community bridge._
+- **Why does `getDb()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 5`, `Community 9`, `Community 10`, `Community 12`, `Community 16`, `Community 21`?**
+  _High betweenness centrality (0.135) - this node is a cross-community bridge._
 - **Are the 92 inferred relationships involving `getDb()` (e.g. with `main()` and `ownedProject()`) actually correct?**
   _`getDb()` has 92 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 73 inferred relationships involving `get()` (e.g. with `fetchJSON()` and `dedupeEvents()`) actually correct?**

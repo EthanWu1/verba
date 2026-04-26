@@ -17,26 +17,34 @@ router.use(requireUser);
 // can disambiguate before confirming.
 router.post('/tabroom-link', (req, res) => {
   const { teamCode, schoolName } = req.body || {};
-  if (!teamCode || typeof teamCode !== 'string') {
-    return res.status(400).json({ error: 'teamCode required' });
+  const tc = (teamCode || '').trim();
+  const sn = (schoolName || '').trim();
+  if (!tc && !sn) {
+    return res.status(400).json({ error: 'teamCode or schoolName required' });
   }
   const db = getDb();
-  const pattern = `%${teamCode.trim()}%`;
   let rows;
-  if (schoolName) {
+  if (tc && sn) {
     rows = db.prepare(`
       SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
       FROM tabroom_entry_index
       WHERE teamCode LIKE ? AND schoolName LIKE ?
       LIMIT 50
-    `).all(pattern, `%${schoolName.trim()}%`);
+    `).all(`%${tc}%`, `%${sn}%`);
+  } else if (tc) {
+    rows = db.prepare(`
+      SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
+      FROM tabroom_entry_index
+      WHERE teamCode LIKE ? OR schoolName LIKE ?
+      LIMIT 50
+    `).all(`%${tc}%`, `%${tc}%`);
   } else {
     rows = db.prepare(`
       SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
       FROM tabroom_entry_index
-      WHERE teamCode LIKE ?
+      WHERE schoolName LIKE ?
       LIMIT 50
-    `).all(pattern);
+    `).all(`%${sn}%`);
   }
   // Group by (teamCode, schoolName)
   const grouped = {};
