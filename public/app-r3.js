@@ -234,10 +234,14 @@ function renderTopicList(analytics){
   const root = $('topic-list');
   const meta = $('topic-meta');
   const raw   = (analytics && analytics.topTopics) || [];
-  const topics = raw.filter(t => {
+  let topics = raw.filter(t => {
     const lab = String(t.label || t.name || '').trim().toLowerCase();
     return lab && !TOPIC_BLOCKLIST.has(lab);
   });
+  // Truncate the chip list at "Politics DA" inclusive — anything past it is
+  // long-tail noise. Topics are already sorted by frequency DESC.
+  const cutIdx = topics.findIndex(t => String(t.label||t.name||'').trim().toLowerCase() === 'politics da');
+  if (cutIdx >= 0) topics = topics.slice(0, cutIdx + 1);
   // Prefer the live count from /api/library/count over the cached analytics total.
   const total = state.cardCount || (analytics && analytics.totals && analytics.totals.cards) || 0;
   if(!topics.length){
@@ -245,7 +249,7 @@ function renderTopicList(analytics){
     meta.textContent = total ? `${total.toLocaleString()} cards` : '';
     return;
   }
-  meta.textContent = `${total ? total.toLocaleString()+' cards across ' : ''}${topics.length} topic${topics.length===1?'':'s'}`;
+  meta.textContent = total ? `${total.toLocaleString()} cards across hundreds of topics` : 'Across hundreds of topics';
   root.innerHTML = topics.map(t => {
     const label = t.label || t.name || '';
     const count = t.count || 0;
@@ -360,18 +364,8 @@ function bindAllTournamentsControls(){
 }
 async function loadAllTournaments(){
   $('all-tourn-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Loading tournaments…</b></div>`;
-  // tocDb.listTournaments requires a season — pull the most recent.
-  if(!state.tocSeason){
-    const seasonsResp = await fetchJSON('/api/toc/seasons');
-    const list = (seasonsResp && seasonsResp.seasons) || [];
-    state.tocSeason = list.length ? (list[0].season || list[0]) : null;
-  }
-  if(!state.tocSeason){
-    $('all-tourn-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No tournaments indexed</b>Run <code>POST /api/toc/reindex</code> or set <code>TOC_AUTOSEED=1</code>.</div>`;
-    $('all-show-more-row').style.display = 'none';
-    return;
-  }
-  const data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}&season=${encodeURIComponent(state.tocSeason)}`);
+  // tocDb.listTournaments now treats season as optional — omit it to get all seasons.
+  const data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}`);
   state.allTourns = (data && data.tournaments) || [];
   renderAllTournaments();
 }

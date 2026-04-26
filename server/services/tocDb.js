@@ -40,7 +40,7 @@ function listTournaments({ season, when }) {
   // the "International Initiative TOC Test" placeholder tournament.
   let sql = `
     SELECT t.* FROM toc_tournaments t
-    WHERE t.season = ?
+    WHERE 1=1
       AND (t.country IS NULL OR UPPER(t.country) IN ('US', 'USA', 'UNITED STATES'))
       AND t.name NOT LIKE '%International Initiative TOC Test%'
       AND (
@@ -49,10 +49,12 @@ function listTournaments({ season, when }) {
         OR (t.name LIKE '%Tournament of Champions%' AND t.name NOT LIKE '%Middle School%')
       )
   `;
-  const args = [season];
+  const args = [];
+  // Season is optional. When omitted/empty, list across all seasons (most recent first).
+  if (season) { sql += ` AND t.season = ?`; args.push(season); }
   if (when === 'upcoming') { sql += ` AND t.endDate >= ?`; args.push(nowIso); }
   else if (when === 'past') { sql += ` AND t.endDate < ?`;  args.push(nowIso); }
-  sql += ` ORDER BY t.startDate ASC`;
+  sql += season ? ` ORDER BY t.startDate ASC` : ` ORDER BY t.season DESC, t.startDate ASC`;
   return db.prepare(sql).all(...args);
 }
 
