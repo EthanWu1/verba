@@ -26,12 +26,20 @@ function shortenDisplayName(displayName, schoolName) {
 
   const schoolBase = stripSchoolSuffix(school) || school;
 
-  // Case A: displayName starts with the full school name. Extract whatever
-  // follows; if it's >=2 words, fold to initials. If it's already a short code
-  // like "SU", keep it but anchor to the canonical schoolBase.
-  const schoolLow = school.toLowerCase();
-  if (name.toLowerCase().startsWith(schoolLow)) {
-    const rest = name.slice(school.length).trim();
+  // Case A: displayName starts with either the full school name OR the
+  // stripped base (e.g. "Marlborough Claire Sun" with school "Marlborough
+  // High School" should match the base). Whatever follows becomes the code:
+  // if 2+ words, fold to initials; otherwise keep verbatim.
+  const tryPrefix = (prefix) => {
+    if (!prefix) return null;
+    const pl = prefix.toLowerCase();
+    const nl = name.toLowerCase();
+    if (!nl.startsWith(pl)) return null;
+    // Require a word boundary after the prefix so "Memori" doesn't false-match
+    // "Memorial".
+    const next = name.charAt(prefix.length);
+    if (next && next !== ' ' && next !== '\t') return null;
+    const rest = name.slice(prefix.length).trim();
     if (!rest) return schoolBase;
     const words = rest.split(/\s+/);
     if (words.length >= 2) {
@@ -39,7 +47,9 @@ function shortenDisplayName(displayName, schoolName) {
       if (/^[A-Z]{2,6}$/.test(initials)) return `${schoolBase} ${initials}`;
     }
     return `${schoolBase} ${rest}`;
-  }
+  };
+  const matched = tryPrefix(school) || (schoolBase !== school ? tryPrefix(schoolBase) : null);
+  if (matched) return matched;
 
   // Case B: displayName is a bare "First Last" (or up to 4 capitalized words)
   // with no school prefix at all. Convert to "<SchoolBase> <Initials>".

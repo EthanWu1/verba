@@ -1,12 +1,12 @@
 # Graph Report - .  (2026-04-25)
 
 ## Corpus Check
-- 132 files · ~393,181 words
+- 132 files · ~394,219 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 884 nodes · 1816 edges · 75 communities detected
-- Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 484 edges (avg confidence: 0.8)
+- 894 nodes · 1852 edges · 73 communities detected
+- Extraction: 74% EXTRACTED · 26% INFERRED · 0% AMBIGUOUS · INFERRED: 484 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -83,32 +83,30 @@
 - [[_COMMUNITY_Community 70|Community 70]]
 - [[_COMMUNITY_Community 71|Community 71]]
 - [[_COMMUNITY_Community 72|Community 72]]
-- [[_COMMUNITY_Community 73|Community 73]]
-- [[_COMMUNITY_Community 74|Community 74]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `getDb()` - 111 edges
 2. `get()` - 74 edges
 3. `push()` - 63 edges
-4. `run()` - 43 edges
-5. `$()` - 41 edges
+4. `$()` - 47 edges
+5. `run()` - 43 edges
 6. `now()` - 35 edges
 7. `set()` - 27 edges
 8. `$()` - 26 edges
 9. `indexTournament()` - 24 edges
-10. `importZipToLibrary()` - 18 edges
+10. `fetchJSON()` - 18 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `fmtRelLong()` --calls--> `now()`  [INFERRED]
-  public\app-r3.js → server\services\chatStore.js
 - `push()` --calls--> `dedupeByUrl()`  [INFERRED]
   public\lib\alertToast.js → server\services\instantResearch.js
-- `_isStale()` --calls--> `now()`  [INFERRED]
-  server\routes\toc.js → server\services\chatStore.js
-- `now()` --calls--> `isTeamStale()`  [INFERRED]
-  server\services\chatStore.js → server\services\wikiDb.js
-- `getDb()` --calls--> `searchTeams()`  [INFERRED]
-  server\services\db.js → server\services\wikiDb.js
+- `get()` --calls--> `unwrapDuckDuckGoUrl()`  [INFERRED]
+  server\services\fileCache.js → server\services\sources\domainSearch.js
+- `get()` --calls--> `search()`  [INFERRED]
+  server\services\fileCache.js → server\services\sources\unpaywall.js
+- `get()` --calls--> `signupAndCookie()`  [INFERRED]
+  server\services\fileCache.js → test\user-scoping.test.js
+- `indexTournament()` --calls--> `seasonFor()`  [INFERRED]
+  server\services\tocIndexer.js → server\services\tocParser.js
 
 ## Hyperedges (group relationships)
 - **Core LLM Coding Principles** — claude_think_before_coding, claude_simplicity_first, claude_surgical_changes, claude_goal_driven_execution [EXTRACTED 1.00]
@@ -117,51 +115,51 @@
 
 ### Community 0 - "Community 0"
 Cohesion: 0.03
-Nodes (113): set(), search(), createSession(), createUser(), deleteAllSessionsForUser(), deleteSession(), findUserByEmail(), findUserByGoogleSub() (+105 more)
+Nodes (121): set(), search(), createSession(), createUser(), deleteAllSessionsForUser(), deleteSession(), findUserByEmail(), findUserByGoogleSub() (+113 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.03
-Nodes (99): activate(), activeItem(), apply(), applyHighlightToSelection(), applyRoute(), applyState(), askArgument(), cardBodyHTML() (+91 more)
+Nodes (116): $(), activate(), activeItem(), apply(), applyHighlightToSelection(), applyRoute(), applyState(), askArgument() (+108 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.05
-Nodes (68): _backfillDerivedLabels(), _backfillHasHighlight(), _backfillHighlightWordCount(), _buildFtsMatch(), _buildWhere(), _ensureAnalyzed(), getCardById(), getExistingFingerprints() (+60 more)
+Cohesion: 0.07
+Nodes (65): $(), applyTweaks(), bindAllTournamentsControls(), bindCommandPalette(), bindCutterControls(), bindLibraryControls(), bindLinkModal(), bindRail() (+57 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.08
-Nodes (56): $(), applyTweaks(), bindAllTournamentsControls(), bindCommandPalette(), bindLibraryControls(), bindLinkModal(), bindRail(), bindRankingsControls() (+48 more)
+Cohesion: 0.05
+Nodes (49): ensureStack(), ensureStyle(), esc(), push(), buildCutPrompt(), stripAbstractPrelude(), stripBoilerplateSections(), decodeXml() (+41 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.05
-Nodes (48): ensureStack(), ensureStyle(), esc(), push(), buildCutPrompt(), stripAbstractPrelude(), stripBoilerplateSections(), decodeXml() (+40 more)
+Nodes (53): fmtRelLong(), cacheGet(), cacheSet(), retrieveAnalytics(), retrieveCards(), retrieveUserContext(), sanitize(), now() (+45 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.11
-Nodes (30): $(), closeProjModal(), openProjModal(), refreshNavCounts(), $(), load(), save(), saveMeta() (+22 more)
+Cohesion: 0.09
+Nodes (38): getExistingFingerprints(), loadAllCards(), recanonicalizeGroups(), chooseCanonicals(), computeWarrantDensity(), enrichCard(), extractDocxXmlFromZip(), extractParagraphs() (+30 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.1
 Nodes (23): onPhase(), safeStringify(), send(), stripFormatMarks(), verifyBodyFidelity(), createKeywordMatcher(), dedupeByUrl(), extractDoi() (+15 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.12
-Nodes (29): fetchCaselists(), fetchCites(), fetchRounds(), fetchSchools(), fetchTeams(), _get(), _login(), _sleep() (+21 more)
+Cohesion: 0.11
+Nodes (23): load(), buildBodyParagraphsFromHtml(), buildBodyParagraphsFromMarkdown(), buildCiteRuns(), buildDocx(), buildProjectDocx(), htmlChildrenToRuns(), htmlNodeToRuns() (+15 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.11
 Nodes (21): bootApp(), buildCite(), cleanAuthor(), formatDate(), inferCredentials(), parseLastName(), parseYear(), normalize() (+13 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.13
-Nodes (22): cardBlob(), classifyCutCard(), fingerprint(), saveCutCardForUser(), stripFormatMarks(), facetCounts(), searchAnalytics(), deriveAllLabels() (+14 more)
-
-### Community 10 - "Community 10"
 Cohesion: 0.16
 Nodes (22): $(), attachEntryClicks(), bidClass(), bindStatic(), dedupeEvents(), esc(), isPastTournament(), loadEventBody() (+14 more)
 
-### Community 11 - "Community 11"
+### Community 10 - "Community 10"
 Cohesion: 0.18
 Nodes (13): init(), initComposer(), show(), getSelectedIds(), stream(), autogrow(), blockCard(), escapeHtml() (+5 more)
+
+### Community 11 - "Community 11"
+Cohesion: 0.21
+Nodes (15): cardBlob(), classifyCutCard(), fingerprint(), saveCutCardForUser(), stripFormatMarks(), deriveAllLabels(), deriveResolutionLabel(), deriveScope() (+7 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.25
@@ -180,72 +178,72 @@ Cohesion: 0.2
 Nodes (12): CLAUDE.md Behavioral Guidelines, Goal-Driven Execution, GRAPH_REPORT.md, Graphify Knowledge Graph Integration, Rationale: Caution Over Speed Tradeoff, Rationale: No Speculative Code, Rationale: Clean Up Only Your Own Mess, Rationale: Verifiable Success Criteria (+4 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.36
-Nodes (7): $(), bind(), esc(), groupBySchool(), load(), renderArgs(), toggleDebater()
-
-### Community 17 - "Community 17"
 Cohesion: 0.29
 Nodes (9): fnv1a(), inferBidLevel(), parseBallots(), _points(), _result(), seasonFor(), _side(), teamKeyFor() (+1 more)
+
+### Community 17 - "Community 17"
+Cohesion: 0.47
+Nodes (9): fetchCaselists(), fetchCites(), fetchRounds(), fetchSchools(), fetchTeams(), _get(), _login(), _sleep() (+1 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.36
 Nodes (5): bodyPrefix(), bodyScore(), groupKeyFor(), highlightWordCount(), normalizeCite()
 
 ### Community 19 - "Community 19"
-Cohesion: 0.57
-Nodes (6): cacheGet(), cacheSet(), retrieveAnalytics(), retrieveCards(), retrieveUserContext(), sanitize()
-
-### Community 20 - "Community 20"
 Cohesion: 0.38
 Nodes (4): enforceLimit(), checkAndBudget(), getCount(), nextResetAt()
 
-### Community 21 - "Community 21"
+### Community 20 - "Community 20"
 Cohesion: 0.43
 Nodes (5): aggregateBallotsToResult(), applyElo(), expectedScore(), kBase(), kMult()
 
-### Community 22 - "Community 22"
+### Community 21 - "Community 21"
 Cohesion: 0.67
 Nodes (5): isWord(), snapEnd(), snapStart(), snapToWordBoundaries(), wordAt()
 
-### Community 23 - "Community 23"
+### Community 22 - "Community 22"
 Cohesion: 0.33
 Nodes (0): 
 
-### Community 24 - "Community 24"
+### Community 23 - "Community 23"
 Cohesion: 0.4
 Nodes (0): 
 
-### Community 25 - "Community 25"
+### Community 24 - "Community 24"
 Cohesion: 0.83
 Nodes (3): close(), open(), outsideClose()
 
-### Community 26 - "Community 26"
+### Community 25 - "Community 25"
 Cohesion: 0.83
 Nodes (3): shortenDisplayName(), stripSchoolSuffix(), withShortenedName()
 
-### Community 27 - "Community 27"
+### Community 26 - "Community 26"
 Cohesion: 0.67
 Nodes (2): normalizeMinMax(), scoreEntries()
 
-### Community 28 - "Community 28"
+### Community 27 - "Community 27"
 Cohesion: 0.67
 Nodes (3): pickBestOaUrl(), resolveDoi(), search()
+
+### Community 28 - "Community 28"
+Cohesion: 0.67
+Nodes (0): 
 
 ### Community 29 - "Community 29"
 Cohesion: 0.67
 Nodes (0): 
 
 ### Community 30 - "Community 30"
-Cohesion: 0.67
-Nodes (0): 
+Cohesion: 1.0
+Nodes (2): sendPasswordReset(), transporter()
 
 ### Community 31 - "Community 31"
-Cohesion: 0.67
-Nodes (1): _isStale()
+Cohesion: 1.0
+Nodes (0): 
 
 ### Community 32 - "Community 32"
 Cohesion: 1.0
-Nodes (2): sendPasswordReset(), transporter()
+Nodes (0): 
 
 ### Community 33 - "Community 33"
 Cohesion: 1.0
@@ -407,111 +405,103 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
-### Community 73 - "Community 73"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 74 - "Community 74"
-Cohesion: 1.0
-Nodes (0): 
-
 ## Knowledge Gaps
 - **6 isolated node(s):** `Rationale: Caution Over Speed Tradeoff`, `Rationale: No Speculative Code`, `Rationale: Clean Up Only Your Own Mess`, `Rationale: Verifiable Success Criteria`, `GRAPH_REPORT.md` (+1 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 33`** (2 nodes): `jsonFetch()`, `api.js`
+- **Thin community `Community 31`** (2 nodes): `jsonFetch()`, `api.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (2 nodes): `filterEvidenceClient()`, `app-main.search.js`
+- **Thin community `Community 32`** (2 nodes): `filterEvidenceClient()`, `app-main.search.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 35`** (2 nodes): `mount()`, `cmdPalette.js`
+- **Thin community `Community 33`** (2 nodes): `mount()`, `cmdPalette.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 36`** (2 nodes): `isDirty()`, `isDirty.js`
+- **Thin community `Community 34`** (2 nodes): `isDirty()`, `isDirty.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (2 nodes): `isCaselistZip()`, `import-caselist.js`
+- **Thin community `Community 35`** (2 nodes): `isCaselistZip()`, `import-caselist.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (2 nodes): `pickChatMaxTokens()`, `chatBrevity.js`
+- **Thin community `Community 36`** (2 nodes): `pickChatMaxTokens()`, `chatBrevity.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (2 nodes): `loadProjects()`, `export.js`
+- **Thin community `Community 37`** (2 nodes): `loadProjects()`, `export.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (2 nodes): `fingerprint()`, `mine.js`
+- **Thin community `Community 38`** (2 nodes): `fingerprint()`, `mine.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 41`** (2 nodes): `_validateEvent()`, `rankings.js`
+- **Thin community `Community 39`** (2 nodes): `_validateEvent()`, `rankings.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 42`** (2 nodes): `wiki.js`, `_safeFilename()`
+- **Thin community `Community 40`** (2 nodes): `wiki.js`, `_safeFilename()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (2 nodes): `search()`, `exa.js`
+- **Thin community `Community 41`** (2 nodes): `search()`, `exa.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 44`** (2 nodes): `tavily.js`, `search()`
+- **Thin community `Community 42`** (2 nodes): `tavily.js`, `search()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 45`** (2 nodes): `tabroomSearch.test.js`, `escHtml()`
+- **Thin community `Community 43`** (2 nodes): `tabroomSearch.test.js`, `escHtml()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 46`** (2 nodes): `ids()`, `evidence-random.test.js`
+- **Thin community `Community 44`** (2 nodes): `ids()`, `evidence-random.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 47`** (2 nodes): `tocParser.test.js`, `make()`
+- **Thin community `Community 45`** (2 nodes): `tocParser.test.js`, `make()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 48`** (2 nodes): `useTempDb()`, `_helpers.js`
+- **Thin community `Community 46`** (2 nodes): `useTempDb()`, `_helpers.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 49`** (1 nodes): `force-crawl.js`
+- **Thin community `Community 47`** (1 nodes): `force-crawl.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 50`** (1 nodes): `probe-ocl.js`
+- **Thin community `Community 48`** (1 nodes): `probe-ocl.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 51`** (1 nodes): `probe-rounds.js`
+- **Thin community `Community 49`** (1 nodes): `probe-rounds.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 52`** (1 nodes): `probe-tabroom.js`
+- **Thin community `Community 50`** (1 nodes): `probe-tabroom.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 53`** (1 nodes): `_count-canon.js`
+- **Thin community `Community 51`** (1 nodes): `_count-canon.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 54`** (1 nodes): `history.js`
+- **Thin community `Community 52`** (1 nodes): `history.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 55`** (1 nodes): `import.js`
+- **Thin community `Community 53`** (1 nodes): `import.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 56`** (1 nodes): `scrape.js`
+- **Thin community `Community 54`** (1 nodes): `scrape.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 57`** (1 nodes): `threatScorer.test.js`
+- **Thin community `Community 55`** (1 nodes): `threatScorer.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 58`** (1 nodes): `cardCutter-prompt.test.js`
+- **Thin community `Community 56`** (1 nodes): `cardCutter-prompt.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 59`** (1 nodes): `carousel.test.js`
+- **Thin community `Community 57`** (1 nodes): `carousel.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 60`** (1 nodes): `chat-brevity.test.js`
+- **Thin community `Community 58`** (1 nodes): `chat-brevity.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 61`** (1 nodes): `chatCommands.test.js`
+- **Thin community `Community 59`** (1 nodes): `chatCommands.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 62`** (1 nodes): `chatRetrieval.test.js`
+- **Thin community `Community 60`** (1 nodes): `chatRetrieval.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 63`** (1 nodes): `chatStore.test.js`
+- **Thin community `Community 61`** (1 nodes): `chatStore.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 64`** (1 nodes): `clipboard.test.js`
+- **Thin community `Community 62`** (1 nodes): `clipboard.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 65`** (1 nodes): `evidence-search.test.js`
+- **Thin community `Community 63`** (1 nodes): `evidence-search.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 66`** (1 nodes): `expand-command.test.js`
+- **Thin community `Community 64`** (1 nodes): `expand-command.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 67`** (1 nodes): `instant-research.test.js`
+- **Thin community `Community 65`** (1 nodes): `instant-research.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 68`** (1 nodes): `isDirty.test.js`
+- **Thin community `Community 66`** (1 nodes): `isDirty.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 69`** (1 nodes): `limits.test.js`
+- **Thin community `Community 67`** (1 nodes): `limits.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 70`** (1 nodes): `project-cleanup.test.js`
+- **Thin community `Community 68`** (1 nodes): `project-cleanup.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 71`** (1 nodes): `rankingsEngine.test.js`
+- **Thin community `Community 69`** (1 nodes): `rankingsEngine.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 72`** (1 nodes): `slash-enter.test.js`
+- **Thin community `Community 70`** (1 nodes): `slash-enter.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 73`** (1 nodes): `wordAt.test.js`
+- **Thin community `Community 71`** (1 nodes): `wordAt.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 74`** (1 nodes): `wordSnap.test.js`
+- **Thin community `Community 72`** (1 nodes): `wordSnap.test.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `get()` connect `Community 0` to `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 16`, `Community 19`, `Community 20`, `Community 28`?**
-  _High betweenness centrality (0.279) - this node is a cross-community bridge._
-- **Why does `push()` connect `Community 4` to `Community 0`, `Community 1`, `Community 2`, `Community 5`, `Community 6`, `Community 7`, `Community 9`, `Community 12`, `Community 14`, `Community 16`, `Community 17`?**
-  _High betweenness centrality (0.219) - this node is a cross-community bridge._
-- **Why does `getDb()` connect `Community 0` to `Community 2`, `Community 4`, `Community 5`, `Community 7`, `Community 9`, `Community 19`, `Community 20`?**
-  _High betweenness centrality (0.131) - this node is a cross-community bridge._
+- **Why does `get()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 17`, `Community 19`, `Community 27`?**
+  _High betweenness centrality (0.284) - this node is a cross-community bridge._
+- **Why does `push()` connect `Community 3` to `Community 0`, `Community 1`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 12`, `Community 14`, `Community 16`?**
+  _High betweenness centrality (0.217) - this node is a cross-community bridge._
+- **Why does `getDb()` connect `Community 0` to `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 7`, `Community 11`, `Community 19`?**
+  _High betweenness centrality (0.129) - this node is a cross-community bridge._
 - **Are the 92 inferred relationships involving `getDb()` (e.g. with `main()` and `ownedProject()`) actually correct?**
   _`getDb()` has 92 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 73 inferred relationships involving `get()` (e.g. with `fetchJSON()` and `dedupeEvents()`) actually correct?**

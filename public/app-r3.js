@@ -105,6 +105,7 @@ function go(p){
   state.pageNow = p;
   TWEAKS.page = p; persistTweaks();
   if(p==='today') loadToday();
+  if(p==='cutter') loadCutter();
   if(p==='library') loadLibrary();
   if(p==='tournaments') loadTournaments();
   if(p==='rankings') loadRankings();
@@ -124,6 +125,7 @@ async function boot(){
   bindAllTournamentsControls();
   bindRankingsControls();
   bindLibraryControls();
+  bindCutterControls();
 
   await loadUser();
   await loadLinks();
@@ -322,17 +324,6 @@ function renderPulse(analytics){
 
 /* ── TOURNAMENTS ────────────────────────────────────────── */
 function bindTournamentsControls(){
-  $('t-search-q').addEventListener('input', renderPastTournaments);
-  $$('#t-fmt-tabs .rank-tab').forEach(b => b.addEventListener('click', ()=>{
-    $$('#t-fmt-tabs .rank-tab').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    state.pastShown = 10;
-    renderPastTournaments();
-  }));
-  $('show-more-btn').addEventListener('click', ()=>{
-    state.pastShown += 10;
-    renderPastTournaments();
-  });
   $('t-back').addEventListener('click', (e)=>{
     e.preventDefault();
     $('t-detail-view').style.display='none';
@@ -352,14 +343,9 @@ function bindTournamentsControls(){
   });
 }
 async function loadTournaments(){
-  const [up, past] = await Promise.all([
-    fetchJSON('/api/me/tabroom/upcoming'),
-    fetchJSON('/api/me/tabroom/results'),
-  ]);
-  state.upcoming    = (up && up.tournaments) || [];
-  state.pastResults = (past && past.tournaments) || [];
+  const up = await fetchJSON('/api/me/tabroom/upcoming');
+  state.upcoming = (up && up.tournaments) || [];
   renderUpcomingGrid();
-  renderPastTournaments();
   loadAllTournaments();
 }
 
@@ -1318,6 +1304,263 @@ function bindRail(){
     if(t){ e.preventDefault(); go(t.dataset.go); }
   });
   $('tp-back').addEventListener('click', e => { e.preventDefault(); go('rankings'); });
+}
+
+/* ── CUTTER ───────────────────────────────────────────── */
+function bindCutterControls(){
+  $$('.cut-mode').forEach(b => b.addEventListener('click', ()=>{
+    $$('.cut-mode').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    const m = b.dataset.mode;
+    const inp = $('cut-q');
+    if(m === 'url') inp.placeholder = 'Paste a URL — Verba scrapes it…';
+    else if(m === 'pdf') inp.placeholder = 'Click upload, or drop a PDF here…';
+  }));
+  $('cut-go').addEventListener('click', runCutterScrape);
+  $('cut-q').addEventListener('keydown', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); runCutterScrape(); }
+  });
+  $('cut-upload').addEventListener('click', ()=> $('cut-file').click());
+  $('cut-file').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if(file) runCutterFile(file);
+  });
+}
+
+function loadCutter(){
+  // Recent cuts come from /api/history (already loaded into state.history when
+  // Today is visited; refresh here too in case user lands on Cutter first).
+  fetchJSON('/api/history').then(data => {
+    state.history = (data && data.items) || [];
+    renderCutterRecent();
+  });
+}
+
+function renderCutterRecent(){
+  const root = $('cut-recent');
+  const meta = $('cut-recent-meta');
+  const items = (state.history || []).slice(0, 8);
+  if(!items.length){
+    root.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No recent cuts</b>Paste a URL above to get started.</div>`;
+    meta.textContent = '';
+    return;
+  }
+  meta.textContent = `${state.history.length} recent`;
+  root.innerHTML = items.map(it => {
+    const tag  = it.tag || it.title || it.query || it.url || '(untitled)';
+    const cite = it.cite || it.author || it.host || '';
+    return `
+      <div class="recent-card">
+        <div class="head">
+          <span class="when">${escapeHTML(fmtRel(it.at))}</span>
+        </div>
+        <div class="tag">${escapeHTML(tag)}</div>
+        ${cite ? `<div class="cite">${escapeHTML(cite)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function termOpen(label){
+  $('cut-term-label').textContent = label || 'verba scrape';
+  $('cut-term-body').innerHTML = '';
+  $('cut-term').classList.add('on');
+}
+function termLine(pfx, body, status){
+  const line = document.createElement('div');
+  line.className = 'term-line';
+  const okClass = status === 'err' ? 'err' : 'ok';
+  line.innerHTML = `<span class="pfx">${escapeHTML(pfx)}</span><span class="dim">${escapeHTML(body)}</span>${status?`<span class="${okClass}">${escapeHTML(status==='err'?status:'ok')}</span>`:''}`;
+  $('cut-term-body').appendChild(line);
+  $('cut-term-body').scrollTop = $('cut-term-body').scrollHeight;
+}
+function termClose(){ setTimeout(()=> $('cut-term').classList.remove('on'), 600); }
+
+async function runCutterScrape(){
+  const url = $('cut-q').value.trim();
+  if(!url){ $('cut-q').focus(); return; }
+  if(!/^https?:\/\//i.test(url)){ showToast('Paste a full http(s) URL'); return; }
+
+  let host = url;
+  try { host = new URL(url).host.replace(/^www\./,''); } catch {}
+  termOpen('verba cut · ' + host);
+  await new Promise(r => setTimeout(r, 60));
+  termLine('$', 'verba scrape ' + host);
+  termLine('→', 'GET ' + url);
+
+  let scraped;
+  try {
+    scraped = await fetch('/api/scrape', {
+      method:'POST',
+      credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ url }),
+    }).then(async r => {
+      if(!r.ok){ const t = await r.text().catch(()=>''); throw new Error(`${r.status} ${t.slice(0,160)}`); }
+      return r.json();
+    });
+  } catch (err) {
+    termLine('!', err.message || 'scrape failed', 'err');
+    showToast('Scrape failed');
+    return;
+  }
+  termLine('✓', 'fetched ' + (scraped.title || 'article'));
+  if(scraped.author) termLine('✓', 'author: ' + scraped.author);
+  if(scraped.date)   termLine('✓', 'date: ' + scraped.date);
+  termLine('✓', `body: ${(scraped.bodyText||'').length.toLocaleString()} chars`);
+  termLine('→', 'cut-card · LLM passage selection + highlight');
+
+  // Chain to LLM cut
+  const cut = await runCutLLM({
+    bodyText: scraped.bodyText || '',
+    cite:     scraped.cite     || '',
+    meta:     {
+      title:  scraped.title,
+      author: scraped.author,
+      date:   scraped.date,
+      source: scraped.source,
+      url:    scraped.url,
+    },
+  });
+  if(!cut){ return; }
+  termClose();
+  showCutResult({ ...scraped, ...cut });
+}
+
+async function runCutLLM({ bodyText, cite, meta, argument = '' }){
+  if(!bodyText || bodyText.length < 50){
+    termLine('!', 'body too short for LLM cut', 'err');
+    showToast('Body too short to cut');
+    return null;
+  }
+  let resp;
+  try {
+    resp = await fetch('/api/cut-card', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ argument, bodyText, meta, cite }),
+    });
+  } catch (err) {
+    termLine('!', 'cut-card request failed', 'err');
+    return null;
+  }
+  if(!resp.ok){
+    const t = await resp.text().catch(()=>'');
+    let msg = `${resp.status}`;
+    try { const j = JSON.parse(t); msg = j.error || j.hint || msg; } catch { msg = t.slice(0,140) || msg; }
+    termLine('!', 'cut failed · ' + msg, 'err');
+    showToast('LLM cut failed');
+    return null;
+  }
+  const data = await resp.json();
+  if(!data.card){
+    termLine('!', 'no card returned', 'err');
+    return null;
+  }
+  termLine('✓', 'card cut · ' + (data.card.tag || '').slice(0,60));
+  if(data.fidelity) termLine('✓', `fidelity: ${(data.fidelity.score || 0).toFixed(2)}`);
+  termLine('✓', 'saved to library', 'done');
+  return data;
+}
+
+async function runCutterFile(file){
+  termOpen('verba cut · ' + (file.name||'file'));
+  termLine('$', 'verba parse ' + file.name);
+
+  // /api/scrape/file returns a token + preview + chars; the full body is held
+  // in a server-side cache and exposed via the streaming /research-source-stream
+  // endpoint. For Phase 2 we use the preview text as the body for the LLM cut.
+  const fd = new FormData();
+  fd.append('file', file);
+  let parsed;
+  try {
+    parsed = await fetch('/api/scrape/file', {
+      method:'POST',
+      credentials:'same-origin',
+      body: fd,
+    }).then(async r => {
+      if(!r.ok){ const t = await r.text().catch(()=>''); throw new Error(`${r.status} ${t.slice(0,160)}`); }
+      return r.json();
+    });
+  } catch (err) {
+    termLine('!', err.message || 'parse failed', 'err');
+    showToast('Could not read file');
+    return;
+  }
+  termLine('✓', `parsed ${parsed.chars?.toLocaleString()||'?'} chars`);
+  termLine('✓', 'cite: ' + (parsed.cite || ''));
+  termLine('→', 'cut-card · LLM passage selection + highlight');
+
+  const cut = await runCutLLM({
+    bodyText: parsed.preview || '',
+    cite:     parsed.cite || '',
+    meta:     { title: parsed.title, source: parsed.filename },
+  });
+  if(!cut) return;
+  termClose();
+  showCutResult({
+    title:    parsed.title,
+    cite:     parsed.cite,
+    bodyText: parsed.preview || '',
+    isPdf:    true,
+    ...cut,
+  });
+}
+
+function showCutResult(data){
+  const card = $('cut-card');
+  const body = $('cut-body');
+  // LLM cut returns `card: { tag, cite, body_markdown, ... }`. Pre-cut scrape
+  // returns `bodyText`. Prefer the cut output.
+  const cutCard = data.card || null;
+  const tag   = (cutCard && cutCard.tag) || data.title || '(untitled)';
+  const cite  = (cutCard && cutCard.cite) || data.cite || '';
+  const url   = data.url || (cutCard && cutCard.url);
+  const md    = (cutCard && (cutCard.body_markdown || cutCard.body_plain)) || '';
+  const plainBody = String(data.bodyText || '').trim();
+
+  let bodyHtml;
+  if (md) {
+    bodyHtml = renderCardBody(md);
+  } else if (plainBody) {
+    bodyHtml = plainBody.split(/\n\s*\n/).slice(0, 12).map(p => `<p>${escapeHTML(p.trim())}</p>`).join('');
+  } else {
+    bodyHtml = '<div class="empty" style="padding:20px 0"><b>No body text</b></div>';
+  }
+
+  body.innerHTML = `
+    <div class="cite-block">
+      <div style="font:700 20px/1.3 var(--font-display);letter-spacing:-0.015em;color:var(--ink);margin-bottom:10px">${escapeHTML(tag)}</div>
+      ${cite ? `<div class="meta"><b>${escapeHTML(cite)}</b></div>` : ''}
+      ${data.fidelity ? `<div style="margin-top:8px;font:500 11px/1 var(--font-mono);color:var(--muted)">Fidelity ${(data.fidelity.score||0).toFixed(2)}${data.saved?.duplicate ? ' · duplicate' : ''}</div>` : ''}
+    </div>
+    ${bodyHtml}
+  `;
+  card.classList.add('on');
+
+  $('cut-source').onclick = url ? (()=> window.open(url, '_blank')) : null;
+  $('cut-source').style.display = url ? '' : 'none';
+
+  // Copy: prefer the cut markdown's plain text, otherwise the card body.
+  $('cut-copy').onclick = ()=>{
+    const text = (cutCard && cutCard.body_plain) || body.innerText || '';
+    navigator.clipboard.writeText(text).then(()=>{
+      const btn = $('cut-copy');
+      const orig = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
+      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = orig; }, 1400);
+    });
+  };
+
+  // Log to history (server already saved the card via saveCutCardForUser).
+  fetchJSON('/api/history', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ entry: { kind:'cut', tag, cite, url, cardId: data.saved?.id, host: (function(){ try{return new URL(url||'').host}catch{return ''} })() } }),
+  }).then(()=> loadCutter());
+
+  card.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
 /* boot */
