@@ -34,8 +34,12 @@ async function main() {
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
       console.log(`[ingest] DONE: ${zipName} — ${result.newCards} new cards, ${result.analyticsCount} analytics, ${result.processedDocs} docs (${elapsed}s)`);
 
-      fs.unlinkSync(path.join(ROOT, zipName));
-      console.log(`[ingest] DELETED: ${zipName}`);
+      // Don't delete the source zip — keep it on disk so we can re-run the
+      // import (e.g. to rebackfill cite/topic columns after a parser fix).
+      // To save disk space, mark with .imported suffix so it's skipped next time.
+      const importedPath = path.join(ROOT, zipName + '.imported');
+      fs.renameSync(path.join(ROOT, zipName), importedPath);
+      console.log(`[ingest] MARKED: ${zipName} -> ${path.basename(importedPath)}`);
     } catch (err) {
       console.error(`[ingest] ERROR on ${zipName}: ${err.message}`);
     }
