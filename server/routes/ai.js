@@ -168,37 +168,38 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       } catch { /* keep best so far */ }
     }
     if (!fidelity.ok) {
-      // Last-ditch repair: walk paragraph-by-paragraph and KEEP only paragraphs
-      // whose stripped text appears verbatim in source. Drops the one or two
-      // paragraphs the model mangled, salvages the rest. The card is shorter
-      // but every word in it now passes the verbatim check.
-      const sourceLower = truncated.toLowerCase().replace(/\s+/g, ' ');
+      // Strict per-paragraph repair: a paragraph survives ONLY if its stripped
+      // plain text is a contiguous substring of source (after normalizing
+      // smart quotes, em-dashes, NBSP, and whitespace). Anything else is
+      // dropped. Result: every surviving word is guaranteed verbatim.
+      const normalize = (s) => String(s || '')
+        .replace(/[‘’‚‛′]/g, "'")
+        .replace(/[“”„‟″]/g, '"')
+        .replace(/[–—―]/g, '-')
+        .replace(/[ ]/g, ' ')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+      const sourceNorm = normalize(truncated);
       const cardParas = String(card.body_markdown || '').split(/\n{2,}/);
       const goodParas = [];
       for (const p of cardParas) {
-        const plain = stripFormatMarks(p).toLowerCase().replace(/\s+/g, ' ').trim();
+        const plain = normalize(stripFormatMarks(p));
         if (!plain) continue;
-        // Sample five 5-word windows; require all of them to appear in source.
-        const words = plain.split(/\s+/);
-        if (words.length < 8) { goodParas.push(p); continue; }
-        let allIn = true;
-        for (let i = 0; i + 5 <= words.length; i += Math.max(3, Math.floor(words.length / 5))) {
-          if (!sourceLower.includes(words.slice(i, i + 5).join(' '))) { allIn = false; break; }
-        }
-        if (allIn) goodParas.push(p);
+        // Substring check: the entire paragraph's plain text must appear
+        // verbatim somewhere in source. No sampling, no exceptions.
+        if (sourceNorm.includes(plain)) goodParas.push(p);
       }
-      if (goodParas.length) {
-        card.body_markdown = goodParas.join('\n\n');
-        fidelity = verifyBodyFidelity(card.body_markdown, truncated);
-        console.warn(`[cut-card] paragraph-repair kept ${goodParas.length}/${cardParas.length} paragraphs, fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
-      }
-      if (!fidelity.ok && goodParas.length === 0) {
+      if (goodParas.length === 0) {
         return res.status(502).json({
-          error: 'Could not produce a verbatim card after retries + repair.',
+          error: 'Could not produce a 100% verbatim card. The model altered every paragraph.',
           fidelity,
-          hint: 'Try again, or paste the article body directly via the paste-fallback panel.',
+          hint: 'Try again or use the paste-fallback panel.',
         });
       }
+      card.body_markdown = goodParas.join('\n\n');
+      fidelity = verifyBodyFidelity(card.body_markdown, truncated);
+      console.warn(`[cut-card] strict paragraph-repair kept ${goodParas.length}/${cardParas.length} paragraphs, fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
     }
 
     let saved = null;
