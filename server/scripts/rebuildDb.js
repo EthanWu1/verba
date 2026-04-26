@@ -84,6 +84,9 @@ dst.pragma('journal_mode = OFF');
 dst.pragma('synchronous = OFF');
 dst.pragma('temp_store = MEMORY');
 dst.pragma('cache_size = -200000');   // 200 MB page cache
+// Disable FK enforcement during bulk copy — child rows would fail when their
+// parent table hasn't been copied yet. The app re-enables FK on every open.
+dst.pragma('foreign_keys = OFF');
 
 // ── SCHEMA ────────────────────────────────────────────────────────────────
 // Order: regular tables → virtual tables (FTS5/vec) → indexes → triggers → views.
