@@ -1063,7 +1063,8 @@ function renderLibList(){
   }
   list.innerHTML = state.libCards.map((c, i) => {
     const tag  = c.tag || '(untitled)';
-    const cite = c.shortCite || c.cite || '';
+    // Always show the FULL cite — shortCite was inconsistent across rows.
+    const cite = c.cite || c.shortCite || '';
     const date = c.createdAt || c.savedAt || c.indexedAt || '';
     const side = sideFromCard(c);
     const sideBadge = side==='aff' ? `<span class="badge aff">Aff</span>`
@@ -1091,32 +1092,112 @@ function renderLibList(){
 //   __text__   → underline
 //   **text**   → bold (warrant)
 //   blank line → paragraph break
+// Convert Verbatim-style body_markdown to clipboard-ready HTML with INLINE
+// styles so Word/Verbatim/Google Docs preserve the highlight + underline + bold
+// formatting on paste. Tag is rendered as a heading. Cite below in bold.
+function cardToHtml(card){
+  const tag  = (card && (card.tag || card.title)) || '';
+  const cite = (card && (card.cite || card.shortCite)) || '';
+  const md   = (card && (card.body_markdown || card.body_plain || card.bodyText)) || '';
+
+  const HO = String.fromCharCode(1), HC = String.fromCharCode(2);
+  const UO = String.fromCharCode(3), UC = String.fromCharCode(4);
+  const BO = String.fromCharCode(5), BC = String.fromCharCode(6);
+
+  let s = String(md);
+  s = s.replace(/\*\*([\s\S]+?)\*\*/g, function(_, x){ return BO + x + BC; });
+  s = s.replace(/==([\s\S]+?)==/g,    function(_, x){ return HO + x + HC; });
+  s = s.replace(/<u>/gi, UO).replace(/<\/u>/gi, UC);
+  s = s.replace(/__([^_]+?)__/g,      function(_, x){ return UO + x + UC; });
+  // HTML-escape everything else
+  s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Restore real tags with INLINE styles for clipboard portability
+  s = s.split(HO).join('<span style="background-color:#FFEB3B">').split(HC).join('</span>')
+       .split(UO).join('<u>').split(UC).join('</u>')
+       .split(BO).join('<strong>').split(BC).join('</strong>');
+  const paragraphs = s.split(/\n{2,}/).map(function(p){
+    return '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; line-height:1.4; margin:0 0 8pt 0">' + p.replace(/\n/g, '<br>') + '</p>';
+  }).join('');
+
+  const escapeAttr = function(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  const tagHtml  = tag  ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; font-weight:700; margin:0 0 4pt 0">' + escapeAttr(tag)  + '</p>' : '';
+  const citeHtml = cite ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; font-weight:700; margin:0 0 8pt 0">' + escapeAttr(cite) + '</p>' : '';
+  return tagHtml + citeHtml + paragraphs;
+}
+
+// Plain-text version for the text/plain clipboard slot.
+function cardToPlain(card){
+  const tag  = (card && (card.tag || card.title)) || '';
+  const cite = (card && (card.cite || card.shortCite)) || '';
+  const md   = (card && (card.body_markdown || card.body_plain || card.bodyText)) || '';
+  const stripped = String(md)
+    .replace(/<\/?u>/gi,'')
+    .replace(/__([^_]+?)__/g,'$1')
+    .replace(/\*\*([\s\S]+?)\*\*/g,'$1')
+    .replace(/==([\s\S]+?)==/g,'$1');
+  return [tag, cite, '', stripped].filter(Boolean).join('\n');
+}
+
+async function writeCardToClipboard(card){
+  const html  = cardToHtml(card);
+  const plain = cardToPlain(card);
+  // Modern path: ClipboardItem with both MIME slots so Word picks up HTML.
+  if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+    try {
+      const item = new ClipboardItem({
+        'text/html':  new Blob([html],  { type: 'text/html' }),
+        'text/plain': new Blob([plain], { type: 'text/plain' }),
+      });
+      await navigator.clipboard.write([item]);
+      return true;
+    } catch (err) {
+      console.warn('[clipboard] ClipboardItem failed, falling back:', err.message);
+    }
+  }
+  // Fallback: render HTML into a hidden contenteditable and use execCommand('copy').
+  try {
+    const div = document.createElement('div');
+    div.contentEditable = 'true';
+    div.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    div.innerHTML = html;
+    document.body.appendChild(div);
+    const range = document.createRange();
+    range.selectNodeContents(div);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    div.remove();
+    return true;
+  } catch (err) {
+    // Last-ditch plain-text fallback
+    try { await navigator.clipboard.writeText(plain); return true; } catch {}
+    return false;
+  }
+}
+
 function renderCardBody(md){
   if(!md) return '';
-  // Strip dangerous tags but keep <u>, <strong>, <em>, <span>, <br>, <p>
+  // Unique sentinel placeholders so markup survives HTML escaping.
+  const HO = String.fromCharCode(1), HC = String.fromCharCode(2);
+  const UO = String.fromCharCode(3), UC = String.fromCharCode(4);
+  const BO = String.fromCharCode(5), BC = String.fromCharCode(6);
   let s = String(md);
-  // Convert markdown markers BEFORE escaping (we use placeholders)
-  const PH = { hl:'', hlEnd:'', u:'', uEnd:'', b:'', bEnd:'' };
-  s = s.replace(/==([\s\S]+?)==/g, (_,x)=> PH.hl + x + PH.hlEnd);
-  s = s.replace(/<u>/g, PH.u).replace(/<\/u>/g, PH.uEnd);
-  s = s.replace(/__([^_]+?)__/g, (_,x)=> PH.u + x + PH.uEnd);
-  s = s.replace(/\*\*([^*]+?)\*\*/g, (_,x)=> PH.b + x + PH.bEnd);
-  // Now escape everything else
+  s = s.replace(/\*\*([\s\S]+?)\*\*/g, function(_, x){ return BO + x + BC; });
+  s = s.replace(/==([\s\S]+?)==/g,    function(_, x){ return HO + x + HC; });
+  s = s.replace(/<u>/gi, UO).replace(/<\/u>/gi, UC);
+  s = s.replace(/__([^_]+?)__/g,      function(_, x){ return UO + x + UC; });
   s = escapeHTML(s);
-  // Restore markers
-  s = s.replace(new RegExp(PH.hl,'g'),'<span class="hl">')
-       .replace(new RegExp(PH.hlEnd,'g'),'</span>')
-       .replace(new RegExp(PH.u,'g'),'<span class="u">')
-       .replace(new RegExp(PH.uEnd,'g'),'</span>')
-       .replace(new RegExp(PH.b,'g'),'<span class="warrant">')
-       .replace(new RegExp(PH.bEnd,'g'),'</span>');
-  // Paragraphs
-  return s.split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
+  s = s.split(HO).join('<span class="hl">').split(HC).join('</span>')
+       .split(UO).join('<span class="u">').split(UC).join('</span>')
+       .split(BO).join('<span class="warrant">').split(BC).join('</span>');
+  return s.split(/\n{2,}/).map(function(p){ return '<p>' + p.replace(/\n/g, '<br>') + '</p>'; }).join('');
 }
 async function showLibPreview(card){
   if(!card){ $('lib-pv-body').innerHTML = `<div class="empty"><b>No card selected</b></div>`; return; }
   state.libSelected = card;
-  $('lib-pv-meta').textContent = card.shortCite || card.cite || '';
+  $('lib-pv-meta').textContent = card.cite || card.shortCite || '';
   // Header always renders immediately; body text is paginated separately.
   $('lib-pv-body').innerHTML = `
     <div style="border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px">
@@ -1141,15 +1222,14 @@ async function showLibPreview(card){
   const url = full.url || full.sourceUrl;
   if(url){ $('lib-pv-source').style.display=''; $('lib-pv-source').onclick = ()=> window.open(url, '_blank'); }
   else $('lib-pv-source').style.display='none';
-  $('lib-pv-copy').onclick = ()=>{
-    const text = (full.body_plain || $('lib-pv-body').innerText || '');
-    navigator.clipboard.writeText(text).then(()=> {
-      const btn = $('lib-pv-copy');
-      const original = btn.innerHTML;
-      btn.classList.add('copied');
-      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
-      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = original; }, 1400);
-    });
+  $('lib-pv-copy').onclick = async ()=>{
+    const ok = await writeCardToClipboard(full);
+    if(!ok){ showToast('Copy failed'); return; }
+    const btn = $('lib-pv-copy');
+    const original = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
+    setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = original; }, 1400);
   };
 }
 
@@ -1331,6 +1411,93 @@ function bindCutterControls(){
     $('cut-paste-text').value = '';
     $('cut-paste-cite').value = '';
   });
+
+  // Toolbar buttons + keyboard shortcuts
+  $('cut-tool-hl').addEventListener('click', ()=> applyCutMarkup('hl'));
+  $('cut-tool-u').addEventListener('click',  ()=> applyCutMarkup('u'));
+  $('cut-tool-b').addEventListener('click',  ()=> applyCutMarkup('b'));
+  document.addEventListener('keydown', (e)=>{
+    // Only when cutter page is visible AND focus is not in an input
+    if(state.pageNow !== 'cutter') return;
+    const tag = (e.target && e.target.tagName) || '';
+    if(tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if(e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if(k === 'h'){ e.preventDefault(); applyCutMarkup('hl'); }
+    else if(k === 'u'){ e.preventDefault(); applyCutMarkup('u'); }
+    else if(k === 'b'){ e.preventDefault(); applyCutMarkup('b'); }
+  });
+}
+
+// ── Selection → body_markdown wrapping ──────────────────────────────────
+// Walks the rendered DOM and the source markdown in parallel, mapping plain-text
+// character offsets back to markdown indices so we can wrap the selection
+// regardless of where existing ==, <u>, **, __ marks already sit.
+function plainToMarkdownOffset(md, plainOffset){
+  let i = 0, p = 0;
+  const len = md.length;
+  while(i < len && p < plainOffset){
+    if(md.charCodeAt(i) === 0x3D && md.charCodeAt(i+1) === 0x3D){ i += 2; continue; } // ==
+    if(md.charCodeAt(i) === 0x2A && md.charCodeAt(i+1) === 0x2A){ i += 2; continue; } // **
+    if(md.charCodeAt(i) === 0x5F && md.charCodeAt(i+1) === 0x5F){ i += 2; continue; } // __
+    if(md.startsWith('<u>', i))  { i += 3; continue; }
+    if(md.startsWith('</u>', i)) { i += 4; continue; }
+    if(md.startsWith('<U>', i))  { i += 3; continue; }
+    if(md.startsWith('</U>', i)) { i += 4; continue; }
+    p++;
+    i++;
+  }
+  return i;
+}
+function stripMarkupForSearch(md){
+  return md
+    .replace(/==/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/__/g, '')
+    .replace(/<\/?u>/gi, '');
+}
+function applyCutMarkup(kind){
+  if(!state.cutCard || !state.cutCard.body_markdown){ showToast('Run a cut first'); return; }
+  const sel = window.getSelection();
+  if(!sel || sel.rangeCount === 0 || sel.isCollapsed){ return; }
+  const range = sel.getRangeAt(0);
+  const body = $('cut-body');
+  if(!body.contains(range.commonAncestorContainer)) return;
+
+  const text = sel.toString();
+  const trimmed = text.trim();
+  if(!trimmed) return;
+
+  const md    = state.cutCard.body_markdown;
+  const plain = stripMarkupForSearch(md);
+  const idx   = plain.indexOf(trimmed);
+  if(idx < 0){
+    showToast('Could not locate selection — try selecting fewer words');
+    return;
+  }
+  const mdStart = plainToMarkdownOffset(md, idx);
+  const mdEnd   = plainToMarkdownOffset(md, idx + trimmed.length);
+  const open  = kind === 'hl' ? '==' : kind === 'u' ? '<u>' : '**';
+  const close = kind === 'hl' ? '==' : kind === 'u' ? '</u>' : '**';
+  state.cutCard.body_markdown = md.slice(0, mdStart) + open + md.slice(mdStart, mdEnd) + close + md.slice(mdEnd);
+  rerenderCutBody();
+  // Flash the toolbar button so the user sees the action registered
+  const btn = kind === 'hl' ? $('cut-tool-hl') : kind === 'u' ? $('cut-tool-u') : $('cut-tool-b');
+  if(btn){ btn.classList.add('cut-tool-flash'); setTimeout(()=>btn.classList.remove('cut-tool-flash'), 280); }
+  // Keep the user's selection visible after re-render
+  window.getSelection()?.removeAllRanges();
+}
+function rerenderCutBody(){
+  if(!state.cutCard) return;
+  const body = $('cut-body');
+  const cite = body.querySelector('.cite-block');
+  const html = renderCardBody(state.cutCard.body_markdown || '');
+  if(cite){
+    while(cite.nextSibling) cite.nextSibling.remove();
+    cite.insertAdjacentHTML('afterend', html);
+  } else {
+    body.innerHTML = html;
+  }
 }
 
 function showPasteFallback(url){
@@ -1562,6 +1729,8 @@ function showCutResult(data){
   // LLM cut returns `card: { tag, cite, body_markdown, ... }`. Pre-cut scrape
   // returns `bodyText`. Prefer the cut output.
   const cutCard = data.card || null;
+  // Stash the live card so the toolbar can mutate body_markdown.
+  state.cutCard = cutCard ? { ...cutCard } : null;
   const tag   = (cutCard && cutCard.tag) || data.title || '(untitled)';
   const cite  = (cutCard && cutCard.cite) || data.cite || '';
   const url   = data.url || (cutCard && cutCard.url);
@@ -1590,16 +1759,20 @@ function showCutResult(data){
   $('cut-source').onclick = url ? (()=> window.open(url, '_blank')) : null;
   $('cut-source').style.display = url ? '' : 'none';
 
-  // Copy: prefer the cut markdown's plain text, otherwise the card body.
-  $('cut-copy').onclick = ()=>{
-    const text = (cutCard && cutCard.body_plain) || body.innerText || '';
-    navigator.clipboard.writeText(text).then(()=>{
-      const btn = $('cut-copy');
-      const orig = btn.innerHTML;
-      btn.classList.add('copied');
-      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
-      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = orig; }, 1400);
-    });
+  // Copy: write rich HTML so Verbatim/Word preserves highlight + underline + bold.
+  // Always read from state.cutCard so toolbar edits are included.
+  $('cut-copy').onclick = async ()=>{
+    const live = state.cutCard;
+    const payload = live
+      ? { tag: live.tag || tag, cite: live.cite || cite, body_markdown: live.body_markdown, body_plain: live.body_plain }
+      : { tag, cite, body_plain: plainBody };
+    const ok = await writeCardToClipboard(payload);
+    if(!ok){ showToast('Copy failed'); return; }
+    const btn = $('cut-copy');
+    const orig = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
+    setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = orig; }, 1400);
   };
 
   // Log to history (server already saved the card via saveCutCardForUser).

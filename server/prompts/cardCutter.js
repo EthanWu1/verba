@@ -9,7 +9,12 @@ const DENSITY_PRESETS = {
 const LENGTH_PRESETS = {
   short:  { paragraphRule: '3–5 complete source paragraphs', maxWords: 500 },
   medium: { paragraphRule: '5–8 complete source paragraphs', maxWords: 1000 },
-  long:   { paragraphRule: '8–14 complete source paragraphs', maxWords: 1800 },
+  // 'long' is the default: pick as many whole source paragraphs as the warrant
+  // requires. Err on the longer side. If the operative warrant is in two
+  // adjacent paragraphs, use just those. If it's spread across separated
+  // sections, include the connective paragraphs so the read makes sense.
+  // No hard cap — judgment-based.
+  long:   { paragraphRule: 'as many complete source paragraphs as the warrant actually needs (typical 5–12; err longer over shorter; never trim a paragraph mid-flight)', maxWords: 4000 },
 };
 
 function buildSystemPrompt({ density = 'heavy', length = 'long' } = {}) {

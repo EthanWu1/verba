@@ -19,7 +19,10 @@ const LENGTH_BUDGETS = {
   medium: { input: 9000,  output: 4500 },
   long:   { input: 16000, output: 8000 },
 };
-function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'heavy'; }
+// Defaults tuned by usage: 'standard' density (45–65% underline) is the
+// preferred read-aloud weight; 'long' length lets the LLM pick as many
+// complete paragraphs as the warrant requires.
+function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'standard'; }
 function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'long'; }
 const { validateCut } = require('../services/cutValidator');
 const { buildChatContext } = require('../services/libraryQuery');
@@ -126,7 +129,42 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       catch {}
     }
 
-    const fidelity = verifyBodyFidelity(card.body_markdown, truncated);
+    // Fidelity gate: if the model dropped, paraphrased, or re-ordered words,
+    // retry once with explicit fidelity critique at temperature 0. Keep
+    // whichever version has a higher matchRate.
+    let fidelity = verifyBodyFidelity(card.body_markdown, truncated);
+    if (!fidelity.ok) {
+      console.warn(`[cut-card] low fidelity ${(fidelity.matchRate || 0).toFixed(2)} — retrying`);
+      const fidCritique =
+        `FIDELITY FAIL — your previous output altered, skipped, or re-ordered source words. ` +
+        `These 5-word windows from your output were NOT found in SOURCE: ${(fidelity.missing || []).slice(0,5).map(m => '"' + m + '"').join(', ') || '(none surfaced)'}. ` +
+        `Re-emit using EXCLUSIVELY verbatim text from SOURCE TEXT — every word inside the cut, including words inside <u>…</u>, **…**, and ==…== marks, must appear in SOURCE in the EXACT same order and spelling. Drop any paragraph you cannot copy 100% verbatim. No paraphrasing, no skipping, no insertions, no synonym substitution.`;
+      try {
+        const retry2 = await complete({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length, critique: fidCritique }) },
+          ],
+          temperature: 0,
+          maxTokens: budget.output,
+          forceModel: CARD_CUT_MODEL,
+        });
+        try {
+          const retryCard = parseJSON(retry2.content);
+          if (retryCard && retryCard.body_markdown) {
+            const retryFid = verifyBodyFidelity(retryCard.body_markdown, truncated);
+            // Adopt the retry only if it actually improved fidelity.
+            if ((retryFid.matchRate || 0) > (fidelity.matchRate || 0)) {
+              card = retryCard;
+              fidelity = retryFid;
+              if (meta.url && !validateCiteMatchesMeta(card.cite, meta)) {
+                card.cite = cite || card.cite;
+              }
+            }
+          }
+        } catch { /* keep original */ }
+      } catch (e) { /* keep original */ }
+    }
 
     let saved = null;
     try {

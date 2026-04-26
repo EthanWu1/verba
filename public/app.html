@@ -230,7 +230,11 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .cut-card-head{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-soft);background:var(--panel)}
 .cut-card-head .pip{width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
 .cut-card-head .ttl{font:600 12px/1 var(--font-display);text-transform:uppercase;letter-spacing:.1em;color:var(--ink-2)}
-.cut-card-head .actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.cut-card-head .actions{margin-left:auto;display:flex;align-items:center;gap:4px}
+.cut-toolbar{display:flex;align-items:center;gap:2px;padding:2px;background:#fff;border:1px solid var(--line);border-radius:7px}
+.tool-sep{width:1px;height:18px;background:var(--line);margin:0 4px}
+.cut-tool-flash{animation:toolFlash .25s ease}
+@keyframes toolFlash{0%{background:var(--hl-yellow)}100%{background:transparent}}
 .cut-body{padding:28px 36px;font-family:var(--font-ui);font-size:15px;line-height:1.8;color:var(--ink-2);min-height:200px;max-height:560px;overflow:auto}
 .cut-body .cite-block{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}
 .cut-body .cite-block .meta{font-family:var(--font-display);font-size:12.5px;color:var(--muted);line-height:1.5}
@@ -738,9 +742,14 @@ body.density-dense .shellpad{padding-top:18px}
               <span class="pip"></span>
               <span class="ttl">Scraped article</span>
               <div class="actions">
-                <button class="btn btn-sm" id="cut-copy"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Copy</button>
-                <button class="btn btn-sm" id="cut-source" style="display:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M10 14L21 3"/></svg>Source</button>
-                <a class="btn btn-sm btn-primary" href="/app-legacy" id="cut-edit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5l4 4L8 20l-4 1 1-4 11.5-13.5z"/></svg>Edit & highlight</a>
+                <div class="cut-toolbar">
+                  <button class="icon-btn" id="cut-tool-hl" title="Highlight (H)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button>
+                  <button class="icon-btn" id="cut-tool-u" title="Underline (U)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
+                  <button class="icon-btn" id="cut-tool-b" title="Bold warrant (B)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button>
+                </div>
+                <span class="tool-sep"></span>
+                <button class="icon-btn" id="cut-copy" title="Copy card"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></button>
+                <button class="icon-btn" id="cut-source" title="Open source" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M10 14L21 3"/></svg></button>
               </div>
             </div>
             <div class="cut-body" id="cut-body"></div>

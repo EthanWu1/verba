@@ -26,7 +26,7 @@
       "source_file": "public\\api.js",
       "source_location": "L1",
       "id": "public_api_js",
-      "community": 31,
+      "community": 30,
       "norm_label": "api.js"
     },
     {
@@ -35,7 +35,7 @@
       "source_file": "public\\api.js",
       "source_location": "L5",
       "id": "api_jsonfetch",
-      "community": 31,
+      "community": 30,
       "norm_label": "jsonfetch()"
     },
     {
@@ -80,7 +80,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L56",
       "id": "app_main",
-      "community": 6,
+      "community": 1,
       "norm_label": "$()"
     },
     {
@@ -161,7 +161,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L244",
       "id": "app_main_refreshnavcounts",
-      "community": 6,
+      "community": 1,
       "norm_label": "refreshnavcounts()"
     },
     {
@@ -539,7 +539,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L955",
       "id": "app_main_sethighlightmode",
-      "community": 1,
+      "community": 8,
       "norm_label": "sethighlightmode()"
     },
     {
@@ -791,7 +791,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1690",
       "id": "app_main_openprojmodal",
-      "community": 6,
+      "community": 1,
       "norm_label": "openprojmodal()"
     },
     {
@@ -800,7 +800,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1691",
       "id": "app_main_closeprojmodal",
-      "community": 6,
+      "community": 1,
       "norm_label": "closeprojmodal()"
     },
     {
@@ -872,7 +872,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1976",
       "id": "app_main_refreshusage",
-      "community": 1,
+      "community": 8,
       "norm_label": "refreshusage()"
     },
     {
@@ -1043,7 +1043,7 @@
       "source_file": "public\\app-main.search.js",
       "source_location": "L1",
       "id": "public_app_main_search_js",
-      "community": 32,
+      "community": 31,
       "norm_label": "app-main.search.js"
     },
     {
@@ -1052,7 +1052,7 @@
       "source_file": "public\\app-main.search.js",
       "source_location": "L2",
       "id": "app_main_search_filterevidenceclient",
-      "community": 32,
+      "community": 31,
       "norm_label": "filterevidenceclient()"
     },
     {
@@ -1106,7 +1106,7 @@
       "source_file": "public\\app-r3.js",
       "source_location": "L63",
       "id": "app_r3_fmtrellong",
-      "community": 0,
+      "community": 5,
       "norm_label": "fmtrellong()"
     },
     {
@@ -1560,10 +1560,37 @@
       "norm_label": "renderliblist()"
     },
     {
+      "label": "cardToHtml()",
+      "file_type": "code",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1098",
+      "id": "app_r3_cardtohtml",
+      "community": 2,
+      "norm_label": "cardtohtml()"
+    },
+    {
+      "label": "cardToPlain()",
+      "file_type": "code",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1129",
+      "id": "app_r3_cardtoplain",
+      "community": 2,
+      "norm_label": "cardtoplain()"
+    },
+    {
+      "label": "writeCardToClipboard()",
+      "file_type": "code",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1141",
+      "id": "app_r3_writecardtoclipboard",
+      "community": 2,
+      "norm_label": "writecardtoclipboard()"
+    },
+    {
       "label": "renderCardBody()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1094",
+      "source_location": "L1180",
       "id": "app_r3_rendercardbody",
       "community": 2,
       "norm_label": "rendercardbody()"
@@ -1572,7 +1599,7 @@
       "label": "showLibPreview()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1116",
+      "source_location": "L1197",
       "id": "app_r3_showlibpreview",
       "community": 2,
       "norm_label": "showlibpreview()"
@@ -1581,7 +1608,7 @@
       "label": "bindSettings()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1157",
+      "source_location": "L1237",
       "id": "app_r3_bindsettings",
       "community": 2,
       "norm_label": "bindsettings()"
@@ -1590,7 +1617,7 @@
       "label": "loadSettings()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1182",
+      "source_location": "L1262",
       "id": "app_r3_loadsettings",
       "community": 2,
       "norm_label": "loadsettings()"
@@ -1599,7 +1626,7 @@
       "label": "applyTweaks()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1186",
+      "source_location": "L1266",
       "id": "app_r3_applytweaks",
       "community": 2,
       "norm_label": "applytweaks()"
@@ -1608,7 +1635,7 @@
       "label": "bindLinkModal()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1201",
+      "source_location": "L1281",
       "id": "app_r3_bindlinkmodal",
       "community": 2,
       "norm_label": "bindlinkmodal()"
@@ -1617,7 +1644,7 @@
       "label": "openLinkModal()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1218",
+      "source_location": "L1298",
       "id": "app_r3_openlinkmodal",
       "community": 2,
       "norm_label": "openlinkmodal()"
@@ -1626,7 +1653,7 @@
       "label": "closeLinkModal()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1225",
+      "source_location": "L1305",
       "id": "app_r3_closelinkmodal",
       "community": 2,
       "norm_label": "closelinkmodal()"
@@ -1635,7 +1662,7 @@
       "label": "renderLinkCurrent()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1226",
+      "source_location": "L1306",
       "id": "app_r3_renderlinkcurrent",
       "community": 2,
       "norm_label": "renderlinkcurrent()"
@@ -1644,7 +1671,7 @@
       "label": "searchTabroom()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1237",
+      "source_location": "L1317",
       "id": "app_r3_searchtabroom",
       "community": 2,
       "norm_label": "searchtabroom()"
@@ -1653,7 +1680,7 @@
       "label": "bindCommandPalette()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1276",
+      "source_location": "L1356",
       "id": "app_r3_bindcommandpalette",
       "community": 2,
       "norm_label": "bindcommandpalette()"
@@ -1662,7 +1689,7 @@
       "label": "bindRail()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1300",
+      "source_location": "L1380",
       "id": "app_r3_bindrail",
       "community": 2,
       "norm_label": "bindrail()"
@@ -1671,16 +1698,52 @@
       "label": "bindCutterControls()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1310",
+      "source_location": "L1390",
       "id": "app_r3_bindcuttercontrols",
       "community": 2,
       "norm_label": "bindcuttercontrols()"
     },
     {
+      "label": "plainToMarkdownOffset()",
+      "file_type": "code",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1436",
+      "id": "app_r3_plaintomarkdownoffset",
+      "community": 2,
+      "norm_label": "plaintomarkdownoffset()"
+    },
+    {
+      "label": "stripMarkupForSearch()",
+      "file_type": "code",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1452",
+      "id": "app_r3_stripmarkupforsearch",
+      "community": 2,
+      "norm_label": "stripmarkupforsearch()"
+    },
+    {
+      "label": "applyCutMarkup()",
+      "file_type": "code",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1459",
+      "id": "app_r3_applycutmarkup",
+      "community": 2,
+      "norm_label": "applycutmarkup()"
+    },
+    {
+      "label": "rerenderCutBody()",
+      "file_type": "code",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1490",
+      "id": "app_r3_rerendercutbody",
+      "community": 2,
+      "norm_label": "rerendercutbody()"
+    },
+    {
       "label": "showPasteFallback()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1336",
+      "source_location": "L1503",
       "id": "app_r3_showpastefallback",
       "community": 2,
       "norm_label": "showpastefallback()"
@@ -1689,7 +1752,7 @@
       "label": "runCutterPaste()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1349",
+      "source_location": "L1516",
       "id": "app_r3_runcutterpaste",
       "community": 2,
       "norm_label": "runcutterpaste()"
@@ -1698,7 +1761,7 @@
       "label": "loadCutter()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1365",
+      "source_location": "L1532",
       "id": "app_r3_loadcutter",
       "community": 2,
       "norm_label": "loadcutter()"
@@ -1707,7 +1770,7 @@
       "label": "renderCutterRecent()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1374",
+      "source_location": "L1541",
       "id": "app_r3_rendercutterrecent",
       "community": 2,
       "norm_label": "rendercutterrecent()"
@@ -1716,7 +1779,7 @@
       "label": "termOpen()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1398",
+      "source_location": "L1565",
       "id": "app_r3_termopen",
       "community": 2,
       "norm_label": "termopen()"
@@ -1725,7 +1788,7 @@
       "label": "termLine()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1403",
+      "source_location": "L1570",
       "id": "app_r3_termline",
       "community": 2,
       "norm_label": "termline()"
@@ -1734,7 +1797,7 @@
       "label": "termClose()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1411",
+      "source_location": "L1578",
       "id": "app_r3_termclose",
       "community": 2,
       "norm_label": "termclose()"
@@ -1743,7 +1806,7 @@
       "label": "runCutterScrape()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1413",
+      "source_location": "L1580",
       "id": "app_r3_runcutterscrape",
       "community": 2,
       "norm_label": "runcutterscrape()"
@@ -1752,7 +1815,7 @@
       "label": "runCutLLM()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1478",
+      "source_location": "L1645",
       "id": "app_r3_runcutllm",
       "community": 2,
       "norm_label": "runcutllm()"
@@ -1761,7 +1824,7 @@
       "label": "runCutterFile()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1515",
+      "source_location": "L1682",
       "id": "app_r3_runcutterfile",
       "community": 2,
       "norm_label": "runcutterfile()"
@@ -1770,7 +1833,7 @@
       "label": "showCutResult()",
       "file_type": "code",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1559",
+      "source_location": "L1726",
       "id": "app_r3_showcutresult",
       "community": 2,
       "norm_label": "showcutresult()"
@@ -1781,7 +1844,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L1",
       "id": "public_rankings_js",
-      "community": 13,
+      "community": 14,
       "norm_label": "rankings.js"
     },
     {
@@ -1790,7 +1853,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L7",
       "id": "rankings",
-      "community": 13,
+      "community": 14,
       "norm_label": "$()"
     },
     {
@@ -1799,7 +1862,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L8",
       "id": "rankings_esc",
-      "community": 13,
+      "community": 14,
       "norm_label": "esc()"
     },
     {
@@ -1808,7 +1871,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L10",
       "id": "rankings_initials",
-      "community": 13,
+      "community": 14,
       "norm_label": "initials()"
     },
     {
@@ -1817,7 +1880,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L14",
       "id": "rankings_loadseasons",
-      "community": 13,
+      "community": 14,
       "norm_label": "loadseasons()"
     },
     {
@@ -1826,7 +1889,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L30",
       "id": "rankings_buildpagewindow",
-      "community": 13,
+      "community": 14,
       "norm_label": "buildpagewindow()"
     },
     {
@@ -1835,7 +1898,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L42",
       "id": "rankings_chevronsvg",
-      "community": 13,
+      "community": 14,
       "norm_label": "chevronsvg()"
     },
     {
@@ -1844,7 +1907,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L47",
       "id": "rankings_renderpagination",
-      "community": 13,
+      "community": 14,
       "norm_label": "renderpagination()"
     },
     {
@@ -1853,7 +1916,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L74",
       "id": "rankings_gotopage",
-      "community": 13,
+      "community": 14,
       "norm_label": "gotopage()"
     },
     {
@@ -1862,7 +1925,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L81",
       "id": "rankings_renderrows",
-      "community": 13,
+      "community": 14,
       "norm_label": "renderrows()"
     },
     {
@@ -1871,7 +1934,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L114",
       "id": "rankings_load",
-      "community": 13,
+      "community": 14,
       "norm_label": "load()"
     },
     {
@@ -1880,7 +1943,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L141",
       "id": "rankings_openprofile",
-      "community": 13,
+      "community": 14,
       "norm_label": "openprofile()"
     },
     {
@@ -1889,7 +1952,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L289",
       "id": "rankings_openpairingsforentry",
-      "community": 13,
+      "community": 14,
       "norm_label": "openpairingsforentry()"
     },
     {
@@ -1898,7 +1961,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L334",
       "id": "rankings_renderelochart",
-      "community": 13,
+      "community": 14,
       "norm_label": "renderelochart()"
     },
     {
@@ -1907,7 +1970,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L355",
       "id": "rankings_restoretable",
-      "community": 13,
+      "community": 14,
       "norm_label": "restoretable()"
     },
     {
@@ -1916,7 +1979,7 @@
       "source_file": "public\\rankings.js",
       "source_location": "L373",
       "id": "rankings_bind",
-      "community": 13,
+      "community": 14,
       "norm_label": "bind()"
     },
     {
@@ -1925,7 +1988,7 @@
       "source_file": "public\\slash-helpers.js",
       "source_location": "L1",
       "id": "public_slash_helpers_js",
-      "community": 28,
+      "community": 27,
       "norm_label": "slash-helpers.js"
     },
     {
@@ -1934,7 +1997,7 @@
       "source_file": "public\\slash-helpers.js",
       "source_location": "L2",
       "id": "slash_helpers_expandcommand",
-      "community": 28,
+      "community": 27,
       "norm_label": "expandcommand()"
     },
     {
@@ -1943,7 +2006,7 @@
       "source_file": "public\\slash-helpers.js",
       "source_location": "L28",
       "id": "slash_helpers_shouldkeepslashopen",
-      "community": 28,
+      "community": 27,
       "norm_label": "shouldkeepslashopen()"
     },
     {
@@ -2177,7 +2240,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L1",
       "id": "public_wiki_js",
-      "community": 16,
+      "community": 8,
       "norm_label": "wiki.js"
     },
     {
@@ -2186,7 +2249,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L6",
       "id": "wiki",
-      "community": 16,
+      "community": 8,
       "norm_label": "$()"
     },
     {
@@ -2195,7 +2258,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L7",
       "id": "wiki_esc",
-      "community": 16,
+      "community": 8,
       "norm_label": "esc()"
     },
     {
@@ -2204,7 +2267,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L9",
       "id": "wiki_initials",
-      "community": 16,
+      "community": 8,
       "norm_label": "initials()"
     },
     {
@@ -2213,7 +2276,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L13",
       "id": "wiki_groupbyschool",
-      "community": 16,
+      "community": 8,
       "norm_label": "groupbyschool()"
     },
     {
@@ -2222,7 +2285,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L23",
       "id": "wiki_debaterlabel",
-      "community": 16,
+      "community": 8,
       "norm_label": "debaterlabel()"
     },
     {
@@ -2231,7 +2294,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L27",
       "id": "wiki_load",
-      "community": 16,
+      "community": 8,
       "norm_label": "load()"
     },
     {
@@ -2240,7 +2303,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L73",
       "id": "wiki_toggledebater",
-      "community": 16,
+      "community": 8,
       "norm_label": "toggledebater()"
     },
     {
@@ -2249,7 +2312,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L90",
       "id": "wiki_renderargs",
-      "community": 16,
+      "community": 8,
       "norm_label": "renderargs()"
     },
     {
@@ -2258,7 +2321,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L105",
       "id": "wiki_bind",
-      "community": 16,
+      "community": 8,
       "norm_label": "bind()"
     },
     {
@@ -2411,7 +2474,7 @@
       "source_file": "public\\lib\\chatApp.js",
       "source_location": "L1",
       "id": "public_lib_chatapp_js",
-      "community": 11,
+      "community": 12,
       "norm_label": "chatapp.js"
     },
     {
@@ -2420,7 +2483,7 @@
       "source_file": "public\\lib\\chatApp.js",
       "source_location": "L5",
       "id": "chatapp_show",
-      "community": 11,
+      "community": 12,
       "norm_label": "show()"
     },
     {
@@ -2429,7 +2492,7 @@
       "source_file": "public\\lib\\chatApp.js",
       "source_location": "L16",
       "id": "chatapp_init",
-      "community": 11,
+      "community": 12,
       "norm_label": "init()"
     },
     {
@@ -2438,7 +2501,7 @@
       "source_file": "public\\lib\\chatApp.js",
       "source_location": "L27",
       "id": "chatapp_initcomposer",
-      "community": 11,
+      "community": 12,
       "norm_label": "initcomposer()"
     },
     {
@@ -2447,7 +2510,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L1",
       "id": "public_lib_chatcontext_js",
-      "community": 12,
+      "community": 13,
       "norm_label": "chatcontext.js"
     },
     {
@@ -2456,7 +2519,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L14",
       "id": "chatcontext_loadselected",
-      "community": 12,
+      "community": 13,
       "norm_label": "loadselected()"
     },
     {
@@ -2465,7 +2528,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L18",
       "id": "chatcontext_saveselected",
-      "community": 12,
+      "community": 13,
       "norm_label": "saveselected()"
     },
     {
@@ -2474,7 +2537,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L22",
       "id": "chatcontext",
-      "community": 6,
+      "community": 1,
       "norm_label": "$()"
     },
     {
@@ -2483,7 +2546,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L24",
       "id": "chatcontext_ensurewired",
-      "community": 12,
+      "community": 13,
       "norm_label": "ensurewired()"
     },
     {
@@ -2492,7 +2555,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L83",
       "id": "chatcontext_open",
-      "community": 12,
+      "community": 13,
       "norm_label": "open()"
     },
     {
@@ -2501,7 +2564,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L92",
       "id": "chatcontext_close",
-      "community": 12,
+      "community": 13,
       "norm_label": "close()"
     },
     {
@@ -2510,7 +2573,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L101",
       "id": "chatcontext_refreshlist",
-      "community": 12,
+      "community": 13,
       "norm_label": "refreshlist()"
     },
     {
@@ -2519,7 +2582,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L130",
       "id": "chatcontext_updatecount",
-      "community": 12,
+      "community": 13,
       "norm_label": "updatecount()"
     },
     {
@@ -2528,7 +2591,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L136",
       "id": "chatcontext_renderrow",
-      "community": 12,
+      "community": 13,
       "norm_label": "renderrow()"
     },
     {
@@ -2537,7 +2600,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L180",
       "id": "chatcontext_iconfor",
-      "community": 12,
+      "community": 13,
       "norm_label": "iconfor()"
     },
     {
@@ -2546,7 +2609,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L188",
       "id": "chatcontext_uploadfiles",
-      "community": 12,
+      "community": 13,
       "norm_label": "uploadfiles()"
     },
     {
@@ -2555,7 +2618,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L200",
       "id": "chatcontext_togglepaste",
-      "community": 12,
+      "community": 13,
       "norm_label": "togglepaste()"
     },
     {
@@ -2564,7 +2627,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L205",
       "id": "chatcontext_addpasted",
-      "community": 12,
+      "community": 13,
       "norm_label": "addpasted()"
     },
     {
@@ -2573,7 +2636,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L215",
       "id": "chatcontext_togglelibrary",
-      "community": 12,
+      "community": 13,
       "norm_label": "togglelibrary()"
     },
     {
@@ -2582,7 +2645,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L220",
       "id": "chatcontext_searchlibrary",
-      "community": 12,
+      "community": 13,
       "norm_label": "searchlibrary()"
     },
     {
@@ -2591,7 +2654,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L247",
       "id": "chatcontext_escapehtml",
-      "community": 12,
+      "community": 13,
       "norm_label": "escapehtml()"
     },
     {
@@ -2600,7 +2663,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L249",
       "id": "chatcontext_getselectedids",
-      "community": 11,
+      "community": 12,
       "norm_label": "getselectedids()"
     },
     {
@@ -2609,7 +2672,7 @@
       "source_file": "public\\lib\\chatHistory.js",
       "source_location": "L1",
       "id": "public_lib_chathistory_js",
-      "community": 11,
+      "community": 12,
       "norm_label": "chathistory.js"
     },
     {
@@ -2618,7 +2681,7 @@
       "source_file": "public\\lib\\chatHistory.js",
       "source_location": "L6",
       "id": "chathistory_open",
-      "community": 11,
+      "community": 12,
       "norm_label": "open()"
     },
     {
@@ -2627,7 +2690,7 @@
       "source_file": "public\\lib\\chatHistory.js",
       "source_location": "L25",
       "id": "chathistory_close",
-      "community": 11,
+      "community": 12,
       "norm_label": "close()"
     },
     {
@@ -2636,7 +2699,7 @@
       "source_file": "public\\lib\\chatHistory.js",
       "source_location": "L26",
       "id": "chathistory_outsideclose",
-      "community": 11,
+      "community": 12,
       "norm_label": "outsideclose()"
     },
     {
@@ -2645,7 +2708,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L1",
       "id": "public_lib_chatsplitview_js",
-      "community": 1,
+      "community": 8,
       "norm_label": "chatsplitview.js"
     },
     {
@@ -2654,7 +2717,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L6",
       "id": "chatsplitview_renderblockhtml",
-      "community": 1,
+      "community": 8,
       "norm_label": "renderblockhtml()"
     },
     {
@@ -2663,7 +2726,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L21",
       "id": "chatsplitview_toggle",
-      "community": 1,
+      "community": 8,
       "norm_label": "toggle()"
     },
     {
@@ -2672,7 +2735,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L46",
       "id": "chatsplitview_close",
-      "community": 1,
+      "community": 8,
       "norm_label": "close()"
     },
     {
@@ -2681,7 +2744,7 @@
       "source_file": "public\\lib\\chatStream.js",
       "source_location": "L1",
       "id": "public_lib_chatstream_js",
-      "community": 11,
+      "community": 12,
       "norm_label": "chatstream.js"
     },
     {
@@ -2690,7 +2753,7 @@
       "source_file": "public\\lib\\chatStream.js",
       "source_location": "L4",
       "id": "chatstream_stream",
-      "community": 11,
+      "community": 12,
       "norm_label": "stream()"
     },
     {
@@ -2699,7 +2762,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L1",
       "id": "public_lib_chatthread_js",
-      "community": 11,
+      "community": 12,
       "norm_label": "chatthread.js"
     },
     {
@@ -2708,7 +2771,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L8",
       "id": "chatthread_init",
-      "community": 11,
+      "community": 12,
       "norm_label": "init()"
     },
     {
@@ -2717,7 +2780,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L18",
       "id": "chatthread_autogrow",
-      "community": 11,
+      "community": 12,
       "norm_label": "autogrow()"
     },
     {
@@ -2726,7 +2789,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L23",
       "id": "chatthread_openthread",
-      "community": 11,
+      "community": 12,
       "norm_label": "openthread()"
     },
     {
@@ -2735,7 +2798,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L34",
       "id": "chatthread_rendermessage",
-      "community": 11,
+      "community": 12,
       "norm_label": "rendermessage()"
     },
     {
@@ -2744,7 +2807,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L45",
       "id": "chatthread_blockcard",
-      "community": 11,
+      "community": 12,
       "norm_label": "blockcard()"
     },
     {
@@ -2753,7 +2816,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L62",
       "id": "chatthread_summarizecites",
-      "community": 11,
+      "community": 12,
       "norm_label": "summarizecites()"
     },
     {
@@ -2762,7 +2825,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L67",
       "id": "chatthread_escapehtml",
-      "community": 11,
+      "community": 12,
       "norm_label": "escapehtml()"
     },
     {
@@ -2771,7 +2834,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L69",
       "id": "chatthread_send",
-      "community": 11,
+      "community": 12,
       "norm_label": "send()"
     },
     {
@@ -2780,7 +2843,7 @@
       "source_file": "public\\lib\\chatThread.js",
       "source_location": "L97",
       "id": "chatthread_scrollbottom",
-      "community": 11,
+      "community": 12,
       "norm_label": "scrollbottom()"
     },
     {
@@ -2789,7 +2852,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L1",
       "id": "public_lib_clipboard_js",
-      "community": 4,
+      "community": 8,
       "norm_label": "clipboard.js"
     },
     {
@@ -2798,7 +2861,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L5",
       "id": "clipboard_extractauthoryearprefix",
-      "community": 4,
+      "community": 8,
       "norm_label": "extractauthoryearprefix()"
     },
     {
@@ -2807,7 +2870,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L12",
       "id": "clipboard_splitcite",
-      "community": 4,
+      "community": 8,
       "norm_label": "splitcite()"
     },
     {
@@ -2816,7 +2879,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L19",
       "id": "clipboard_normalizespanstyles",
-      "community": 4,
+      "community": 8,
       "norm_label": "normalizespanstyles()"
     },
     {
@@ -2825,7 +2888,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L69",
       "id": "clipboard_flatteninlinestyles",
-      "community": 4,
+      "community": 8,
       "norm_label": "flatteninlinestyles()"
     },
     {
@@ -2834,7 +2897,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L118",
       "id": "clipboard_esc",
-      "community": 4,
+      "community": 8,
       "norm_label": "esc()"
     },
     {
@@ -2843,7 +2906,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L126",
       "id": "clipboard_stripdangerousattrs",
-      "community": 4,
+      "community": 8,
       "norm_label": "stripdangerousattrs()"
     },
     {
@@ -2852,7 +2915,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L144",
       "id": "clipboard_htmltoplain",
-      "community": 4,
+      "community": 8,
       "norm_label": "htmltoplain()"
     },
     {
@@ -2861,7 +2924,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L158",
       "id": "clipboard_serializeselectionhtmlfromstring",
-      "community": 4,
+      "community": 8,
       "norm_label": "serializeselectionhtmlfromstring()"
     },
     {
@@ -2870,7 +2933,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L183",
       "id": "clipboard_buildcopyhtml",
-      "community": 4,
+      "community": 8,
       "norm_label": "buildcopyhtml()"
     },
     {
@@ -2879,7 +2942,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L213",
       "id": "clipboard_buildcopyplain",
-      "community": 4,
+      "community": 8,
       "norm_label": "buildcopyplain()"
     },
     {
@@ -2888,7 +2951,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L220",
       "id": "clipboard_serializeselectionhtml",
-      "community": 4,
+      "community": 8,
       "norm_label": "serializeselectionhtml()"
     },
     {
@@ -2897,7 +2960,7 @@
       "source_file": "public\\lib\\cmdPalette.js",
       "source_location": "L1",
       "id": "public_lib_cmdpalette_js",
-      "community": 33,
+      "community": 32,
       "norm_label": "cmdpalette.js"
     },
     {
@@ -2906,7 +2969,7 @@
       "source_file": "public\\lib\\cmdPalette.js",
       "source_location": "L80",
       "id": "cmdpalette_mount",
-      "community": 33,
+      "community": 32,
       "norm_label": "mount()"
     },
     {
@@ -2915,7 +2978,7 @@
       "source_file": "public\\lib\\isDirty.js",
       "source_location": "L1",
       "id": "public_lib_isdirty_js",
-      "community": 34,
+      "community": 33,
       "norm_label": "isdirty.js"
     },
     {
@@ -2924,7 +2987,7 @@
       "source_file": "public\\lib\\isDirty.js",
       "source_location": "L5",
       "id": "isdirty_isdirty",
-      "community": 34,
+      "community": 33,
       "norm_label": "isdirty()"
     },
     {
@@ -2933,7 +2996,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L1",
       "id": "public_lib_wordsnap_js",
-      "community": 21,
+      "community": 20,
       "norm_label": "wordsnap.js"
     },
     {
@@ -2942,7 +3005,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L6",
       "id": "wordsnap_isword",
-      "community": 21,
+      "community": 20,
       "norm_label": "isword()"
     },
     {
@@ -2951,7 +3014,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L8",
       "id": "wordsnap_snapstart",
-      "community": 21,
+      "community": 20,
       "norm_label": "snapstart()"
     },
     {
@@ -2960,7 +3023,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L27",
       "id": "wordsnap_snapend",
-      "community": 21,
+      "community": 20,
       "norm_label": "snapend()"
     },
     {
@@ -2969,7 +3032,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L44",
       "id": "wordsnap_snaptowordboundaries",
-      "community": 21,
+      "community": 20,
       "norm_label": "snaptowordboundaries()"
     },
     {
@@ -2978,7 +3041,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L55",
       "id": "wordsnap_wordat",
-      "community": 21,
+      "community": 20,
       "norm_label": "wordat()"
     },
     {
@@ -2987,7 +3050,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L1",
       "id": "scripts_canonicalize_cards_js",
-      "community": 19,
+      "community": 18,
       "norm_label": "canonicalize-cards.js"
     },
     {
@@ -2996,7 +3059,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L54",
       "id": "canonicalize_cards_normalizecite",
-      "community": 19,
+      "community": 18,
       "norm_label": "normalizecite()"
     },
     {
@@ -3005,7 +3068,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L57",
       "id": "canonicalize_cards_bodyprefix",
-      "community": 19,
+      "community": 18,
       "norm_label": "bodyprefix()"
     },
     {
@@ -3014,7 +3077,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L60",
       "id": "canonicalize_cards_groupkeyfor",
-      "community": 19,
+      "community": 18,
       "norm_label": "groupkeyfor()"
     },
     {
@@ -3023,7 +3086,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L66",
       "id": "canonicalize_cards_highlightwordcount",
-      "community": 19,
+      "community": 18,
       "norm_label": "highlightwordcount()"
     },
     {
@@ -3032,7 +3095,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L80",
       "id": "canonicalize_cards_bodyscore",
-      "community": 19,
+      "community": 18,
       "norm_label": "bodyscore()"
     },
     {
@@ -3041,7 +3104,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L85",
       "id": "canonicalize_cards_tagscore",
-      "community": 19,
+      "community": 18,
       "norm_label": "tagscore()"
     },
     {
@@ -3050,7 +3113,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L100",
       "id": "canonicalize_cards_backupdb",
-      "community": 19,
+      "community": 18,
       "norm_label": "backupdb()"
     },
     {
@@ -3059,7 +3122,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L1",
       "id": "scripts_download_openev_js",
-      "community": 4,
+      "community": 5,
       "norm_label": "download-openev.js"
     },
     {
@@ -3068,7 +3131,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L27",
       "id": "download_openev_humanmb",
-      "community": 4,
+      "community": 5,
       "norm_label": "humanmb()"
     },
     {
@@ -3077,7 +3140,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L29",
       "id": "download_openev_download",
-      "community": 4,
+      "community": 5,
       "norm_label": "download()"
     },
     {
@@ -3086,7 +3149,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L53",
       "id": "download_openev_importzip",
-      "community": 4,
+      "community": 5,
       "norm_label": "importzip()"
     },
     {
@@ -3131,7 +3194,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L1",
       "id": "scripts_export_to_obsidian_js",
-      "community": 8,
+      "community": 7,
       "norm_label": "export-to-obsidian.js"
     },
     {
@@ -3140,7 +3203,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L11",
       "id": "export_to_obsidian_ensuredir",
-      "community": 8,
+      "community": 7,
       "norm_label": "ensuredir()"
     },
     {
@@ -3149,7 +3212,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L15",
       "id": "export_to_obsidian_slug",
-      "community": 8,
+      "community": 7,
       "norm_label": "slug()"
     },
     {
@@ -3158,7 +3221,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L24",
       "id": "export_to_obsidian_yamlescape",
-      "community": 8,
+      "community": 7,
       "norm_label": "yamlescape()"
     },
     {
@@ -3167,7 +3230,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L28",
       "id": "export_to_obsidian_readvaultpath",
-      "community": 8,
+      "community": 7,
       "norm_label": "readvaultpath()"
     },
     {
@@ -3176,7 +3239,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L35",
       "id": "export_to_obsidian_writefile",
-      "community": 8,
+      "community": 7,
       "norm_label": "writefile()"
     },
     {
@@ -3185,7 +3248,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L40",
       "id": "export_to_obsidian_buildfrontmatter",
-      "community": 8,
+      "community": 7,
       "norm_label": "buildfrontmatter()"
     },
     {
@@ -3194,7 +3257,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L59",
       "id": "export_to_obsidian_buildcardnote",
-      "community": 8,
+      "community": 7,
       "norm_label": "buildcardnote()"
     },
     {
@@ -3203,7 +3266,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L82",
       "id": "export_to_obsidian_countby",
-      "community": 8,
+      "community": 7,
       "norm_label": "countby()"
     },
     {
@@ -3212,7 +3275,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L91",
       "id": "export_to_obsidian_groupby",
-      "community": 8,
+      "community": 7,
       "norm_label": "groupby()"
     },
     {
@@ -3221,7 +3284,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L101",
       "id": "export_to_obsidian_buildindexnote",
-      "community": 8,
+      "community": 7,
       "norm_label": "buildindexnote()"
     },
     {
@@ -3230,7 +3293,7 @@
       "source_file": "scripts\\export-to-obsidian.js",
       "source_location": "L118",
       "id": "export_to_obsidian_exporttovault",
-      "community": 8,
+      "community": 7,
       "norm_label": "exporttovault()"
     },
     {
@@ -3239,7 +3302,7 @@
       "source_file": "scripts\\force-crawl.js",
       "source_location": "L1",
       "id": "scripts_force_crawl_js",
-      "community": 47,
+      "community": 46,
       "norm_label": "force-crawl.js"
     },
     {
@@ -3248,7 +3311,7 @@
       "source_file": "scripts\\import-caselist.js",
       "source_location": "L1",
       "id": "scripts_import_caselist_js",
-      "community": 35,
+      "community": 34,
       "norm_label": "import-caselist.js"
     },
     {
@@ -3257,7 +3320,7 @@
       "source_file": "scripts\\import-caselist.js",
       "source_location": "L11",
       "id": "import_caselist_iscaselistzip",
-      "community": 35,
+      "community": 34,
       "norm_label": "iscaselistzip()"
     },
     {
@@ -3266,7 +3329,7 @@
       "source_file": "scripts\\import-zip.js",
       "source_location": "L1",
       "id": "scripts_import_zip_js",
-      "community": 5,
+      "community": 3,
       "norm_label": "import-zip.js"
     },
     {
@@ -3275,7 +3338,7 @@
       "source_file": "scripts\\import-zip.js",
       "source_location": "L10",
       "id": "import_zip_main",
-      "community": 5,
+      "community": 3,
       "norm_label": "main()"
     },
     {
@@ -3284,7 +3347,7 @@
       "source_file": "scripts\\probe-ocl.js",
       "source_location": "L1",
       "id": "scripts_probe_ocl_js",
-      "community": 48,
+      "community": 47,
       "norm_label": "probe-ocl.js"
     },
     {
@@ -3293,7 +3356,7 @@
       "source_file": "scripts\\probe-rounds.js",
       "source_location": "L1",
       "id": "scripts_probe_rounds_js",
-      "community": 49,
+      "community": 48,
       "norm_label": "probe-rounds.js"
     },
     {
@@ -3302,7 +3365,7 @@
       "source_file": "scripts\\probe-tabroom.js",
       "source_location": "L1",
       "id": "scripts_probe_tabroom_js",
-      "community": 50,
+      "community": 49,
       "norm_label": "probe-tabroom.js"
     },
     {
@@ -3311,7 +3374,7 @@
       "source_file": "scripts\\_count-canon.js",
       "source_location": "L1",
       "id": "scripts_count_canon_js",
-      "community": 51,
+      "community": 50,
       "norm_label": "_count-canon.js"
     },
     {
@@ -3356,7 +3419,7 @@
       "source_file": "server\\middleware\\enforceLimit.js",
       "source_location": "L1",
       "id": "server_middleware_enforcelimit_js",
-      "community": 24,
+      "community": 21,
       "norm_label": "enforcelimit.js"
     },
     {
@@ -3365,7 +3428,7 @@
       "source_file": "server\\middleware\\enforceLimit.js",
       "source_location": "L4",
       "id": "enforcelimit_enforcelimit",
-      "community": 24,
+      "community": 21,
       "norm_label": "enforcelimit()"
     },
     {
@@ -3399,7 +3462,7 @@
       "label": "buildSystemPrompt()",
       "file_type": "code",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L15",
+      "source_location": "L20",
       "id": "cardcutter_buildsystemprompt",
       "community": 4,
       "norm_label": "buildsystemprompt()"
@@ -3408,7 +3471,7 @@
       "label": "stripAbstractPrelude()",
       "file_type": "code",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L96",
+      "source_location": "L101",
       "id": "cardcutter_stripabstractprelude",
       "community": 4,
       "norm_label": "stripabstractprelude()"
@@ -3417,7 +3480,7 @@
       "label": "stripBoilerplateSections()",
       "file_type": "code",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L105",
+      "source_location": "L110",
       "id": "cardcutter_stripboilerplatesections",
       "community": 4,
       "norm_label": "stripboilerplatesections()"
@@ -3426,7 +3489,7 @@
       "label": "buildCutPrompt()",
       "file_type": "code",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L119",
+      "source_location": "L124",
       "id": "cardcutter_buildcutprompt",
       "community": 4,
       "norm_label": "buildcutprompt()"
@@ -3435,7 +3498,7 @@
       "label": "buildEditPrompt()",
       "file_type": "code",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L147",
+      "source_location": "L152",
       "id": "cardcutter_buildeditprompt",
       "community": 4,
       "norm_label": "buildeditprompt()"
@@ -3446,7 +3509,7 @@
       "source_file": "server\\prompts\\chatBrevity.js",
       "source_location": "L1",
       "id": "server_prompts_chatbrevity_js",
-      "community": 36,
+      "community": 35,
       "norm_label": "chatbrevity.js"
     },
     {
@@ -3455,7 +3518,7 @@
       "source_file": "server\\prompts\\chatBrevity.js",
       "source_location": "L11",
       "id": "chatbrevity_pickchatmaxtokens",
-      "community": 36,
+      "community": 35,
       "norm_label": "pickchatmaxtokens()"
     },
     {
@@ -3464,97 +3527,97 @@
       "source_file": "server\\routes\\ai.js",
       "source_location": "L1",
       "id": "server_routes_ai_js",
-      "community": 7,
+      "community": 6,
       "norm_label": "ai.js"
     },
     {
       "label": "normalizeDensity()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L22",
+      "source_location": "L25",
       "id": "ai_normalizedensity",
-      "community": 7,
+      "community": 6,
       "norm_label": "normalizedensity()"
     },
     {
       "label": "normalizeLength()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L23",
+      "source_location": "L26",
       "id": "ai_normalizelength",
-      "community": 7,
+      "community": 6,
       "norm_label": "normalizelength()"
     },
     {
       "label": "stripFormatMarks()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L37",
+      "source_location": "L40",
       "id": "ai_stripformatmarks",
-      "community": 7,
+      "community": 6,
       "norm_label": "stripformatmarks()"
     },
     {
       "label": "verifyBodyFidelity()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L47",
+      "source_location": "L50",
       "id": "ai_verifybodyfidelity",
-      "community": 7,
+      "community": 6,
       "norm_label": "verifybodyfidelity()"
     },
     {
       "label": "sanitizeChatOutput()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L220",
+      "source_location": "L258",
       "id": "ai_sanitizechatoutput",
-      "community": 7,
+      "community": 6,
       "norm_label": "sanitizechatoutput()"
     },
     {
       "label": "buildSummaryPrompt()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L229",
+      "source_location": "L267",
       "id": "ai_buildsummaryprompt",
-      "community": 7,
+      "community": 6,
       "norm_label": "buildsummaryprompt()"
     },
     {
       "label": "finish()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L358",
+      "source_location": "L396",
       "id": "ai_finish",
-      "community": 7,
+      "community": 6,
       "norm_label": "finish()"
     },
     {
       "label": "safeStringify()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L364",
+      "source_location": "L402",
       "id": "ai_safestringify",
-      "community": 7,
+      "community": 6,
       "norm_label": "safestringify()"
     },
     {
       "label": "send()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L379",
+      "source_location": "L417",
       "id": "ai_send",
-      "community": 7,
+      "community": 6,
       "norm_label": "send()"
     },
     {
       "label": "onPhase()",
       "file_type": "code",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L397",
+      "source_location": "L435",
       "id": "ai_onphase",
-      "community": 7,
+      "community": 6,
       "norm_label": "onphase()"
     },
     {
@@ -3563,7 +3626,7 @@
       "source_file": "server\\routes\\auth.js",
       "source_location": "L1",
       "id": "server_routes_auth_js",
-      "community": 29,
+      "community": 28,
       "norm_label": "auth.js"
     },
     {
@@ -3572,7 +3635,7 @@
       "source_file": "server\\routes\\auth.js",
       "source_location": "L19",
       "id": "auth_sessionmeta",
-      "community": 29,
+      "community": 28,
       "norm_label": "sessionmeta()"
     },
     {
@@ -3581,7 +3644,7 @@
       "source_file": "server\\routes\\auth.js",
       "source_location": "L26",
       "id": "auth_publicuser",
-      "community": 29,
+      "community": 28,
       "norm_label": "publicuser()"
     },
     {
@@ -3635,7 +3698,7 @@
       "source_file": "server\\routes\\contentions.js",
       "source_location": "L11",
       "id": "contentions_load",
-      "community": 6,
+      "community": 1,
       "norm_label": "load()"
     },
     {
@@ -3653,7 +3716,7 @@
       "source_file": "server\\routes\\export.js",
       "source_location": "L1",
       "id": "server_routes_export_js",
-      "community": 37,
+      "community": 36,
       "norm_label": "export.js"
     },
     {
@@ -3662,7 +3725,7 @@
       "source_file": "server\\routes\\export.js",
       "source_location": "L10",
       "id": "export_loadprojects",
-      "community": 37,
+      "community": 36,
       "norm_label": "loadprojects()"
     },
     {
@@ -3671,7 +3734,7 @@
       "source_file": "server\\routes\\history.js",
       "source_location": "L1",
       "id": "server_routes_history_js",
-      "community": 52,
+      "community": 51,
       "norm_label": "history.js"
     },
     {
@@ -3680,7 +3743,7 @@
       "source_file": "server\\routes\\import.js",
       "source_location": "L1",
       "id": "server_routes_import_js",
-      "community": 53,
+      "community": 52,
       "norm_label": "import.js"
     },
     {
@@ -3752,7 +3815,7 @@
       "source_file": "server\\routes\\mine.js",
       "source_location": "L1",
       "id": "server_routes_mine_js",
-      "community": 38,
+      "community": 37,
       "norm_label": "mine.js"
     },
     {
@@ -3761,7 +3824,7 @@
       "source_file": "server\\routes\\mine.js",
       "source_location": "L10",
       "id": "mine_fingerprint",
-      "community": 38,
+      "community": 37,
       "norm_label": "fingerprint()"
     },
     {
@@ -3797,7 +3860,7 @@
       "source_file": "server\\routes\\rankings.js",
       "source_location": "L1",
       "id": "server_routes_rankings_js",
-      "community": 39,
+      "community": 38,
       "norm_label": "rankings.js"
     },
     {
@@ -3806,7 +3869,7 @@
       "source_file": "server\\routes\\rankings.js",
       "source_location": "L10",
       "id": "rankings_validateevent",
-      "community": 39,
+      "community": 38,
       "norm_label": "_validateevent()"
     },
     {
@@ -3833,7 +3896,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L1",
       "id": "server_routes_tabroom_js",
-      "community": 23,
+      "community": 22,
       "norm_label": "tabroom.js"
     },
     {
@@ -3842,7 +3905,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L76",
       "id": "tabroom_ispersonname",
-      "community": 23,
+      "community": 22,
       "norm_label": "ispersonname()"
     },
     {
@@ -3851,7 +3914,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L77",
       "id": "tabroom_isjunkcode",
-      "community": 23,
+      "community": 22,
       "norm_label": "isjunkcode()"
     },
     {
@@ -3860,7 +3923,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L78",
       "id": "tabroom_stripschoolsuffix",
-      "community": 23,
+      "community": 22,
       "norm_label": "stripschoolsuffix()"
     },
     {
@@ -3869,7 +3932,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L82",
       "id": "tabroom_initialsof",
-      "community": 23,
+      "community": 22,
       "norm_label": "initialsof()"
     },
     {
@@ -3878,7 +3941,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L84",
       "id": "tabroom_extractcode",
-      "community": 23,
+      "community": 22,
       "norm_label": "extractcode()"
     },
     {
@@ -3887,7 +3950,7 @@
       "source_file": "server\\routes\\toc.js",
       "source_location": "L1",
       "id": "server_routes_toc_js",
-      "community": 15,
+      "community": 5,
       "norm_label": "toc.js"
     },
     {
@@ -3896,7 +3959,7 @@
       "source_file": "server\\routes\\toc.js",
       "source_location": "L13",
       "id": "toc_validateevent",
-      "community": 15,
+      "community": 5,
       "norm_label": "_validateevent()"
     },
     {
@@ -3905,7 +3968,7 @@
       "source_file": "server\\routes\\toc.js",
       "source_location": "L19",
       "id": "toc_isstale",
-      "community": 15,
+      "community": 5,
       "norm_label": "_isstale()"
     },
     {
@@ -3914,7 +3977,7 @@
       "source_file": "server\\routes\\wiki.js",
       "source_location": "L1",
       "id": "server_routes_wiki_js",
-      "community": 40,
+      "community": 39,
       "norm_label": "wiki.js"
     },
     {
@@ -3923,7 +3986,7 @@
       "source_file": "server\\routes\\wiki.js",
       "source_location": "L11",
       "id": "wiki_safefilename",
-      "community": 40,
+      "community": 39,
       "norm_label": "_safefilename()"
     },
     {
@@ -3932,7 +3995,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L1",
       "id": "server_scripts_classifycards_js",
-      "community": 10,
+      "community": 11,
       "norm_label": "classifycards.js"
     },
     {
@@ -3941,7 +4004,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L76",
       "id": "classifycards_buildcardblob",
-      "community": 10,
+      "community": 11,
       "norm_label": "buildcardblob()"
     },
     {
@@ -3950,7 +4013,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L83",
       "id": "classifycards_classifybatch",
-      "community": 10,
+      "community": 11,
       "norm_label": "classifybatch()"
     },
     {
@@ -3959,7 +4022,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L114",
       "id": "classifycards_saveresult",
-      "community": 10,
+      "community": 11,
       "norm_label": "saveresult()"
     },
     {
@@ -3968,7 +4031,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L135",
       "id": "classifycards_main",
-      "community": 10,
+      "community": 11,
       "norm_label": "main()"
     },
     {
@@ -4013,7 +4076,7 @@
       "source_file": "server\\scripts\\ingestAllZips.js",
       "source_location": "L1",
       "id": "server_scripts_ingestallzips_js",
-      "community": 5,
+      "community": 3,
       "norm_label": "ingestallzips.js"
     },
     {
@@ -4022,7 +4085,7 @@
       "source_file": "server\\scripts\\ingestAllZips.js",
       "source_location": "L25",
       "id": "ingestallzips_main",
-      "community": 5,
+      "community": 3,
       "norm_label": "main()"
     },
     {
@@ -4184,7 +4247,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L93",
       "id": "auth_listsessions",
-      "community": 0,
+      "community": 1,
       "norm_label": "listsessions()"
     },
     {
@@ -4220,7 +4283,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L1",
       "id": "server_services_autocite_js",
-      "community": 8,
+      "community": 7,
       "norm_label": "autocite.js"
     },
     {
@@ -4229,7 +4292,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L7",
       "id": "autocite_buildcite",
-      "community": 8,
+      "community": 7,
       "norm_label": "buildcite()"
     },
     {
@@ -4238,7 +4301,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L77",
       "id": "autocite_cleanauthor",
-      "community": 8,
+      "community": 7,
       "norm_label": "cleanauthor()"
     },
     {
@@ -4247,7 +4310,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L87",
       "id": "autocite_parselastname",
-      "community": 8,
+      "community": 7,
       "norm_label": "parselastname()"
     },
     {
@@ -4256,7 +4319,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L95",
       "id": "autocite_parseyear",
-      "community": 8,
+      "community": 7,
       "norm_label": "parseyear()"
     },
     {
@@ -4265,7 +4328,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L101",
       "id": "autocite_formatdate",
-      "community": 8,
+      "community": 7,
       "norm_label": "formatdate()"
     },
     {
@@ -4274,7 +4337,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L116",
       "id": "autocite_infercredentials",
-      "community": 8,
+      "community": 7,
       "norm_label": "infercredentials()"
     },
     {
@@ -4283,7 +4346,7 @@
       "source_file": "server\\services\\autocite.js",
       "source_location": "L139",
       "id": "autocite_validatecitematchesmeta",
-      "community": 8,
+      "community": 7,
       "norm_label": "validatecitematchesmeta()"
     },
     {
@@ -4292,7 +4355,7 @@
       "source_file": "server\\services\\autoSaveCard.js",
       "source_location": "L1",
       "id": "server_services_autosavecard_js",
-      "community": 3,
+      "community": 10,
       "norm_label": "autosavecard.js"
     },
     {
@@ -4301,7 +4364,7 @@
       "source_file": "server\\services\\autoSaveCard.js",
       "source_location": "L26",
       "id": "autosavecard_cardblob",
-      "community": 3,
+      "community": 10,
       "norm_label": "cardblob()"
     },
     {
@@ -4310,7 +4373,7 @@
       "source_file": "server\\services\\autoSaveCard.js",
       "source_location": "L38",
       "id": "autosavecard_classifycutcard",
-      "community": 3,
+      "community": 10,
       "norm_label": "classifycutcard()"
     },
     {
@@ -4319,7 +4382,7 @@
       "source_file": "server\\services\\autoSaveCard.js",
       "source_location": "L67",
       "id": "autosavecard_stripformatmarks",
-      "community": 3,
+      "community": 10,
       "norm_label": "stripformatmarks()"
     },
     {
@@ -4328,7 +4391,7 @@
       "source_file": "server\\services\\autoSaveCard.js",
       "source_location": "L77",
       "id": "autosavecard_fingerprint",
-      "community": 3,
+      "community": 10,
       "norm_label": "fingerprint()"
     },
     {
@@ -4337,7 +4400,7 @@
       "source_file": "server\\services\\autoSaveCard.js",
       "source_location": "L84",
       "id": "autosavecard_savecutcardforuser",
-      "community": 3,
+      "community": 10,
       "norm_label": "savecutcardforuser()"
     },
     {
@@ -4346,7 +4409,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L1",
       "id": "server_services_chatcommands_js",
-      "community": 25,
+      "community": 23,
       "norm_label": "chatcommands.js"
     },
     {
@@ -4355,7 +4418,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L5",
       "id": "chatcommands_parsecommand",
-      "community": 25,
+      "community": 23,
       "norm_label": "parsecommand()"
     },
     {
@@ -4364,7 +4427,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L12",
       "id": "chatcommands_buildexplainprompt",
-      "community": 25,
+      "community": 23,
       "norm_label": "buildexplainprompt()"
     },
     {
@@ -4373,7 +4436,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L28",
       "id": "chatcommands_buildanalyticprompt",
-      "community": 25,
+      "community": 23,
       "norm_label": "buildanalyticprompt()"
     },
     {
@@ -4382,7 +4445,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L44",
       "id": "chatcommands_buildblockprompt",
-      "community": 25,
+      "community": 23,
       "norm_label": "buildblockprompt()"
     },
     {
@@ -4391,7 +4454,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L1",
       "id": "server_services_chatretrieval_js",
-      "community": 15,
+      "community": 5,
       "norm_label": "chatretrieval.js"
     },
     {
@@ -4400,7 +4463,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L9",
       "id": "chatretrieval_cacheget",
-      "community": 15,
+      "community": 5,
       "norm_label": "cacheget()"
     },
     {
@@ -4409,7 +4472,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L16",
       "id": "chatretrieval_cacheset",
-      "community": 15,
+      "community": 5,
       "norm_label": "cacheset()"
     },
     {
@@ -4418,7 +4481,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L21",
       "id": "chatretrieval_sanitize",
-      "community": 15,
+      "community": 5,
       "norm_label": "sanitize()"
     },
     {
@@ -4427,7 +4490,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L24",
       "id": "chatretrieval_safejson",
-      "community": 15,
+      "community": 5,
       "norm_label": "safejson()"
     },
     {
@@ -4436,7 +4499,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L26",
       "id": "chatretrieval_retrievecards",
-      "community": 15,
+      "community": 5,
       "norm_label": "retrievecards()"
     },
     {
@@ -4445,7 +4508,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L51",
       "id": "chatretrieval_retrieveanalytics",
-      "community": 15,
+      "community": 5,
       "norm_label": "retrieveanalytics()"
     },
     {
@@ -4454,7 +4517,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L67",
       "id": "chatretrieval_retrieveusercontext",
-      "community": 15,
+      "community": 5,
       "norm_label": "retrieveusercontext()"
     },
     {
@@ -4472,7 +4535,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L5",
       "id": "chatstore_now",
-      "community": 0,
+      "community": 5,
       "norm_label": "now()"
     },
     {
@@ -4499,7 +4562,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L21",
       "id": "chatstore_listthreads",
-      "community": 11,
+      "community": 12,
       "norm_label": "listthreads()"
     },
     {
@@ -4535,7 +4598,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L56",
       "id": "chatstore_listmessages",
-      "community": 11,
+      "community": 12,
       "norm_label": "listmessages()"
     },
     {
@@ -4562,7 +4625,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L75",
       "id": "chatstore_listcontext",
-      "community": 12,
+      "community": 13,
       "norm_label": "listcontext()"
     },
     {
@@ -4670,7 +4733,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L1",
       "id": "server_services_db_js",
-      "community": 3,
+      "community": 5,
       "norm_label": "db.js"
     },
     {
@@ -4688,7 +4751,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L28",
       "id": "db_initschema",
-      "community": 3,
+      "community": 5,
       "norm_label": "_initschema()"
     },
     {
@@ -4697,7 +4760,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L425",
       "id": "db_runmigrations",
-      "community": 3,
+      "community": 5,
       "norm_label": "_runmigrations()"
     },
     {
@@ -4706,7 +4769,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L485",
       "id": "db_ensureanalyzed",
-      "community": 3,
+      "community": 5,
       "norm_label": "_ensureanalyzed()"
     },
     {
@@ -4715,7 +4778,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L505",
       "id": "db_setupcardsfts",
-      "community": 3,
+      "community": 5,
       "norm_label": "_setupcardsfts()"
     },
     {
@@ -4724,7 +4787,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L550",
       "id": "db_backfillhashighlight",
-      "community": 3,
+      "community": 5,
       "norm_label": "_backfillhashighlight()"
     },
     {
@@ -4733,7 +4796,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L560",
       "id": "db_counthighlightwords",
-      "community": 3,
+      "community": 5,
       "norm_label": "_counthighlightwords()"
     },
     {
@@ -4742,7 +4805,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L577",
       "id": "db_backfillhighlightwordcount",
-      "community": 3,
+      "community": 5,
       "norm_label": "_backfillhighlightwordcount()"
     },
     {
@@ -4751,7 +4814,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L593",
       "id": "db_backfillderivedlabels",
-      "community": 3,
+      "community": 5,
       "norm_label": "_backfillderivedlabels()"
     },
     {
@@ -4760,7 +4823,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L607",
       "id": "db_refreshderivedlabels",
-      "community": 3,
+      "community": 5,
       "norm_label": "refreshderivedlabels()"
     },
     {
@@ -4769,7 +4832,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L642",
       "id": "db_upsertcards",
-      "community": 3,
+      "community": 5,
       "norm_label": "upsertcards()"
     },
     {
@@ -4778,7 +4841,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L694",
       "id": "db_recanonicalizegroups",
-      "community": 5,
+      "community": 3,
       "norm_label": "recanonicalizegroups()"
     },
     {
@@ -4787,7 +4850,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L742",
       "id": "db_parsecard",
-      "community": 3,
+      "community": 5,
       "norm_label": "_parsecard()"
     },
     {
@@ -4796,7 +4859,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L756",
       "id": "db_loadallcards",
-      "community": 5,
+      "community": 3,
       "norm_label": "loadallcards()"
     },
     {
@@ -4823,7 +4886,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L777",
       "id": "db_getexistingfingerprints",
-      "community": 5,
+      "community": 3,
       "norm_label": "getexistingfingerprints()"
     },
     {
@@ -4832,7 +4895,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L786",
       "id": "db_buildwhere",
-      "community": 3,
+      "community": 5,
       "norm_label": "_buildwhere()"
     },
     {
@@ -4841,7 +4904,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L814",
       "id": "db_buildftsmatch",
-      "community": 3,
+      "community": 5,
       "norm_label": "_buildftsmatch()"
     },
     {
@@ -4850,7 +4913,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L826",
       "id": "db_seedsortclause",
-      "community": 3,
+      "community": 5,
       "norm_label": "_seedsortclause()"
     },
     {
@@ -4859,7 +4922,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L832",
       "id": "db_orderby",
-      "community": 3,
+      "community": 5,
       "norm_label": "_orderby()"
     },
     {
@@ -4868,7 +4931,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L845",
       "id": "db_querycards",
-      "community": 3,
+      "community": 5,
       "norm_label": "querycards()"
     },
     {
@@ -4877,7 +4940,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L873",
       "id": "db_orderbywithrank",
-      "community": 3,
+      "community": 5,
       "norm_label": "_orderbywithrank()"
     },
     {
@@ -4886,7 +4949,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L886",
       "id": "db_getcardbyid",
-      "community": 3,
+      "community": 5,
       "norm_label": "getcardbyid()"
     },
     {
@@ -4904,7 +4967,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L909",
       "id": "db_facetcounts",
-      "community": 3,
+      "community": 5,
       "norm_label": "facetcounts()"
     },
     {
@@ -4913,7 +4976,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L949",
       "id": "db_upsertanalytic",
-      "community": 0,
+      "community": 3,
       "norm_label": "upsertanalytic()"
     },
     {
@@ -4922,7 +4985,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L956",
       "id": "db_searchanalytics",
-      "community": 3,
+      "community": 10,
       "norm_label": "searchanalytics()"
     },
     {
@@ -4931,7 +4994,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L977",
       "id": "db_logingestion",
-      "community": 0,
+      "community": 3,
       "norm_label": "logingestion()"
     },
     {
@@ -4940,7 +5003,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L991",
       "id": "db_loadmeta",
-      "community": 3,
+      "community": 5,
       "norm_label": "loadmeta()"
     },
     {
@@ -4958,7 +5021,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L1",
       "id": "server_services_docxbuilder_js",
-      "community": 6,
+      "community": 4,
       "norm_label": "docxbuilder.js"
     },
     {
@@ -4967,7 +5030,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L18",
       "id": "docxbuilder_pt",
-      "community": 6,
+      "community": 4,
       "norm_label": "pt()"
     },
     {
@@ -4976,7 +5039,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L22",
       "id": "docxbuilder_builddocx",
-      "community": 6,
+      "community": 4,
       "norm_label": "builddocx()"
     },
     {
@@ -4985,7 +5048,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L152",
       "id": "docxbuilder_buildprojectdocx",
-      "community": 6,
+      "community": 4,
       "norm_label": "buildprojectdocx()"
     },
     {
@@ -4994,7 +5057,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L191",
       "id": "docxbuilder_buildciteruns",
-      "community": 6,
+      "community": 4,
       "norm_label": "buildciteruns()"
     },
     {
@@ -5003,7 +5066,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L207",
       "id": "docxbuilder_buildbodyparagraphsfromhtml",
-      "community": 6,
+      "community": 1,
       "norm_label": "buildbodyparagraphsfromhtml()"
     },
     {
@@ -5012,7 +5075,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L214",
       "id": "docxbuilder_basestate",
-      "community": 6,
+      "community": 4,
       "norm_label": "basestate()"
     },
     {
@@ -5021,7 +5084,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L218",
       "id": "docxbuilder_htmlchildrentoruns",
-      "community": 6,
+      "community": 4,
       "norm_label": "htmlchildrentoruns()"
     },
     {
@@ -5030,7 +5093,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L226",
       "id": "docxbuilder_htmlnodetoruns",
-      "community": 6,
+      "community": 4,
       "norm_label": "htmlnodetoruns()"
     },
     {
@@ -5039,7 +5102,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L275",
       "id": "docxbuilder_makerun",
-      "community": 6,
+      "community": 4,
       "norm_label": "makerun()"
     },
     {
@@ -5048,7 +5111,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L291",
       "id": "docxbuilder_buildbodyparagraphsfrommarkdown",
-      "community": 6,
+      "community": 4,
       "norm_label": "buildbodyparagraphsfrommarkdown()"
     },
     {
@@ -5057,7 +5120,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L299",
       "id": "docxbuilder_parseinlinemarkdown",
-      "community": 6,
+      "community": 4,
       "norm_label": "parseinlinemarkdown()"
     },
     {
@@ -5066,7 +5129,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L1",
       "id": "server_services_docximport_js",
-      "community": 5,
+      "community": 3,
       "norm_label": "docximport.js"
     },
     {
@@ -5075,7 +5138,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L15",
       "id": "docximport_xmldecode",
-      "community": 5,
+      "community": 3,
       "norm_label": "xmldecode()"
     },
     {
@@ -5084,7 +5147,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L24",
       "id": "docximport_stripxml",
-      "community": 5,
+      "community": 3,
       "norm_label": "stripxml()"
     },
     {
@@ -5093,7 +5156,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L28",
       "id": "docximport_normalizewhitespace",
-      "community": 5,
+      "community": 3,
       "norm_label": "normalizewhitespace()"
     },
     {
@@ -5102,7 +5165,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L32",
       "id": "docximport_normalizeshortcite",
-      "community": 5,
+      "community": 3,
       "norm_label": "normalizeshortcite()"
     },
     {
@@ -5111,7 +5174,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L52",
       "id": "docximport_infertopicbucket",
-      "community": 5,
+      "community": 3,
       "norm_label": "infertopicbucket()"
     },
     {
@@ -5120,7 +5183,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L68",
       "id": "docximport_inferargumenttypes",
-      "community": 5,
+      "community": 3,
       "norm_label": "inferargumenttypes()"
     },
     {
@@ -5129,7 +5192,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L90",
       "id": "docximport_inferargumenttags",
-      "community": 5,
+      "community": 3,
       "norm_label": "inferargumenttags()"
     },
     {
@@ -5138,7 +5201,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L340",
       "id": "docximport_normalizetag",
-      "community": 5,
+      "community": 3,
       "norm_label": "normalizetag()"
     },
     {
@@ -5147,7 +5210,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L414",
       "id": "docximport_enrichcard",
-      "community": 5,
+      "community": 3,
       "norm_label": "enrichcard()"
     },
     {
@@ -5156,7 +5219,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L426",
       "id": "docximport_computewarrantdensity",
-      "community": 5,
+      "community": 3,
       "norm_label": "computewarrantdensity()"
     },
     {
@@ -5165,7 +5228,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L446",
       "id": "docximport_fingerprintbody",
-      "community": 5,
+      "community": 3,
       "norm_label": "fingerprintbody()"
     },
     {
@@ -5174,7 +5237,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L453",
       "id": "docximport_parseruns",
-      "community": 5,
+      "community": 3,
       "norm_label": "parseruns()"
     },
     {
@@ -5183,7 +5246,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L474",
       "id": "docximport_runstomarkdown",
-      "community": 5,
+      "community": 3,
       "norm_label": "runstomarkdown()"
     },
     {
@@ -5192,7 +5255,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L490",
       "id": "docximport_extractparagraphs",
-      "community": 5,
+      "community": 3,
       "norm_label": "extractparagraphs()"
     },
     {
@@ -5201,7 +5264,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L510",
       "id": "docximport_getouterdirectory",
-      "community": 5,
+      "community": 0,
       "norm_label": "getouterdirectory()"
     },
     {
@@ -5210,7 +5273,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L517",
       "id": "docximport_streamtobuffer",
-      "community": 5,
+      "community": 3,
       "norm_label": "streamtobuffer()"
     },
     {
@@ -5219,7 +5282,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L526",
       "id": "docximport_extractdocxxmlfromzip",
-      "community": 5,
+      "community": 3,
       "norm_label": "extractdocxxmlfromzip()"
     },
     {
@@ -5228,7 +5291,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L537",
       "id": "docximport_parsecardsfromparagraphs",
-      "community": 5,
+      "community": 3,
       "norm_label": "parsecardsfromparagraphs()"
     },
     {
@@ -5237,7 +5300,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L611",
       "id": "docximport_choosecanonicals",
-      "community": 5,
+      "community": 3,
       "norm_label": "choosecanonicals()"
     },
     {
@@ -5246,7 +5309,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L635",
       "id": "docximport_maybestoreanalytic",
-      "community": 5,
+      "community": 3,
       "norm_label": "maybestoreanalytic()"
     },
     {
@@ -5255,7 +5318,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L692",
       "id": "docximport_listdocxentries",
-      "community": 5,
+      "community": 3,
       "norm_label": "listdocxentries()"
     },
     {
@@ -5264,7 +5327,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L699",
       "id": "docximport_importdocxentry",
-      "community": 5,
+      "community": 3,
       "norm_label": "importdocxentry()"
     },
     {
@@ -5273,7 +5336,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L705",
       "id": "docximport_importziptolibrary",
-      "community": 5,
+      "community": 3,
       "norm_label": "importziptolibrary()"
     },
     {
@@ -5282,7 +5345,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L780",
       "id": "docximport_getlibrarydashboard",
-      "community": 5,
+      "community": 0,
       "norm_label": "getlibrarydashboard()"
     },
     {
@@ -5291,7 +5354,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L849",
       "id": "docximport_countargumentbreakdown",
-      "community": 5,
+      "community": 3,
       "norm_label": "countargumentbreakdown()"
     },
     {
@@ -5300,7 +5363,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L860",
       "id": "docximport_countbreakdown",
-      "community": 5,
+      "community": 3,
       "norm_label": "countbreakdown()"
     },
     {
@@ -5309,7 +5372,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L872",
       "id": "docximport_searchlibrary",
-      "community": 5,
+      "community": 3,
       "norm_label": "searchlibrary()"
     },
     {
@@ -5318,7 +5381,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L888",
       "id": "docximport_importdocxbuffer",
-      "community": 5,
+      "community": 3,
       "norm_label": "importdocxbuffer()"
     },
     {
@@ -5327,7 +5390,7 @@
       "source_file": "server\\services\\emailSender.js",
       "source_location": "L1",
       "id": "server_services_emailsender_js",
-      "community": 30,
+      "community": 29,
       "norm_label": "emailsender.js"
     },
     {
@@ -5336,7 +5399,7 @@
       "source_file": "server\\services\\emailSender.js",
       "source_location": "L5",
       "id": "emailsender_transporter",
-      "community": 30,
+      "community": 29,
       "norm_label": "transporter()"
     },
     {
@@ -5345,7 +5408,7 @@
       "source_file": "server\\services\\emailSender.js",
       "source_location": "L16",
       "id": "emailsender_sendpasswordreset",
-      "community": 30,
+      "community": 29,
       "norm_label": "sendpasswordreset()"
     },
     {
@@ -5381,7 +5444,7 @@
       "source_file": "server\\services\\fileCache.js",
       "source_location": "L1",
       "id": "server_services_filecache_js",
-      "community": 0,
+      "community": 5,
       "norm_label": "filecache.js"
     },
     {
@@ -5390,7 +5453,7 @@
       "source_file": "server\\services\\fileCache.js",
       "source_location": "L8",
       "id": "filecache_put",
-      "community": 0,
+      "community": 5,
       "norm_label": "put()"
     },
     {
@@ -5408,7 +5471,7 @@
       "source_file": "server\\services\\fileCache.js",
       "source_location": "L21",
       "id": "filecache_drop",
-      "community": 0,
+      "community": 5,
       "norm_label": "drop()"
     },
     {
@@ -5417,7 +5480,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L1",
       "id": "server_services_gemini_js",
-      "community": 10,
+      "community": 11,
       "norm_label": "gemini.js"
     },
     {
@@ -5426,7 +5489,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L7",
       "id": "gemini_firstwords",
-      "community": 10,
+      "community": 11,
       "norm_label": "firstwords()"
     },
     {
@@ -5435,7 +5498,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L16",
       "id": "gemini_callgeminijson",
-      "community": 10,
+      "community": 11,
       "norm_label": "callgeminijson()"
     },
     {
@@ -5444,7 +5507,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L29",
       "id": "gemini_rankrelevance",
-      "community": 10,
+      "community": 11,
       "norm_label": "rankrelevance()"
     },
     {
@@ -5453,7 +5516,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L70",
       "id": "gemini_splitintowindows",
-      "community": 10,
+      "community": 11,
       "norm_label": "splitintowindows()"
     },
     {
@@ -5462,7 +5525,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L104",
       "id": "gemini_tokenizeintent",
-      "community": 10,
+      "community": 11,
       "norm_label": "tokenizeintent()"
     },
     {
@@ -5471,7 +5534,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L111",
       "id": "gemini_scorewindowkeyword",
-      "community": 10,
+      "community": 11,
       "norm_label": "scorewindowkeyword()"
     },
     {
@@ -5480,7 +5543,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L122",
       "id": "gemini_warrantsignals",
-      "community": 10,
+      "community": 11,
       "norm_label": "warrantsignals()"
     },
     {
@@ -5489,7 +5552,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L132",
       "id": "gemini_pickbestwindow",
-      "community": 10,
+      "community": 11,
       "norm_label": "pickbestwindow()"
     },
     {
@@ -5498,7 +5561,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L1",
       "id": "server_services_instantresearch_js",
-      "community": 7,
+      "community": 6,
       "norm_label": "instantresearch.js"
     },
     {
@@ -5507,7 +5570,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L28",
       "id": "instantresearch_normalizetext",
-      "community": 7,
+      "community": 6,
       "norm_label": "normalizetext()"
     },
     {
@@ -5516,7 +5579,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L32",
       "id": "instantresearch_tokenizequery",
-      "community": 7,
+      "community": 6,
       "norm_label": "tokenizequery()"
     },
     {
@@ -5525,7 +5588,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L41",
       "id": "instantresearch_createkeywordmatcher",
-      "community": 7,
+      "community": 6,
       "norm_label": "createkeywordmatcher()"
     },
     {
@@ -5534,7 +5597,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L50",
       "id": "instantresearch_scoretextforquery",
-      "community": 7,
+      "community": 6,
       "norm_label": "scoretextforquery()"
     },
     {
@@ -5543,7 +5606,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L61",
       "id": "instantresearch_pickbestexcerpt",
-      "community": 7,
+      "community": 6,
       "norm_label": "pickbestexcerpt()"
     },
     {
@@ -5552,7 +5615,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L71",
       "id": "instantresearch_hostof",
-      "community": 7,
+      "community": 6,
       "norm_label": "hostof()"
     },
     {
@@ -5561,7 +5624,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L75",
       "id": "instantresearch_prestigebonus",
-      "community": 7,
+      "community": 6,
       "norm_label": "prestigebonus()"
     },
     {
@@ -5570,7 +5633,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L103",
       "id": "instantresearch_scholarlybonus",
-      "community": 7,
+      "community": 6,
       "norm_label": "scholarlybonus()"
     },
     {
@@ -5579,7 +5642,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L115",
       "id": "instantresearch_dedupebyurl",
-      "community": 7,
+      "community": 6,
       "norm_label": "dedupebyurl()"
     },
     {
@@ -5588,7 +5651,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L128",
       "id": "instantresearch_normalizetitlekey",
-      "community": 7,
+      "community": 6,
       "norm_label": "normalizetitlekey()"
     },
     {
@@ -5597,7 +5660,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L136",
       "id": "instantresearch_extractdoi",
-      "community": 7,
+      "community": 6,
       "norm_label": "extractdoi()"
     },
     {
@@ -5606,7 +5669,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L145",
       "id": "instantresearch_stripboilerplateparagraphs",
-      "community": 7,
+      "community": 6,
       "norm_label": "stripboilerplateparagraphs()"
     },
     {
@@ -5615,7 +5678,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L159",
       "id": "instantresearch_withtimeout",
-      "community": 7,
+      "community": 6,
       "norm_label": "withtimeout()"
     },
     {
@@ -5624,7 +5687,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L166",
       "id": "instantresearch_fanoutresearch",
-      "community": 7,
+      "community": 6,
       "norm_label": "fanoutresearch()"
     },
     {
@@ -5633,7 +5696,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L228",
       "id": "instantresearch_scrapewithconcurrency",
-      "community": 7,
+      "community": 6,
       "norm_label": "scrapewithconcurrency()"
     },
     {
@@ -5642,7 +5705,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L287",
       "id": "instantresearch_findbestresearchsource",
-      "community": 7,
+      "community": 6,
       "norm_label": "findbestresearchsource()"
     },
     {
@@ -5651,7 +5714,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L426",
       "id": "instantresearch_buildinstantlibrarybullets",
-      "community": 7,
+      "community": 6,
       "norm_label": "buildinstantlibrarybullets()"
     },
     {
@@ -5660,7 +5723,7 @@
       "source_file": "server\\services\\instantResearch.js",
       "source_location": "L445",
       "id": "instantresearch_searcharticles",
-      "community": 7,
+      "community": 6,
       "norm_label": "searcharticles()"
     },
     {
@@ -5669,7 +5732,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L1",
       "id": "server_services_labelderivation_js",
-      "community": 3,
+      "community": 10,
       "norm_label": "labelderivation.js"
     },
     {
@@ -5678,7 +5741,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L18",
       "id": "labelderivation_titlecasetopic",
-      "community": 3,
+      "community": 10,
       "norm_label": "titlecasetopic()"
     },
     {
@@ -5687,7 +5750,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L30",
       "id": "labelderivation_titlecase",
-      "community": 3,
+      "community": 10,
       "norm_label": "titlecase()"
     },
     {
@@ -5696,7 +5759,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L36",
       "id": "labelderivation_parsejsonarray",
-      "community": 3,
+      "community": 10,
       "norm_label": "parsejsonarray()"
     },
     {
@@ -5705,7 +5768,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L42",
       "id": "labelderivation_derivetypelabel",
-      "community": 3,
+      "community": 10,
       "norm_label": "derivetypelabel()"
     },
     {
@@ -5714,7 +5777,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L48",
       "id": "labelderivation_derivetopiclabel",
-      "community": 3,
+      "community": 10,
       "norm_label": "derivetopiclabel()"
     },
     {
@@ -5723,7 +5786,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L55",
       "id": "labelderivation_derivesourcelabel",
-      "community": 3,
+      "community": 10,
       "norm_label": "derivesourcelabel()"
     },
     {
@@ -5732,7 +5795,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L59",
       "id": "labelderivation_derivescope",
-      "community": 3,
+      "community": 10,
       "norm_label": "derivescope()"
     },
     {
@@ -5741,7 +5804,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L63",
       "id": "labelderivation_deriveresolutionlabel",
-      "community": 3,
+      "community": 10,
       "norm_label": "deriveresolutionlabel()"
     },
     {
@@ -5750,7 +5813,7 @@
       "source_file": "server\\services\\labelDerivation.js",
       "source_location": "L85",
       "id": "labelderivation_derivealllabels",
-      "community": 3,
+      "community": 10,
       "norm_label": "derivealllabels()"
     },
     {
@@ -5759,7 +5822,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L1",
       "id": "server_services_libraryquery_js",
-      "community": 3,
+      "community": 10,
       "norm_label": "libraryquery.js"
     },
     {
@@ -5768,7 +5831,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L13",
       "id": "libraryquery_cardid",
-      "community": 3,
+      "community": 10,
       "norm_label": "cardid()"
     },
     {
@@ -5777,7 +5840,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L18",
       "id": "libraryquery_hydraterow",
-      "community": 3,
+      "community": 10,
       "norm_label": "hydraterow()"
     },
     {
@@ -5795,7 +5858,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L83",
       "id": "libraryquery_invalidatelibrarycaches",
-      "community": 3,
+      "community": 10,
       "norm_label": "invalidatelibrarycaches()"
     },
     {
@@ -5804,7 +5867,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L89",
       "id": "libraryquery_getcachedfacets",
-      "community": 3,
+      "community": 5,
       "norm_label": "getcachedfacets()"
     },
     {
@@ -5831,7 +5894,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L185",
       "id": "libraryquery_getrelevantanalytics",
-      "community": 3,
+      "community": 10,
       "norm_label": "getrelevantanalytics()"
     },
     {
@@ -5840,7 +5903,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L199",
       "id": "libraryquery_inferresolution",
-      "community": 3,
+      "community": 10,
       "norm_label": "inferresolution()"
     },
     {
@@ -5849,7 +5912,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L203",
       "id": "libraryquery_getcarddetail",
-      "community": 3,
+      "community": 10,
       "norm_label": "getcarddetail()"
     },
     {
@@ -5858,7 +5921,7 @@
       "source_file": "server\\services\\libraryStore.js",
       "source_location": "L1",
       "id": "server_services_librarystore_js",
-      "community": 5,
+      "community": 3,
       "norm_label": "librarystore.js"
     },
     {
@@ -5867,7 +5930,7 @@
       "source_file": "server\\services\\libraryStore.js",
       "source_location": "L6",
       "id": "librarystore_loadcards",
-      "community": 5,
+      "community": 3,
       "norm_label": "loadcards()"
     },
     {
@@ -5876,7 +5939,7 @@
       "source_file": "server\\services\\libraryStore.js",
       "source_location": "L10",
       "id": "librarystore_savecards",
-      "community": 5,
+      "community": 3,
       "norm_label": "savecards()"
     },
     {
@@ -5885,7 +5948,7 @@
       "source_file": "server\\services\\libraryStore.js",
       "source_location": "L15",
       "id": "librarystore_loadmeta",
-      "community": 5,
+      "community": 3,
       "norm_label": "loadmeta()"
     },
     {
@@ -5894,7 +5957,7 @@
       "source_file": "server\\services\\libraryStore.js",
       "source_location": "L19",
       "id": "librarystore_savemeta",
-      "community": 5,
+      "community": 3,
       "norm_label": "savemeta()"
     },
     {
@@ -5903,7 +5966,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L1",
       "id": "server_services_limits_js",
-      "community": 24,
+      "community": 21,
       "norm_label": "limits.js"
     },
     {
@@ -5912,7 +5975,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L4",
       "id": "limits_periodutc",
-      "community": 24,
+      "community": 21,
       "norm_label": "periodutc()"
     },
     {
@@ -5921,7 +5984,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L6",
       "id": "limits_nextresetat",
-      "community": 24,
+      "community": 21,
       "norm_label": "nextresetat()"
     },
     {
@@ -5948,7 +6011,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L27",
       "id": "limits_checkandbudget",
-      "community": 24,
+      "community": 21,
       "norm_label": "checkandbudget()"
     },
     {
@@ -5957,7 +6020,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L1",
       "id": "server_services_llm_js",
-      "community": 10,
+      "community": 11,
       "norm_label": "llm.js"
     },
     {
@@ -5966,7 +6029,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L32",
       "id": "llm_checkdailyreset",
-      "community": 10,
+      "community": 11,
       "norm_label": "checkdailyreset()"
     },
     {
@@ -5975,7 +6038,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L41",
       "id": "llm_recordusage",
-      "community": 10,
+      "community": 11,
       "norm_label": "recordusage()"
     },
     {
@@ -5984,7 +6047,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L50",
       "id": "llm_gettokenstats",
-      "community": 10,
+      "community": 11,
       "norm_label": "gettokenstats()"
     },
     {
@@ -5993,7 +6056,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L61",
       "id": "llm_estimatetokens",
-      "community": 10,
+      "community": 11,
       "norm_label": "estimatetokens()"
     },
     {
@@ -6002,7 +6065,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L63",
       "id": "llm_smarttruncate",
-      "community": 10,
+      "community": 11,
       "norm_label": "smarttruncate()"
     },
     {
@@ -6011,7 +6074,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L91",
       "id": "llm_issoftfailure",
-      "community": 10,
+      "community": 11,
       "norm_label": "issoftfailure()"
     },
     {
@@ -6020,7 +6083,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L110",
       "id": "llm_complete",
-      "community": 10,
+      "community": 11,
       "norm_label": "complete()"
     },
     {
@@ -6029,7 +6092,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L181",
       "id": "llm_parsejson",
-      "community": 10,
+      "community": 11,
       "norm_label": "parsejson()"
     },
     {
@@ -6038,7 +6101,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L208",
       "id": "llm_completestream",
-      "community": 10,
+      "community": 11,
       "norm_label": "completestream()"
     },
     {
@@ -6047,7 +6110,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L1",
       "id": "server_services_nameutil_js",
-      "community": 26,
+      "community": 24,
       "norm_label": "nameutil.js"
     },
     {
@@ -6056,7 +6119,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L5",
       "id": "nameutil_stripschoolsuffix",
-      "community": 26,
+      "community": 24,
       "norm_label": "stripschoolsuffix()"
     },
     {
@@ -6065,7 +6128,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L21",
       "id": "nameutil_shortendisplayname",
-      "community": 26,
+      "community": 24,
       "norm_label": "shortendisplayname()"
     },
     {
@@ -6074,7 +6137,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L72",
       "id": "nameutil_withshortenedname",
-      "community": 26,
+      "community": 24,
       "norm_label": "withshortenedname()"
     },
     {
@@ -6146,7 +6209,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L1",
       "id": "server_services_rankingsengine_js",
-      "community": 20,
+      "community": 19,
       "norm_label": "rankingsengine.js"
     },
     {
@@ -6155,7 +6218,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L21",
       "id": "rankingsengine_expectedscore",
-      "community": 20,
+      "community": 19,
       "norm_label": "expectedscore()"
     },
     {
@@ -6164,7 +6227,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L25",
       "id": "rankingsengine_kbase",
-      "community": 20,
+      "community": 19,
       "norm_label": "kbase()"
     },
     {
@@ -6173,7 +6236,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L31",
       "id": "rankingsengine_kmult",
-      "community": 20,
+      "community": 19,
       "norm_label": "kmult()"
     },
     {
@@ -6182,7 +6245,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L35",
       "id": "rankingsengine_applyelo",
-      "community": 20,
+      "community": 19,
       "norm_label": "applyelo()"
     },
     {
@@ -6191,7 +6254,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L52",
       "id": "rankingsengine_aggregateballotstoresult",
-      "community": 20,
+      "community": 19,
       "norm_label": "aggregateballotstoresult()"
     },
     {
@@ -6200,7 +6263,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L66",
       "id": "rankingsengine_inferelimdepth",
-      "community": 20,
+      "community": 19,
       "norm_label": "inferelimdepth()"
     },
     {
@@ -6218,7 +6281,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L1",
       "id": "server_services_scraper_js",
-      "community": 6,
+      "community": 1,
       "norm_label": "scraper.js"
     },
     {
@@ -6227,7 +6290,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L54",
       "id": "scraper_scrapeurl",
-      "community": 6,
+      "community": 1,
       "norm_label": "scrapeurl()"
     },
     {
@@ -6236,7 +6299,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L117",
       "id": "scraper_scrapepdf",
-      "community": 6,
+      "community": 1,
       "norm_label": "scrapepdf()"
     },
     {
@@ -6245,7 +6308,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L158",
       "id": "scraper_extractstructuredbody",
-      "community": 6,
+      "community": 1,
       "norm_label": "extractstructuredbody()"
     },
     {
@@ -6254,7 +6317,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L208",
       "id": "scraper_makeanchor",
-      "community": 6,
+      "community": 1,
       "norm_label": "makeanchor()"
     },
     {
@@ -6263,7 +6326,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L219",
       "id": "scraper_extractjsonld",
-      "community": 6,
+      "community": 1,
       "norm_label": "extractjsonld()"
     },
     {
@@ -6272,7 +6335,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L232",
       "id": "scraper_findldarticle",
-      "community": 6,
+      "community": 1,
       "norm_label": "findldarticle()"
     },
     {
@@ -6281,7 +6344,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L241",
       "id": "scraper_extracttitle",
-      "community": 6,
+      "community": 1,
       "norm_label": "extracttitle()"
     },
     {
@@ -6290,7 +6353,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L253",
       "id": "scraper_extractauthor",
-      "community": 6,
+      "community": 1,
       "norm_label": "extractauthor()"
     },
     {
@@ -6299,7 +6362,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L282",
       "id": "scraper_extractdate",
-      "community": 6,
+      "community": 1,
       "norm_label": "extractdate()"
     },
     {
@@ -6308,7 +6371,7 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L304",
       "id": "scraper_extractsource",
-      "community": 6,
+      "community": 1,
       "norm_label": "extractsource()"
     },
     {
@@ -6317,7 +6380,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L1",
       "id": "server_services_semanticindex_js",
-      "community": 22,
+      "community": 0,
       "norm_label": "semanticindex.js"
     },
     {
@@ -6326,7 +6389,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L8",
       "id": "semanticindex_loadvecext",
-      "community": 22,
+      "community": 0,
       "norm_label": "_loadvecext()"
     },
     {
@@ -6335,7 +6398,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L23",
       "id": "semanticindex_ensureschema",
-      "community": 22,
+      "community": 0,
       "norm_label": "ensureschema()"
     },
     {
@@ -6344,7 +6407,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L42",
       "id": "semanticindex_upsertembedding",
-      "community": 22,
+      "community": 0,
       "norm_label": "upsertembedding()"
     },
     {
@@ -6353,7 +6416,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L61",
       "id": "semanticindex_knn",
-      "community": 22,
+      "community": 0,
       "norm_label": "knn()"
     },
     {
@@ -6371,7 +6434,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L85",
       "id": "semanticindex_extensionstatus",
-      "community": 22,
+      "community": 0,
       "norm_label": "extensionstatus()"
     },
     {
@@ -6380,7 +6443,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L1",
       "id": "server_services_tabroomcrawler_js",
-      "community": 6,
+      "community": 4,
       "norm_label": "tabroomcrawler.js"
     },
     {
@@ -6389,7 +6452,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L13",
       "id": "tabroomcrawler_download_url",
-      "community": 6,
+      "community": 4,
       "norm_label": "download_url()"
     },
     {
@@ -6398,7 +6461,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L19",
       "id": "tabroomcrawler_parseentries",
-      "community": 6,
+      "community": 4,
       "norm_label": "parseentries()"
     },
     {
@@ -6407,7 +6470,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L68",
       "id": "tabroomcrawler_fetchtournament",
-      "community": 6,
+      "community": 4,
       "norm_label": "fetchtournament()"
     },
     {
@@ -6416,7 +6479,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L119",
       "id": "tabroomcrawler_findupcoming",
-      "community": 6,
+      "community": 4,
       "norm_label": "findupcoming()"
     },
     {
@@ -6425,7 +6488,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L170",
       "id": "tabroomcrawler_refreshall",
-      "community": 6,
+      "community": 4,
       "norm_label": "refreshall()"
     },
     {
@@ -6434,7 +6497,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L1",
       "id": "server_services_threatscorer_js",
-      "community": 27,
+      "community": 25,
       "norm_label": "threatscorer.js"
     },
     {
@@ -6443,7 +6506,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L7",
       "id": "threatscorer_placementscore",
-      "community": 27,
+      "community": 25,
       "norm_label": "placementscore()"
     },
     {
@@ -6452,7 +6515,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L21",
       "id": "threatscorer_normalizeminmax",
-      "community": 27,
+      "community": 25,
       "norm_label": "normalizeminmax()"
     },
     {
@@ -6461,7 +6524,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L29",
       "id": "threatscorer_scoreentries",
-      "community": 27,
+      "community": 25,
       "norm_label": "scoreentries()"
     },
     {
@@ -6839,7 +6902,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L1",
       "id": "server_services_tocparser_js",
-      "community": 17,
+      "community": 16,
       "norm_label": "tocparser.js"
     },
     {
@@ -6848,7 +6911,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L4",
       "id": "tocparser_fnv1a",
-      "community": 17,
+      "community": 16,
       "norm_label": "fnv1a()"
     },
     {
@@ -6857,7 +6920,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L14",
       "id": "tocparser_seasonfor",
-      "community": 17,
+      "community": 16,
       "norm_label": "seasonfor()"
     },
     {
@@ -6866,7 +6929,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L22",
       "id": "tocparser_teamkeyfor",
-      "community": 17,
+      "community": 16,
       "norm_label": "teamkeyfor()"
     },
     {
@@ -6875,7 +6938,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L37",
       "id": "tocparser_inferbidlevel",
-      "community": 17,
+      "community": 16,
       "norm_label": "inferbidlevel()"
     },
     {
@@ -6884,7 +6947,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L59",
       "id": "tocparser_side",
-      "community": 17,
+      "community": 16,
       "norm_label": "_side()"
     },
     {
@@ -6893,7 +6956,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L65",
       "id": "tocparser_result",
-      "community": 17,
+      "community": 16,
       "norm_label": "_result()"
     },
     {
@@ -6902,7 +6965,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L71",
       "id": "tocparser_points",
-      "community": 17,
+      "community": 16,
       "norm_label": "_points()"
     },
     {
@@ -6911,7 +6974,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L78",
       "id": "tocparser_parseballots",
-      "community": 17,
+      "community": 16,
       "norm_label": "parseballots()"
     },
     {
@@ -6929,7 +6992,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L143",
       "id": "tocparser_tierof",
-      "community": 17,
+      "community": 16,
       "norm_label": "_tierof()"
     },
     {
@@ -6947,7 +7010,7 @@
       "source_file": "server\\services\\urlCheck.js",
       "source_location": "L1",
       "id": "server_services_urlcheck_js",
-      "community": 7,
+      "community": 6,
       "norm_label": "urlcheck.js"
     },
     {
@@ -6956,7 +7019,7 @@
       "source_file": "server\\services\\urlCheck.js",
       "source_location": "L14",
       "id": "urlcheck_reachable",
-      "community": 7,
+      "community": 6,
       "norm_label": "reachable()"
     },
     {
@@ -7037,7 +7100,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L1",
       "id": "server_services_wikicrawler_js",
-      "community": 18,
+      "community": 17,
       "norm_label": "wikicrawler.js"
     },
     {
@@ -7046,7 +7109,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L11",
       "id": "wikicrawler_sleep",
-      "community": 18,
+      "community": 17,
       "norm_label": "_sleep()"
     },
     {
@@ -7055,7 +7118,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L15",
       "id": "wikicrawler_login",
-      "community": 18,
+      "community": 17,
       "norm_label": "_login()"
     },
     {
@@ -7064,7 +7127,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L37",
       "id": "wikicrawler_get",
-      "community": 18,
+      "community": 17,
       "norm_label": "_get()"
     },
     {
@@ -7073,7 +7136,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L59",
       "id": "wikicrawler_fetchcaselists",
-      "community": 18,
+      "community": 17,
       "norm_label": "fetchcaselists()"
     },
     {
@@ -7082,7 +7145,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L63",
       "id": "wikicrawler_fetchschools",
-      "community": 18,
+      "community": 17,
       "norm_label": "fetchschools()"
     },
     {
@@ -7091,7 +7154,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L68",
       "id": "wikicrawler_fetchteams",
-      "community": 18,
+      "community": 17,
       "norm_label": "fetchteams()"
     },
     {
@@ -7100,7 +7163,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L73",
       "id": "wikicrawler_fetchrounds",
-      "community": 18,
+      "community": 17,
       "norm_label": "fetchrounds()"
     },
     {
@@ -7109,7 +7172,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L78",
       "id": "wikicrawler_fetchcites",
-      "community": 18,
+      "community": 17,
       "norm_label": "fetchcites()"
     },
     {
@@ -7298,7 +7361,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L20",
       "id": "wikiindexer_seedteamindex",
-      "community": 18,
+      "community": 17,
       "norm_label": "seedteamindex()"
     },
     {
@@ -7352,7 +7415,7 @@
       "source_file": "server\\services\\zipImporter.js",
       "source_location": "L1",
       "id": "server_services_zipimporter_js",
-      "community": 5,
+      "community": 3,
       "norm_label": "zipimporter.js"
     },
     {
@@ -7361,7 +7424,7 @@
       "source_file": "server\\services\\zipImporter.js",
       "source_location": "L9",
       "id": "zipimporter_resolveprojectpath",
-      "community": 5,
+      "community": 3,
       "norm_label": "resolveprojectpath()"
     },
     {
@@ -7370,7 +7433,7 @@
       "source_file": "server\\services\\zipImporter.js",
       "source_location": "L30",
       "id": "zipimporter_listzipentries",
-      "community": 5,
+      "community": 3,
       "norm_label": "listzipentries()"
     },
     {
@@ -7379,7 +7442,7 @@
       "source_file": "server\\services\\zipImporter.js",
       "source_location": "L40",
       "id": "zipimporter_summarizeentries",
-      "community": 5,
+      "community": 3,
       "norm_label": "summarizeentries()"
     },
     {
@@ -7388,7 +7451,7 @@
       "source_file": "server\\services\\zipImporter.js",
       "source_location": "L85",
       "id": "zipimporter_previewzipimport",
-      "community": 5,
+      "community": 3,
       "norm_label": "previewzipimport()"
     },
     {
@@ -7415,7 +7478,7 @@
       "source_file": "server\\services\\cite\\crossref.js",
       "source_location": "L1",
       "id": "server_services_cite_crossref_js",
-      "community": 8,
+      "community": 7,
       "norm_label": "crossref.js"
     },
     {
@@ -7424,7 +7487,7 @@
       "source_file": "server\\services\\cite\\crossref.js",
       "source_location": "L12",
       "id": "crossref_resolve",
-      "community": 8,
+      "community": 7,
       "norm_label": "resolve()"
     },
     {
@@ -7433,7 +7496,7 @@
       "source_file": "server\\services\\cite\\crossref.js",
       "source_location": "L35",
       "id": "crossref_normalize",
-      "community": 8,
+      "community": 7,
       "norm_label": "normalize()"
     },
     {
@@ -7442,7 +7505,7 @@
       "source_file": "server\\services\\cite\\crossref.js",
       "source_location": "L56",
       "id": "crossref_jaccard",
-      "community": 8,
+      "community": 7,
       "norm_label": "jaccard()"
     },
     {
@@ -7505,7 +7568,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L1",
       "id": "server_services_sources_domainsearch_js",
-      "community": 6,
+      "community": 1,
       "norm_label": "domainsearch.js"
     },
     {
@@ -7514,7 +7577,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L19",
       "id": "domainsearch_buildsitefilter",
-      "community": 6,
+      "community": 1,
       "norm_label": "buildsitefilter()"
     },
     {
@@ -7523,7 +7586,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L23",
       "id": "domainsearch_unwrapduckduckgourl",
-      "community": 6,
+      "community": 1,
       "norm_label": "unwrapduckduckgourl()"
     },
     {
@@ -7532,7 +7595,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L36",
       "id": "domainsearch_matchsource",
-      "community": 6,
+      "community": 1,
       "norm_label": "matchsource()"
     },
     {
@@ -7541,7 +7604,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L46",
       "id": "domainsearch_search",
-      "community": 6,
+      "community": 1,
       "norm_label": "search()"
     },
     {
@@ -7550,7 +7613,7 @@
       "source_file": "server\\services\\sources\\exa.js",
       "source_location": "L1",
       "id": "server_services_sources_exa_js",
-      "community": 41,
+      "community": 40,
       "norm_label": "exa.js"
     },
     {
@@ -7559,7 +7622,7 @@
       "source_file": "server\\services\\sources\\exa.js",
       "source_location": "L7",
       "id": "exa_search",
-      "community": 41,
+      "community": 40,
       "norm_label": "search()"
     },
     {
@@ -7640,7 +7703,7 @@
       "source_file": "server\\services\\sources\\tavily.js",
       "source_location": "L1",
       "id": "server_services_sources_tavily_js",
-      "community": 42,
+      "community": 41,
       "norm_label": "tavily.js"
     },
     {
@@ -7649,7 +7712,7 @@
       "source_file": "server\\services\\sources\\tavily.js",
       "source_location": "L7",
       "id": "tavily_search",
-      "community": 42,
+      "community": 41,
       "norm_label": "search()"
     },
     {
@@ -7658,7 +7721,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L1",
       "id": "server_services_sources_unpaywall_js",
-      "community": 0,
+      "community": 26,
       "norm_label": "unpaywall.js"
     },
     {
@@ -7667,7 +7730,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L8",
       "id": "unpaywall_pickbestoaurl",
-      "community": 0,
+      "community": 26,
       "norm_label": "pickbestoaurl()"
     },
     {
@@ -7676,7 +7739,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L16",
       "id": "unpaywall_search",
-      "community": 0,
+      "community": 26,
       "norm_label": "search()"
     },
     {
@@ -7685,7 +7748,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L45",
       "id": "unpaywall_resolvedoi",
-      "community": 0,
+      "community": 26,
       "norm_label": "resolvedoi()"
     },
     {
@@ -7694,7 +7757,7 @@
       "source_file": "server\\services\\__tests__\\tabroomSearch.test.js",
       "source_location": "L1",
       "id": "server_services_tests_tabroomsearch_test_js",
-      "community": 43,
+      "community": 42,
       "norm_label": "tabroomsearch.test.js"
     },
     {
@@ -7703,7 +7766,7 @@
       "source_file": "server\\services\\__tests__\\tabroomSearch.test.js",
       "source_location": "L28",
       "id": "tabroomsearch_test_eschtml",
-      "community": 43,
+      "community": 42,
       "norm_label": "eschtml()"
     },
     {
@@ -7712,7 +7775,7 @@
       "source_file": "server\\services\\__tests__\\threatScorer.test.js",
       "source_location": "L1",
       "id": "server_services_tests_threatscorer_test_js",
-      "community": 54,
+      "community": 53,
       "norm_label": "threatscorer.test.js"
     },
     {
@@ -7721,7 +7784,7 @@
       "source_file": "test\\auth.test.js",
       "source_location": "L1",
       "id": "test_auth_test_js",
-      "community": 8,
+      "community": 7,
       "norm_label": "auth.test.js"
     },
     {
@@ -7730,7 +7793,7 @@
       "source_file": "test\\auth.test.js",
       "source_location": "L85",
       "id": "auth_test_bootapp",
-      "community": 8,
+      "community": 7,
       "norm_label": "bootapp()"
     },
     {
@@ -7739,7 +7802,7 @@
       "source_file": "test\\cardCutter-prompt.test.js",
       "source_location": "L1",
       "id": "test_cardcutter_prompt_test_js",
-      "community": 55,
+      "community": 54,
       "norm_label": "cardcutter-prompt.test.js"
     },
     {
@@ -7748,7 +7811,7 @@
       "source_file": "test\\carousel.test.js",
       "source_location": "L1",
       "id": "test_carousel_test_js",
-      "community": 56,
+      "community": 55,
       "norm_label": "carousel.test.js"
     },
     {
@@ -7757,7 +7820,7 @@
       "source_file": "test\\chat-brevity.test.js",
       "source_location": "L1",
       "id": "test_chat_brevity_test_js",
-      "community": 57,
+      "community": 56,
       "norm_label": "chat-brevity.test.js"
     },
     {
@@ -7766,7 +7829,7 @@
       "source_file": "test\\chatCommands.test.js",
       "source_location": "L1",
       "id": "test_chatcommands_test_js",
-      "community": 58,
+      "community": 57,
       "norm_label": "chatcommands.test.js"
     },
     {
@@ -7775,7 +7838,7 @@
       "source_file": "test\\chatRetrieval.test.js",
       "source_location": "L1",
       "id": "test_chatretrieval_test_js",
-      "community": 59,
+      "community": 58,
       "norm_label": "chatretrieval.test.js"
     },
     {
@@ -7784,7 +7847,7 @@
       "source_file": "test\\chatStore.test.js",
       "source_location": "L1",
       "id": "test_chatstore_test_js",
-      "community": 60,
+      "community": 59,
       "norm_label": "chatstore.test.js"
     },
     {
@@ -7793,7 +7856,7 @@
       "source_file": "test\\clipboard.test.js",
       "source_location": "L1",
       "id": "test_clipboard_test_js",
-      "community": 61,
+      "community": 60,
       "norm_label": "clipboard.test.js"
     },
     {
@@ -7802,7 +7865,7 @@
       "source_file": "test\\evidence-random.test.js",
       "source_location": "L1",
       "id": "test_evidence_random_test_js",
-      "community": 44,
+      "community": 43,
       "norm_label": "evidence-random.test.js"
     },
     {
@@ -7811,7 +7874,7 @@
       "source_file": "test\\evidence-random.test.js",
       "source_location": "L22",
       "id": "evidence_random_test_ids",
-      "community": 44,
+      "community": 43,
       "norm_label": "ids()"
     },
     {
@@ -7820,7 +7883,7 @@
       "source_file": "test\\evidence-search.test.js",
       "source_location": "L1",
       "id": "test_evidence_search_test_js",
-      "community": 62,
+      "community": 61,
       "norm_label": "evidence-search.test.js"
     },
     {
@@ -7829,7 +7892,7 @@
       "source_file": "test\\expand-command.test.js",
       "source_location": "L1",
       "id": "test_expand_command_test_js",
-      "community": 63,
+      "community": 62,
       "norm_label": "expand-command.test.js"
     },
     {
@@ -7838,7 +7901,7 @@
       "source_file": "test\\instant-research.test.js",
       "source_location": "L1",
       "id": "test_instant_research_test_js",
-      "community": 64,
+      "community": 63,
       "norm_label": "instant-research.test.js"
     },
     {
@@ -7847,7 +7910,7 @@
       "source_file": "test\\isDirty.test.js",
       "source_location": "L1",
       "id": "test_isdirty_test_js",
-      "community": 65,
+      "community": 64,
       "norm_label": "isdirty.test.js"
     },
     {
@@ -7856,7 +7919,7 @@
       "source_file": "test\\limits.test.js",
       "source_location": "L1",
       "id": "test_limits_test_js",
-      "community": 66,
+      "community": 65,
       "norm_label": "limits.test.js"
     },
     {
@@ -7883,7 +7946,7 @@
       "source_file": "test\\project-cleanup.test.js",
       "source_location": "L1",
       "id": "test_project_cleanup_test_js",
-      "community": 67,
+      "community": 66,
       "norm_label": "project-cleanup.test.js"
     },
     {
@@ -7892,7 +7955,7 @@
       "source_file": "test\\rankingsEngine.test.js",
       "source_location": "L1",
       "id": "test_rankingsengine_test_js",
-      "community": 68,
+      "community": 67,
       "norm_label": "rankingsengine.test.js"
     },
     {
@@ -7901,7 +7964,7 @@
       "source_file": "test\\slash-enter.test.js",
       "source_location": "L1",
       "id": "test_slash_enter_test_js",
-      "community": 69,
+      "community": 68,
       "norm_label": "slash-enter.test.js"
     },
     {
@@ -7910,7 +7973,7 @@
       "source_file": "test\\tocParser.test.js",
       "source_location": "L1",
       "id": "test_tocparser_test_js",
-      "community": 45,
+      "community": 44,
       "norm_label": "tocparser.test.js"
     },
     {
@@ -7919,7 +7982,7 @@
       "source_file": "test\\tocParser.test.js",
       "source_location": "L39",
       "id": "tocparser_test_make",
-      "community": 45,
+      "community": 44,
       "norm_label": "make()"
     },
     {
@@ -7928,7 +7991,7 @@
       "source_file": "test\\user-scoping.test.js",
       "source_location": "L1",
       "id": "test_user_scoping_test_js",
-      "community": 8,
+      "community": 7,
       "norm_label": "user-scoping.test.js"
     },
     {
@@ -7937,7 +8000,7 @@
       "source_file": "test\\user-scoping.test.js",
       "source_location": "L6",
       "id": "user_scoping_test_bootappwithprojects",
-      "community": 8,
+      "community": 7,
       "norm_label": "bootappwithprojects()"
     },
     {
@@ -7946,7 +8009,7 @@
       "source_file": "test\\user-scoping.test.js",
       "source_location": "L24",
       "id": "user_scoping_test_signupandcookie",
-      "community": 8,
+      "community": 7,
       "norm_label": "signupandcookie()"
     },
     {
@@ -7955,7 +8018,7 @@
       "source_file": "test\\wordAt.test.js",
       "source_location": "L1",
       "id": "test_wordat_test_js",
-      "community": 70,
+      "community": 69,
       "norm_label": "wordat.test.js"
     },
     {
@@ -7964,7 +8027,7 @@
       "source_file": "test\\wordSnap.test.js",
       "source_location": "L1",
       "id": "test_wordsnap_test_js",
-      "community": 71,
+      "community": 70,
       "norm_label": "wordsnap.test.js"
     },
     {
@@ -7973,7 +8036,7 @@
       "source_file": "test\\_helpers.js",
       "source_location": "L1",
       "id": "test_helpers_js",
-      "community": 46,
+      "community": 45,
       "norm_label": "_helpers.js"
     },
     {
@@ -7982,7 +8045,7 @@
       "source_file": "test\\_helpers.js",
       "source_location": "L6",
       "id": "helpers_usetempdb",
-      "community": 46,
+      "community": 45,
       "norm_label": "usetempdb()"
     },
     {
@@ -7994,7 +8057,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "claude.md behavioral guidelines",
       "id": "claude_behavioral_guidelines"
     },
@@ -8007,7 +8070,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "think before coding",
       "id": "claude_think_before_coding"
     },
@@ -8020,7 +8083,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "simplicity first",
       "id": "claude_simplicity_first"
     },
@@ -8033,7 +8096,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "surgical changes",
       "id": "claude_surgical_changes"
     },
@@ -8046,7 +8109,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "goal-driven execution",
       "id": "claude_goal_driven_execution"
     },
@@ -8059,7 +8122,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "rationale: caution over speed tradeoff",
       "id": "claude_rationale_caution_over_speed"
     },
@@ -8072,7 +8135,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "rationale: no speculative code",
       "id": "claude_rationale_no_speculation"
     },
@@ -8085,7 +8148,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "rationale: clean up only your own mess",
       "id": "claude_rationale_surgical_orphans"
     },
@@ -8098,7 +8161,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "rationale: verifiable success criteria",
       "id": "claude_rationale_verifiable_goals"
     },
@@ -8111,7 +8174,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "graphify knowledge graph integration",
       "id": "claude_graphify_integration"
     },
@@ -8124,7 +8187,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "graph_report.md",
       "id": "claude_graph_report"
     },
@@ -8137,7 +8200,7 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "community": 14,
+      "community": 15,
       "norm_label": "wiki index (graphify-out/wiki/index.md)",
       "id": "claude_wiki_index"
     }
@@ -12239,7 +12302,43 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1094",
+      "source_location": "L1098",
+      "weight": 1.0,
+      "_src": "public_app_r3_js",
+      "_tgt": "app_r3_cardtohtml",
+      "source": "public_app_r3_js",
+      "target": "app_r3_cardtohtml",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1129",
+      "weight": 1.0,
+      "_src": "public_app_r3_js",
+      "_tgt": "app_r3_cardtoplain",
+      "source": "public_app_r3_js",
+      "target": "app_r3_cardtoplain",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1141",
+      "weight": 1.0,
+      "_src": "public_app_r3_js",
+      "_tgt": "app_r3_writecardtoclipboard",
+      "source": "public_app_r3_js",
+      "target": "app_r3_writecardtoclipboard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1180",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_rendercardbody",
@@ -12251,7 +12350,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1116",
+      "source_location": "L1197",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_showlibpreview",
@@ -12263,7 +12362,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1157",
+      "source_location": "L1237",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_bindsettings",
@@ -12275,7 +12374,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1182",
+      "source_location": "L1262",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_loadsettings",
@@ -12287,7 +12386,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1186",
+      "source_location": "L1266",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_applytweaks",
@@ -12299,7 +12398,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1201",
+      "source_location": "L1281",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_bindlinkmodal",
@@ -12311,7 +12410,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1218",
+      "source_location": "L1298",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_openlinkmodal",
@@ -12323,7 +12422,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1225",
+      "source_location": "L1305",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_closelinkmodal",
@@ -12335,7 +12434,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1226",
+      "source_location": "L1306",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_renderlinkcurrent",
@@ -12347,7 +12446,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1237",
+      "source_location": "L1317",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_searchtabroom",
@@ -12359,7 +12458,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1276",
+      "source_location": "L1356",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_bindcommandpalette",
@@ -12371,7 +12470,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1300",
+      "source_location": "L1380",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_bindrail",
@@ -12383,7 +12482,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1310",
+      "source_location": "L1390",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_bindcuttercontrols",
@@ -12395,7 +12494,55 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1336",
+      "source_location": "L1436",
+      "weight": 1.0,
+      "_src": "public_app_r3_js",
+      "_tgt": "app_r3_plaintomarkdownoffset",
+      "source": "public_app_r3_js",
+      "target": "app_r3_plaintomarkdownoffset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1452",
+      "weight": 1.0,
+      "_src": "public_app_r3_js",
+      "_tgt": "app_r3_stripmarkupforsearch",
+      "source": "public_app_r3_js",
+      "target": "app_r3_stripmarkupforsearch",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1459",
+      "weight": 1.0,
+      "_src": "public_app_r3_js",
+      "_tgt": "app_r3_applycutmarkup",
+      "source": "public_app_r3_js",
+      "target": "app_r3_applycutmarkup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1490",
+      "weight": 1.0,
+      "_src": "public_app_r3_js",
+      "_tgt": "app_r3_rerendercutbody",
+      "source": "public_app_r3_js",
+      "target": "app_r3_rerendercutbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1503",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_showpastefallback",
@@ -12407,7 +12554,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1349",
+      "source_location": "L1516",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_runcutterpaste",
@@ -12419,7 +12566,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1365",
+      "source_location": "L1532",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_loadcutter",
@@ -12431,7 +12578,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1374",
+      "source_location": "L1541",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_rendercutterrecent",
@@ -12443,7 +12590,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1398",
+      "source_location": "L1565",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_termopen",
@@ -12455,7 +12602,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1403",
+      "source_location": "L1570",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_termline",
@@ -12467,7 +12614,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1411",
+      "source_location": "L1578",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_termclose",
@@ -12479,7 +12626,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1413",
+      "source_location": "L1580",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_runcutterscrape",
@@ -12491,7 +12638,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1478",
+      "source_location": "L1645",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_runcutllm",
@@ -12503,7 +12650,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1515",
+      "source_location": "L1682",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_runcutterfile",
@@ -12515,7 +12662,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1559",
+      "source_location": "L1726",
       "weight": 1.0,
       "_src": "public_app_r3_js",
       "_tgt": "app_r3_showcutresult",
@@ -12899,7 +13046,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1117",
+      "source_location": "L1198",
       "weight": 1.0,
       "_src": "app_r3_showlibpreview",
       "_tgt": "app_r3",
@@ -12911,7 +13058,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1164",
+      "source_location": "L1244",
       "weight": 1.0,
       "_src": "app_r3_bindsettings",
       "_tgt": "app_r3",
@@ -12923,7 +13070,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1202",
+      "source_location": "L1282",
       "weight": 1.0,
       "_src": "app_r3_bindlinkmodal",
       "_tgt": "app_r3",
@@ -12935,7 +13082,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1219",
+      "source_location": "L1299",
       "weight": 1.0,
       "_src": "app_r3_openlinkmodal",
       "_tgt": "app_r3",
@@ -12947,7 +13094,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1225",
+      "source_location": "L1305",
       "weight": 1.0,
       "_src": "app_r3_closelinkmodal",
       "_tgt": "app_r3",
@@ -12959,7 +13106,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1227",
+      "source_location": "L1307",
       "weight": 1.0,
       "_src": "app_r3_renderlinkcurrent",
       "_tgt": "app_r3",
@@ -12971,7 +13118,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1238",
+      "source_location": "L1318",
       "weight": 1.0,
       "_src": "app_r3_searchtabroom",
       "_tgt": "app_r3",
@@ -12983,7 +13130,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1277",
+      "source_location": "L1357",
       "weight": 1.0,
       "_src": "app_r3_bindcommandpalette",
       "_tgt": "app_r3",
@@ -12995,7 +13142,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1306",
+      "source_location": "L1386",
       "weight": 1.0,
       "_src": "app_r3_bindrail",
       "_tgt": "app_r3",
@@ -13007,7 +13154,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1319",
+      "source_location": "L1399",
       "weight": 1.0,
       "_src": "app_r3_bindcuttercontrols",
       "_tgt": "app_r3",
@@ -13019,7 +13166,31 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1340",
+      "source_location": "L1464",
+      "weight": 1.0,
+      "_src": "app_r3_applycutmarkup",
+      "_tgt": "app_r3",
+      "source": "app_r3",
+      "target": "app_r3_applycutmarkup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1492",
+      "weight": 1.0,
+      "_src": "app_r3_rerendercutbody",
+      "_tgt": "app_r3",
+      "source": "app_r3",
+      "target": "app_r3_rerendercutbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1507",
       "weight": 1.0,
       "_src": "app_r3_showpastefallback",
       "_tgt": "app_r3",
@@ -13031,7 +13202,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1350",
+      "source_location": "L1517",
       "weight": 1.0,
       "_src": "app_r3_runcutterpaste",
       "_tgt": "app_r3",
@@ -13043,7 +13214,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1375",
+      "source_location": "L1542",
       "weight": 1.0,
       "_src": "app_r3_rendercutterrecent",
       "_tgt": "app_r3",
@@ -13055,7 +13226,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1399",
+      "source_location": "L1566",
       "weight": 1.0,
       "_src": "app_r3_termopen",
       "_tgt": "app_r3",
@@ -13067,7 +13238,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1408",
+      "source_location": "L1575",
       "weight": 1.0,
       "_src": "app_r3_termline",
       "_tgt": "app_r3",
@@ -13079,7 +13250,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1414",
+      "source_location": "L1581",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3",
@@ -13091,7 +13262,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1560",
+      "source_location": "L1727",
       "weight": 1.0,
       "_src": "app_r3_showcutresult",
       "_tgt": "app_r3",
@@ -13247,7 +13418,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1131",
+      "source_location": "L1212",
       "weight": 1.0,
       "_src": "app_r3_showlibpreview",
       "_tgt": "app_r3_fetchjson",
@@ -13259,7 +13430,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1245",
+      "source_location": "L1325",
       "weight": 1.0,
       "_src": "app_r3_searchtabroom",
       "_tgt": "app_r3_fetchjson",
@@ -13271,7 +13442,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1368",
+      "source_location": "L1535",
       "weight": 1.0,
       "_src": "app_r3_loadcutter",
       "_tgt": "app_r3_fetchjson",
@@ -13283,7 +13454,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1606",
+      "source_location": "L1779",
       "weight": 1.0,
       "_src": "app_r3_showcutresult",
       "_tgt": "app_r3_fetchjson",
@@ -13331,7 +13502,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1105",
+      "source_location": "L1191",
       "weight": 1.0,
       "_src": "app_r3_rendercardbody",
       "_tgt": "app_r3_escapehtml",
@@ -13343,7 +13514,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1123",
+      "source_location": "L1204",
       "weight": 1.0,
       "_src": "app_r3_showlibpreview",
       "_tgt": "app_r3_escapehtml",
@@ -13355,7 +13526,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1248",
+      "source_location": "L1328",
       "weight": 1.0,
       "_src": "app_r3_searchtabroom",
       "_tgt": "app_r3_escapehtml",
@@ -13367,7 +13538,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1407",
+      "source_location": "L1574",
       "weight": 1.0,
       "_src": "app_r3_termline",
       "_tgt": "app_r3_escapehtml",
@@ -13379,7 +13550,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1582",
+      "source_location": "L1751",
       "weight": 1.0,
       "_src": "app_r3_showcutresult",
       "_tgt": "app_r3_escapehtml",
@@ -13391,7 +13562,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1232",
+      "source_location": "L1312",
       "weight": 1.0,
       "_src": "app_r3_renderlinkcurrent",
       "_tgt": "app_r3_fmtrel",
@@ -13475,7 +13646,19 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1351",
+      "source_location": "L1460",
+      "weight": 1.0,
+      "_src": "app_r3_applycutmarkup",
+      "_tgt": "app_r3_showtoast",
+      "source": "app_r3_showtoast",
+      "target": "app_r3_applycutmarkup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1518",
       "weight": 1.0,
       "_src": "app_r3_runcutterpaste",
       "_tgt": "app_r3_showtoast",
@@ -13487,7 +13670,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1416",
+      "source_location": "L1583",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3_showtoast",
@@ -13499,7 +13682,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1481",
+      "source_location": "L1648",
       "weight": 1.0,
       "_src": "app_r3_runcutllm",
       "_tgt": "app_r3_showtoast",
@@ -13511,7 +13694,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1536",
+      "source_location": "L1703",
       "weight": 1.0,
       "_src": "app_r3_runcutterfile",
       "_tgt": "app_r3_showtoast",
@@ -14003,7 +14186,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1205",
+      "source_location": "L1285",
       "weight": 1.0,
       "_src": "app_r3_bindlinkmodal",
       "_tgt": "app_r3_debounce",
@@ -14039,7 +14222,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1086",
+      "source_location": "L1087",
       "weight": 1.0,
       "_src": "app_r3_renderliblist",
       "_tgt": "app_r3_showlibpreview",
@@ -14051,7 +14234,31 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1135",
+      "source_location": "L1142",
+      "weight": 1.0,
+      "_src": "app_r3_writecardtoclipboard",
+      "_tgt": "app_r3_cardtohtml",
+      "source": "app_r3_cardtohtml",
+      "target": "app_r3_writecardtoclipboard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1143",
+      "weight": 1.0,
+      "_src": "app_r3_writecardtoclipboard",
+      "_tgt": "app_r3_cardtoplain",
+      "source": "app_r3_cardtoplain",
+      "target": "app_r3_writecardtoclipboard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1216",
       "weight": 1.0,
       "_src": "app_r3_showlibpreview",
       "_tgt": "app_r3_rendercardbody",
@@ -14063,7 +14270,19 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1573",
+      "source_location": "L1494",
+      "weight": 1.0,
+      "_src": "app_r3_rerendercutbody",
+      "_tgt": "app_r3_rendercardbody",
+      "source": "app_r3_rendercardbody",
+      "target": "app_r3_rerendercutbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1742",
       "weight": 1.0,
       "_src": "app_r3_showcutresult",
       "_tgt": "app_r3_rendercardbody",
@@ -14075,7 +14294,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1184",
+      "source_location": "L1264",
       "weight": 1.0,
       "_src": "app_r3_loadsettings",
       "_tgt": "app_r3_applytweaks",
@@ -14087,7 +14306,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1222",
+      "source_location": "L1302",
       "weight": 1.0,
       "_src": "app_r3_openlinkmodal",
       "_tgt": "app_r3_renderlinkcurrent",
@@ -14099,7 +14318,43 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1442",
+      "source_location": "L1478",
+      "weight": 1.0,
+      "_src": "app_r3_applycutmarkup",
+      "_tgt": "app_r3_plaintomarkdownoffset",
+      "source": "app_r3_plaintomarkdownoffset",
+      "target": "app_r3_applycutmarkup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1472",
+      "weight": 1.0,
+      "_src": "app_r3_applycutmarkup",
+      "_tgt": "app_r3_stripmarkupforsearch",
+      "source": "app_r3_stripmarkupforsearch",
+      "target": "app_r3_applycutmarkup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1483",
+      "weight": 1.0,
+      "_src": "app_r3_applycutmarkup",
+      "_tgt": "app_r3_rerendercutbody",
+      "source": "app_r3_applycutmarkup",
+      "target": "app_r3_rerendercutbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "public\\app-r3.js",
+      "source_location": "L1609",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3_showpastefallback",
@@ -14111,7 +14366,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1355",
+      "source_location": "L1522",
       "weight": 1.0,
       "_src": "app_r3_runcutterpaste",
       "_tgt": "app_r3_termopen",
@@ -14123,7 +14378,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1356",
+      "source_location": "L1523",
       "weight": 1.0,
       "_src": "app_r3_runcutterpaste",
       "_tgt": "app_r3_termline",
@@ -14135,7 +14390,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1358",
+      "source_location": "L1525",
       "weight": 1.0,
       "_src": "app_r3_runcutterpaste",
       "_tgt": "app_r3_runcutllm",
@@ -14147,7 +14402,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1360",
+      "source_location": "L1527",
       "weight": 1.0,
       "_src": "app_r3_runcutterpaste",
       "_tgt": "app_r3_termclose",
@@ -14159,7 +14414,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1362",
+      "source_location": "L1529",
       "weight": 1.0,
       "_src": "app_r3_runcutterpaste",
       "_tgt": "app_r3_showcutresult",
@@ -14171,7 +14426,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1420",
+      "source_location": "L1587",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3_termopen",
@@ -14183,7 +14438,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1516",
+      "source_location": "L1683",
       "weight": 1.0,
       "_src": "app_r3_runcutterfile",
       "_tgt": "app_r3_termopen",
@@ -14195,7 +14450,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1422",
+      "source_location": "L1589",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3_termline",
@@ -14207,7 +14462,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1480",
+      "source_location": "L1647",
       "weight": 1.0,
       "_src": "app_r3_runcutllm",
       "_tgt": "app_r3_termline",
@@ -14219,7 +14474,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1517",
+      "source_location": "L1684",
       "weight": 1.0,
       "_src": "app_r3_runcutterfile",
       "_tgt": "app_r3_termline",
@@ -14231,7 +14486,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1441",
+      "source_location": "L1608",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3_termclose",
@@ -14243,7 +14498,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1549",
+      "source_location": "L1716",
       "weight": 1.0,
       "_src": "app_r3_runcutterfile",
       "_tgt": "app_r3_termclose",
@@ -14255,7 +14510,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1462",
+      "source_location": "L1629",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3_runcutllm",
@@ -14267,7 +14522,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1475",
+      "source_location": "L1642",
       "weight": 1.0,
       "_src": "app_r3_runcutterscrape",
       "_tgt": "app_r3_showcutresult",
@@ -14279,7 +14534,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1543",
+      "source_location": "L1710",
       "weight": 1.0,
       "_src": "app_r3_runcutterfile",
       "_tgt": "app_r3_runcutllm",
@@ -14291,7 +14546,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "public\\app-r3.js",
-      "source_location": "L1550",
+      "source_location": "L1717",
       "weight": 1.0,
       "_src": "app_r3_runcutterfile",
       "_tgt": "app_r3_showcutresult",
@@ -18659,7 +18914,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L15",
+      "source_location": "L20",
       "weight": 1.0,
       "_src": "server_prompts_cardcutter_js",
       "_tgt": "cardcutter_buildsystemprompt",
@@ -18671,7 +18926,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L96",
+      "source_location": "L101",
       "weight": 1.0,
       "_src": "server_prompts_cardcutter_js",
       "_tgt": "cardcutter_stripabstractprelude",
@@ -18683,7 +18938,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L105",
+      "source_location": "L110",
       "weight": 1.0,
       "_src": "server_prompts_cardcutter_js",
       "_tgt": "cardcutter_stripboilerplatesections",
@@ -18695,7 +18950,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L119",
+      "source_location": "L124",
       "weight": 1.0,
       "_src": "server_prompts_cardcutter_js",
       "_tgt": "cardcutter_buildcutprompt",
@@ -18707,7 +18962,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L147",
+      "source_location": "L152",
       "weight": 1.0,
       "_src": "server_prompts_cardcutter_js",
       "_tgt": "cardcutter_buildeditprompt",
@@ -18719,7 +18974,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L123",
+      "source_location": "L128",
       "weight": 1.0,
       "_src": "cardcutter_buildcutprompt",
       "_tgt": "cardcutter_stripabstractprelude",
@@ -18731,7 +18986,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\prompts\\cardCutter.js",
-      "source_location": "L123",
+      "source_location": "L128",
       "weight": 1.0,
       "_src": "cardcutter_buildcutprompt",
       "_tgt": "cardcutter_stripboilerplatesections",
@@ -18755,7 +19010,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L22",
+      "source_location": "L25",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_normalizedensity",
@@ -18767,7 +19022,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L23",
+      "source_location": "L26",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_normalizelength",
@@ -18779,7 +19034,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L37",
+      "source_location": "L40",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_stripformatmarks",
@@ -18791,7 +19046,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L47",
+      "source_location": "L50",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_verifybodyfidelity",
@@ -18803,7 +19058,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L220",
+      "source_location": "L258",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_sanitizechatoutput",
@@ -18815,7 +19070,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L229",
+      "source_location": "L267",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_buildsummaryprompt",
@@ -18827,7 +19082,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L358",
+      "source_location": "L396",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_finish",
@@ -18839,7 +19094,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L364",
+      "source_location": "L402",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_safestringify",
@@ -18851,7 +19106,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L379",
+      "source_location": "L417",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_send",
@@ -18863,7 +19118,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L397",
+      "source_location": "L435",
       "weight": 1.0,
       "_src": "server_routes_ai_js",
       "_tgt": "ai_onphase",
@@ -18875,7 +19130,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L48",
+      "source_location": "L51",
       "weight": 1.0,
       "_src": "ai_verifybodyfidelity",
       "_tgt": "ai_stripformatmarks",
@@ -18887,7 +19142,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L382",
+      "source_location": "L420",
       "weight": 1.0,
       "_src": "ai_send",
       "_tgt": "ai_safestringify",
@@ -18899,7 +19154,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\routes\\ai.js",
-      "source_location": "L397",
+      "source_location": "L435",
       "weight": 1.0,
       "_src": "ai_onphase",
       "_tgt": "ai_send",
