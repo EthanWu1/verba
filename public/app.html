@@ -275,6 +275,33 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .show-more{padding:9px 18px;border-radius:7px;background:#fff;border:1px solid var(--line);font:500 12.5px/1 var(--font-display);color:var(--ink-2)}
 .show-more:hover{background:var(--panel);border-color:var(--line-2)}
 
+/* Tournaments — list table */
+.tt-table{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.tt-head,.tt-row{display:grid;grid-template-columns:minmax(220px,2fr) 130px minmax(140px,1.4fr) 110px;gap:18px;padding:11px 18px;align-items:center}
+.tt-head{background:var(--panel);border-bottom:1px solid var(--line);font:600 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+.tt-row{border-bottom:1px solid var(--line-soft);cursor:pointer;transition:background .12s}
+.tt-row:last-child{border-bottom:0}
+.tt-row:hover{background:var(--panel)}
+.tt-name{font:600 14px/1.3 var(--font-display);color:var(--ink);letter-spacing:-0.005em}
+.tt-name .loc{display:block;font:500 11px/1.2 var(--font-display);color:var(--muted);margin-top:3px;font-weight:500}
+.tt-date{font:500 12px/1 var(--font-mono);color:var(--ink-2)}
+.tt-event{font:500 12px/1.3 var(--font-display);color:var(--ink-2)}
+.tt-status{font:600 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;text-align:right}
+.tt-status.up{color:var(--ok)}
+
+/* Past card with record on right */
+.past-card{flex-direction:row !important;align-items:center;gap:14px}
+.past-card .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.past-card .body .name{font:700 15.5px/1.25 var(--font-display);letter-spacing:-0.01em;color:var(--ink)}
+.past-card .body .meta{font:500 12px/1.4 var(--font-display);color:var(--muted)}
+.past-card .rec-block{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;padding-left:14px;border-left:1px solid var(--line-soft);min-width:108px}
+.past-card .rec-block .lab{font:500 10px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.past-card .rec-block .val{font:700 18px/1 var(--font-mono);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+.past-card .rec-block .bid{font:600 9.5px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.1em;padding:3px 6px;border-radius:3px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.past-card .rec-block .bid.silver{background:#E5E7EB;color:#374151;border-color:#D1D5DB}
+.past-card .rec-block .bid.ghost{background:var(--panel);color:var(--muted-2);border-color:var(--line)}
+.past-card .rec-block .bid.none{display:none}
+
 /* Tournament detail */
 .pp-shell{padding:28px clamp(28px,4vw,52px) 56px;max-width:1280px;margin:0 auto}
 .pp-back{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;cursor:pointer;margin-bottom:18px}
@@ -290,13 +317,45 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .pp-block h3{margin:0 0 12px;font:600 11.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
 
 .tres-table{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.tr-head,.tr-row{display:grid;grid-template-columns:80px 1fr 100px 100px 120px;gap:14px;padding:11px 18px;align-items:center}
+.tr-head,.tr-row{display:grid;grid-template-columns:90px 1fr 70px 80px 80px 70px 70px;gap:14px;padding:11px 18px;align-items:center}
 .tr-head{background:var(--panel);border-bottom:1px solid var(--line);font:600 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
-.tr-row{border-bottom:1px solid var(--line-soft);transition:background .12s}
+.tr-row{border-bottom:1px solid var(--line-soft);transition:background .12s;cursor:pointer}
 .tr-row:last-child{border-bottom:0}
 .tr-row:hover{background:var(--panel)}
 .tr-cell{font:500 12.5px/1.3 var(--font-display);color:var(--ink-2)}
 .tr-cell.b{font-weight:600;color:var(--ink)}
+.tr-cell.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.tr-team{display:flex;flex-direction:column;gap:3px;min-width:0}
+.tr-team .nm{font:600 13px/1.25 var(--font-display);color:var(--ink);letter-spacing:-0.005em}
+.tr-team .nm:hover{text-decoration:underline;text-underline-offset:3px}
+.tr-team .sch{font:500 11px/1.2 var(--font-display);color:var(--muted)}
+.tr-place{font:700 12px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.tr-place.gold{color:#A16207}.tr-place.silver{color:#525252}.tr-place.bronze{color:#92400E}
+.tr-bid{font:600 10.5px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.1em;padding:3px 7px;border-radius:4px;width:fit-content;white-space:nowrap}
+.tr-bid.full{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.tr-bid.silver{background:#E5E7EB;color:#374151;border:1px solid #D1D5DB}
+.tr-bid.ghost{background:var(--panel);color:var(--muted-2);border:1px solid var(--line)}
+.tr-bid.none{color:var(--muted-2)}
+
+/* Pairings table */
+.pair-table{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:12px}
+.pt-head,.pt-row{display:grid;grid-template-columns:60px 50px 1fr 1fr 70px 70px;gap:14px;padding:11px 18px;align-items:center}
+.pt-head{background:var(--panel);border-bottom:1px solid var(--line);font:600 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+.pt-row{border-bottom:1px solid var(--line-soft);transition:background .12s}
+.pt-row:last-child{border-bottom:0}
+.pt-row:hover{background:var(--panel)}
+.pt-round{font:600 12px/1 var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.pt-side{display:inline-flex;padding:2px 7px;border-radius:3px;font:600 10px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.04em;width:fit-content}
+.pt-side.aff{background:var(--ok-soft);color:var(--ok)}
+.pt-side.neg{background:var(--danger-soft);color:var(--danger)}
+.pt-opp{cursor:pointer}
+.pt-opp .nm{font:600 13px/1.25 var(--font-display);color:var(--ink);letter-spacing:-0.005em}
+.pt-opp .nm:hover{text-decoration:underline;text-underline-offset:3px}
+.pt-opp .sch{font:500 11px/1.2 var(--font-display);color:var(--muted);margin-top:2px}
+.pt-judge{font:500 12px/1.3 var(--font-display);color:var(--ink-2)}
+.pt-result{font:700 13px/1 var(--font-mono);font-variant-numeric:tabular-nums}
+.pt-result.w{color:var(--ok)}.pt-result.l{color:var(--danger)}
+.pt-pts{font:500 12px/1 var(--font-mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
 
 /* RANKINGS */
 .lb{border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;box-shadow:var(--shadow-sm)}
@@ -611,8 +670,9 @@ body.density-dense .shellpad{padding-top:18px}
               <button class="rank-tab" data-when="past">Past</button>
             </div>
           </div>
-          <div class="tourn-grid" id="all-tourn-grid">
-            <div class="empty" style="grid-column:1/-1"><b>Loading tournaments…</b></div>
+          <div class="tt-table" id="all-tourn-grid">
+            <div class="tt-head"><span>Tournament</span><span>Date</span><span>Location</span><span>Status</span></div>
+            <div class="empty"><b>Loading tournaments…</b></div>
           </div>
           <div class="show-more-row" id="all-show-more-row" style="display:none">
             <button class="show-more" id="all-show-more-btn">Show more</button>
@@ -649,13 +709,25 @@ body.density-dense .shellpad{padding-top:18px}
               <div class="sub" id="td-sub">—</div>
             </div>
           </div>
-          <div class="pp-stats" id="td-stats"></div>
+          <div class="rank-tabs" id="td-evt-tabs" style="margin-bottom:18px"></div>
+          <div id="td-content"><div class="empty"><b>Loading…</b></div></div>
+        </div>
+
+        <div class="shellpad" id="t-pairings-view" style="display:none">
+          <a class="pp-back" id="t-pair-back">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <span id="t-pair-back-lbl">Back to results</span>
+          </a>
+          <div class="pp-head">
+            <div class="who">
+              <h1 id="t-pair-name">Entry</h1>
+              <div class="sub" id="t-pair-sub">—</div>
+            </div>
+          </div>
+          <div class="pp-stats" id="t-pair-stats"></div>
           <div class="pp-block">
             <h3>Round-by-round</h3>
-            <div class="tres-table">
-              <div class="tr-head"><span>Event</span><span>Round</span><span>Side</span><span>Judge</span><span>Result</span></div>
-              <div id="td-rounds"></div>
-            </div>
+            <div id="t-pair-rounds"></div>
           </div>
         </div>
       </section>
@@ -762,6 +834,10 @@ body.density-dense .shellpad{padding-top:18px}
             </div>
           </div>
           <div class="pp-stats" id="tp-stats"></div>
+          <div class="pp-block">
+            <h3 id="tp-tourn-lbl">Tournaments this season</h3>
+            <div id="tp-tourns"><div class="empty"><b>No tournaments</b></div></div>
+          </div>
         </div>
       </section>
 

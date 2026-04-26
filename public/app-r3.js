@@ -331,7 +331,23 @@ function bindTournamentsControls(){
     state.pastShown += 10;
     renderPastTournaments();
   });
-  $('t-back').addEventListener('click', (e)=>{ e.preventDefault(); $('t-detail-view').style.display='none'; $('t-list-view').style.display='block'; window.scrollTo(0,0); });
+  $('t-back').addEventListener('click', (e)=>{
+    e.preventDefault();
+    $('t-detail-view').style.display='none';
+    $('t-pairings-view').style.display='none';
+    $('t-list-view').style.display='block';
+    window.scrollTo(0,0);
+  });
+  $('t-pair-back').addEventListener('click', (e)=>{
+    e.preventDefault();
+    $('t-pairings-view').style.display='none';
+    if(state.tocDetail){
+      $('t-detail-view').style.display='block';
+    } else {
+      $('t-list-view').style.display='block';
+    }
+    window.scrollTo(0,0);
+  });
 }
 async function loadTournaments(){
   const [up, past] = await Promise.all([
@@ -384,37 +400,63 @@ function renderAllTournaments(){
   const grid = $('all-tourn-grid');
   const q = ($('all-search-q').value||'').trim().toLowerCase();
   const filtered = !q ? state.allTourns : state.allTourns.filter(t => {
-    const hay = `${t.name||''} ${t.city||''} ${t.state||''} ${(t.events||[]).map(e=>e.eventAbbr||e.eventName||'').join(' ')}`.toLowerCase();
+    const hay = `${t.name||''} ${t.city||''} ${t.state||''}`.toLowerCase();
     return hay.includes(q);
   });
   $('all-tourn-lbl').textContent = `Tournaments · ${filtered.length}`;
+  const head = `<div class="tt-head"><span>Tournament</span><span>Date</span><span>Location</span><span>Status</span></div>`;
   if(!filtered.length){
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No tournaments</b>${state.allTourns.length?'No matches for that search.':`No ${state.allWhen} tournaments — try the other tab.`}</div>`;
+    grid.innerHTML = head + `<div class="empty"><b>No tournaments</b>${state.allTourns.length?'No matches for that search.':`No ${state.allWhen} tournaments — try the other tab.`}</div>`;
     $('all-show-more-row').style.display='none';
     return;
   }
   const visible = filtered.slice(0, state.allShown);
-  grid.innerHTML = visible.map(t => {
+  grid.innerHTML = head + visible.map(t => {
     const where = [t.city, t.state].filter(Boolean).join(', ');
-    const events = [...new Set((t.events||[]).map(e => e.eventAbbr || e.eventName).filter(Boolean))];
     const range = fmtDateRange(t.startDate || t.start_date, t.endDate || t.end_date);
-    const isUpcoming = (t.startDate || t.start_date) && (Date.parse(t.startDate||t.start_date) > Date.now());
+    const tid = t.tournId || t.tourn_id || '';
+    const isUp = state.allWhen === 'upcoming';
     return `
-      <div class="tcard ${isUpcoming?'upcoming':''}" data-toc-tid="${escapeHTML(String(t.tournId||t.tourn_id||''))}">
-        <div class="tcard-head">
-          <div>
-            <div class="name">${escapeHTML(t.name||'Tournament')}</div>
-            <div class="tcard-meta" style="margin-top:6px">
-              ${range?`<span><b>${escapeHTML(range)}</b></span>`:''}
-              ${where?`<span>${escapeHTML(where)}</span>`:''}
-              ${events.length?`<span>${escapeHTML(events.join(' · '))}</span>`:''}
-            </div>
-          </div>
-        </div>
+      <div class="tt-row" data-toc-tid="${escapeHTML(String(tid))}">
+        <div class="tt-name">${escapeHTML(t.name||'Tournament')}</div>
+        <div class="tt-date">${escapeHTML(range||'—')}</div>
+        <div class="tt-event">${escapeHTML(where||'—')}</div>
+        <div class="tt-status${isUp?' up':''}">${isUp?'Upcoming':'Past'}</div>
       </div>`;
   }).join('');
+  $$('.tt-row[data-toc-tid]', grid).forEach(r => r.addEventListener('click', ()=> showTocTournDetail(r.dataset.tocTid)));
   $('all-show-more-row').style.display = filtered.length > state.allShown ? 'flex' : 'none';
 }
+
+// ── helpers for results/pairings ──────────────────────────────────────
+function placeLabel(row){
+  // Result rows have either `place` ("1st", "T-9th") or numeric `rank`.
+  const r = (row && (row.rank!=null ? row.rank : parseInt(String(row.place||'').replace(/\D/g,''),10))) || null;
+  if(!r || isNaN(r)) return 'Prelim';
+  if(r === 1) return 'First';
+  if(r === 2) return 'Second';
+  if(r <= 4) return 'Semis';
+  if(r <= 8) return 'Quarters';
+  if(r <= 16) return 'Octos';
+  if(r <= 32) return 'Doubles';
+  if(r <= 64) return 'Triples';
+  return 'Prelim';
+}
+function placeClass(row){
+  const r = row && row.rank;
+  if(r === 1) return 'gold';
+  if(r === 2) return 'silver';
+  if(r != null && r <= 4) return 'bronze';
+  return '';
+}
+function bidLabel(b){
+  const v = String(b||'').trim().toLowerCase();
+  if(v === 'full' || v === 'gold') return 'FULL';
+  if(v === 'silver' || v === 'partial') return 'SILVER';
+  if(v === 'ghost') return 'GHOST';
+  return '';
+}
+function bidClass(label){ return label==='FULL'?'full':label==='SILVER'?'silver':label==='GHOST'?'ghost':'none'; }
 function renderUpcomingGrid(){
   const grid = $('upcoming-grid');
   $('upcoming-lbl').textContent = `Upcoming · ${state.upcoming.length}`;
@@ -479,21 +521,20 @@ function renderPastTournaments(){
     const wins = (t.rounds||[]).filter(r => roundIsWin(r)).length;
     const losses = (t.rounds||[]).filter(r => roundIsLoss(r)).length;
     const elimRound = lastElimRound(t.rounds||[]);
-    const bid = inferBid(elimRound, t.name);
-    const bidClass = bid==='Gold' ? '' : bid==='Silver' ? 'silver' : 'none';
+    const inferred = inferBid(elimRound, t.name);
+    const bid = bidLabel(inferred);
+    const bClass = bidClass(bid);
+    const events = [...new Set((t.entries||[]).map(e => e.eventAbbr || e.eventName).filter(Boolean))];
     return `
       <div class="past-card" data-tid="${escapeHTML(String(t.tournId))}">
-        <div class="head">
-          <div>
-            <div class="name">${escapeHTML(t.name||'Tournament')}</div>
-            <div class="meta">${escapeHTML(fmtDateRange(t.startDate, t.endDate))}</div>
-          </div>
-          <div class="when">${escapeHTML(fmtRel(t.endDate || t.startDate))}</div>
+        <div class="body">
+          <div class="name">${escapeHTML(t.name||'Tournament')}</div>
+          <div class="meta">${escapeHTML(fmtDateRange(t.startDate, t.endDate))}${events.length?` · ${escapeHTML(events.join(' · '))}`:''}</div>
         </div>
-        <div class="stats">
-          <div class="stat"><div class="lab">Record</div><div class="val">${wins}–${losses}</div></div>
-          <div class="stat"><div class="lab">Elim</div><div class="val">${escapeHTML(elimRound||'—')}</div></div>
-          <div class="stat bid ${bidClass}"><div class="lab">Bid</div><div class="val">${escapeHTML(bid||'None')}</div></div>
+        <div class="rec-block">
+          <div class="lab">Record</div>
+          <div class="val">${wins}–${losses}</div>
+          ${bid?`<div class="bid ${bClass}">${escapeHTML(bid)}</div>`:''}
         </div>
       </div>`;
   }).join('');
@@ -528,44 +569,244 @@ function inferBid(elim, tournName){
   if(/quarter|octos|octofinal/.test(e)) return 'Silver';
   return null;
 }
+// User's tabroom past tournament (clicked from "Your past tournaments" cards).
+// Renders the user's own round records.
 function showTournDetail(tid){
   const t = [...state.upcoming, ...state.pastResults].find(x => String(x.tournId)===String(tid));
   if(!t) return;
   $('t-list-view').style.display='none';
+  $('t-pairings-view').style.display='none';
   $('t-detail-view').style.display='block';
   window.scrollTo(0,0);
   $('td-title').textContent = t.name || 'Tournament';
   $('td-sub').textContent = `${fmtDateRange(t.startDate, t.endDate)}${(t.entries||[]).length?` · ${(t.entries||[]).length} entr${(t.entries||[]).length===1?'y':'ies'}`:''}`;
-
-  const wins = (t.rounds||[]).filter(roundIsWin).length;
-  const losses = (t.rounds||[]).filter(roundIsLoss).length;
-  const elim = lastElimRound(t.rounds||[]);
-  const bid  = inferBid(elim);
-  $('td-stats').innerHTML = `
-    <div class="pp-stat"><div class="lab">Record</div><div class="val">${wins}–${losses}</div></div>
-    <div class="pp-stat"><div class="lab">Rounds</div><div class="val">${(t.rounds||[]).length}</div></div>
-    <div class="pp-stat"><div class="lab">Elim</div><div class="val" style="font-size:16px">${escapeHTML(elim||'—')}</div></div>
-    <div class="pp-stat"><div class="lab">Bid</div><div class="val" style="font-size:16px">${escapeHTML(bid||'—')}</div></div>
-  `;
+  $('td-evt-tabs').innerHTML = '';
   const rounds = (t.rounds||[]);
   if(!rounds.length){
-    $('td-rounds').innerHTML = `<div class="empty"><b>No round records</b>Tabroom hasn't published rounds for this tournament yet.</div>`;
+    $('td-content').innerHTML = `<div class="empty"><b>No round records</b>Tabroom hasn't published rounds for this tournament yet.</div>`;
     return;
   }
-  $('td-rounds').innerHTML = rounds.map(r => {
-    const last = (r.scores||[]).slice().reverse().find(s => s && (s.win!=null || s.points!=null)) || {};
-    const result = last.win===true||last.win==='W'||last.win===1 ? 'W'
-                 : last.win===false||last.win==='L'||last.win===0 ? 'L'
-                 : '—';
-    return `
-      <div class="tr-row">
-        <span class="tr-cell b">${escapeHTML(r.event||'')}</span>
-        <span class="tr-cell">${escapeHTML(r.round||'')}</span>
-        <span class="tr-cell">${escapeHTML(r.side||'')}</span>
-        <span class="tr-cell">${escapeHTML(r.judge||'')}</span>
-        <span class="tr-cell b">${result}</span>
-      </div>`;
-  }).join('');
+  $('td-content').innerHTML = `
+    <div class="tres-table">
+      <div class="tr-head" style="grid-template-columns:80px 1fr 80px 1fr 80px 80px"><span>Event</span><span>Round</span><span>Side</span><span>Judge</span><span>Result</span><span>Speaks</span></div>
+      ${rounds.map(r => {
+        const last = (r.scores||[]).slice().reverse().find(s => s && (s.win!=null || s.points!=null)) || {};
+        const result = last.win===true||last.win==='W'||last.win===1 ? 'W'
+                     : last.win===false||last.win==='L'||last.win===0 ? 'L' : '—';
+        const cls = result==='W'?'w':result==='L'?'l':'';
+        return `
+          <div class="tr-row" style="grid-template-columns:80px 1fr 80px 1fr 80px 80px;cursor:default">
+            <span class="tr-cell b">${escapeHTML(r.event||'')}</span>
+            <span class="tr-cell">${escapeHTML(r.round||'')}</span>
+            <span class="tr-cell">${escapeHTML(r.side||'')}</span>
+            <span class="tr-cell">${escapeHTML(r.judge||'')}</span>
+            <span class="pt-result ${cls}">${result}</span>
+            <span class="tr-cell mono">${last.points!=null?escapeHTML(String(last.points)):'—'}</span>
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// TOC tournament (clicked from the "Tournaments" all-list table). Shows event
+// tabs, then results (past) or threats (upcoming) per event.
+async function showTocTournDetail(tournId){
+  $('t-list-view').style.display='none';
+  $('t-pairings-view').style.display='none';
+  $('t-detail-view').style.display='block';
+  window.scrollTo(0,0);
+  $('td-title').textContent = 'Loading…';
+  $('td-sub').textContent = '';
+  $('td-evt-tabs').innerHTML = '';
+  $('td-content').innerHTML = `<div class="empty"><b>Loading tournament…</b></div>`;
+
+  const data = await fetchJSON(`/api/toc/tournaments/${encodeURIComponent(tournId)}`);
+  if(!data || !data.tournament){
+    $('td-content').innerHTML = `<div class="empty"><b>Not found</b></div>`;
+    return;
+  }
+  const t = data.tournament;
+  // Event abbrs we care about
+  const events = (data.events || []).filter(e => /^(LD|PF|CX)$/i.test(String(e.abbr||'').trim()));
+  state.tocDetail = { tournament: t, events, tournId };
+  $('td-title').textContent = t.name || 'Tournament';
+  const where = [t.city, t.state].filter(Boolean).join(', ');
+  $('td-sub').textContent = `${fmtDateRange(t.startDate, t.endDate)}${where?` · ${where}`:''}`;
+
+  if(!events.length){
+    $('td-content').innerHTML = `<div class="empty"><b>No LD/PF/CX events</b>This tournament has no LD, PF, or CX events indexed.</div>`;
+    return;
+  }
+  const order = { CX:0, LD:1, PF:2 };
+  events.sort((a,b) => (order[a.abbr.toUpperCase()] ?? 9) - (order[b.abbr.toUpperCase()] ?? 9));
+  $('td-evt-tabs').innerHTML = events.map((e,i) =>
+    `<button class="rank-tab${i===0?' on':''}" data-evt="${escapeHTML(e.abbr)}">${escapeHTML(e.abbr.toUpperCase())}</button>`
+  ).join('');
+  $$('#td-evt-tabs .rank-tab').forEach(btn => btn.addEventListener('click', ()=>{
+    $$('#td-evt-tabs .rank-tab').forEach(x => x.classList.remove('on'));
+    btn.classList.add('on');
+    loadTocEventContent(btn.dataset.evt);
+  }));
+  loadTocEventContent(events[0].abbr);
+}
+
+async function loadTocEventContent(eventAbbr){
+  const det = state.tocDetail;
+  if(!det) return;
+  state.tocDetail.currentEvent = eventAbbr;
+  $('td-content').innerHTML = `<div class="empty"><b>Loading…</b></div>`;
+  const t = det.tournament;
+  const isUpcoming = t.endDate && (Date.parse(t.endDate + 'T23:59:59') > Date.now());
+  if(isUpcoming){
+    const data = await fetchJSON(`/api/toc/tournaments/${encodeURIComponent(det.tournId)}/threats/${encodeURIComponent(eventAbbr)}`);
+    renderThreats((data && data.threats) || [], eventAbbr);
+  } else {
+    const data = await fetchJSON(`/api/toc/tournaments/${encodeURIComponent(det.tournId)}/results/${encodeURIComponent(eventAbbr)}`);
+    renderResults((data && data.results) || [], eventAbbr);
+  }
+}
+
+function renderResults(rows, eventAbbr){
+  if(!rows.length){
+    $('td-content').innerHTML = `<div class="empty"><b>No results</b>Results aren't published for this event yet.</div>`;
+    return;
+  }
+  const html = `
+    <div class="tres-table">
+      <div class="tr-head"><span>Place</span><span>Team</span><span>Code</span><span>Prelim</span><span>Elim</span><span>Speaks</span><span>Bid</span></div>
+      ${rows.map(r => {
+        const place = placeLabel(r);
+        const pcls  = placeClass(r);
+        const bid   = bidLabel(r.earnedBid);
+        const bcls  = bidClass(bid);
+        const prelim = (r.prelimWins!=null && r.prelimLosses!=null) ? `${r.prelimWins}–${r.prelimLosses}` : '—';
+        const elim   = (r.elimWins!=null && r.elimLosses!=null) ? `${r.elimWins}–${r.elimLosses}` : '—';
+        const speaks = r.speakerPoints!=null ? Number(r.speakerPoints).toFixed(1) : '—';
+        return `
+          <div class="tr-row" data-eid="${escapeHTML(String(r.entryId||''))}" data-evt="${escapeHTML(eventAbbr)}">
+            <span class="tr-place ${pcls}">${escapeHTML(place)}</span>
+            <div class="tr-team"><span class="nm">${escapeHTML(r.displayName||'')}</span><span class="sch">${escapeHTML(r.schoolName||'')}</span></div>
+            <span class="tr-cell mono">${escapeHTML(r.schoolCode||'—')}</span>
+            <span class="tr-cell mono">${prelim}</span>
+            <span class="tr-cell mono">${elim}</span>
+            <span class="tr-cell mono">${speaks}</span>
+            <span class="tr-bid ${bcls}">${bid || '—'}</span>
+          </div>`;
+      }).join('')}
+    </div>`;
+  $('td-content').innerHTML = html;
+  $$('.tr-row[data-eid]', $('td-content')).forEach(r => {
+    r.addEventListener('click', ()=> openEntryPairings(r.dataset.eid, eventAbbr));
+  });
+}
+
+function renderThreats(threats, eventAbbr){
+  if(!threats.length){
+    $('td-content').innerHTML = `<div class="empty"><b>No threats</b>No qualifying threats indexed for this event yet.</div>`;
+    return;
+  }
+  const html = `
+    <div class="tres-table">
+      <div class="tr-head"><span>Rank</span><span>Team</span><span>Code</span><span>Full</span><span>Partial</span><span>Recent</span><span>Bid</span></div>
+      ${threats.map((t, i) => {
+        const recent = (t.recentPlacements||[]).slice(0,2).map(p => p.place || '').filter(Boolean).join(', ') || '—';
+        const bid = bidLabel(t.earnedBid || t.maxBidLevel);
+        const bcls = bidClass(bid);
+        return `
+          <div class="tr-row" data-eid="${escapeHTML(String(t.entryId||''))}">
+            <span class="tr-cell mono b">#${i+1}</span>
+            <div class="tr-team"><span class="nm">${escapeHTML(t.displayName||'')}</span><span class="sch">${escapeHTML(t.schoolName||'')}</span></div>
+            <span class="tr-cell mono">${escapeHTML(t.schoolCode||'—')}</span>
+            <span class="tr-cell mono">${t.seasonFullBids||0}</span>
+            <span class="tr-cell mono">${t.seasonPartialBids||0}</span>
+            <span class="tr-cell">${escapeHTML(recent)}</span>
+            <span class="tr-bid ${bcls}">${bid || '—'}</span>
+          </div>`;
+      }).join('')}
+    </div>`;
+  $('td-content').innerHTML = html;
+  $$('.tr-row[data-eid]', $('td-content')).forEach(r => {
+    r.addEventListener('click', ()=> openEntryPairings(r.dataset.eid, eventAbbr));
+  });
+}
+
+// ── PAIRINGS (recursive — click an opponent to load their pairings) ──
+async function openEntryPairings(entryId, eventAbbr){
+  if(!entryId) return;
+  $('t-list-view').style.display='none';
+  $('t-detail-view').style.display='none';
+  $('t-pairings-view').style.display='block';
+  window.scrollTo(0,0);
+  $('t-pair-name').textContent = 'Loading…';
+  $('t-pair-sub').textContent = '';
+  $('t-pair-stats').innerHTML = '';
+  $('t-pair-rounds').innerHTML = `<div class="empty"><b>Loading pairings…</b></div>`;
+  // Back stack lets us return through chained pairings views
+  state.pairBack = state.pairBack || [];
+  if(state.tocDetail) {
+    $('t-pair-back-lbl').textContent = `Back to ${state.tocDetail.tournament.name || 'tournament'}`;
+  }
+
+  const data = await fetchJSON(`/api/toc/entries/${encodeURIComponent(entryId)}/pairings`);
+  if(!data || !data.entry){
+    $('t-pair-name').textContent = 'Entry not found';
+    $('t-pair-rounds').innerHTML = `<div class="empty"><b>No data</b></div>`;
+    return;
+  }
+  const e = data.entry;
+  const pairings = data.pairings || [];
+  $('t-pair-name').textContent = e.displayName || 'Entry';
+  const evtLbl = eventAbbr || e.eventAbbr || '';
+  $('t-pair-sub').textContent = `${e.schoolName||''}${evtLbl?` · ${evtLbl}`:''}${e.schoolCode?` · ${e.schoolCode}`:''}`;
+
+  // Stats
+  const wins = pairings.filter(p => p.result === 'W').length;
+  const losses = pairings.filter(p => p.result === 'L').length;
+  const prelimW = pairings.filter(p => p.roundType==='prelim' && p.result==='W').length;
+  const prelimL = pairings.filter(p => p.roundType==='prelim' && p.result==='L').length;
+  const elimW = pairings.filter(p => p.roundType==='elim' && p.result==='W').length;
+  const elimL = pairings.filter(p => p.roundType==='elim' && p.result==='L').length;
+  const avgSpk = (() => {
+    const vals = pairings.map(p => p.speakerPoints).filter(v => v != null);
+    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '—';
+  })();
+  $('t-pair-stats').innerHTML = `
+    <div class="pp-stat"><div class="lab">Record</div><div class="val">${wins}–${losses}</div></div>
+    <div class="pp-stat"><div class="lab">Prelim</div><div class="val">${prelimW}–${prelimL}</div></div>
+    <div class="pp-stat"><div class="lab">Elim</div><div class="val">${elimW}–${elimL}</div></div>
+    <div class="pp-stat"><div class="lab">Avg speaks</div><div class="val">${avgSpk}</div></div>
+  `;
+
+  if(!pairings.length){
+    $('t-pair-rounds').innerHTML = `<div class="empty"><b>No pairings</b>Pairings haven't been crawled for this entry.</div>`;
+    return;
+  }
+  $('t-pair-rounds').innerHTML = `
+    <div class="pair-table">
+      <div class="pt-head"><span>Round</span><span>Side</span><span>Opponent</span><span>Judge</span><span>Result</span><span>Speaks</span></div>
+      ${pairings.map(p => {
+        const sideCls = (p.side||'').toLowerCase()==='aff' ? 'aff' : (p.side||'').toLowerCase()==='neg' ? 'neg' : '';
+        const resCls  = p.result === 'W' ? 'w' : p.result === 'L' ? 'l' : '';
+        return `
+          <div class="pt-row">
+            <span class="pt-round">${escapeHTML(p.roundName||'—')}</span>
+            <span class="pt-side ${sideCls}">${escapeHTML(p.side||'—')}</span>
+            <div class="pt-opp" data-opp-eid="${escapeHTML(String(p.opponentEntryId||''))}">
+              <div class="nm">${escapeHTML(p.opponentName||'—')}</div>
+              ${p.opponentSchool?`<div class="sch">${escapeHTML(p.opponentSchool)}</div>`:''}
+            </div>
+            <span class="pt-judge">${escapeHTML(p.judgeName||'—')}</span>
+            <span class="pt-result ${resCls}">${escapeHTML(p.result||'—')}</span>
+            <span class="pt-pts">${p.speakerPoints!=null?escapeHTML(Number(p.speakerPoints).toFixed(1)):'—'}</span>
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+  $$('.pt-opp[data-opp-eid]', $('t-pair-rounds')).forEach(el => {
+    const oid = el.dataset.oppEid;
+    if(!oid || oid === '0') return;
+    el.addEventListener('click', ()=> openEntryPairings(oid, evtLbl));
+  });
 }
 
 /* ── RANKINGS ───────────────────────────────────────────── */
@@ -638,6 +879,7 @@ async function openTeamProfile(teamKey){
   $('tp-name').textContent = 'Loading…';
   $('tp-school').textContent = '';
   $('tp-stats').innerHTML = '';
+  $('tp-tourns').innerHTML = '';
   // Make sure we have a season loaded; the rankings route 400s without it.
   if(!state.rankings.season){
     const seasonsResp = await fetchJSON('/api/rankings/seasons');
@@ -658,19 +900,59 @@ async function openTeamProfile(teamKey){
   }
   $('tp-name').textContent = p.displayName || p.shortName || teamKey;
   $('tp-school').textContent = `${p.schoolName||''} · ${state.rankings.event} · ${state.rankings.season}`;
-  const elo = p.rating!=null ? Math.round(p.rating) : '—';
+  $('tp-tourn-lbl').textContent = `Tournaments · ${state.rankings.season}`;
+
+  const elo  = p.rating!=null ? Math.round(p.rating) : '—';
   const peak = p.peakRating!=null ? Math.round(p.peakRating) : '—';
-  const wins = p.wins!=null?p.wins:0, losses = p.losses!=null?p.losses:0;
-  const rounds = p.roundCount!=null ? p.roundCount : (wins+losses);
-  const tournCount = (p.tournaments && p.tournaments.length) || p.tournamentCount || 0;
+  // Derive prelim/elim splits from ballotRecs if present, otherwise from tournaments list,
+  // otherwise from total wins/losses (no split).
+  let prelimW = 0, prelimL = 0, elimW = 0, elimL = 0;
+  const ts = p.tournaments || [];
+  for(const t of ts){
+    prelimW += t.prelimWins   || 0;
+    prelimL += t.prelimLosses || 0;
+    elimW   += t.elimWins     || 0;
+    elimL   += t.elimLosses   || 0;
+  }
+  if(prelimW+prelimL+elimW+elimL === 0 && p.wins!=null){
+    // Fallback when splits aren't available — show combined record under Prelim only.
+    prelimW = p.wins; prelimL = p.losses || 0;
+  }
   const rank = p.rank!=null ? `#${p.rank}${p.outOf?` of ${p.outOf}`:''}` : '—';
   $('tp-stats').innerHTML = `
     <div class="pp-stat"><div class="lab">Elo</div><div class="val">${elo}</div></div>
-    <div class="pp-stat"><div class="lab">Record</div><div class="val">${wins}–${losses}</div></div>
-    <div class="pp-stat"><div class="lab">Rounds</div><div class="val">${rounds}</div></div>
-    <div class="pp-stat"><div class="lab">Rank</div><div class="val">${rank}</div></div>
     <div class="pp-stat"><div class="lab">Peak Elo</div><div class="val">${peak}</div></div>
-    <div class="pp-stat"><div class="lab">Tournaments</div><div class="val">${tournCount}</div></div>
+    <div class="pp-stat"><div class="lab">Prelim record</div><div class="val">${prelimW}–${prelimL}</div></div>
+    <div class="pp-stat"><div class="lab">Elim record</div><div class="val">${elimW}–${elimL}</div></div>
+    <div class="pp-stat"><div class="lab">Rank</div><div class="val">${rank}</div></div>
+    <div class="pp-stat"><div class="lab">Tournaments</div><div class="val">${ts.length}</div></div>
+  `;
+
+  // Tournament history table
+  if(!ts.length){
+    $('tp-tourns').innerHTML = `<div class="empty"><b>No tournaments</b>This team has no tournament records for the current season.</div>`;
+    return;
+  }
+  $('tp-tourns').innerHTML = `
+    <div class="tres-table">
+      <div class="tr-head" style="grid-template-columns:1.6fr 110px 80px 80px 100px 70px"><span>Tournament</span><span>Date</span><span>Prelim</span><span>Elim</span><span>Place</span><span>Bid</span></div>
+      ${ts.map(t => {
+        const place = placeLabel(t);
+        const pcls  = placeClass(t);
+        const bid   = bidLabel(t.earnedBid);
+        const bcls  = bidClass(bid);
+        const date  = fmtDateRange(t.startDate, t.endDate);
+        return `
+          <div class="tr-row" style="grid-template-columns:1.6fr 110px 80px 80px 100px 70px;cursor:default">
+            <div class="tr-team"><span class="nm">${escapeHTML(t.name||t.tournamentName||'—')}</span></div>
+            <span class="tr-cell mono">${escapeHTML(date||'—')}</span>
+            <span class="tr-cell mono">${(t.prelimWins!=null && t.prelimLosses!=null)?`${t.prelimWins}–${t.prelimLosses}`:'—'}</span>
+            <span class="tr-cell mono">${(t.elimWins!=null && t.elimLosses!=null)?`${t.elimWins}–${t.elimLosses}`:'—'}</span>
+            <span class="tr-place ${pcls}">${escapeHTML(place)}</span>
+            <span class="tr-bid ${bcls}">${bid || '—'}</span>
+          </div>`;
+      }).join('')}
+    </div>
   `;
 }
 
