@@ -1045,16 +1045,33 @@ async function searchLibrary(q){
   const total = (data && data.total) || items.length;
   $('lib-sub').textContent = `${total.toLocaleString()} match${total===1?'':'es'}`;
 }
-// Pull "Last 'YY" out of a card. Prefer card.shortCite; otherwise extract the
-// prefix before "[" from the full cite, otherwise fall back.
+// Extract "Last 'YY" from a card's cite. Tries (in order):
+//   1. card.shortCite if explicitly set
+//   2. Everything before the "[" in cite (Verbatim convention: Last 'YY [Full Name; ...])
+//   3. Author-token followed by year ("Smith '24", "Smith 2024", "Mahbubani 2024 —", etc.)
+//   4. First chunk before any em-dash, comma, or "writes at"
+//   5. First 40 chars
 function shortCiteFor(card){
   if(!card) return '';
-  if(card.shortCite) return card.shortCite;
-  const cite = card.cite || '';
-  const m = cite.match(/^([^\[]+?)\s*\[/);
-  if(m) return m[1].trim();
-  const yr = cite.match(/^\S+(?:\s+\S+)?\s*['"‘’]?\d{2,4}/);
-  if(yr) return yr[0].trim();
+  if(card.shortCite) return String(card.shortCite).trim();
+  const cite = String(card.cite || '').trim();
+  if(!cite) return '';
+
+  // 2. before "["
+  const bracket = cite.match(/^([^\[]+?)\s*\[/);
+  if(bracket) return bracket[1].trim();
+
+  // 3. author + year (handles "Smith '24", "Smith 2024", quoted/unquoted)
+  const yearForm = cite.match(/^([A-Z][\w'’.-]*(?:\s+(?:de|van|von|der|et al\.?|[A-Z][\w'’.-]*)){0,3})\s+(?:and|&|,)?\s*(?:in\s+)?['‘’"]?(\d{2,4})\b/);
+  if(yearForm){
+    const yy = yearForm[2].length === 4 ? `'${yearForm[2].slice(-2)}` : `'${yearForm[2]}`;
+    return `${yearForm[1].trim()} ${yy}`;
+  }
+
+  // 4. first segment before em-dash / "writes at" / comma
+  const segment = cite.split(/[—–-]|\bwrites\s+at\b|\bin\s+the\b|,/i)[0];
+  if(segment && segment.length < 60) return segment.trim();
+
   return cite.slice(0, 40);
 }
 
@@ -1575,7 +1592,33 @@ function applyCutMarkup(kind){
 
   const btn = kind === 'hl' ? $('cut-tool-hl') : kind === 'u' ? $('cut-tool-u') : $('cut-tool-b');
   if(btn){ btn.classList.add('cut-tool-flash'); setTimeout(()=>btn.classList.remove('cut-tool-flash'), 280); }
-  window.getSelection()?.removeAllRanges();
+
+  // Re-select the just-wrapped span so a second toolbar press (e.g. Highlight
+  // then Bold) doesn't require re-selecting. Walk the rendered body to find
+  // the matching text and select it.
+  try {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, null);
+    let node, plain = 0, startNode = null, startOff = 0, endNode = null, endOff = 0;
+    while((node = walker.nextNode())){
+      const len = node.textContent.length;
+      if(startNode === null && plain + len > sP){
+        startNode = node; startOff = sP - plain;
+      }
+      if(plain + len >= eP){
+        endNode = node; endOff = eP - plain;
+        break;
+      }
+      plain += len;
+    }
+    if(startNode && endNode){
+      const range = document.createRange();
+      range.setStart(startNode, Math.max(0, Math.min(startOff, startNode.textContent.length)));
+      range.setEnd(endNode, Math.max(0, Math.min(endOff, endNode.textContent.length)));
+      sel.addRange(range);
+    }
+  } catch { /* selection restore best-effort */ }
 }
 function rerenderCutBody(){
   if(!state.cutCard) return;
