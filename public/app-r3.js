@@ -365,8 +365,19 @@ function bindAllTournamentsControls(){
 async function loadAllTournaments(){
   $('all-tourn-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Loading tournaments…</b></div>`;
   // tocDb.listTournaments now treats season as optional — omit it to get all seasons.
-  const data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}`);
-  state.allTourns = (data && data.tournaments) || [];
+  let data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}`);
+  let rows = (data && data.tournaments) || [];
+  // If "upcoming" is empty (e.g. season is over), auto-fall-back to past so the
+  // page isn't blank — and update the tab UI to reflect what's actually shown.
+  if (!rows.length && state.allWhen === 'upcoming') {
+    data = await fetchJSON('/api/toc/tournaments?when=past');
+    rows = (data && data.tournaments) || [];
+    if (rows.length) {
+      state.allWhen = 'past';
+      $$('#all-when-tabs .rank-tab').forEach(b => b.classList.toggle('on', b.dataset.when === 'past'));
+    }
+  }
+  state.allTourns = rows;
   renderAllTournaments();
 }
 function renderAllTournaments(){
@@ -378,7 +389,7 @@ function renderAllTournaments(){
   });
   $('all-tourn-lbl').textContent = `Tournaments · ${filtered.length}`;
   if(!filtered.length){
-    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No tournaments</b>${state.allTourns.length?'No matches for that search.':'Tournament index is empty — set TOC_AUTOSEED=1 or POST /api/toc/reindex.'}</div>`;
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No tournaments</b>${state.allTourns.length?'No matches for that search.':`No ${state.allWhen} tournaments — try the other tab.`}</div>`;
     $('all-show-more-row').style.display='none';
     return;
   }
