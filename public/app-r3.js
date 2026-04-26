@@ -1077,14 +1077,24 @@ function shortCiteFor(card){
 
 // Render a full cite with the "Last 'YY" prefix in Verbatim's "Cite" style
 // (14pt bold Calibri inline) and the rest at 11pt regular.
+//
+// Detection works for any cite format, including those without brackets, by
+// finding the FIRST year token (2- or 4-digit, optionally apostrophed) within
+// the first ~50 chars. Everything up to and including that year is the
+// "Last 'YY" prefix and gets bolded. Examples:
+//   "Saaliq '25 [Sheikh Saaliq, AP News, …]"   → bolds "Saaliq '25"
+//   "Smith 2024, NYT, 3/12/24 …"               → bolds "Smith 2024"
+//   "Mahbubani 2024 — Foreign Affairs …"       → bolds "Mahbubani 2024"
+//   "[No Author] 25 …"                          → bolds "[No Author] 25"
 const CITE_PREFIX_STYLE = 'font-family:Calibri,sans-serif;font-size:14pt;font-weight:700';
-function citeWithBoldPrefix(full, short){
-  const fullStr  = String(full || '').trim();
-  const shortStr = String(short || '').trim();
+function citeWithBoldPrefix(full /*, short*/){
+  const fullStr = String(full || '').trim();
   if(!fullStr) return '';
-  if(!shortStr) return escapeHTML(fullStr);
-  if(fullStr.toLowerCase().startsWith(shortStr.toLowerCase())){
-    return `<span style="${CITE_PREFIX_STYLE}">${escapeHTML(fullStr.slice(0, shortStr.length))}</span>${escapeHTML(fullStr.slice(shortStr.length))}`;
+  // Find the first year token within the leading 60 chars.
+  const m = fullStr.match(/^([\s\S]{0,60}?[‘’']?\d{2,4}\b)/);
+  if(m){
+    const prefix = m[1];
+    return `<span style="${CITE_PREFIX_STYLE}">${escapeHTML(prefix)}</span>${escapeHTML(fullStr.slice(prefix.length))}`;
   }
   return escapeHTML(fullStr);
 }
@@ -1180,11 +1190,13 @@ function cardToHtml(card){
   const full = (card && card.cite) || short;
   let citeInner = '';
   if (full) {
-    if (short && full.toLowerCase().startsWith(short.toLowerCase())) {
-      // Bold prefix at 14pt (Verbatim's "Cite" character style), rest at 11pt regular.
+    // Find first year token in the leading chars; everything up to it is the
+    // "Last 'YY" prefix and gets the Cite character style (14pt bold).
+    const ym = full.match(/^([\s\S]{0,60}?[‘’']?\d{2,4}\b)/);
+    if (ym) {
       citeInner = '<span style="font-family:Calibri,Arial,sans-serif;font-size:14pt;font-weight:700">' +
-                  escapeAttr(full.slice(0, short.length)) +
-                  '</span>' + escapeAttr(full.slice(short.length));
+                  escapeAttr(ym[1]) +
+                  '</span>' + escapeAttr(full.slice(ym[1].length));
     } else {
       citeInner = escapeAttr(full);
     }
