@@ -834,8 +834,11 @@ async function importZipToLibrary(zipPath, options = {}) {
     }
   }
 
-  // Dedup: only insert cards with fingerprints not already in DB
-  const existingFingerprints = db.getExistingFingerprints();
+  // Dedup: only insert cards with fingerprints not already in DB.
+  // Use the candidate-only lookup so we don't load every fingerprint in the
+  // DB (~800k+) into JS memory — which OOMs the import on tight-RAM hosts.
+  const candidateFps = rawNewCards.map(c => c.contentFingerprint);
+  const existingFingerprints = db.filterExistingFingerprints(candidateFps);
   const deduped = rawNewCards.filter(c => !existingFingerprints.has(c.contentFingerprint));
 
   // Insert new cards with isCanonical=false initially
@@ -999,7 +1002,7 @@ async function importDocxBuffer(buffer, sourceLabel = 'manual-upload') {
 
   maybeStoreAnalytic(paragraphs, sourceLabel, sourceLabel, cards);
 
-  const existingFingerprints = db.getExistingFingerprints();
+  const existingFingerprints = db.filterExistingFingerprints(cards.map(c => c.contentFingerprint));
   const deduped = cards.filter(c => !existingFingerprints.has(c.contentFingerprint));
   deduped.forEach(c => { c.isCanonical = false; c.variantCount = 1; c.sourceKind = 'personal'; });
   db.upsertCards(deduped);

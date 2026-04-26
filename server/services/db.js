@@ -833,6 +833,29 @@ function getExistingFingerprints() {
   return new Set(rows.map(r => r.contentFingerprint));
 }
 
+/**
+ * Memory-safe alternative to getExistingFingerprints(). Given a list of
+ * candidate fingerprints (from a single zip's parse), returns a Set of those
+ * already present in the DB. Chunks the IN clause to stay under SQLite's
+ * SQLITE_MAX_VARIABLE_NUMBER (default 999).
+ */
+function filterExistingFingerprints(candidates) {
+  const found = new Set();
+  if (!candidates || candidates.length === 0) return found;
+  const db = getDb();
+  const unique = [...new Set(candidates.filter(Boolean))];
+  const CHUNK = 500;
+  for (let i = 0; i < unique.length; i += CHUNK) {
+    const slice = unique.slice(i, i + CHUNK);
+    const placeholders = slice.map(() => '?').join(',');
+    const rows = db.prepare(
+      `SELECT contentFingerprint FROM cards WHERE contentFingerprint IN (${placeholders})`
+    ).all(...slice);
+    for (const r of rows) found.add(r.contentFingerprint);
+  }
+  return found;
+}
+
 // ---------------------------------------------------------------------------
 // SQL-backed query + facets (pagination, filters)
 // ---------------------------------------------------------------------------
@@ -1073,6 +1096,7 @@ module.exports = {
   loadCardsPaged,
   countCards,
   getExistingFingerprints,
+  filterExistingFingerprints,
   recanonicalizeGroups,
   refreshDerivedLabels,
   queryCards,
