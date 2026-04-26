@@ -134,7 +134,7 @@ function getLibraryAnalytics() {
       SELECT 'topic' AS kind, topicLabel AS label,
              COUNT(*), NULL, NULL, NULL
       FROM cards WHERE hasHighlight = 1 AND topicLabel IS NOT NULL AND topicLabel != ''
-      GROUP BY topicLabel ORDER BY COUNT(*) DESC, topicLabel ASC LIMIT 6
+      GROUP BY topicLabel ORDER BY COUNT(*) DESC, topicLabel ASC LIMIT 200
     )
   `).all();
 

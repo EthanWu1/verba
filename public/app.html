@@ -113,7 +113,9 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 @keyframes dot{0%,100%{opacity:1}50%{opacity:.4}}
 .today-h1{font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:clamp(40px,5vw,64px);line-height:1.04;letter-spacing:-0.025em;margin:0;color:var(--ink);position:relative;z-index:2;max-width:22ch}
 .today-h1 .roman{font-style:normal;font-weight:600}
-.today-h1 .mark{background:var(--hl-cyan);padding:0 6px;font-style:normal;font-weight:600;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.today-h1 .mark{font-style:normal;font-weight:inherit;background:linear-gradient(180deg, transparent 60%, var(--hl-yellow) 60%);padding:0 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+body.hl-cyan .today-h1 .mark{background:linear-gradient(180deg, transparent 60%, var(--hl-cyan) 60%)}
+body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%, var(--hl-green) 60%)}
 .today-sub{margin:14px 0 0;color:var(--muted);font-size:15px;max-width:62ch;position:relative;z-index:2}
 .today-sub b{color:var(--ink);font-weight:600}
 
@@ -310,6 +312,7 @@ kbd{font:500 10.5px/1 var(--font-mono);color:var(--muted);background:var(--panel
 .lb-elo{font:700 16px/1 var(--font-mono);color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
 .lb-trend{display:inline-flex;align-items:center;gap:3px;font:500 12px/1 var(--font-mono);color:var(--ok)}
 .lb-trend.down{color:var(--danger)}
+.lb-trend svg{width:9px;height:9px;flex:none}
 .lb-record{font:500 12px/1 var(--font-mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
 
 /* SETTINGS */

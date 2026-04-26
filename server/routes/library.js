@@ -12,6 +12,14 @@ router.get('/dashboard', (req, res) => {
   return res.json(getLibraryDashboard(limit));
 });
 
+// Live card count — bypasses the analytics cache so the Today page always
+// reflects the actual current size of the cards table.
+router.get('/count', (req, res) => {
+  const { countCards } = require('../services/db');
+  res.set('Cache-Control', 'no-store');
+  return res.json({ count: countCards() });
+});
+
 router.get('/search', async (req, res) => {
   try {
     const q = String(req.query.q || '');

@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-04-25)
 
 ## Corpus Check
-- 132 files · ~390,557 words
+- 132 files · ~390,960 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 866 nodes · 1782 edges · 73 communities detected
+- 866 nodes · 1783 edges · 73 communities detected
 - Extraction: 73% EXTRACTED · 27% INFERRED · 0% AMBIGUOUS · INFERRED: 483 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
@@ -499,7 +499,7 @@ Nodes (0):
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `get()` connect `Community 0` to `Community 2`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 18`, `Community 19`, `Community 21`?**
-  _High betweenness centrality (0.281) - this node is a cross-community bridge._
+  _High betweenness centrality (0.282) - this node is a cross-community bridge._
 - **Why does `push()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 5`, `Community 6`, `Community 10`, `Community 13`, `Community 14`, `Community 16`, `Community 18`, `Community 19`?**
   _High betweenness centrality (0.225) - this node is a cross-community bridge._
 - **Why does `getDb()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 5`, `Community 9`, `Community 10`, `Community 12`, `Community 16`, `Community 21`?**

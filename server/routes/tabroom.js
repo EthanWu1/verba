@@ -23,26 +23,38 @@ router.post('/tabroom-link', (req, res) => {
     return res.status(400).json({ error: 'teamCode or schoolName required' });
   }
   const db = getDb();
+  // Restrict to LD/PF/CX events only — those are the formats Verba supports.
+  // eventAbbr typically looks like "VLD", "VPF", "CX", "VCX", "Policy", etc.
+  // We match anything containing one of these tokens (case-insensitive).
+  const eventFilter = `(
+    UPPER(eventAbbr) LIKE '%LD%'
+    OR UPPER(eventAbbr) LIKE '%PF%'
+    OR UPPER(eventAbbr) LIKE '%CX%'
+    OR UPPER(eventAbbr) LIKE '%POLICY%'
+    OR UPPER(eventName) LIKE '%LINCOLN%'
+    OR UPPER(eventName) LIKE '%PUBLIC FORUM%'
+    OR UPPER(eventName) LIKE '%POLICY%'
+  )`;
   let rows;
   if (tc && sn) {
     rows = db.prepare(`
       SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
       FROM tabroom_entry_index
-      WHERE teamCode LIKE ? AND schoolName LIKE ?
+      WHERE teamCode LIKE ? AND schoolName LIKE ? AND ${eventFilter}
       LIMIT 50
     `).all(`%${tc}%`, `%${sn}%`);
   } else if (tc) {
     rows = db.prepare(`
       SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
       FROM tabroom_entry_index
-      WHERE teamCode LIKE ? OR schoolName LIKE ?
+      WHERE (teamCode LIKE ? OR schoolName LIKE ?) AND ${eventFilter}
       LIMIT 50
     `).all(`%${tc}%`, `%${tc}%`);
   } else {
     rows = db.prepare(`
       SELECT DISTINCT teamCode, schoolName, eventAbbr, eventName
       FROM tabroom_entry_index
-      WHERE schoolName LIKE ?
+      WHERE schoolName LIKE ? AND ${eventFilter}
       LIMIT 50
     `).all(`%${sn}%`);
   }

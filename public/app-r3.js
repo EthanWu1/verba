@@ -164,13 +164,15 @@ function renderTeamChip(){
 /* ── TODAY ──────────────────────────────────────────────── */
 async function loadToday(){
   setTodayKicker();
-  const [hist, upcoming, analytics] = await Promise.all([
+  const [hist, upcoming, analytics, count] = await Promise.all([
     fetchJSON('/api/history'),
     fetchJSON('/api/me/tabroom/upcoming'),
     fetchJSON('/api/library/analytics'),
+    fetchJSON('/api/library/count'),
   ]);
-  state.history  = (hist && hist.items) || [];
-  state.upcoming = (upcoming && upcoming.tournaments) || [];
+  state.history    = (hist && hist.items) || [];
+  state.upcoming   = (upcoming && upcoming.tournaments) || [];
+  state.cardCount  = (count && count.count) || 0;
   renderTodaySub();
   renderContinueList();
   renderTopicList(analytics);
@@ -226,18 +228,25 @@ function renderContinueList(){
   }).join('');
   $$('.cont-item', root).forEach(el => el.addEventListener('click', ()=> go('library')));
 }
+// Topic labels we never want to show as a chip (umbrella / catch-all categories).
+const TOPIC_BLOCKLIST = new Set(['general ld', 'general', 'misc', 'miscellaneous', 'unknown', 'untagged', 'other']);
 function renderTopicList(analytics){
   const root = $('topic-list');
   const meta = $('topic-meta');
-  const topics = (analytics && analytics.topTopics) || [];
-  const total  = (analytics && analytics.totals && analytics.totals.cards) || 0;
+  const raw   = (analytics && analytics.topTopics) || [];
+  const topics = raw.filter(t => {
+    const lab = String(t.label || t.name || '').trim().toLowerCase();
+    return lab && !TOPIC_BLOCKLIST.has(lab);
+  });
+  // Prefer the live count from /api/library/count over the cached analytics total.
+  const total = state.cardCount || (analytics && analytics.totals && analytics.totals.cards) || 0;
   if(!topics.length){
     root.innerHTML = `<div class="empty" style="padding:18px 0;text-align:left"><b>No topics yet</b>Tags appear after you cut cards.</div>`;
     meta.textContent = total ? `${total.toLocaleString()} cards` : '';
     return;
   }
   meta.textContent = `${total ? total.toLocaleString()+' cards across ' : ''}${topics.length} topic${topics.length===1?'':'s'}`;
-  root.innerHTML = topics.slice(0,16).map(t => {
+  root.innerHTML = topics.map(t => {
     const label = t.label || t.name || '';
     const count = t.count || 0;
     return `<a class="topic-chip" data-topic="${escapeHTML(label)}">${escapeHTML(label)}${count?` <span class="ct">${Number(count).toLocaleString()}</span>`:''}</a>`;
@@ -292,10 +301,10 @@ function startCountdown(startDate){
 }
 function renderPulse(analytics){
   const root = $('pulse-grid');
-  const total = (analytics && analytics.totals && analytics.totals.cards) || 0;
+  const total = state.cardCount || (analytics && analytics.totals && analytics.totals.cards) || 0;
   const week  = state.history.filter(h => h.at && (Date.now()-Date.parse(h.at) < 7*86400e3)).length;
   const today = state.history.filter(h => h.at && (Date.now()-Date.parse(h.at) < 86400e3)).length;
-  const topics = (analytics && analytics.topTopics || []).length;
+  const topics = (analytics && analytics.topTopics || []).filter(t => !TOPIC_BLOCKLIST.has(String(t.label||'').toLowerCase())).length;
   $('week-extra').textContent = week ? `+${week} activit${week===1?'y':'ies'}` : '';
   root.innerHTML = `
     <div class="pulse"><div class="lab">Activity · 7d</div><div class="val">${week.toLocaleString()}</div><div class="delta">${today} today</div></div>
@@ -351,7 +360,18 @@ function bindAllTournamentsControls(){
 }
 async function loadAllTournaments(){
   $('all-tourn-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Loading tournaments…</b></div>`;
-  const data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}`);
+  // tocDb.listTournaments requires a season — pull the most recent.
+  if(!state.tocSeason){
+    const seasonsResp = await fetchJSON('/api/toc/seasons');
+    const list = (seasonsResp && seasonsResp.seasons) || [];
+    state.tocSeason = list.length ? (list[0].season || list[0]) : null;
+  }
+  if(!state.tocSeason){
+    $('all-tourn-grid').innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No tournaments indexed</b>Run <code>POST /api/toc/reindex</code> or set <code>TOC_AUTOSEED=1</code>.</div>`;
+    $('all-show-more-row').style.display = 'none';
+    return;
+  }
+  const data = await fetchJSON(`/api/toc/tournaments?when=${encodeURIComponent(state.allWhen)}&season=${encodeURIComponent(state.tocSeason)}`);
   state.allTourns = (data && data.tournaments) || [];
   renderAllTournaments();
 }
@@ -610,24 +630,42 @@ function renderRankings(){
 async function openTeamProfile(teamKey){
   if(!teamKey) return;
   go('team');
-  $('tp-name').textContent = '—';
+  $('tp-name').textContent = 'Loading…';
   $('tp-school').textContent = '';
   $('tp-stats').innerHTML = '';
-  const p = await fetchJSON(`/api/rankings/${encodeURIComponent(teamKey)}?event=${state.rankings.event}&season=${encodeURIComponent(state.rankings.season)}`);
-  if(!p){
+  // Make sure we have a season loaded; the rankings route 400s without it.
+  if(!state.rankings.season){
+    const seasonsResp = await fetchJSON('/api/rankings/seasons');
+    const list = (seasonsResp && seasonsResp.seasons) || [];
+    if(list.length) state.rankings.season = list[0].season || list[0];
+  }
+  if(!state.rankings.season){
+    $('tp-name').textContent = 'No rankings season';
+    $('tp-school').textContent = 'TOC ratings are not yet computed.';
+    return;
+  }
+  const url = `/api/rankings/${encodeURIComponent(teamKey)}?event=${encodeURIComponent(state.rankings.event)}&season=${encodeURIComponent(state.rankings.season)}`;
+  const p = await fetchJSON(url);
+  if(!p || p.error){
     $('tp-name').textContent = 'Team not found';
+    $('tp-school').textContent = (p && p.error) || `Couldn't load ${teamKey}.`;
     return;
   }
   $('tp-name').textContent = p.displayName || p.shortName || teamKey;
   $('tp-school').textContent = `${p.schoolName||''} · ${state.rankings.event} · ${state.rankings.season}`;
   const elo = p.rating!=null ? Math.round(p.rating) : '—';
-  const wins = p.wins||p.w||0, losses = p.losses||p.l||0;
+  const peak = p.peakRating!=null ? Math.round(p.peakRating) : '—';
+  const wins = p.wins!=null?p.wins:0, losses = p.losses!=null?p.losses:0;
+  const rounds = p.roundCount!=null ? p.roundCount : (wins+losses);
   const tournCount = (p.tournaments && p.tournaments.length) || p.tournamentCount || 0;
+  const rank = p.rank!=null ? `#${p.rank}${p.outOf?` of ${p.outOf}`:''}` : '—';
   $('tp-stats').innerHTML = `
     <div class="pp-stat"><div class="lab">Elo</div><div class="val">${elo}</div></div>
     <div class="pp-stat"><div class="lab">Record</div><div class="val">${wins}–${losses}</div></div>
+    <div class="pp-stat"><div class="lab">Rounds</div><div class="val">${rounds}</div></div>
+    <div class="pp-stat"><div class="lab">Rank</div><div class="val">${rank}</div></div>
+    <div class="pp-stat"><div class="lab">Peak Elo</div><div class="val">${peak}</div></div>
     <div class="pp-stat"><div class="lab">Tournaments</div><div class="val">${tournCount}</div></div>
-    <div class="pp-stat"><div class="lab">Rank</div><div class="val">${p.rank||'—'}</div></div>
   `;
 }
 
@@ -726,24 +764,36 @@ function renderCardBody(md){
   // Paragraphs
   return s.split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g,'<br>')}</p>`).join('');
 }
-function showLibPreview(card){
+async function showLibPreview(card){
   if(!card){ $('lib-pv-body').innerHTML = `<div class="empty"><b>No card selected</b></div>`; return; }
   state.libSelected = card;
   $('lib-pv-meta').textContent = card.shortCite || card.cite || '';
-  const md = card.body_markdown || card.body_plain || '';
-  const bodyHtml = renderCardBody(md);
+  // Header always renders immediately; body text is paginated separately.
   $('lib-pv-body').innerHTML = `
     <div style="border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px">
       <div style="font:700 22px/1.25 var(--font-display);letter-spacing:-0.02em;color:var(--ink);margin-bottom:8px">${escapeHTML(card.tag||'(untitled)')}</div>
       ${card.cite?`<div style="font:500 13px/1.5 var(--font-display);color:var(--muted)">${escapeHTML(card.cite)}</div>`:''}
     </div>
-    ${bodyHtml || '<div class="empty" style="padding:24px 0"><b>No body text</b>This card has no preview content stored.</div>'}
+    <div id="lib-pv-loading" class="empty" style="padding:24px 0"><b>Loading body…</b></div>
   `;
-  const url = card.url || card.sourceUrl;
+  // Lite list rows don't include body_markdown — fetch the full card by id.
+  let full = card;
+  if(!card.body_markdown && card.id){
+    const detail = await fetchJSON(`/api/library/cards/${encodeURIComponent(card.id)}`);
+    if(detail && detail.card) full = detail.card;
+  }
+  const md = full.body_markdown || full.body_plain || '';
+  const bodyHtml = renderCardBody(md);
+  const loading = $('lib-pv-loading');
+  if(loading){
+    if(bodyHtml) loading.outerHTML = bodyHtml;
+    else loading.outerHTML = '<div class="empty" style="padding:24px 0"><b>No body text</b>This card has no preview content stored.</div>';
+  }
+  const url = full.url || full.sourceUrl;
   if(url){ $('lib-pv-source').style.display=''; $('lib-pv-source').onclick = ()=> window.open(url, '_blank'); }
   else $('lib-pv-source').style.display='none';
   $('lib-pv-copy').onclick = ()=>{
-    const text = (card.body_plain || $('lib-pv-body').innerText || '');
+    const text = (full.body_plain || $('lib-pv-body').innerText || '');
     navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard'));
   };
 }
