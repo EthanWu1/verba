@@ -22,7 +22,10 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
     FROM toc_ratings
     WHERE season = ? AND eventAbbr = ? AND roundCount >= ?
   `;
-  const args = [season, event, MIN_ROUNDS_FOR_BOARD];
+  // When the user searches, drop the MIN_ROUNDS filter so the query reaches
+  // every rated team (otherwise teams with <10 rounds — most of them — never surface).
+  const minRounds = qTrim ? 0 : MIN_ROUNDS_FOR_BOARD;
+  const args = [season, event, minRounds];
   let where = '';
   if (qTrim) {
     where = ` AND (LOWER(displayName) LIKE ? OR LOWER(schoolName) LIKE ?)`;
@@ -45,7 +48,7 @@ function leaderboard({ season, event, page = 1, q = '', sort = 'rating' }) {
       WHERE season = ? AND eventAbbr = ? AND roundCount >= ?
     )
   `;
-  const rankedArgs = [season, event, MIN_ROUNDS_FOR_BOARD];
+  const rankedArgs = [season, event, minRounds];
   let filter = '';
   if (qTrim) {
     filter = ` WHERE LOWER(displayName) LIKE ? OR LOWER(schoolName) LIKE ?`;

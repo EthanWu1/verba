@@ -78,10 +78,12 @@ function fmtDateRange(start, end){
   if(!start) return '';
   const s = new Date(start), e = end ? new Date(end) : null;
   const sm = s.toLocaleDateString(undefined,{ month:'short', day:'numeric' });
-  if(!e || e.toDateString()===s.toDateString()) return sm;
-  const sameMonth = s.getMonth()===e.getMonth();
+  if(!e || e.toDateString()===s.toDateString()){
+    return `${sm}, ${s.getFullYear()}`;
+  }
+  const sameMonth = s.getMonth()===e.getMonth() && s.getFullYear()===e.getFullYear();
   const ed = sameMonth ? e.getDate() : e.toLocaleDateString(undefined,{month:'short',day:'numeric'});
-  return `${sm}${sameMonth?'':' '}–${sameMonth?' ':''}${ed}, ${e.getFullYear()}`;
+  return `${sm} – ${ed}, ${e.getFullYear()}`;
 }
 function initials(name){
   if(!name) return '··';
@@ -442,12 +444,40 @@ function placeLabel(row){
   if(r <= 64) return 'Triples';
   return 'Prelim';
 }
-function placeClass(row){
-  const r = row && row.rank;
-  if(r === 1) return 'gold';
-  if(r === 2) return 'silver';
-  if(r != null && r <= 4) return 'bronze';
+function placeClass(/*row*/){
+  // Per-design: place column stays default (black) — no gold/silver/bronze tint.
   return '';
+}
+// Pairings round label: short single-letter for elims, number for prelims.
+// roundType values: prelim, highlow (still prelim), elim, final.
+function roundLabel(p){
+  const rn = String(p.roundName||'').trim();
+  const rt = String(p.roundType||'').toLowerCase();
+  const depth = String(p.depth||'').toLowerCase();
+  // Prelim-style → return the round number
+  if(rt === 'prelim' || rt === 'highlow'){
+    return rn.replace(/^round\s*/i,'') || '—';
+  }
+  // Finals
+  if(rt === 'final') return 'F';
+  // Elim — disambiguate by `depth` first (e.g. "Doubles", "Octos"), then roundName
+  const probe = (depth + ' ' + rn).toLowerCase();
+  if(/final|grand/.test(probe)) return 'F';
+  if(/semi/.test(probe)) return 'S';
+  if(/quarter/.test(probe)) return 'Q';
+  if(/octo/.test(probe)) return 'O';
+  if(/double/.test(probe)) return 'D';
+  if(/triple/.test(probe)) return 'T';
+  return rn || '—';
+}
+// Best-effort debater name display: prefer a `students` array on the row,
+// fall back to studentNames JSON, otherwise null.
+function debaterNames(row){
+  if(!row) return null;
+  let s = row.students || row.studentNames || row.entrants;
+  if(typeof s === 'string'){ try { s = JSON.parse(s); } catch { return null; } }
+  if(!Array.isArray(s) || !s.length) return null;
+  return s.map(x => typeof x === 'string' ? x : (x && (x.name || `${x.firstName||''} ${x.lastName||''}`.trim()))).filter(Boolean).join(' & ');
 }
 function bidLabel(b){
   const v = String(b||'').trim().toLowerCase();
@@ -672,24 +702,21 @@ function renderResults(rows, eventAbbr){
     return;
   }
   const html = `
-    <div class="tres-table">
-      <div class="tr-head"><span>Place</span><span>Team</span><span>Code</span><span>Prelim</span><span>Elim</span><span>Speaks</span><span>Bid</span></div>
+    <div class="tres-table tres-results">
+      <div class="tr-head"><span>Place</span><span>Team</span><span>Prelim</span><span>Elim</span><span>Bid</span></div>
       ${rows.map(r => {
         const place = placeLabel(r);
-        const pcls  = placeClass(r);
         const bid   = bidLabel(r.earnedBid);
         const bcls  = bidClass(bid);
         const prelim = (r.prelimWins!=null && r.prelimLosses!=null) ? `${r.prelimWins}–${r.prelimLosses}` : '—';
         const elim   = (r.elimWins!=null && r.elimLosses!=null) ? `${r.elimWins}–${r.elimLosses}` : '—';
-        const speaks = r.speakerPoints!=null ? Number(r.speakerPoints).toFixed(1) : '—';
+        const dbs = debaterNames(r);
         return `
           <div class="tr-row" data-eid="${escapeHTML(String(r.entryId||''))}" data-evt="${escapeHTML(eventAbbr)}">
-            <span class="tr-place ${pcls}">${escapeHTML(place)}</span>
-            <div class="tr-team"><span class="nm">${escapeHTML(r.displayName||'')}</span><span class="sch">${escapeHTML(r.schoolName||'')}</span></div>
-            <span class="tr-cell mono">${escapeHTML(r.schoolCode||'—')}</span>
+            <span class="tr-place">${escapeHTML(place)}</span>
+            <div class="tr-team"><span class="nm">${escapeHTML(r.displayName||'')}</span>${dbs?`<span class="sch">${escapeHTML(dbs)}</span>`:`<span class="sch">${escapeHTML(r.schoolName||'')}</span>`}</div>
             <span class="tr-cell mono">${prelim}</span>
             <span class="tr-cell mono">${elim}</span>
-            <span class="tr-cell mono">${speaks}</span>
             <span class="tr-bid ${bcls}">${bid || '—'}</span>
           </div>`;
       }).join('')}
@@ -706,20 +733,18 @@ function renderThreats(threats, eventAbbr){
     return;
   }
   const html = `
-    <div class="tres-table">
-      <div class="tr-head"><span>Rank</span><span>Team</span><span>Code</span><span>Full</span><span>Partial</span><span>Recent</span><span>Bid</span></div>
+    <div class="tres-table tres-threats">
+      <div class="tr-head"><span>Rank</span><span>Team</span><span>Full</span><span>Partial</span><span>Bid</span></div>
       ${threats.map((t, i) => {
-        const recent = (t.recentPlacements||[]).slice(0,2).map(p => p.place || '').filter(Boolean).join(', ') || '—';
         const bid = bidLabel(t.earnedBid || t.maxBidLevel);
         const bcls = bidClass(bid);
+        const dbs = debaterNames(t);
         return `
           <div class="tr-row" data-eid="${escapeHTML(String(t.entryId||''))}">
             <span class="tr-cell mono b">#${i+1}</span>
-            <div class="tr-team"><span class="nm">${escapeHTML(t.displayName||'')}</span><span class="sch">${escapeHTML(t.schoolName||'')}</span></div>
-            <span class="tr-cell mono">${escapeHTML(t.schoolCode||'—')}</span>
+            <div class="tr-team"><span class="nm">${escapeHTML(t.displayName||'')}</span>${dbs?`<span class="sch">${escapeHTML(dbs)}</span>`:`<span class="sch">${escapeHTML(t.schoolName||'')}</span>`}</div>
             <span class="tr-cell mono">${t.seasonFullBids||0}</span>
             <span class="tr-cell mono">${t.seasonPartialBids||0}</span>
-            <span class="tr-cell">${escapeHTML(recent)}</span>
             <span class="tr-bid ${bcls}">${bid || '—'}</span>
           </div>`;
       }).join('')}
@@ -759,13 +784,19 @@ async function openEntryPairings(entryId, eventAbbr){
   const evtLbl = eventAbbr || e.eventAbbr || '';
   $('t-pair-sub').textContent = `${e.schoolName||''}${evtLbl?` · ${evtLbl}`:''}${e.schoolCode?` · ${e.schoolCode}`:''}`;
 
-  // Stats
+  // Stats — toc_ballots stores 4 roundType values:
+  //   prelim   = high-high prelim (rounds 1-2)
+  //   highlow  = high-low prelim (rounds 3-N) — still prelim, just paired differently
+  //   elim     = bracket elim
+  //   final    = grand finals
+  const isPrelim = (p) => p.roundType === 'prelim' || p.roundType === 'highlow';
+  const isElim   = (p) => p.roundType === 'elim'   || p.roundType === 'final';
   const wins = pairings.filter(p => p.result === 'W').length;
   const losses = pairings.filter(p => p.result === 'L').length;
-  const prelimW = pairings.filter(p => p.roundType==='prelim' && p.result==='W').length;
-  const prelimL = pairings.filter(p => p.roundType==='prelim' && p.result==='L').length;
-  const elimW = pairings.filter(p => p.roundType==='elim' && p.result==='W').length;
-  const elimL = pairings.filter(p => p.roundType==='elim' && p.result==='L').length;
+  const prelimW = pairings.filter(p => isPrelim(p) && p.result==='W').length;
+  const prelimL = pairings.filter(p => isPrelim(p) && p.result==='L').length;
+  const elimW   = pairings.filter(p => isElim(p)   && p.result==='W').length;
+  const elimL   = pairings.filter(p => isElim(p)   && p.result==='L').length;
   const avgSpk = (() => {
     const vals = pairings.map(p => p.speakerPoints).filter(v => v != null);
     return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : '—';
@@ -787,13 +818,14 @@ async function openEntryPairings(entryId, eventAbbr){
       ${pairings.map(p => {
         const sideCls = (p.side||'').toLowerCase()==='aff' ? 'aff' : (p.side||'').toLowerCase()==='neg' ? 'neg' : '';
         const resCls  = p.result === 'W' ? 'w' : p.result === 'L' ? 'l' : '';
+        const oppDbs  = debaterNames(p);
         return `
           <div class="pt-row">
-            <span class="pt-round">${escapeHTML(p.roundName||'—')}</span>
+            <span class="pt-round">${escapeHTML(roundLabel(p))}</span>
             <span class="pt-side ${sideCls}">${escapeHTML(p.side||'—')}</span>
             <div class="pt-opp" data-opp-eid="${escapeHTML(String(p.opponentEntryId||''))}">
               <div class="nm">${escapeHTML(p.opponentName||'—')}</div>
-              ${p.opponentSchool?`<div class="sch">${escapeHTML(p.opponentSchool)}</div>`:''}
+              ${oppDbs?`<div class="sch">${escapeHTML(oppDbs)}</div>`:p.opponentSchool?`<div class="sch">${escapeHTML(p.opponentSchool)}</div>`:''}
             </div>
             <span class="pt-judge">${escapeHTML(p.judgeName||'—')}</span>
             <span class="pt-result ${resCls}">${escapeHTML(p.result||'—')}</span>
@@ -818,13 +850,14 @@ function bindRankingsControls(){
     TWEAKS.format = b.dataset.fmt.toLowerCase(); persistTweaks();
     loadRankings();
   }));
+  const qIn = $('rank-q');
+  if(qIn) qIn.addEventListener('input', debounce(()=> loadRankings($('rank-q').value.trim()), 220));
 }
-async function loadRankings(){
+async function loadRankings(query){
   // sync tab state
   $$('#format-tabs .rank-tab').forEach(x => x.classList.toggle('on', x.dataset.fmt===state.rankings.event));
   const seasonsResp = await fetchJSON('/api/rankings/seasons');
   const seasonsList = (seasonsResp && seasonsResp.seasons) || [];
-  // listSeasons returns rows like {season, ratedCount}. Pull the string.
   const season = seasonsList.length ? (seasonsList[0].season || seasonsList[0]) : null;
   if(!season){
     $('lb-body').innerHTML = `<div class="empty"><b>No rankings yet</b>Rankings will appear once TOC ratings are computed (POST /api/toc/reindex).</div>`;
@@ -833,7 +866,9 @@ async function loadRankings(){
   state.rankings.season = season;
   $('rank-eyebrow').textContent = `National Circuit · ${season} · ${state.rankings.event}`;
   $('lb-body').innerHTML = `<div class="empty"><b>Loading…</b></div>`;
-  const data = await fetchJSON(`/api/rankings?event=${encodeURIComponent(state.rankings.event)}&season=${encodeURIComponent(season)}&page=1`);
+  const q = (query!=null ? query : ($('rank-q')?.value || '')).trim();
+  const url = `/api/rankings?event=${encodeURIComponent(state.rankings.event)}&season=${encodeURIComponent(season)}&page=1${q?`&q=${encodeURIComponent(q)}`:''}`;
+  const data = await fetchJSON(url);
   state.rankings.rows = (data && data.rows) || [];
   renderRankings();
 }
@@ -878,8 +913,10 @@ async function openTeamProfile(teamKey){
   go('team');
   $('tp-name').textContent = 'Loading…';
   $('tp-school').textContent = '';
+  $('tp-rank').textContent = '—';
   $('tp-stats').innerHTML = '';
   $('tp-tourns').innerHTML = '';
+  $('tp-elo-chart').innerHTML = '';
   // Make sure we have a season loaded; the rankings route 400s without it.
   if(!state.rankings.season){
     const seasonsResp = await fetchJSON('/api/rankings/seasons');
@@ -891,68 +928,112 @@ async function openTeamProfile(teamKey){
     $('tp-school').textContent = 'TOC ratings are not yet computed.';
     return;
   }
-  const url = `/api/rankings/${encodeURIComponent(teamKey)}?event=${encodeURIComponent(state.rankings.event)}&season=${encodeURIComponent(state.rankings.season)}`;
-  const p = await fetchJSON(url);
+  const evt = state.rankings.event;
+  const season = state.rankings.season;
+  const profileUrl = `/api/rankings/${encodeURIComponent(teamKey)}?event=${encodeURIComponent(evt)}&season=${encodeURIComponent(season)}`;
+  const historyUrl = `/api/rankings/${encodeURIComponent(teamKey)}/history?event=${encodeURIComponent(evt)}&season=${encodeURIComponent(season)}`;
+  const [p, h] = await Promise.all([ fetchJSON(profileUrl), fetchJSON(historyUrl) ]);
   if(!p || p.error){
     $('tp-name').textContent = 'Team not found';
     $('tp-school').textContent = (p && p.error) || `Couldn't load ${teamKey}.`;
     return;
   }
   $('tp-name').textContent = p.displayName || p.shortName || teamKey;
-  $('tp-school').textContent = `${p.schoolName||''} · ${state.rankings.event} · ${state.rankings.season}`;
-  $('tp-tourn-lbl').textContent = `Tournaments · ${state.rankings.season}`;
+  $('tp-school').textContent = `${p.schoolName||''} · ${evt} · ${season}`;
+  $('tp-tourn-lbl').textContent = `Tournaments · ${season}`;
+  $('tp-rank').innerHTML = p.rank!=null ? `#${p.rank}<span class="of">${p.outOf?`of ${p.outOf}`:''}</span>` : '—';
 
+  const ts = p.tournaments || [];
   const elo  = p.rating!=null ? Math.round(p.rating) : '—';
   const peak = p.peakRating!=null ? Math.round(p.peakRating) : '—';
-  // Derive prelim/elim splits from ballotRecs if present, otherwise from tournaments list,
-  // otherwise from total wins/losses (no split).
+  // Derive prelim/elim splits from tournaments list (per-tournament records).
   let prelimW = 0, prelimL = 0, elimW = 0, elimL = 0;
-  const ts = p.tournaments || [];
+  let speakSum = 0, speakCount = 0;
+  let fullBids = 0, partialBids = 0;
   for(const t of ts){
     prelimW += t.prelimWins   || 0;
     prelimL += t.prelimLosses || 0;
     elimW   += t.elimWins     || 0;
     elimL   += t.elimLosses   || 0;
+    if(t.avgSpeakerPoints!=null){ speakSum += Number(t.avgSpeakerPoints); speakCount++; }
+    else if(t.speakerPoints!=null){ speakSum += Number(t.speakerPoints); speakCount++; }
+    const bid = String(t.earnedBid||'').toLowerCase();
+    if(bid==='full' || bid==='gold') fullBids++;
+    else if(bid==='silver' || bid==='partial') partialBids++;
   }
   if(prelimW+prelimL+elimW+elimL === 0 && p.wins!=null){
-    // Fallback when splits aren't available — show combined record under Prelim only.
     prelimW = p.wins; prelimL = p.losses || 0;
   }
-  const rank = p.rank!=null ? `#${p.rank}${p.outOf?` of ${p.outOf}`:''}` : '—';
+  // Fallback to top-level fields when per-tournament data is missing.
+  if(speakCount===0 && p.avgSpeakerPoints!=null){ speakSum = Number(p.avgSpeakerPoints); speakCount = 1; }
+  if(fullBids===0 && p.fullBids!=null) fullBids = p.fullBids;
+  if(partialBids===0 && p.partialBids!=null) partialBids = p.partialBids;
+  const avgSpeaks = speakCount ? (speakSum/speakCount).toFixed(1) : '—';
+
   $('tp-stats').innerHTML = `
     <div class="pp-stat"><div class="lab">Elo</div><div class="val">${elo}</div></div>
     <div class="pp-stat"><div class="lab">Peak Elo</div><div class="val">${peak}</div></div>
-    <div class="pp-stat"><div class="lab">Prelim record</div><div class="val">${prelimW}–${prelimL}</div></div>
-    <div class="pp-stat"><div class="lab">Elim record</div><div class="val">${elimW}–${elimL}</div></div>
-    <div class="pp-stat"><div class="lab">Rank</div><div class="val">${rank}</div></div>
+    <div class="pp-stat"><div class="lab">Prelim</div><div class="val">${prelimW}–${prelimL}</div></div>
+    <div class="pp-stat"><div class="lab">Elim</div><div class="val">${elimW}–${elimL}</div></div>
+    <div class="pp-stat"><div class="lab">Rank</div><div class="val">${p.rank!=null?'#'+p.rank:'—'}</div></div>
     <div class="pp-stat"><div class="lab">Tournaments</div><div class="val">${ts.length}</div></div>
+    <div class="pp-stat"><div class="lab">Avg speaks</div><div class="val">${avgSpeaks}</div></div>
+    <div class="pp-stat"><div class="lab">Bids</div><div class="val">${fullBids+partialBids}<span style="font:500 11px/1 var(--font-mono);color:var(--muted);margin-left:4px">${fullBids}F·${partialBids}P</span></div></div>
   `;
 
-  // Tournament history table
+  // Elo chart from history
+  renderEloChart((h && h.history) || []);
+
+  // Tournament history table — no Date column
   if(!ts.length){
     $('tp-tourns').innerHTML = `<div class="empty"><b>No tournaments</b>This team has no tournament records for the current season.</div>`;
     return;
   }
   $('tp-tourns').innerHTML = `
     <div class="tres-table">
-      <div class="tr-head" style="grid-template-columns:1.6fr 110px 80px 80px 100px 70px"><span>Tournament</span><span>Date</span><span>Prelim</span><span>Elim</span><span>Place</span><span>Bid</span></div>
+      <div class="tr-head" style="grid-template-columns:1.6fr 90px 90px 100px 70px"><span>Tournament</span><span>Prelim</span><span>Elim</span><span>Place</span><span>Bid</span></div>
       ${ts.map(t => {
         const place = placeLabel(t);
-        const pcls  = placeClass(t);
         const bid   = bidLabel(t.earnedBid);
         const bcls  = bidClass(bid);
-        const date  = fmtDateRange(t.startDate, t.endDate);
         return `
-          <div class="tr-row" style="grid-template-columns:1.6fr 110px 80px 80px 100px 70px;cursor:default">
+          <div class="tr-row" style="grid-template-columns:1.6fr 90px 90px 100px 70px;cursor:default">
             <div class="tr-team"><span class="nm">${escapeHTML(t.name||t.tournamentName||'—')}</span></div>
-            <span class="tr-cell mono">${escapeHTML(date||'—')}</span>
             <span class="tr-cell mono">${(t.prelimWins!=null && t.prelimLosses!=null)?`${t.prelimWins}–${t.prelimLosses}`:'—'}</span>
             <span class="tr-cell mono">${(t.elimWins!=null && t.elimLosses!=null)?`${t.elimWins}–${t.elimLosses}`:'—'}</span>
-            <span class="tr-place ${pcls}">${escapeHTML(place)}</span>
+            <span class="tr-place">${escapeHTML(place)}</span>
             <span class="tr-bid ${bcls}">${bid || '—'}</span>
           </div>`;
       }).join('')}
     </div>
+  `;
+}
+
+function renderEloChart(history){
+  const root = $('tp-elo-chart');
+  if(!history || !history.length){
+    root.innerHTML = `<div class="empty" style="padding:30px 0"><b>No Elo history</b>History will appear once rounds are crawled.</div>`;
+    return;
+  }
+  const pts = history.filter(h => h.ratingAfter!=null).map(h => Number(h.ratingAfter));
+  if(pts.length < 2){
+    root.innerHTML = `<div class="empty" style="padding:30px 0"><b>Not enough history</b>Need at least 2 rated rounds.</div>`;
+    return;
+  }
+  const W = 800, H = 130;
+  const min = Math.min(...pts), max = Math.max(...pts);
+  const span = Math.max(1, max - min);
+  const xs = pts.map((_,i) => (i/(pts.length-1)) * W);
+  const ys = pts.map(p => H - ((p - min)/span) * (H-10) - 5);
+  const linePath = xs.map((x,i)=> `${i===0?'M':'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L${W},${H} L0,${H} Z`;
+  const lastX = xs[xs.length-1], lastY = ys[ys.length-1];
+  root.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <path class="area" d="${areaPath}"/>
+      <path class="line" d="${linePath}"/>
+      <circle class="dot" cx="${lastX.toFixed(1)}" cy="${lastY.toFixed(1)}" r="3.5"/>
+    </svg>
   `;
 }
 
@@ -1081,7 +1162,13 @@ async function showLibPreview(card){
   else $('lib-pv-source').style.display='none';
   $('lib-pv-copy').onclick = ()=>{
     const text = (full.body_plain || $('lib-pv-body').innerText || '');
-    navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard'));
+    navigator.clipboard.writeText(text).then(()=> {
+      const btn = $('lib-pv-copy');
+      const original = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
+      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = original; }, 1400);
+    });
   };
 }
 

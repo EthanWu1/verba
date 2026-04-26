@@ -227,6 +227,10 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .lib-pv-body .shrink{font-size:8pt;color:#9CA3AF;line-height:1.5}
 .lib-pv-body p{margin:0 0 16px}
 
+/* Copy-success state */
+.btn.copied{background:var(--ok)!important;color:#fff!important;border-color:var(--ok)!important;transition:background .14s, color .14s, border-color .14s}
+.btn.copied svg{stroke:#fff}
+
 /* TOURNAMENTS */
 .tourn-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px}
 .tcard{position:relative;background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;transition:all .15s;cursor:pointer;box-shadow:var(--shadow-sm)}
@@ -310,14 +314,29 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .pp-head .who h1{margin:0;font:700 26px/1.1 var(--font-display);letter-spacing:-0.025em;color:var(--ink)}
 .pp-head .who .sub{margin-top:6px;font:500 12.5px/1 var(--font-display);color:var(--muted)}
 .pp-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.pp-stats.eight{grid-template-columns:repeat(8,1fr)}
+@media(max-width:1100px){.pp-stats.eight{grid-template-columns:repeat(4,1fr)}}
 .pp-stat{padding:14px 16px;background:#fff}
 .pp-stat .lab{font:500 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
 .pp-stat .val{font:700 22px/1 var(--font-display);color:var(--ink);margin-top:6px;letter-spacing:-0.02em;font-variant-numeric:tabular-nums}
+.pp-stats.eight .pp-stat .val{font-size:19px}
+
+/* Big rank chip on profile head */
+.pp-rank{flex:none;text-align:right;font:700 36px/1 var(--font-mono);color:var(--ink);letter-spacing:-0.04em;font-variant-numeric:tabular-nums;margin-left:auto}
+.pp-rank .of{display:block;font:500 11px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:6px}
+
+/* Elo history sparkline */
+.elo-chart{height:160px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:24px}
+.elo-chart svg{width:100%;height:100%;display:block}
+.elo-chart .area{fill:rgba(15,23,42,0.10)}
+.elo-chart .line{fill:none;stroke:var(--ink);stroke-width:1.6}
+.elo-chart .dot{fill:var(--ink)}
 .pp-block{margin-bottom:28px}
 .pp-block h3{margin:0 0 12px;font:600 11.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
 
 .tres-table{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.tr-head,.tr-row{display:grid;grid-template-columns:90px 1fr 70px 80px 80px 70px 70px;gap:14px;padding:11px 18px;align-items:center}
+.tr-head,.tr-row{display:grid;grid-template-columns:100px 1fr 90px 90px 80px;gap:14px;padding:11px 18px;align-items:center}
+.tres-threats .tr-head,.tres-threats .tr-row{grid-template-columns:60px 1fr 70px 80px 80px}
 .tr-head{background:var(--panel);border-bottom:1px solid var(--line);font:600 10.5px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
 .tr-row{border-bottom:1px solid var(--line-soft);transition:background .12s;cursor:pointer}
 .tr-row:last-child{border-bottom:0}
@@ -726,7 +745,7 @@ body.density-dense .shellpad{padding-top:18px}
           </div>
           <div class="pp-stats" id="t-pair-stats"></div>
           <div class="pp-block">
-            <h3>Round-by-round</h3>
+            <h3>Pairings</h3>
             <div id="t-pair-rounds"></div>
           </div>
         </div>
@@ -735,12 +754,18 @@ body.density-dense .shellpad{padding-top:18px}
       <!-- RANKINGS -->
       <section class="page" id="page-rankings">
         <div class="shellpad">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:14px;flex-wrap:wrap">
             <div style="font:500 11px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em" id="rank-eyebrow">National Circuit · Live Elo</div>
             <div class="rank-tabs" id="format-tabs">
               <button class="rank-tab" data-fmt="LD">LD</button>
               <button class="rank-tab" data-fmt="PF">PF</button>
               <button class="rank-tab on" data-fmt="CX">CX</button>
+            </div>
+          </div>
+          <div class="t-toolbar" style="margin-bottom:14px">
+            <div class="t-search">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--muted)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input id="rank-q" placeholder="Search team or school…">
             </div>
           </div>
           <div class="lb">
@@ -832,8 +857,13 @@ body.density-dense .shellpad{padding-top:18px}
               <h1 id="tp-name">—</h1>
               <div class="sub" id="tp-school"></div>
             </div>
+            <div class="pp-rank" id="tp-rank">—</div>
           </div>
-          <div class="pp-stats" id="tp-stats"></div>
+          <div class="pp-stats eight" id="tp-stats"></div>
+          <div class="pp-block">
+            <h3>Elo · last 12 months</h3>
+            <div class="elo-chart" id="tp-elo-chart"><div class="empty"><b>No history</b>Elo history will appear once rounds are recorded.</div></div>
+          </div>
           <div class="pp-block">
             <h3 id="tp-tourn-lbl">Tournaments this season</h3>
             <div id="tp-tourns"><div class="empty"><b>No tournaments</b></div></div>
