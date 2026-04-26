@@ -283,10 +283,11 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .lib-pv-head .meta{font:500 11px/1 var(--font-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
 .lib-pv-head .actions{margin-left:auto;display:flex;gap:6px}
 .lib-pv-body{padding:36px 56px 60px;max-width:820px;margin:0 auto;font-family:var(--font-ui);font-size:15.5px;line-height:1.8;color:var(--ink-2)}
-.lib-pv-body .hl{background:var(--hl-cyan);padding:0 1px;border-radius:1px}
-.lib-pv-body .warrant{font-weight:700;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;color:var(--ink)}
-.lib-pv-body .u{text-decoration:underline;text-decoration-thickness:1.2px;text-underline-offset:2.5px;text-decoration-color:rgba(15,23,42,0.35);color:var(--ink)}
-.lib-pv-body .shrink{font-size:8pt;color:#9CA3AF;line-height:1.5}
+/* Card formatting — global so it applies in library preview AND cut-body */
+.hl{background:var(--hl-yellow);padding:0 1px;border-radius:1px}
+.warrant{font-weight:700;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;color:var(--ink)}
+.u{text-decoration:underline;text-decoration-thickness:1.2px;text-underline-offset:2.5px;text-decoration-color:rgba(15,23,42,0.35);color:var(--ink)}
+.shrink{font-size:8pt;color:#9CA3AF;line-height:1.5}
 .lib-pv-body p{margin:0 0 16px}
 
 /* Copy-success state */

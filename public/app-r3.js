@@ -214,7 +214,7 @@ function renderContinueList(){
   }
   root.innerHTML = items.map(it => {
     const tag = it.tag || it.title || it.query || it.url || '(untitled)';
-    const cite = it.cite || it.author || it.host || it.kind || '';
+    const cite = shortCiteFor(it) || it.author || it.host || it.kind || '';
     const sideClass = (it.side||'').toLowerCase()==='aff' ? 'aff' : (it.side||'').toLowerCase()==='neg' ? 'neg' : '';
     const topic = it.topic ? `<span class="badge topic">${escapeHTML(it.topic)}</span>` : '';
     const sideBadge = sideClass ? `<span class="badge ${sideClass}">${sideClass.toUpperCase()}</span>` : '';
@@ -1045,6 +1045,19 @@ async function searchLibrary(q){
   const total = (data && data.total) || items.length;
   $('lib-sub').textContent = `${total.toLocaleString()} match${total===1?'':'es'}`;
 }
+// Pull "Last 'YY" out of a card. Prefer card.shortCite; otherwise extract the
+// prefix before "[" from the full cite, otherwise fall back.
+function shortCiteFor(card){
+  if(!card) return '';
+  if(card.shortCite) return card.shortCite;
+  const cite = card.cite || '';
+  const m = cite.match(/^([^\[]+?)\s*\[/);
+  if(m) return m[1].trim();
+  const yr = cite.match(/^\S+(?:\s+\S+)?\s*['"‘’]?\d{2,4}/);
+  if(yr) return yr[0].trim();
+  return cite.slice(0, 40);
+}
+
 function sideFromCard(c){
   // Prefer typeLabel ("Aff"/"Neg"/"K"/"DA"/...). Fallback to scope/side fields.
   const t = String(c.typeLabel||c.scope||c.side||'').toLowerCase();
@@ -1063,8 +1076,9 @@ function renderLibList(){
   }
   list.innerHTML = state.libCards.map((c, i) => {
     const tag  = c.tag || '(untitled)';
-    // Always show the FULL cite — shortCite was inconsistent across rows.
-    const cite = c.cite || c.shortCite || '';
+    // List rows show ONLY the short author cite (Author 'YY). The full cite
+    // appears in the preview pane.
+    const cite = shortCiteFor(c);
     const date = c.createdAt || c.savedAt || c.indexedAt || '';
     const side = sideFromCard(c);
     const sideBadge = side==='aff' ? `<span class="badge aff">Aff</span>`
@@ -1120,9 +1134,22 @@ function cardToHtml(card){
   }).join('');
 
   const escapeAttr = function(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
-  const tagHtml  = tag  ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; font-weight:700; margin:0 0 4pt 0">' + escapeAttr(tag)  + '</p>' : '';
-  const citeHtml = cite ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; font-weight:700; margin:0 0 8pt 0">' + escapeAttr(cite) + '</p>' : '';
-  return tagHtml + citeHtml + paragraphs;
+  // Verbatim convention:
+  //   Tag        — Heading-4 style: bold 13pt
+  //   Short cite — bold 13pt (NOT a heading)
+  //   Full cite  — regular 11pt
+  //   Body       — regular 11pt Calibri
+  const short = (function(){
+    if(card && card.shortCite) return card.shortCite;
+    const c = (card && card.cite) || '';
+    const m = c.match(/^([^\[]+?)\s*\[/);
+    return m ? m[1].trim() : c;
+  })();
+  const full = (card && card.cite) || '';
+  const tagHtml   = tag   ? '<h4 style="font-family:Calibri, Arial, sans-serif; font-size:13pt; font-weight:700; margin:0 0 4pt 0">' + escapeAttr(tag) + '</h4>' : '';
+  const shortHtml = short ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:13pt; font-weight:700; margin:0 0 2pt 0">' + escapeAttr(short) + '</p>' : '';
+  const fullHtml  = (full && full !== short) ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; font-weight:400; margin:0 0 8pt 0">' + escapeAttr(full) + '</p>' : '';
+  return tagHtml + shortHtml + fullHtml + paragraphs;
 }
 
 // Plain-text version for the text/plain clipboard slot.
@@ -1197,12 +1224,17 @@ function renderCardBody(md){
 async function showLibPreview(card){
   if(!card){ $('lib-pv-body').innerHTML = `<div class="empty"><b>No card selected</b></div>`; return; }
   state.libSelected = card;
-  $('lib-pv-meta').textContent = card.cite || card.shortCite || '';
+  // Top meta line shows the SHORT cite — full cite goes inside the body.
+  $('lib-pv-meta').textContent = shortCiteFor(card);
   // Header always renders immediately; body text is paginated separately.
+  const _short = shortCiteFor(card);
+  const _full  = card.cite || '';
+  const _showFull = _full && _full !== _short;
   $('lib-pv-body').innerHTML = `
-    <div style="border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px">
-      <div style="font:700 22px/1.25 var(--font-display);letter-spacing:-0.02em;color:var(--ink);margin-bottom:8px">${escapeHTML(card.tag||'(untitled)')}</div>
-      ${card.cite?`<div style="font:500 13px/1.5 var(--font-display);color:var(--muted)">${escapeHTML(card.cite)}</div>`:''}
+    <div style="border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:22px">
+      <h4 style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.25">${escapeHTML(card.tag||'(untitled)')}</h4>
+      ${_short?`<div style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.3">${escapeHTML(_short)}</div>`:''}
+      ${_showFull?`<div style="font-family:var(--font-ui);font-size:11pt;font-weight:400;color:var(--ink-2);line-height:1.45">${escapeHTML(_full)}</div>`:''}
     </div>
     <div id="lib-pv-loading" class="empty" style="padding:24px 0"><b>Loading body…</b></div>
   `;
@@ -1456,6 +1488,31 @@ function stripMarkupForSearch(md){
     .replace(/__/g, '')
     .replace(/<\/?u>/gi, '');
 }
+// Compute the plain-text character offset of a (textNode, offset) pair
+// relative to a root element. Inserts "\n\n" between top-level <p> blocks
+// so the offset matches the source markdown's paragraph structure.
+function plainOffsetWithin(root, container, offset){
+  let plain = 0;
+  let pCount = 0;
+  let found = false;
+  function walk(node){
+    if(found) return;
+    if(node.nodeType === 3){
+      if(node === container){ plain += offset; found = true; return; }
+      plain += node.textContent.length;
+      return;
+    }
+    if(node.nodeType === 1){
+      const isP = node.tagName === 'P';
+      // Top-level <p> children of root: separate with "\n\n"
+      if(isP && node.parentNode === root && pCount > 0) plain += 2;
+      if(isP && node.parentNode === root) pCount++;
+      for(const c of node.childNodes){ walk(c); if(found) return; }
+    }
+  }
+  walk(root);
+  return plain;
+}
 function applyCutMarkup(kind){
   if(!state.cutCard || !state.cutCard.body_markdown){ showToast('Run a cut first'); return; }
   const sel = window.getSelection();
@@ -1464,27 +1521,60 @@ function applyCutMarkup(kind){
   const body = $('cut-body');
   if(!body.contains(range.commonAncestorContainer)) return;
 
-  const text = sel.toString();
-  const trimmed = text.trim();
+  const trimmed = sel.toString().trim();
   if(!trimmed) return;
 
-  const md    = state.cutCard.body_markdown;
-  const plain = stripMarkupForSearch(md);
-  const idx   = plain.indexOf(trimmed);
-  if(idx < 0){
-    showToast('Could not locate selection — try selecting fewer words');
-    return;
+  // Position-based mapping. Compute the rendered plain-text offsets of the
+  // selection's start/end relative to #cut-body, accounting for paragraph
+  // breaks. Then find the markdown indices that correspond to those offsets
+  // in body_markdown after stripping markup.
+  const startPlain = plainOffsetWithin(body, range.startContainer, range.startOffset);
+  const endPlain   = plainOffsetWithin(body, range.endContainer,   range.endOffset);
+  if(endPlain <= startPlain){ return; }
+
+  // The body's rendered DOM also includes the cite-block before any <p> we
+  // care about. Subtract its plain length so offsets align with body_markdown.
+  const cite = body.querySelector('.cite-block');
+  let citeAdjust = 0;
+  if(cite){
+    // Plain length of cite-block + the implicit \n\n that sits between the
+    // cite block and the first body <p>. We replicate the same walker but
+    // bounded to the cite-block.
+    let cl = 0;
+    function walkCite(n){
+      if(n.nodeType === 3){ cl += n.textContent.length; return; }
+      for(const c of n.childNodes) walkCite(c);
+    }
+    walkCite(cite);
+    citeAdjust = cl;
+    // The body markdown does NOT contain the cite block, so we subtract.
   }
-  const mdStart = plainToMarkdownOffset(md, idx);
-  const mdEnd   = plainToMarkdownOffset(md, idx + trimmed.length);
+  const sP = Math.max(0, startPlain - citeAdjust);
+  const eP = Math.max(0, endPlain   - citeAdjust);
+
+  const md = state.cutCard.body_markdown;
+  const mdStart = plainToMarkdownOffset(md, sP);
+  const mdEnd   = plainToMarkdownOffset(md, eP);
+  if(mdEnd <= mdStart){ showToast('Could not locate selection'); return; }
+
   const open  = kind === 'hl' ? '==' : kind === 'u' ? '<u>' : '**';
   const close = kind === 'hl' ? '==' : kind === 'u' ? '</u>' : '**';
-  state.cutCard.body_markdown = md.slice(0, mdStart) + open + md.slice(mdStart, mdEnd) + close + md.slice(mdEnd);
+
+  // If the selection crosses an existing markup tag boundary, the output may
+  // have malformed nesting. Clean up by collapsing duplicate same-tag adjacencies
+  // that can occur after wrapping (e.g. ==a== inside ==b== → ==a====b==).
+  let next = md.slice(0, mdStart) + open + md.slice(mdStart, mdEnd) + close + md.slice(mdEnd);
+  next = next
+    .replace(/====/g, '')              // ==X== adjacent to ==Y== → drop the seam
+    .replace(/\*\*\*\*/g, '')          // same for bold
+    .replace(/<\/u><u>/gi, '')         // <u>X</u><u>Y</u> → <u>XY</u>
+    .replace(/====<\/u>/gi, '</u>');   // tail-cleanup edge
+
+  state.cutCard.body_markdown = next;
   rerenderCutBody();
-  // Flash the toolbar button so the user sees the action registered
+
   const btn = kind === 'hl' ? $('cut-tool-hl') : kind === 'u' ? $('cut-tool-u') : $('cut-tool-b');
   if(btn){ btn.classList.add('cut-tool-flash'); setTimeout(()=>btn.classList.remove('cut-tool-flash'), 280); }
-  // Keep the user's selection visible after re-render
   window.getSelection()?.removeAllRanges();
 }
 function rerenderCutBody(){
@@ -1550,7 +1640,7 @@ function renderCutterRecent(){
   meta.textContent = `${state.history.length} recent`;
   root.innerHTML = items.map(it => {
     const tag  = it.tag || it.title || it.query || it.url || '(untitled)';
-    const cite = it.cite || it.author || it.host || '';
+    const cite = shortCiteFor(it) || it.author || it.host || '';
     return `
       <div class="recent-card">
         <div class="head">
@@ -1746,11 +1836,16 @@ function showCutResult(data){
     bodyHtml = '<div class="empty" style="padding:20px 0"><b>No body text</b></div>';
   }
 
+  // Verbatim header structure: tag (h4 bold 13pt) → short cite (bold 13pt) → full cite (regular 11pt)
+  const _short = shortCiteFor(cutCard || { cite });
+  const _full  = cite || '';
+  const _showFull = _full && _full !== _short;
   body.innerHTML = `
     <div class="cite-block">
-      <div style="font:700 20px/1.3 var(--font-display);letter-spacing:-0.015em;color:var(--ink);margin-bottom:10px">${escapeHTML(tag)}</div>
-      ${cite ? `<div class="meta"><b>${escapeHTML(cite)}</b></div>` : ''}
-      ${data.fidelity ? `<div style="margin-top:8px;font:500 11px/1 var(--font-mono);color:var(--muted)">Fidelity ${(data.fidelity.score||0).toFixed(2)}${data.saved?.duplicate ? ' · duplicate' : ''}</div>` : ''}
+      <h4 style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.25">${escapeHTML(tag)}</h4>
+      ${_short ? `<div style="font-family:var(--font-ui);font-size:13pt;font-weight:700;color:var(--ink);margin:0 0 4px 0;line-height:1.3">${escapeHTML(_short)}</div>` : ''}
+      ${_showFull ? `<div style="font-family:var(--font-ui);font-size:11pt;font-weight:400;color:var(--ink-2);line-height:1.45">${escapeHTML(_full)}</div>` : ''}
+      ${data.fidelity ? `<div style="margin-top:8px;font:500 11px/1 var(--font-mono);color:var(--muted)">Fidelity ${(data.fidelity.matchRate || data.fidelity.score || 0).toFixed(2)}${data.saved?.duplicate ? ' · duplicate' : ''}</div>` : ''}
     </div>
     ${bodyHtml}
   `;
