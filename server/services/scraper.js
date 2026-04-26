@@ -11,8 +11,11 @@
 
 'use strict';
 
-const axios   = require('axios');
-const cheerio = require('cheerio');
+const axios    = require('axios');
+const cheerio  = require('cheerio');
+const webfetch = require('./webfetch');
+
+const USE_WEBFETCH = String(process.env.USE_WEBFETCH || '').toLowerCase() === 'true';
 
 const NOISE_SELECTORS = [
   'nav', 'header', 'footer', 'aside',
@@ -57,21 +60,31 @@ async function scrapeUrl(url) {
   }
 
   let html;
-  try {
-    const resp = await axios.get(url, {
-      headers: HEADERS,
-      timeout: 8000,
-      maxRedirects: 5,
-      responseType: 'text',
-      maxContentLength: 4 * 1024 * 1024,
-      maxBodyLength: 4 * 1024 * 1024,
-    });
-    html = resp.data;
-  } catch (err) {
-    if (err.response?.status === 403 || err.response?.status === 401) {
-      throw new Error(`Access denied (${err.response.status}). Try pasting the article text directly.`);
+  if (USE_WEBFETCH) {
+    try {
+      const out = await webfetch.fetchHtml(url, { timeout: 25000 });
+      html = out.html;
+      if (!html || html.length < 100) throw new Error('webfetch returned empty html');
+    } catch (err) {
+      throw new Error(`Could not fetch URL via webfetch: ${err.message}`);
     }
-    throw new Error(`Could not fetch URL: ${err.message}`);
+  } else {
+    try {
+      const resp = await axios.get(url, {
+        headers: HEADERS,
+        timeout: 8000,
+        maxRedirects: 5,
+        responseType: 'text',
+        maxContentLength: 4 * 1024 * 1024,
+        maxBodyLength: 4 * 1024 * 1024,
+      });
+      html = resp.data;
+    } catch (err) {
+      if (err.response?.status === 403 || err.response?.status === 401) {
+        throw new Error(`Access denied (${err.response.status}). Try pasting the article text directly.`);
+      }
+      throw new Error(`Could not fetch URL: ${err.message}`);
+    }
   }
 
   if (html.length > 2_000_000) html = html.slice(0, 2_000_000);

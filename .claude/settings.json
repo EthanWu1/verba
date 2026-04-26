@@ -31,10 +31,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "async": true,
+            "command": "git rev-parse --git-dir >/dev/null 2>&1 || exit 0; branch=$(git rev-parse --abbrev-ref HEAD); case \"$branch\" in main|master|develop|HEAD) exit 0 ;; esac; if git diff --quiet && git diff --cached --quiet; then exit 0; fi; git add -u; if git diff --cached --quiet; then exit 0; fi; git commit -m \"auto: claude $(date +%Y-%m-%d_%H:%M:%S)\" >/dev/null 2>&1 || exit 0; (git pull --rebase --autostash && git push) >/dev/null 2>&1 || true; exit 0"
+          }
+        ]
+      }
     ]
-  },
-  "enabledPlugins": {
-    "autoresearch@ai-research-skills": false,
-    "microsoft-docs@claude-plugins-official": true
   }
 }
