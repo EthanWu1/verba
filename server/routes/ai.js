@@ -109,9 +109,18 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       });
     }
 
-    // Overwrite any LLM-altered cite with the server-built one if host does not match
-    if (meta.url && !validateCiteMatchesMeta(card.cite, meta)) {
-      card.cite = cite || card.cite;
+    // Cite policy: server's buildCite output is the source of truth. The LLM
+    // routinely truncates or fabricates cite fields, so we override with the
+    // server-built cite whenever it exists and is longer/more-complete.
+    // Reasoning: buildCite is deterministic and uses real meta (title, author,
+    // date, source, URL) — every available field gets included.
+    if (cite && (cite.length >= (card.cite || '').length || cite.includes('['))) {
+      card.cite = cite;
+    }
+    // Always populate shortCite from the cite (the "Last 'YY" prefix before "[").
+    if (!card.shortCite) {
+      const m = (card.cite || '').match(/^([^\[]+?)\s*\[/);
+      card.shortCite = m ? m[1].trim() : (card.cite || '').slice(0, 40).trim();
     }
 
     const cutCheck = validateCut(card.body_markdown || '', truncated, { density });
@@ -159,8 +168,13 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
             if ((retryFid.matchRate || 0) >= (fidelity.matchRate || 0)) {
               card = retryCard;
               fidelity = retryFid;
-              if (meta.url && !validateCiteMatchesMeta(card.cite, meta)) {
-                card.cite = cite || card.cite;
+              // Same cite override as above — trust server's buildCite output.
+              if (cite && (cite.length >= (card.cite || '').length || cite.includes('['))) {
+                card.cite = cite;
+              }
+              if (!card.shortCite) {
+                const m = (card.cite || '').match(/^([^\[]+?)\s*\[/);
+                card.shortCite = m ? m[1].trim() : (card.cite || '').slice(0, 40).trim();
               }
             }
           }
