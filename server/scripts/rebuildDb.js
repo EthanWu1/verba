@@ -206,10 +206,16 @@ for (const v of virtualTables) {
 }
 
 // ── INDEXES + TRIGGERS + VIEWS ────────────────────────────────────────────
-log('Creating indexes...');
+log(`Creating ${indexes.length} indexes (each scans the cards table — slow ones are normal)...`);
 for (const i of indexes) {
-  try { dst.exec(i.sql); }
-  catch (err) { log(`  WARN: index ${i.name} — ${err.message}`); }
+  const t = Date.now();
+  try {
+    dst.exec(i.sql);
+    const dt = ((Date.now() - t) / 1000).toFixed(1);
+    if (Number(dt) > 1) log(`  ${i.name}: ${dt}s`);
+  } catch (err) {
+    log(`  WARN: index ${i.name} — ${err.message}`);
+  }
 }
 log('Creating triggers...');
 for (const t of triggers) {
