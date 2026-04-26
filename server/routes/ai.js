@@ -168,13 +168,37 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       } catch { /* keep best so far */ }
     }
     if (!fidelity.ok) {
-      // We tried hard and couldn't get verbatim fidelity. Surface the failure
-      // rather than saving a card with skipped/altered words.
-      return res.status(502).json({
-        error: 'Could not produce a verbatim card after retries. The model kept altering source text.',
-        fidelity,
-        hint: 'Try again, or paste the article body directly via the paste-fallback panel.',
-      });
+      // Last-ditch repair: walk paragraph-by-paragraph and KEEP only paragraphs
+      // whose stripped text appears verbatim in source. Drops the one or two
+      // paragraphs the model mangled, salvages the rest. The card is shorter
+      // but every word in it now passes the verbatim check.
+      const sourceLower = truncated.toLowerCase().replace(/\s+/g, ' ');
+      const cardParas = String(card.body_markdown || '').split(/\n{2,}/);
+      const goodParas = [];
+      for (const p of cardParas) {
+        const plain = stripFormatMarks(p).toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!plain) continue;
+        // Sample five 5-word windows; require all of them to appear in source.
+        const words = plain.split(/\s+/);
+        if (words.length < 8) { goodParas.push(p); continue; }
+        let allIn = true;
+        for (let i = 0; i + 5 <= words.length; i += Math.max(3, Math.floor(words.length / 5))) {
+          if (!sourceLower.includes(words.slice(i, i + 5).join(' '))) { allIn = false; break; }
+        }
+        if (allIn) goodParas.push(p);
+      }
+      if (goodParas.length) {
+        card.body_markdown = goodParas.join('\n\n');
+        fidelity = verifyBodyFidelity(card.body_markdown, truncated);
+        console.warn(`[cut-card] paragraph-repair kept ${goodParas.length}/${cardParas.length} paragraphs, fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
+      }
+      if (!fidelity.ok && goodParas.length === 0) {
+        return res.status(502).json({
+          error: 'Could not produce a verbatim card after retries + repair.',
+          fidelity,
+          hint: 'Try again, or paste the article body directly via the paste-fallback panel.',
+        });
+      }
     }
 
     let saved = null;

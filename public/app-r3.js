@@ -1075,16 +1075,16 @@ function shortCiteFor(card){
   return cite.slice(0, 40);
 }
 
-// Render a full cite with the "Last 'YY" prefix bolded inline (Verbatim style).
-// `full` = full cite text, `short` = the precomputed short cite to look for.
+// Render a full cite with the "Last 'YY" prefix in Verbatim's "Cite" style
+// (14pt bold Calibri inline) and the rest at 11pt regular.
+const CITE_PREFIX_STYLE = 'font-family:Calibri,sans-serif;font-size:14pt;font-weight:700';
 function citeWithBoldPrefix(full, short){
   const fullStr  = String(full || '').trim();
   const shortStr = String(short || '').trim();
   if(!fullStr) return '';
   if(!shortStr) return escapeHTML(fullStr);
-  // Find the short cite at the start of the full cite — case-insensitive.
   if(fullStr.toLowerCase().startsWith(shortStr.toLowerCase())){
-    return `<strong>${escapeHTML(fullStr.slice(0, shortStr.length))}</strong>${escapeHTML(fullStr.slice(shortStr.length))}`;
+    return `<span style="${CITE_PREFIX_STYLE}">${escapeHTML(fullStr.slice(0, shortStr.length))}</span>${escapeHTML(fullStr.slice(shortStr.length))}`;
   }
   return escapeHTML(fullStr);
 }
@@ -1181,13 +1181,18 @@ function cardToHtml(card){
   let citeInner = '';
   if (full) {
     if (short && full.toLowerCase().startsWith(short.toLowerCase())) {
-      citeInner = '<strong>' + escapeAttr(full.slice(0, short.length)) + '</strong>' + escapeAttr(full.slice(short.length));
+      // Bold prefix at 14pt (Verbatim's "Cite" character style), rest at 11pt regular.
+      citeInner = '<span style="font-family:Calibri,Arial,sans-serif;font-size:14pt;font-weight:700">' +
+                  escapeAttr(full.slice(0, short.length)) +
+                  '</span>' + escapeAttr(full.slice(short.length));
     } else {
       citeInner = escapeAttr(full);
     }
   }
-  const tagHtml  = tag  ? '<h4 style="font-family:Calibri, Arial, sans-serif; font-size:13pt; font-weight:700; margin:0 0 4pt 0">' + escapeAttr(tag) + '</h4>' : '';
-  const citeHtml = citeInner ? '<p style="font-family:Calibri, Arial, sans-serif; font-size:11pt; margin:0 0 8pt 0">' + citeInner + '</p>' : '';
+  // Tag = Heading 4: Calibri 13pt bold. Cite = paragraph base 11pt regular Calibri,
+  // with the "Last 'YY" prefix at 14pt bold via the inline span above.
+  const tagHtml  = tag  ? '<h4 style="font-family:Calibri,Arial,sans-serif;font-size:13pt;font-weight:700;margin:0 0 2pt 0">' + escapeAttr(tag) + '</h4>' : '';
+  const citeHtml = citeInner ? '<p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;margin:0 0 8pt 0">' + citeInner + '</p>' : '';
   return tagHtml + citeHtml + paragraphs;
 }
 
