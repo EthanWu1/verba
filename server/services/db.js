@@ -943,31 +943,20 @@ function facetCounts(scope = null, limit = 20) {
 }
 
 // ---------------------------------------------------------------------------
-// Analytics
+// Analytics — DISABLED.
+// The `analytics` table was a misnamed redundant copy of every imported docx
+// body (39k rows × ~120 KB ≈ 4.8 GB). It was dropped in production to
+// reclaim disk; the canonical card data already lives in `cards`. Both the
+// upsert and search are now safe no-ops so the importer + chat retrieval
+// don't blow up against a missing table.
 // ---------------------------------------------------------------------------
 
-function upsertAnalytic(analytic) {
-  getDb().prepare(`
-    INSERT OR REPLACE INTO analytics (id, zipPath, sourceEntry, title, content_plain, wordCount, importedAt)
-    VALUES (@id, @zipPath, @sourceEntry, @title, @content_plain, @wordCount, @importedAt)
-  `).run(analytic);
+function upsertAnalytic(/* analytic */) {
+  // intentionally no-op
 }
 
-function searchAnalytics(query, limit = 50) {
-  const db = getDb();
-  if (!query || !query.trim()) {
-    return db.prepare('SELECT id, zipPath, sourceEntry, title, wordCount, importedAt FROM analytics ORDER BY importedAt DESC LIMIT ?').all(limit);
-  }
-  const pattern = `%${query.replace(/[%_]/g, '\\$&')}%`;
-  return db.prepare(`
-    SELECT id, zipPath, sourceEntry, title, wordCount, importedAt,
-           substr(content_plain, 1, 500) AS excerpt
-    FROM analytics
-    WHERE content_plain LIKE ? ESCAPE '\\'
-       OR title LIKE ? ESCAPE '\\'
-    ORDER BY importedAt DESC
-    LIMIT ?
-  `).all(pattern, pattern, limit);
+function searchAnalytics(/* query, limit */) {
+  return [];
 }
 
 // ---------------------------------------------------------------------------
