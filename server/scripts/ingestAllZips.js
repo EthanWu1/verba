@@ -1,8 +1,16 @@
 'use strict';
 
 /**
- * Ingests all ZIPs in the project root into SQLite, then deletes them.
- * Usage: node server/scripts/ingestAllZips.js
+ * Ingests every .zip in <project-root>/backfiles/ into SQLite. Re-running is
+ * safe: the importer upserts on (sourceEntry, contentFingerprint) so existing
+ * rows get their cite/body_markdown updated WITHOUT clobbering enrichment
+ * fields (typeLabel/topicLabel/etc.) — see upsertCards in services/db.js.
+ *
+ * Usage:
+ *   node server/scripts/ingestAllZips.js
+ *
+ * Optional: pass a folder path to override the default:
+ *   node server/scripts/ingestAllZips.js /path/to/zips
  */
 
 const fs = require('fs');
@@ -10,42 +18,45 @@ const path = require('path');
 const { importZipToLibrary } = require('../services/docxImport');
 
 const ROOT = path.resolve(__dirname, '..', '..');
+const FOLDER = process.argv[2] || path.join(ROOT, 'backfiles');
 
-const ZIPS = [
-  'hspf25-weekly-2026-01-20.zip',
-  'hspf25-weekly-2026-03-17.zip',
-  'hspf25-weekly-2026-03-24.zip',
-  'hspf25-weekly-2026-04-07.zip',
-  'hspf25-weekly-2026-04-14.zip',
-  'hspolicy24-all-2025-05-06.zip',
-  'hsld25-all-2026-04-14.zip',
-  'ndtceda25-all-2026-04-14.zip',
-].filter(name => fs.existsSync(path.join(ROOT, name)));
+function collectZips(dir) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...collectZips(full));
+    else if (entry.isFile() && /\.zip$/i.test(entry.name)) out.push(full);
+  }
+  return out;
+}
 
 async function main() {
-  console.log(`[ingest] Found ${ZIPS.length} ZIPs to process`);
+  const zips = collectZips(FOLDER);
+  console.log(`[ingest] Folder: ${FOLDER}`);
+  console.log(`[ingest] Found ${zips.length} .zip file(s)`);
 
-  for (const zipName of ZIPS) {
-    const zipPath = zipName; // importZipToLibrary resolves relative to project root
+  let totalNew = 0;
+  let totalDocs = 0;
+  const t0all = Date.now();
+
+  for (const zipPath of zips) {
+    const zipName = path.basename(zipPath);
     console.log(`\n[ingest] START: ${zipName}`);
     const t0 = Date.now();
     try {
       const result = await importZipToLibrary(zipPath);
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-      console.log(`[ingest] DONE: ${zipName} — ${result.newCards} new cards, ${result.analyticsCount} analytics, ${result.processedDocs} docs (${elapsed}s)`);
-
-      // Don't delete the source zip — keep it on disk so we can re-run the
-      // import (e.g. to rebackfill cite/topic columns after a parser fix).
-      // To save disk space, mark with .imported suffix so it's skipped next time.
-      const importedPath = path.join(ROOT, zipName + '.imported');
-      fs.renameSync(path.join(ROOT, zipName), importedPath);
-      console.log(`[ingest] MARKED: ${zipName} -> ${path.basename(importedPath)}`);
+      totalNew  += result.newCards || 0;
+      totalDocs += result.processedDocs || 0;
+      console.log(`[ingest] DONE: ${zipName} — ${result.newCards} new/updated cards, ${result.processedDocs} docs (${elapsed}s)`);
     } catch (err) {
       console.error(`[ingest] ERROR on ${zipName}: ${err.message}`);
     }
   }
 
-  console.log('\n[ingest] All ZIPs processed.');
+  const totalSec = ((Date.now() - t0all) / 1000).toFixed(1);
+  console.log(`\n[ingest] All ZIPs processed. ${totalNew} cards across ${totalDocs} docs in ${totalSec}s.`);
 }
 
 main();

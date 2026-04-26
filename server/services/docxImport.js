@@ -534,25 +534,85 @@ async function extractDocxXmlFromZip(zipPath, entryPath) {
   return documentEntry.async('string');
 }
 
+// ── Card classification helpers ─────────────────────────────────────────────
+//
+// Multi-signal segmentation. The parser cannot rely on Heading 4 alone — many
+// docs have malformed tag styles, missing section dividers, or analytical
+// commentary blocks (AT/OV/Solves/2NC) wedged between cards. This classifier
+// runs per-paragraph and feeds a state machine.
+
+const _ANALYTIC_RE = [
+  /^(AT|RE|2AC|2NC|1NC|1AR|1AC|2AR|3NR|2NR|FW|UV|UQ|UNQ|IL|MPX|IMP|SQ)\s*[:—–\-]/i,
+  /^OV\s*[—–\-:]/i,
+  /^Solves\s+[A-Z]/,
+  /^Turns\s+[A-Z]/,
+  /^\d+[\)\.\]]\s+[A-Z][^.]*[—–\-:]/, // "1] NL — Material can…"
+];
+function isAnalyticHeader(text) {
+  const t = String(text || '').trim();
+  if (!t) return false;
+  return _ANALYTIC_RE.some(rx => rx.test(t));
+}
+
+function isHeading(paragraph) {
+  const style = String(paragraph?.style || '').toLowerCase();
+  if (/^heading[1-3]$/i.test(paragraph?.style || '')) return true;
+  if (['hat', 'block', 'pocket'].includes(style)) return true;
+  return false;
+}
+
+function looksLikeCite(paragraph) {
+  if (!paragraph) return false;
+  const style = String(paragraph.style || '').toLowerCase();
+  // Primary: explicit Verbatim Cite paragraph style
+  if (style === 'cite' || style.endsWith('cite') || style === 'citestyle') return true;
+  const text = String(paragraph.text || '');
+  if (!text.trim()) return false;
+  // Cite paragraphs almost always carry a year token AND (URL OR quoted
+  // title OR substantial bibliographic length).
+  const hasUrl     = /https?:\/\/\S+/.test(text);
+  const hasQuoted  = /["“”'‘’][^"“”'‘’]{6,}["“”'‘’]/.test(text);
+  const hasYear4   = /\b(19|20)\d{2}\b/.test(text);
+  const hasYear2   = /['‘’]\d{2}\b/.test(text);
+  const authorYear = /^[A-Z][\w\-’']+(?:[\s,]+(?:and|&|et\s+al\.?|[A-Z][\w\-’']+))?\s+(?:['‘’]?\d{2,4}\b)/.test(text.trim());
+  if (authorYear && (hasUrl || hasQuoted || text.length > 80)) return true;
+  if (hasUrl && (hasYear2 || hasYear4) && text.length > 60) return true;
+  return false;
+}
+
+function looksLikeTag(paragraph, nextParagraph) {
+  if (!paragraph) return false;
+  const style = String(paragraph.style || '');
+  if (style === 'Heading4' || style.toLowerCase() === 'tag') return true;
+  // Fallback: a non-analytic, non-cite, non-heading line that's followed by
+  // a cite. The user's hint: "if a single line right above a cite, it's a tag"
+  const text = String(paragraph.text || '').trim();
+  if (!text || text.length > 400) return false;
+  if (isAnalyticHeader(text)) return false;
+  if (looksLikeCite(paragraph)) return false;
+  if (isHeading(paragraph)) return false;
+  if (/^https?:\/\//.test(text)) return false; // URL alone isn't a tag
+  if (nextParagraph && looksLikeCite(nextParagraph)) return true;
+  return false;
+}
+
 function parseCardsFromParagraphs(paragraphs, entryPath, zipPath) {
   const cards = [];
-  let current = null;
+  let current = null;          // { tag, cite, body[], bodyText[] }
+  let state = 'SEARCHING';     // SEARCHING | EXPECT_CITE | IN_BODY
 
-  const flush = () => {
-    if (!current || !current.cite || !current.body.length) {
-      current = null;
-      return;
-    }
-
-    const bodyMarkdown = current.body.join('\n\n').trim();
-    const bodyPlain = normalizeWhitespace(current.bodyText.join(' '));
-    const shortCite = normalizeShortCite(current.cite);
+  const buildCard = () => {
+    const bodyMarkdown   = current.body.join('\n\n').trim();
+    const bodyPlain      = normalizeWhitespace(current.bodyText.join(' '));
+    const shortCite      = normalizeShortCite(current.cite);
     const bodyFingerprint = fingerprintBody(bodyPlain);
-    const cleanTag = normalizeTag(current.tag);
-    const classifyText = `${cleanTag} ${bodyPlain}`;
-
-    cards.push({
-      id: crypto.createHash('sha1').update(`${entryPath}|${current.tag}|${current.cite}|${bodyFingerprint}`).digest('hex'),
+    const cleanTag       = normalizeTag(current.tag);
+    const classifyText   = `${cleanTag} ${bodyPlain}`;
+    return {
+      // ID is stable across re-imports: depends on (entryPath, body content
+      // fingerprint) only — NOT tag or cite — so a parser fix that improves
+      // tag/cite extraction updates the existing row instead of creating a dup.
+      id: crypto.createHash('sha1').update(`${entryPath}|${bodyFingerprint}`).digest('hex'),
       zipPath,
       sourceEntry: entryPath,
       sourceFileName: entryPath.split('/').pop() || entryPath,
@@ -574,42 +634,79 @@ function parseCardsFromParagraphs(paragraphs, entryPath, zipPath) {
       sourceKind: 'wiki',
       isCanonical: false,
       canonicalGroupKey: shortCite && bodyFingerprint ? `${shortCite}::${bodyFingerprint}` : '',
-    });
-
-    current = null;
+    };
   };
 
-  paragraphs.forEach(paragraph => {
-    if (paragraph.style === 'Heading4') {
+  const flush = () => {
+    if (current && current.cite && current.body.length) cards.push(buildCard());
+    current = null;
+    state = 'SEARCHING';
+  };
+
+  for (let i = 0; i < paragraphs.length; i++) {
+    const p = paragraphs[i];
+    const next = paragraphs[i + 1];
+    const text = String(p.text || '');
+
+    // 1. Analytic chunks → drop entirely. Close any in-progress card so the
+    //    next card starts cleanly.
+    if (isAnalyticHeader(text)) {
+      if (state === 'IN_BODY') flush();
+      continue;
+    }
+
+    // 2. Section heading → close any open card, reset
+    if (isHeading(p)) { flush(); continue; }
+
+    // 3. Cite paragraph
+    if (looksLikeCite(p)) {
+      if (state === 'EXPECT_CITE' && current) {
+        current.cite = normalizeWhitespace(text);
+        state = 'IN_BODY';
+        continue;
+      }
+      if (state === 'IN_BODY' && current) {
+        // Mid-body cite → likely a new card with a malformed (un-styled) tag.
+        // The user's rule: "if there's a single line right on top of the cite
+        // it's probably a new card". Pop the last short body line and treat
+        // it as the new card's tag.
+        const lastIdx = current.bodyText.length - 1;
+        const lastLine = lastIdx >= 0 ? current.bodyText[lastIdx] : '';
+        const isShortClaim = lastLine && lastLine.length < 250 &&
+                             !/https?:\/\//.test(lastLine) &&
+                             !isAnalyticHeader(lastLine);
+        if (isShortClaim) {
+          current.body.pop();
+          current.bodyText.pop();
+          const newTag = lastLine;
+          flush();
+          current = { tag: newTag, cite: normalizeWhitespace(text), body: [], bodyText: [] };
+          state = 'IN_BODY';
+        } else {
+          flush();
+        }
+        continue;
+      }
+      // Cite without a preceding tag — skip
+      continue;
+    }
+
+    // 4. Tag paragraph (Heading 4, "Tag" style, or single line preceding a cite)
+    if (looksLikeTag(p, next)) {
       flush();
-      current = {
-        tag: paragraph.text,
-        cite: '',
-        body: [],
-        bodyText: [],
-      };
-      return;
+      current = { tag: text, cite: '', body: [], bodyText: [] };
+      state = 'EXPECT_CITE';
+      continue;
     }
 
-    if (!current) return;
-
-    // The first paragraph after the tag that looks like a cite line (its first
-    // tokens parse as "Last 'YY") IS the cite. Keep the FULL paragraph text —
-    // bibliographic data after the short prefix (e.g. "[Sheikh Saaliq; AP News;
-    // 4-25-2025; URL]") was previously discarded. We only normalize-detect to
-    // confirm this paragraph is the cite line; the actual stored value is the
-    // full text, and `shortCite` is derived separately by the saver.
-    if (!current.cite && normalizeShortCite(paragraph.text)) {
-      current.cite = normalizeWhitespace(paragraph.text);
-      return;
+    // 5. Body paragraph — append while IN_BODY
+    if (state === 'IN_BODY' && current) {
+      current.body.push(p.markdown || text);
+      current.bodyText.push(text);
+      continue;
     }
-
-    if (current.cite) {
-      current.body.push(paragraph.markdown || paragraph.text);
-      current.bodyText.push(paragraph.text);
-    }
-  });
-
+    // 6. Anything else (orphan paragraph in SEARCHING/EXPECT_CITE) → ignore
+  }
   flush();
   return cards;
 }

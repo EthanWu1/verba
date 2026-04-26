@@ -642,11 +642,69 @@ const INSERT_CARD = `
 function upsertCards(cards) {
   const db = getDb();
   const stmt = db.prepare(INSERT_CARD);
+  // Look up an existing row for the same source content. If found, we
+  // preserve its enrichment fields (typeLabel, topicLabel, argumentTypes,
+  // argumentTags) instead of overwriting with newly-derived values — per
+  // user requirement: "don't retag existing cards, only enrich new ones".
+  const findExisting = db.prepare(`
+    SELECT id, typeLabel, topicLabel, sourceLabel, scope, resolutionLabel,
+           argumentTypes, argumentTags, isCanonical, variantCount
+    FROM cards
+    WHERE id = ? OR (sourceEntry = ? AND contentFingerprint = ? AND contentFingerprint <> '')
+    LIMIT 1
+  `);
+
   const insertMany = db.transaction(rows => {
     for (const card of rows) {
-      const labels = deriveAllLabels(card);
+      const existing = findExisting.get(
+        card.id || '',
+        card.sourceEntry || '',
+        card.contentFingerprint || ''
+      );
+
+      const hasHl = /(==|<u>|\*\*)/.test(card.body_markdown || '') ? 1 : 0;
+
+      let labels;
+      let argumentTypes;
+      let argumentTags;
+      let cardId = card.id;
+      let isCanon = card.isCanonical ? 1 : 0;
+      let variantCount = card.variantCount || 1;
+
+      if (existing) {
+        // Preserve all existing enrichment so we don't retag cards.
+        cardId       = existing.id;
+        labels = {
+          typeLabel:       existing.typeLabel       ?? null,
+          topicLabel:      existing.topicLabel      ?? null,
+          sourceLabel:     existing.sourceLabel     ?? null,
+          scope:           existing.scope           ?? null,
+          resolutionLabel: existing.resolutionLabel ?? null,
+        };
+        argumentTypes = existing.argumentTypes || '["none"]';
+        argumentTags  = existing.argumentTags  || '[]';
+        isCanon       = existing.isCanonical;
+        variantCount  = existing.variantCount || 1;
+      } else if (hasHl) {
+        // New card AND has highlights → enrich with derived labels + tags.
+        labels = deriveAllLabels(card);
+        argumentTypes = Array.isArray(card.argumentTypes)
+          ? JSON.stringify(card.argumentTypes)
+          : (card.argumentTypes || '["none"]');
+        argumentTags = Array.isArray(card.argumentTags)
+          ? JSON.stringify(card.argumentTags)
+          : (card.argumentTags || '[]');
+      } else {
+        // New card without highlights → store with NULL enrichment so it
+        // doesn't pollute filters; it'll be enriched if/when canonicalized
+        // and re-imported with markup.
+        labels = { typeLabel: null, topicLabel: null, sourceLabel: null, scope: null, resolutionLabel: null };
+        argumentTypes = '["none"]';
+        argumentTags  = '[]';
+      }
+
       stmt.run({
-        id: card.id || '',
+        id: cardId || '',
         zipPath: card.zipPath || '',
         sourceEntry: card.sourceEntry || '',
         sourceFileName: card.sourceFileName || '',
@@ -663,22 +721,18 @@ function upsertCards(cards) {
         foundAt: card.foundAt || null,
         importedAt: card.importedAt || null,
         topicBucket: card.topicBucket || null,
-        argumentTypes: Array.isArray(card.argumentTypes)
-          ? JSON.stringify(card.argumentTypes)
-          : (card.argumentTypes || '["none"]'),
-        argumentTags: Array.isArray(card.argumentTags)
-          ? JSON.stringify(card.argumentTags)
-          : (card.argumentTags || '[]'),
+        argumentTypes,
+        argumentTags,
         sourceKind: card.sourceKind || null,
-        isCanonical: card.isCanonical ? 1 : 0,
+        isCanonical: isCanon,
         canonicalGroupKey: card.canonicalGroupKey || null,
-        variantCount: card.variantCount || 1,
+        variantCount,
         typeLabel: labels.typeLabel,
         topicLabel: labels.topicLabel,
         sourceLabel: labels.sourceLabel,
         scope: labels.scope,
         resolutionLabel: labels.resolutionLabel,
-        hasHighlight: /(==|<u>|\*\*)/.test(card.body_markdown || '') ? 1 : 0,
+        hasHighlight: hasHl,
         highlightWordCount: _countHighlightWords(card.body_markdown || ''),
       });
     }
