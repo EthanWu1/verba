@@ -70,25 +70,40 @@ router.post('/tabroom-link', (req, res) => {
     `).all(sl, sl);
   }
 
-  // ── Cleanup: drop garbage, normalize school names, convert "First Last"
-  //    teamCodes to "School FL" initials form. ────────────────────────────
+  // ── Cleanup: drop garbage, normalize displayed code as "<SchoolBase> <CODE>",
+  //    converting person-name codes into initials and replacing truncated school
+  //    prefixes with the canonical schoolName base.
   const isPersonName = (s) => /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3}$/.test(String(s||'').trim());
-  const isJunkCode   = (s) => !s || /^[\d\s\-_]+$/.test(s) || s.length > 60;
+  const isJunkCode   = (s) => !s || /^[\d\s\-_]+$/.test(s) || s.length > 80;
   const stripSchoolSuffix = (sn) => String(sn||'')
     .replace(/\s*\((?:Public|Charter|Magnet)\)\s*$/i,'')
     .replace(/\s+(?:High\s+School|HS|Senior\s+High|Junior\s+High|Middle\s+School|School|Academy|Prep|Preparatory|Magnet|Charter)\s*$/i,'')
     .trim();
-  const initialsOf = (s) => String(s||'').split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0,3);
+  const initialsOf = (s) => String(s||'').split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0,4);
+  // Extract the trailing 1–4 uppercase-letter code, e.g. "Memori EW" → "EW".
+  const extractCode = (tc) => {
+    const m = String(tc||'').trim().match(/(?:^|\s)([A-Z]{1,4})\s*$/);
+    return m ? m[1] : null;
+  };
 
   const cleaned = [];
+  const seen = new Set();
   for (const r of rows) {
     if (isJunkCode(r.teamCode)) continue;
-    let teamCode = String(r.teamCode || '').trim();
+    const original = String(r.teamCode || '').trim();
     const schoolName = String(r.schoolName || '').trim();
-    if (isPersonName(teamCode) && schoolName) {
+    let teamCode = original;
+    if (isPersonName(original) && schoolName) {
       const base = stripSchoolSuffix(schoolName);
-      teamCode = `${base} ${initialsOf(teamCode)}`;
+      teamCode = `${base} ${initialsOf(original)}`;
+    } else if (schoolName) {
+      // Replace truncated school prefix with canonical base (so "Memori EW" → "Memorial EW").
+      const code = extractCode(original);
+      if (code) teamCode = `${stripSchoolSuffix(schoolName)} ${code}`;
     }
+    const key = `${teamCode}||${schoolName}||${r.eventAbbr}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     cleaned.push({ ...r, teamCode, schoolName });
   }
   // Group by (teamCode, schoolName)
@@ -268,7 +283,52 @@ router.get('/tabroom/results', (req, res) => {
     tourn.rounds = rounds;
   }
 
-  res.json({ tournaments: Object.values(byTourn) });
+  // Also augment with TOC data: any linked teamCode (e.g. "Memorial EW") that
+  // exists in toc_entries but not in tabroom_entry_index will have no record
+  // here. Fill from toc_ballots so rankings-linked teams still show their past
+  // tournaments.
+  const lcCodes = codes.map(c => c.toLowerCase());
+  const tocEntries = db.prepare(`
+    SELECT e.entryId, e.tournId, e.eventAbbr, e.displayName, e.schoolName,
+           t.name AS tournName, t.startDate, t.endDate
+    FROM toc_entries e
+    JOIN toc_tournaments t ON t.tourn_id = e.tournId
+    WHERE LOWER(e.displayName) IN (${lcCodes.map(()=>'?').join(',')})
+      AND e.eventAbbr IN ('LD','PF','CX')
+  `).all(...lcCodes);
+  for (const entry of tocEntries) {
+    if (byTourn[entry.tournId]) continue; // tabroom data wins when both exist
+    const ballots = db.prepare(`
+      SELECT roundType, roundName, side, opponentName, judgeName,
+             ballotResults, result, speakerPoints
+      FROM toc_ballots
+      WHERE entryId = ?
+      ORDER BY id
+    `).all(entry.entryId);
+    byTourn[entry.tournId] = {
+      tournId:   entry.tournId,
+      name:      entry.tournName,
+      startDate: entry.startDate,
+      endDate:   entry.endDate,
+      entries:   [{
+        teamCode:   entry.displayName,
+        schoolName: entry.schoolName,
+        eventAbbr:  entry.eventAbbr,
+        entryId:    entry.entryId,
+      }],
+      rounds: ballots.map(b => ({
+        event:  entry.eventAbbr,
+        round:  b.roundName,
+        side:   b.side,
+        judge:  b.judgeName,
+        scores: [{ win: b.result === 'W', points: b.speakerPoints }],
+      })),
+    };
+  }
+
+  // Sort by start date desc.
+  const out = Object.values(byTourn).sort((a, b) => String(b.startDate||'').localeCompare(String(a.startDate||'')));
+  res.json({ tournaments: out });
 });
 
 module.exports = router;
