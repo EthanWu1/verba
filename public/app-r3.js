@@ -1325,6 +1325,41 @@ function bindCutterControls(){
     const file = e.target.files && e.target.files[0];
     if(file) runCutterFile(file);
   });
+  $('cut-paste-go').addEventListener('click', runCutterPaste);
+  $('cut-paste-cancel').addEventListener('click', ()=>{
+    $('cut-paste').classList.remove('on');
+    $('cut-paste-text').value = '';
+    $('cut-paste-cite').value = '';
+  });
+}
+
+function showPasteFallback(url){
+  const msg = url
+    ? `${new URL(url).host.replace(/^www\./,'')} blocked the scraper. Paste the article text below and Verba will run the LLM cut on it.`
+    : 'Paste the article text below and Verba will run the LLM cut on it.';
+  $('cut-paste-msg').textContent = msg;
+  $('cut-paste-cite').value = '';
+  $('cut-paste-text').value = '';
+  $('cut-paste').classList.add('on');
+  $('cut-paste-text').focus();
+  // Stash the URL so we can attach it to the card meta after the manual cut.
+  state.pasteUrl = url || '';
+}
+
+async function runCutterPaste(){
+  const bodyText = $('cut-paste-text').value.trim();
+  if(bodyText.length < 50){ showToast('Paste at least 50 characters'); return; }
+  const cite = $('cut-paste-cite').value.trim();
+  const url = state.pasteUrl || '';
+
+  termOpen('verba cut · pasted text');
+  termLine('$', 'verba cut · ' + bodyText.length.toLocaleString() + ' chars');
+  termLine('→', 'cut-card · LLM passage selection + highlight');
+  const cut = await runCutLLM({ bodyText, cite, meta: { url, source: url ? new URL(url).host : 'pasted' } });
+  if(!cut) return;
+  termClose();
+  $('cut-paste').classList.remove('on');
+  showCutResult({ url, cite, bodyText, ...cut });
 }
 
 function loadCutter(){
@@ -1389,18 +1424,32 @@ async function runCutterScrape(){
 
   let scraped;
   try {
-    scraped = await fetch('/api/scrape', {
+    const r = await fetch('/api/scrape', {
       method:'POST',
       credentials:'same-origin',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ url }),
-    }).then(async r => {
-      if(!r.ok){ const t = await r.text().catch(()=>''); throw new Error(`${r.status} ${t.slice(0,160)}`); }
-      return r.json();
     });
+    if(!r.ok){
+      const t = await r.text().catch(()=> '');
+      let parsed = {}; try { parsed = JSON.parse(t); } catch {}
+      const errMsg = parsed.error || t.slice(0,200) || `HTTP ${r.status}`;
+      termLine('!', errMsg, 'err');
+      // Sites that block scraping → offer manual paste fallback
+      if (/access denied|403|forbidden|blocked|cloudflare|paywall/i.test(errMsg) || r.status === 422 || r.status === 403) {
+        termLine('→', 'falling back to manual paste');
+        termClose();
+        showPasteFallback(url);
+        return;
+      }
+      showToast('Scrape failed');
+      return;
+    }
+    scraped = await r.json();
   } catch (err) {
     termLine('!', err.message || 'scrape failed', 'err');
-    showToast('Scrape failed');
+    termClose();
+    showPasteFallback(url);
     return;
   }
   termLine('✓', 'fetched ' + (scraped.title || 'article'));

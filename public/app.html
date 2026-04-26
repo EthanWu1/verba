@@ -237,6 +237,15 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .cut-body .cite-block .meta b{color:var(--ink-2);font-weight:600}
 .cut-body p{margin:0 0 14px}
 
+.cut-paste{margin-top:18px;background:#fff;border:1px dashed var(--line-2);border-radius:10px;padding:18px;display:none}
+.cut-paste.on{display:block}
+.cut-paste h3{margin:0 0 6px;font:600 14px/1.3 var(--font-display);color:var(--ink)}
+.cut-paste p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.5}
+.cut-paste textarea{width:100%;min-height:180px;padding:12px;border:1px solid var(--line);border-radius:8px;font:14px/1.6 var(--font-ui);color:var(--ink);background:#fff;resize:vertical;outline:0}
+.cut-paste textarea:focus{border-color:var(--lilac-ink);box-shadow:0 0 0 3px rgba(15,23,42,0.06)}
+.cut-paste-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.cut-paste-row .cite-input{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;color:var(--ink);background:#fff}
+
 .recent-section{margin-top:36px}
 .recent-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .recent-card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px;cursor:pointer;transition:all .18s ease;display:flex;flex-direction:column;gap:8px}
@@ -711,6 +720,17 @@ body.density-dense .shellpad{padding-top:18px}
               <span class="label" id="cut-term-label">verba scrape</span>
             </div>
             <div class="term-body" id="cut-term-body"></div>
+          </div>
+
+          <div class="cut-paste" id="cut-paste">
+            <h3>Site blocked the scraper</h3>
+            <p id="cut-paste-msg">Paste the article text below and Verba will run the LLM cut on it directly.</p>
+            <textarea id="cut-paste-text" placeholder="Paste article body here…"></textarea>
+            <div class="cut-paste-row">
+              <input class="cite-input" id="cut-paste-cite" placeholder="Cite (e.g. Smith '24, NYT, 3/12/24)">
+              <button class="btn btn-primary" id="cut-paste-go">Cut card</button>
+              <button class="btn btn-sm" id="cut-paste-cancel">Cancel</button>
+            </div>
           </div>
 
           <div class="cut-card" id="cut-card">

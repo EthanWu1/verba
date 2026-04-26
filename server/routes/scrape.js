@@ -11,9 +11,10 @@ const path    = require('path');
 const pdfParse = require('pdf-parse');
 const router  = express.Router();
 
-const { scrapeUrl } = require('../services/scraper');
-const { buildCite } = require('../services/autocite');
-const fileCache    = require('../services/fileCache');
+const { scrapeUrl }    = require('../services/scraper');
+const { buildCite }    = require('../services/autocite');
+const fileCache        = require('../services/fileCache');
+const { fetchViaJina } = require('../services/sources/jina');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -33,11 +34,40 @@ router.post('/', async (req, res) => {
   }
 
   let scraped;
+  let viaJina = false;
   try {
     scraped = await scrapeUrl(url);
   } catch (err) {
-    console.error('[scrape] Error:', err.message);
-    return res.status(422).json({ error: err.message });
+    console.warn('[scrape] direct fetch failed:', err.message);
+    // Cloudflare / 403 / paywall? Retry via Jina Reader, which proxies through
+    // their headless infra and bypasses bot challenges.
+    const jina = await fetchViaJina(url);
+    if (!jina || !jina.bodyText || jina.bodyText.length < 80) {
+      return res.status(422).json({ error: err.message });
+    }
+    // Jina returns text with a metadata header followed by "Markdown Content:".
+    // Pull the title/source/published-time out and use the remainder as bodyText.
+    const full = jina.bodyText;
+    const headerEnd = full.indexOf('Markdown Content:');
+    const header    = headerEnd >= 0 ? full.slice(0, headerEnd) : '';
+    const body      = headerEnd >= 0 ? full.slice(headerEnd + 'Markdown Content:'.length) : full;
+    const grab = (re) => { const m = header.match(re); return m ? m[1].trim() : ''; };
+    const title  = jina.title || grab(/Title:\s*(.+)/i);
+    const date   = grab(/Published Time:\s*(.+)/i);
+    const author = grab(/(?:Author|Byline):\s*(.+)/i);
+    let source;
+    try { source = new URL(url).host.replace(/^www\./, ''); } catch { source = ''; }
+    scraped = {
+      title:    title || '',
+      author:   author || '',
+      date:     date || '',
+      source,
+      url,
+      isPdf:    false,
+      bodyText: body.trim(),
+    };
+    viaJina = true;
+    console.log(`[scrape] recovered via Jina (${scraped.bodyText.length} chars)`);
   }
 
   // Build auto-cite string
