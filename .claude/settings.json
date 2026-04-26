@@ -31,10 +31,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "async": true,
+            "command": "bash ~/.tools/verba-autodeploy.sh 2>/dev/null || true"
+          }
+        ]
+      }
     ]
-  },
-  "enabledPlugins": {
-    "autoresearch@ai-research-skills": false,
-    "microsoft-docs@claude-plugins-official": true
   }
 }

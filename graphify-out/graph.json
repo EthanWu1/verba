@@ -26,7 +26,7 @@
       "source_file": "public\\api.js",
       "source_location": "L1",
       "id": "public_api_js",
-      "community": 28,
+      "community": 30,
       "norm_label": "api.js"
     },
     {
@@ -35,7 +35,7 @@
       "source_file": "public\\api.js",
       "source_location": "L5",
       "id": "api_jsonfetch",
-      "community": 28,
+      "community": 30,
       "norm_label": "jsonfetch()"
     },
     {
@@ -44,7 +44,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1",
       "id": "public_app_main_js",
-      "community": 0,
+      "community": 1,
       "norm_label": "app-main.js"
     },
     {
@@ -53,7 +53,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L10",
       "id": "app_main_currenthlcolor",
-      "community": 0,
+      "community": 1,
       "norm_label": "currenthlcolor()"
     },
     {
@@ -62,7 +62,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L15",
       "id": "app_main_computeinitials",
-      "community": 0,
+      "community": 1,
       "norm_label": "computeinitials()"
     },
     {
@@ -71,7 +71,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L30",
       "id": "app_main_paintaccount",
-      "community": 0,
+      "community": 1,
       "norm_label": "paintaccount()"
     },
     {
@@ -80,7 +80,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L56",
       "id": "app_main",
-      "community": 0,
+      "community": 1,
       "norm_label": "$()"
     },
     {
@@ -89,7 +89,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L58",
       "id": "app_main_esc",
-      "community": 0,
+      "community": 1,
       "norm_label": "esc()"
     },
     {
@@ -98,7 +98,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L59",
       "id": "app_main_toast",
-      "community": 0,
+      "community": 1,
       "norm_label": "toast()"
     },
     {
@@ -107,7 +107,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L70",
       "id": "app_main_handlelimiterror",
-      "community": 0,
+      "community": 1,
       "norm_label": "handlelimiterror()"
     },
     {
@@ -116,7 +116,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L92",
       "id": "app_main_applyroute",
-      "community": 0,
+      "community": 1,
       "norm_label": "applyroute()"
     },
     {
@@ -125,7 +125,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L119",
       "id": "app_main_go",
-      "community": 0,
+      "community": 1,
       "norm_label": "go()"
     },
     {
@@ -134,7 +134,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L154",
       "id": "app_main_positionmenu",
-      "community": 0,
+      "community": 1,
       "norm_label": "positionmenu()"
     },
     {
@@ -143,7 +143,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L162",
       "id": "app_main_openmenu",
-      "community": 0,
+      "community": 1,
       "norm_label": "openmenu()"
     },
     {
@@ -152,7 +152,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L171",
       "id": "app_main_closemenu",
-      "community": 0,
+      "community": 1,
       "norm_label": "closemenu()"
     },
     {
@@ -161,7 +161,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L244",
       "id": "app_main_refreshnavcounts",
-      "community": 0,
+      "community": 1,
       "norm_label": "refreshnavcounts()"
     },
     {
@@ -170,7 +170,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L264",
       "id": "app_main_schedulesave",
-      "community": 0,
+      "community": 1,
       "norm_label": "schedulesave()"
     },
     {
@@ -179,7 +179,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L270",
       "id": "app_main_applystate",
-      "community": 0,
+      "community": 1,
       "norm_label": "applystate()"
     },
     {
@@ -188,7 +188,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L275",
       "id": "app_main_activeitem",
-      "community": 0,
+      "community": 1,
       "norm_label": "activeitem()"
     },
     {
@@ -197,7 +197,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L280",
       "id": "app_main_get",
-      "community": 0,
+      "community": 1,
       "norm_label": "get()"
     },
     {
@@ -206,7 +206,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L281",
       "id": "app_main_set",
-      "community": 1,
+      "community": 0,
       "norm_label": "set()"
     },
     {
@@ -215,7 +215,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L285",
       "id": "app_main_rendercarousel",
-      "community": 0,
+      "community": 1,
       "norm_label": "rendercarousel()"
     },
     {
@@ -224,7 +224,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L339",
       "id": "app_main_rendercuttingbody",
-      "community": 0,
+      "community": 1,
       "norm_label": "rendercuttingbody()"
     },
     {
@@ -233,7 +233,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L352",
       "id": "app_main_rendererrorbody",
-      "community": 0,
+      "community": 1,
       "norm_label": "rendererrorbody()"
     },
     {
@@ -242,7 +242,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L356",
       "id": "app_main_rendereditorbody",
-      "community": 0,
+      "community": 1,
       "norm_label": "rendereditorbody()"
     },
     {
@@ -251,7 +251,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L366",
       "id": "app_main_escapehtml",
-      "community": 0,
+      "community": 1,
       "norm_label": "escapehtml()"
     },
     {
@@ -260,7 +260,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L371",
       "id": "app_main_handletrash",
-      "community": 0,
+      "community": 1,
       "norm_label": "handletrash()"
     },
     {
@@ -269,7 +269,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L382",
       "id": "app_main_showundotoast",
-      "community": 0,
+      "community": 1,
       "norm_label": "showundotoast()"
     },
     {
@@ -278,7 +278,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L399",
       "id": "app_main_filterevidenceclient",
-      "community": 0,
+      "community": 1,
       "norm_label": "filterevidenceclient()"
     },
     {
@@ -287,7 +287,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L415",
       "id": "app_main_markdowncardtohtml",
-      "community": 0,
+      "community": 1,
       "norm_label": "markdowncardtohtml()"
     },
     {
@@ -296,7 +296,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L442",
       "id": "app_main_cardbodyhtml",
-      "community": 0,
+      "community": 1,
       "norm_label": "cardbodyhtml()"
     },
     {
@@ -305,7 +305,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L448",
       "id": "app_main_splitciteforcopy",
-      "community": 0,
+      "community": 1,
       "norm_label": "splitciteforcopy()"
     },
     {
@@ -314,7 +314,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L461",
       "id": "app_main_extractpartialcard",
-      "community": 0,
+      "community": 1,
       "norm_label": "extractpartialcard()"
     },
     {
@@ -323,7 +323,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L484",
       "id": "app_main_rendercardghost",
-      "community": 0,
+      "community": 1,
       "norm_label": "rendercardghost()"
     },
     {
@@ -332,7 +332,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L486",
       "id": "app_main_rendercardinpane",
-      "community": 0,
+      "community": 5,
       "norm_label": "rendercardinpane()"
     },
     {
@@ -341,7 +341,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L509",
       "id": "app_main_startcut",
-      "community": 0,
+      "community": 1,
       "norm_label": "startcut()"
     },
     {
@@ -350,7 +350,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L518",
       "id": "app_main_currentlength",
-      "community": 0,
+      "community": 1,
       "norm_label": "currentlength()"
     },
     {
@@ -359,7 +359,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L522",
       "id": "app_main_opencutstream",
-      "community": 0,
+      "community": 1,
       "norm_label": "opencutstream()"
     },
     {
@@ -368,7 +368,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L625",
       "id": "app_main_describephase",
-      "community": 0,
+      "community": 1,
       "norm_label": "describephase()"
     },
     {
@@ -377,7 +377,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L646",
       "id": "app_main_updatechiplabel",
-      "community": 0,
+      "community": 1,
       "norm_label": "updatechiplabel()"
     },
     {
@@ -386,7 +386,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L661",
       "id": "app_main_typewritechip",
-      "community": 0,
+      "community": 1,
       "norm_label": "typewritechip()"
     },
     {
@@ -395,7 +395,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L676",
       "id": "app_main_pushphase",
-      "community": 0,
+      "community": 1,
       "norm_label": "pushphase()"
     },
     {
@@ -404,7 +404,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L703",
       "id": "app_main_setprogress",
-      "community": 0,
+      "community": 1,
       "norm_label": "setprogress()"
     },
     {
@@ -413,7 +413,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L716",
       "id": "app_main_finishprogress",
-      "community": 0,
+      "community": 1,
       "norm_label": "finishprogress()"
     },
     {
@@ -422,7 +422,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L728",
       "id": "app_main_askargument",
-      "community": 0,
+      "community": 1,
       "norm_label": "askargument()"
     },
     {
@@ -431,7 +431,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L758",
       "id": "app_main_runcutterfrominput",
-      "community": 0,
+      "community": 1,
       "norm_label": "runcutterfrominput()"
     },
     {
@@ -440,7 +440,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L795",
       "id": "app_main_syncactivefromdom",
-      "community": 0,
+      "community": 1,
       "norm_label": "syncactivefromdom()"
     },
     {
@@ -449,7 +449,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L812",
       "id": "app_main_synccardfromdom",
-      "community": 0,
+      "community": 1,
       "norm_label": "synccardfromdom()"
     },
     {
@@ -458,7 +458,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L814",
       "id": "app_main_normalizeunderlinetags",
-      "community": 0,
+      "community": 1,
       "norm_label": "normalizeunderlinetags()"
     },
     {
@@ -467,7 +467,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L826",
       "id": "app_main_selectioninside",
-      "community": 0,
+      "community": 1,
       "norm_label": "selectioninside()"
     },
     {
@@ -476,7 +476,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L831",
       "id": "app_main_isyellow",
-      "community": 0,
+      "community": 1,
       "norm_label": "isyellow()"
     },
     {
@@ -485,7 +485,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L837",
       "id": "app_main_selectionoverlapshighlight",
-      "community": 0,
+      "community": 1,
       "norm_label": "selectionoverlapshighlight()"
     },
     {
@@ -494,7 +494,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L862",
       "id": "app_main_unwrapelement",
-      "community": 0,
+      "community": 1,
       "norm_label": "unwrapelement()"
     },
     {
@@ -503,7 +503,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L868",
       "id": "app_main_snapselectiontowords",
-      "community": 0,
+      "community": 1,
       "norm_label": "snapselectiontowords()"
     },
     {
@@ -512,7 +512,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L893",
       "id": "app_main_togglehighlight",
-      "community": 0,
+      "community": 1,
       "norm_label": "togglehighlight()"
     },
     {
@@ -521,7 +521,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L911",
       "id": "app_main_renderattachtray",
-      "community": 0,
+      "community": 1,
       "norm_label": "renderattachtray()"
     },
     {
@@ -530,7 +530,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L923",
       "id": "app_main_eschtml",
-      "community": 0,
+      "community": 1,
       "norm_label": "eschtml()"
     },
     {
@@ -539,7 +539,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L955",
       "id": "app_main_sethighlightmode",
-      "community": 8,
+      "community": 1,
       "norm_label": "sethighlightmode()"
     },
     {
@@ -548,7 +548,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L961",
       "id": "app_main_applyhighlighttoselection",
-      "community": 0,
+      "community": 1,
       "norm_label": "applyhighlighttoselection()"
     },
     {
@@ -557,7 +557,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1133",
       "id": "app_main_ensureaddtopop",
-      "community": 0,
+      "community": 1,
       "norm_label": "ensureaddtopop()"
     },
     {
@@ -566,7 +566,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1146",
       "id": "app_main_openaddtopopover",
-      "community": 0,
+      "community": 1,
       "norm_label": "openaddtopopover()"
     },
     {
@@ -575,7 +575,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1207",
       "id": "app_main_loadlibrary",
-      "community": 0,
+      "community": 1,
       "norm_label": "loadlibrary()"
     },
     {
@@ -584,7 +584,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1211",
       "id": "app_main_switchlibtab",
-      "community": 0,
+      "community": 1,
       "norm_label": "switchlibtab()"
     },
     {
@@ -593,7 +593,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1235",
       "id": "app_main_loadevidence",
-      "community": 0,
+      "community": 1,
       "norm_label": "loadevidence()"
     },
     {
@@ -602,7 +602,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1259",
       "id": "app_main_preloadevidencebackground",
-      "community": 0,
+      "community": 1,
       "norm_label": "preloadevidencebackground()"
     },
     {
@@ -611,7 +611,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1273",
       "id": "app_main_cardtype",
-      "community": 0,
+      "community": 1,
       "norm_label": "cardtype()"
     },
     {
@@ -620,7 +620,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1283",
       "id": "app_main_isgeneralld",
-      "community": 0,
+      "community": 1,
       "norm_label": "isgeneralld()"
     },
     {
@@ -629,7 +629,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1288",
       "id": "app_main_normalizetagkey",
-      "community": 0,
+      "community": 1,
       "norm_label": "normalizetagkey()"
     },
     {
@@ -638,7 +638,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1292",
       "id": "app_main_dedupebytag",
-      "community": 0,
+      "community": 1,
       "norm_label": "dedupebytag()"
     },
     {
@@ -647,7 +647,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1310",
       "id": "app_main_shortcitedisplay",
-      "community": 0,
+      "community": 1,
       "norm_label": "shortcitedisplay()"
     },
     {
@@ -656,7 +656,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1317",
       "id": "app_main_renderevidence",
-      "community": 0,
+      "community": 1,
       "norm_label": "renderevidence()"
     },
     {
@@ -665,7 +665,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1377",
       "id": "app_main_loadmoreevidence",
-      "community": 0,
+      "community": 1,
       "norm_label": "loadmoreevidence()"
     },
     {
@@ -674,7 +674,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1395",
       "id": "app_main_maybeinstallevintersectionobserver",
-      "community": 0,
+      "community": 1,
       "norm_label": "maybeinstallevintersectionobserver()"
     },
     {
@@ -683,7 +683,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1405",
       "id": "app_main_evitemhtml",
-      "community": 0,
+      "community": 1,
       "norm_label": "evitemhtml()"
     },
     {
@@ -692,7 +692,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1425",
       "id": "app_main_renderevidencedetail",
-      "community": 0,
+      "community": 1,
       "norm_label": "renderevidencedetail()"
     },
     {
@@ -701,7 +701,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1478",
       "id": "app_main_rankbykeyword",
-      "community": 0,
+      "community": 1,
       "norm_label": "rankbykeyword()"
     },
     {
@@ -710,7 +710,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1502",
       "id": "app_main_runevidencesearch",
-      "community": 0,
+      "community": 1,
       "norm_label": "runevidencesearch()"
     },
     {
@@ -719,7 +719,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1531",
       "id": "app_main_loadprojects",
-      "community": 0,
+      "community": 1,
       "norm_label": "loadprojects()"
     },
     {
@@ -728,7 +728,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1539",
       "id": "app_main_renderprojectrail",
-      "community": 0,
+      "community": 1,
       "norm_label": "renderprojectrail()"
     },
     {
@@ -737,7 +737,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1582",
       "id": "app_main_ensureprojmenu",
-      "community": 0,
+      "community": 1,
       "norm_label": "ensureprojmenu()"
     },
     {
@@ -746,7 +746,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1595",
       "id": "app_main_openprojmenu",
-      "community": 0,
+      "community": 1,
       "norm_label": "openprojmenu()"
     },
     {
@@ -755,7 +755,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1641",
       "id": "app_main_exportprojectdocx",
-      "community": 0,
+      "community": 1,
       "norm_label": "exportprojectdocx()"
     },
     {
@@ -764,7 +764,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1658",
       "id": "app_main_ensureinlinemodal",
-      "community": 0,
+      "community": 1,
       "norm_label": "ensureinlinemodal()"
     },
     {
@@ -773,7 +773,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1667",
       "id": "app_main_openinlineinput",
-      "community": 0,
+      "community": 1,
       "norm_label": "openinlineinput()"
     },
     {
@@ -782,7 +782,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1679",
       "id": "app_main_openconfirm",
-      "community": 0,
+      "community": 1,
       "norm_label": "openconfirm()"
     },
     {
@@ -791,7 +791,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1690",
       "id": "app_main_openprojmodal",
-      "community": 0,
+      "community": 1,
       "norm_label": "openprojmodal()"
     },
     {
@@ -800,7 +800,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1691",
       "id": "app_main_closeprojmodal",
-      "community": 0,
+      "community": 1,
       "norm_label": "closeprojmodal()"
     },
     {
@@ -809,7 +809,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1733",
       "id": "app_main_formatreldate",
-      "community": 0,
+      "community": 1,
       "norm_label": "formatreldate()"
     },
     {
@@ -818,7 +818,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1745",
       "id": "app_main_shortcite",
-      "community": 0,
+      "community": 1,
       "norm_label": "shortcite()"
     },
     {
@@ -827,7 +827,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1760",
       "id": "app_main_rendermycards",
-      "community": 0,
+      "community": 1,
       "norm_label": "rendermycards()"
     },
     {
@@ -836,7 +836,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1886",
       "id": "app_main_parsecitemeta",
-      "community": 0,
+      "community": 1,
       "norm_label": "parsecitemeta()"
     },
     {
@@ -845,7 +845,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1904",
       "id": "app_main_histlabel",
-      "community": 0,
+      "community": 1,
       "norm_label": "histlabel()"
     },
     {
@@ -854,7 +854,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1924",
       "id": "app_main_histdayheading",
-      "community": 0,
+      "community": 1,
       "norm_label": "histdayheading()"
     },
     {
@@ -863,7 +863,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1934",
       "id": "app_main_renderhistory",
-      "community": 0,
+      "community": 1,
       "norm_label": "renderhistory()"
     },
     {
@@ -872,7 +872,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L1976",
       "id": "app_main_refreshusage",
-      "community": 8,
+      "community": 1,
       "norm_label": "refreshusage()"
     },
     {
@@ -881,7 +881,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2017",
       "id": "app_main_open",
-      "community": 0,
+      "community": 1,
       "norm_label": "open()"
     },
     {
@@ -890,7 +890,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2025",
       "id": "app_main_close",
-      "community": 0,
+      "community": 1,
       "norm_label": "close()"
     },
     {
@@ -899,7 +899,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2029",
       "id": "app_main_activate",
-      "community": 0,
+      "community": 1,
       "norm_label": "activate()"
     },
     {
@@ -908,7 +908,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2042",
       "id": "app_main_hydrategeneral",
-      "community": 0,
+      "community": 1,
       "norm_label": "hydrategeneral()"
     },
     {
@@ -917,7 +917,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2171",
       "id": "app_main_hydrateaccount",
-      "community": 0,
+      "community": 1,
       "norm_label": "hydrateaccount()"
     },
     {
@@ -926,7 +926,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2206",
       "id": "app_main_hydratebilling",
-      "community": 0,
+      "community": 1,
       "norm_label": "hydratebilling()"
     },
     {
@@ -935,7 +935,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2216",
       "id": "app_main_parseua",
-      "community": 0,
+      "community": 1,
       "norm_label": "parseua()"
     },
     {
@@ -944,7 +944,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2223",
       "id": "app_main_fmtdate",
-      "community": 0,
+      "community": 1,
       "norm_label": "fmtdate()"
     },
     {
@@ -953,7 +953,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2242",
       "id": "app_main_renderprice",
-      "community": 0,
+      "community": 1,
       "norm_label": "renderprice()"
     },
     {
@@ -962,7 +962,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2284",
       "id": "app_main_render",
-      "community": 0,
+      "community": 1,
       "norm_label": "render()"
     },
     {
@@ -971,7 +971,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2391",
       "id": "app_main_apply",
-      "community": 0,
+      "community": 1,
       "norm_label": "apply()"
     },
     {
@@ -980,7 +980,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2392",
       "id": "app_main_flip",
-      "community": 0,
+      "community": 1,
       "norm_label": "flip()"
     },
     {
@@ -989,7 +989,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2601",
       "id": "app_main_isvisible",
-      "community": 0,
+      "community": 1,
       "norm_label": "isvisible()"
     },
     {
@@ -998,7 +998,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2608",
       "id": "app_main_focusables",
-      "community": 0,
+      "community": 1,
       "norm_label": "focusables()"
     },
     {
@@ -1007,7 +1007,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2611",
       "id": "app_main_onopen",
-      "community": 0,
+      "community": 1,
       "norm_label": "onopen()"
     },
     {
@@ -1016,7 +1016,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2618",
       "id": "app_main_onclose",
-      "community": 0,
+      "community": 1,
       "norm_label": "onclose()"
     },
     {
@@ -1025,7 +1025,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2623",
       "id": "app_main_check",
-      "community": 0,
+      "community": 1,
       "norm_label": "check()"
     },
     {
@@ -1034,7 +1034,7 @@
       "source_file": "public\\app-main.js",
       "source_location": "L2644",
       "id": "app_main_init",
-      "community": 0,
+      "community": 1,
       "norm_label": "init()"
     },
     {
@@ -1043,7 +1043,7 @@
       "source_file": "public\\app-main.search.js",
       "source_location": "L1",
       "id": "public_app_main_search_js",
-      "community": 29,
+      "community": 31,
       "norm_label": "app-main.search.js"
     },
     {
@@ -1052,7 +1052,7 @@
       "source_file": "public\\app-main.search.js",
       "source_location": "L2",
       "id": "app_main_search_filterevidenceclient",
-      "community": 29,
+      "community": 31,
       "norm_label": "filterevidenceclient()"
     },
     {
@@ -1106,7 +1106,7 @@
       "source_file": "public\\app-r3.js",
       "source_location": "L63",
       "id": "app_r3_fmtrellong",
-      "community": 4,
+      "community": 5,
       "norm_label": "fmtrellong()"
     },
     {
@@ -2006,7 +2006,7 @@
       "source_file": "public\\slash-helpers.js",
       "source_location": "L1",
       "id": "public_slash_helpers_js",
-      "community": 25,
+      "community": 27,
       "norm_label": "slash-helpers.js"
     },
     {
@@ -2015,7 +2015,7 @@
       "source_file": "public\\slash-helpers.js",
       "source_location": "L2",
       "id": "slash_helpers_expandcommand",
-      "community": 25,
+      "community": 27,
       "norm_label": "expandcommand()"
     },
     {
@@ -2024,7 +2024,7 @@
       "source_file": "public\\slash-helpers.js",
       "source_location": "L28",
       "id": "slash_helpers_shouldkeepslashopen",
-      "community": 25,
+      "community": 27,
       "norm_label": "shouldkeepslashopen()"
     },
     {
@@ -2258,7 +2258,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L1",
       "id": "public_wiki_js",
-      "community": 8,
+      "community": 16,
       "norm_label": "wiki.js"
     },
     {
@@ -2267,7 +2267,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L6",
       "id": "wiki",
-      "community": 8,
+      "community": 16,
       "norm_label": "$()"
     },
     {
@@ -2276,7 +2276,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L7",
       "id": "wiki_esc",
-      "community": 8,
+      "community": 16,
       "norm_label": "esc()"
     },
     {
@@ -2285,7 +2285,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L9",
       "id": "wiki_initials",
-      "community": 8,
+      "community": 16,
       "norm_label": "initials()"
     },
     {
@@ -2294,7 +2294,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L13",
       "id": "wiki_groupbyschool",
-      "community": 8,
+      "community": 16,
       "norm_label": "groupbyschool()"
     },
     {
@@ -2303,7 +2303,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L23",
       "id": "wiki_debaterlabel",
-      "community": 8,
+      "community": 16,
       "norm_label": "debaterlabel()"
     },
     {
@@ -2312,7 +2312,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L27",
       "id": "wiki_load",
-      "community": 8,
+      "community": 16,
       "norm_label": "load()"
     },
     {
@@ -2321,7 +2321,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L73",
       "id": "wiki_toggledebater",
-      "community": 8,
+      "community": 16,
       "norm_label": "toggledebater()"
     },
     {
@@ -2330,7 +2330,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L90",
       "id": "wiki_renderargs",
-      "community": 8,
+      "community": 16,
       "norm_label": "renderargs()"
     },
     {
@@ -2339,7 +2339,7 @@
       "source_file": "public\\wiki.js",
       "source_location": "L105",
       "id": "wiki_bind",
-      "community": 8,
+      "community": 16,
       "norm_label": "bind()"
     },
     {
@@ -2348,7 +2348,7 @@
       "source_file": "public\\lib\\alertToast.js",
       "source_location": "L1",
       "id": "public_lib_alerttoast_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "alerttoast.js"
     },
     {
@@ -2357,7 +2357,7 @@
       "source_file": "public\\lib\\alertToast.js",
       "source_location": "L55",
       "id": "alerttoast_ensurestyle",
-      "community": 5,
+      "community": 4,
       "norm_label": "ensurestyle()"
     },
     {
@@ -2366,7 +2366,7 @@
       "source_file": "public\\lib\\alertToast.js",
       "source_location": "L64",
       "id": "alerttoast_ensurestack",
-      "community": 5,
+      "community": 4,
       "norm_label": "ensurestack()"
     },
     {
@@ -2375,7 +2375,7 @@
       "source_file": "public\\lib\\alertToast.js",
       "source_location": "L75",
       "id": "alerttoast_esc",
-      "community": 5,
+      "community": 4,
       "norm_label": "esc()"
     },
     {
@@ -2384,7 +2384,7 @@
       "source_file": "public\\lib\\alertToast.js",
       "source_location": "L79",
       "id": "alerttoast_push",
-      "community": 5,
+      "community": 4,
       "norm_label": "push()"
     },
     {
@@ -2393,7 +2393,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L1",
       "id": "public_lib_carousel_js",
-      "community": 0,
+      "community": 5,
       "norm_label": "carousel.js"
     },
     {
@@ -2402,7 +2402,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L8",
       "id": "carousel_createstate",
-      "community": 0,
+      "community": 5,
       "norm_label": "createstate()"
     },
     {
@@ -2411,7 +2411,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L9",
       "id": "carousel_evictifovercap",
-      "community": 0,
+      "community": 5,
       "norm_label": "evictifovercap()"
     },
     {
@@ -2420,7 +2420,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L20",
       "id": "carousel_pushitem",
-      "community": 0,
+      "community": 5,
       "norm_label": "pushitem()"
     },
     {
@@ -2429,7 +2429,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L39",
       "id": "carousel_updateitem",
-      "community": 0,
+      "community": 1,
       "norm_label": "updateitem()"
     },
     {
@@ -2438,7 +2438,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L47",
       "id": "carousel_removeitem",
-      "community": 0,
+      "community": 1,
       "norm_label": "removeitem()"
     },
     {
@@ -2447,7 +2447,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L58",
       "id": "carousel_setactive",
-      "community": 0,
+      "community": 5,
       "norm_label": "setactive()"
     },
     {
@@ -2456,7 +2456,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L64",
       "id": "carousel_clearall",
-      "community": 0,
+      "community": 5,
       "norm_label": "clearall()"
     },
     {
@@ -2465,7 +2465,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L66",
       "id": "carousel_serialize",
-      "community": 0,
+      "community": 5,
       "norm_label": "serialize()"
     },
     {
@@ -2474,7 +2474,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L85",
       "id": "carousel_deserialize",
-      "community": 0,
+      "community": 5,
       "norm_label": "deserialize()"
     },
     {
@@ -2483,7 +2483,7 @@
       "source_file": "public\\lib\\carousel.js",
       "source_location": "L100",
       "id": "carousel_hydrate",
-      "community": 0,
+      "community": 5,
       "norm_label": "hydrate()"
     },
     {
@@ -2555,7 +2555,7 @@
       "source_file": "public\\lib\\chatContext.js",
       "source_location": "L22",
       "id": "chatcontext",
-      "community": 0,
+      "community": 1,
       "norm_label": "$()"
     },
     {
@@ -2726,7 +2726,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L1",
       "id": "public_lib_chatsplitview_js",
-      "community": 8,
+      "community": 1,
       "norm_label": "chatsplitview.js"
     },
     {
@@ -2735,7 +2735,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L6",
       "id": "chatsplitview_renderblockhtml",
-      "community": 8,
+      "community": 1,
       "norm_label": "renderblockhtml()"
     },
     {
@@ -2744,7 +2744,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L21",
       "id": "chatsplitview_toggle",
-      "community": 8,
+      "community": 1,
       "norm_label": "toggle()"
     },
     {
@@ -2753,7 +2753,7 @@
       "source_file": "public\\lib\\chatSplitView.js",
       "source_location": "L46",
       "id": "chatsplitview_close",
-      "community": 8,
+      "community": 1,
       "norm_label": "close()"
     },
     {
@@ -2870,7 +2870,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L1",
       "id": "public_lib_clipboard_js",
-      "community": 8,
+      "community": 14,
       "norm_label": "clipboard.js"
     },
     {
@@ -2879,7 +2879,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L5",
       "id": "clipboard_extractauthoryearprefix",
-      "community": 8,
+      "community": 14,
       "norm_label": "extractauthoryearprefix()"
     },
     {
@@ -2888,7 +2888,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L12",
       "id": "clipboard_splitcite",
-      "community": 8,
+      "community": 14,
       "norm_label": "splitcite()"
     },
     {
@@ -2897,7 +2897,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L19",
       "id": "clipboard_normalizespanstyles",
-      "community": 8,
+      "community": 14,
       "norm_label": "normalizespanstyles()"
     },
     {
@@ -2906,7 +2906,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L69",
       "id": "clipboard_flatteninlinestyles",
-      "community": 8,
+      "community": 14,
       "norm_label": "flatteninlinestyles()"
     },
     {
@@ -2915,7 +2915,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L118",
       "id": "clipboard_esc",
-      "community": 8,
+      "community": 14,
       "norm_label": "esc()"
     },
     {
@@ -2924,7 +2924,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L126",
       "id": "clipboard_stripdangerousattrs",
-      "community": 8,
+      "community": 14,
       "norm_label": "stripdangerousattrs()"
     },
     {
@@ -2933,7 +2933,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L144",
       "id": "clipboard_htmltoplain",
-      "community": 8,
+      "community": 14,
       "norm_label": "htmltoplain()"
     },
     {
@@ -2942,7 +2942,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L158",
       "id": "clipboard_serializeselectionhtmlfromstring",
-      "community": 8,
+      "community": 14,
       "norm_label": "serializeselectionhtmlfromstring()"
     },
     {
@@ -2951,7 +2951,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L183",
       "id": "clipboard_buildcopyhtml",
-      "community": 8,
+      "community": 14,
       "norm_label": "buildcopyhtml()"
     },
     {
@@ -2960,7 +2960,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L213",
       "id": "clipboard_buildcopyplain",
-      "community": 8,
+      "community": 14,
       "norm_label": "buildcopyplain()"
     },
     {
@@ -2969,7 +2969,7 @@
       "source_file": "public\\lib\\clipboard.js",
       "source_location": "L220",
       "id": "clipboard_serializeselectionhtml",
-      "community": 8,
+      "community": 14,
       "norm_label": "serializeselectionhtml()"
     },
     {
@@ -2978,7 +2978,7 @@
       "source_file": "public\\lib\\cmdPalette.js",
       "source_location": "L1",
       "id": "public_lib_cmdpalette_js",
-      "community": 30,
+      "community": 32,
       "norm_label": "cmdpalette.js"
     },
     {
@@ -2987,7 +2987,7 @@
       "source_file": "public\\lib\\cmdPalette.js",
       "source_location": "L80",
       "id": "cmdpalette_mount",
-      "community": 30,
+      "community": 32,
       "norm_label": "mount()"
     },
     {
@@ -2996,7 +2996,7 @@
       "source_file": "public\\lib\\isDirty.js",
       "source_location": "L1",
       "id": "public_lib_isdirty_js",
-      "community": 31,
+      "community": 33,
       "norm_label": "isdirty.js"
     },
     {
@@ -3005,7 +3005,7 @@
       "source_file": "public\\lib\\isDirty.js",
       "source_location": "L5",
       "id": "isdirty_isdirty",
-      "community": 31,
+      "community": 33,
       "norm_label": "isdirty()"
     },
     {
@@ -3014,7 +3014,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L1",
       "id": "public_lib_wordsnap_js",
-      "community": 20,
+      "community": 21,
       "norm_label": "wordsnap.js"
     },
     {
@@ -3023,7 +3023,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L6",
       "id": "wordsnap_isword",
-      "community": 20,
+      "community": 21,
       "norm_label": "isword()"
     },
     {
@@ -3032,7 +3032,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L8",
       "id": "wordsnap_snapstart",
-      "community": 20,
+      "community": 21,
       "norm_label": "snapstart()"
     },
     {
@@ -3041,7 +3041,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L27",
       "id": "wordsnap_snapend",
-      "community": 20,
+      "community": 21,
       "norm_label": "snapend()"
     },
     {
@@ -3050,7 +3050,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L44",
       "id": "wordsnap_snaptowordboundaries",
-      "community": 20,
+      "community": 21,
       "norm_label": "snaptowordboundaries()"
     },
     {
@@ -3059,7 +3059,7 @@
       "source_file": "public\\lib\\wordSnap.js",
       "source_location": "L55",
       "id": "wordsnap_wordat",
-      "community": 20,
+      "community": 21,
       "norm_label": "wordat()"
     },
     {
@@ -3068,7 +3068,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L1",
       "id": "scripts_canonicalize_cards_js",
-      "community": 18,
+      "community": 19,
       "norm_label": "canonicalize-cards.js"
     },
     {
@@ -3077,7 +3077,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L54",
       "id": "canonicalize_cards_normalizecite",
-      "community": 18,
+      "community": 19,
       "norm_label": "normalizecite()"
     },
     {
@@ -3086,7 +3086,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L57",
       "id": "canonicalize_cards_bodyprefix",
-      "community": 18,
+      "community": 19,
       "norm_label": "bodyprefix()"
     },
     {
@@ -3095,7 +3095,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L60",
       "id": "canonicalize_cards_groupkeyfor",
-      "community": 18,
+      "community": 19,
       "norm_label": "groupkeyfor()"
     },
     {
@@ -3104,7 +3104,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L66",
       "id": "canonicalize_cards_highlightwordcount",
-      "community": 18,
+      "community": 19,
       "norm_label": "highlightwordcount()"
     },
     {
@@ -3113,7 +3113,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L80",
       "id": "canonicalize_cards_bodyscore",
-      "community": 18,
+      "community": 19,
       "norm_label": "bodyscore()"
     },
     {
@@ -3122,7 +3122,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L85",
       "id": "canonicalize_cards_tagscore",
-      "community": 18,
+      "community": 19,
       "norm_label": "tagscore()"
     },
     {
@@ -3131,7 +3131,7 @@
       "source_file": "scripts\\canonicalize-cards.js",
       "source_location": "L100",
       "id": "canonicalize_cards_backupdb",
-      "community": 18,
+      "community": 19,
       "norm_label": "backupdb()"
     },
     {
@@ -3140,7 +3140,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L1",
       "id": "scripts_download_openev_js",
-      "community": 4,
+      "community": 5,
       "norm_label": "download-openev.js"
     },
     {
@@ -3149,7 +3149,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L27",
       "id": "download_openev_humanmb",
-      "community": 4,
+      "community": 5,
       "norm_label": "humanmb()"
     },
     {
@@ -3158,7 +3158,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L29",
       "id": "download_openev_download",
-      "community": 4,
+      "community": 5,
       "norm_label": "download()"
     },
     {
@@ -3167,7 +3167,7 @@
       "source_file": "scripts\\download-openev.js",
       "source_location": "L53",
       "id": "download_openev_importzip",
-      "community": 4,
+      "community": 5,
       "norm_label": "importzip()"
     },
     {
@@ -3176,7 +3176,7 @@
       "source_file": "scripts\\embed-library.js",
       "source_location": "L1",
       "id": "scripts_embed_library_js",
-      "community": 14,
+      "community": 4,
       "norm_label": "embed-library.js"
     },
     {
@@ -3185,7 +3185,7 @@
       "source_file": "scripts\\embed-library.js",
       "source_location": "L30",
       "id": "embed_library_extracthighlights",
-      "community": 14,
+      "community": 4,
       "norm_label": "extracthighlights()"
     },
     {
@@ -3194,7 +3194,7 @@
       "source_file": "scripts\\embed-library.js",
       "source_location": "L40",
       "id": "embed_library_hashtext",
-      "community": 14,
+      "community": 4,
       "norm_label": "hashtext()"
     },
     {
@@ -3203,7 +3203,7 @@
       "source_file": "scripts\\embed-library.js",
       "source_location": "L44",
       "id": "embed_library_main",
-      "community": 14,
+      "community": 4,
       "norm_label": "main()"
     },
     {
@@ -3320,7 +3320,7 @@
       "source_file": "scripts\\force-crawl.js",
       "source_location": "L1",
       "id": "scripts_force_crawl_js",
-      "community": 44,
+      "community": 46,
       "norm_label": "force-crawl.js"
     },
     {
@@ -3329,7 +3329,7 @@
       "source_file": "scripts\\import-caselist.js",
       "source_location": "L1",
       "id": "scripts_import_caselist_js",
-      "community": 32,
+      "community": 34,
       "norm_label": "import-caselist.js"
     },
     {
@@ -3338,7 +3338,7 @@
       "source_file": "scripts\\import-caselist.js",
       "source_location": "L11",
       "id": "import_caselist_iscaselistzip",
-      "community": 32,
+      "community": 34,
       "norm_label": "iscaselistzip()"
     },
     {
@@ -3365,7 +3365,7 @@
       "source_file": "scripts\\probe-ocl.js",
       "source_location": "L1",
       "id": "scripts_probe_ocl_js",
-      "community": 45,
+      "community": 47,
       "norm_label": "probe-ocl.js"
     },
     {
@@ -3374,7 +3374,7 @@
       "source_file": "scripts\\probe-rounds.js",
       "source_location": "L1",
       "id": "scripts_probe_rounds_js",
-      "community": 46,
+      "community": 48,
       "norm_label": "probe-rounds.js"
     },
     {
@@ -3383,7 +3383,7 @@
       "source_file": "scripts\\probe-tabroom.js",
       "source_location": "L1",
       "id": "scripts_probe_tabroom_js",
-      "community": 47,
+      "community": 49,
       "norm_label": "probe-tabroom.js"
     },
     {
@@ -3392,7 +3392,7 @@
       "source_file": "scripts\\_count-canon.js",
       "source_location": "L1",
       "id": "scripts_count_canon_js",
-      "community": 48,
+      "community": 50,
       "norm_label": "_count-canon.js"
     },
     {
@@ -3401,7 +3401,7 @@
       "source_file": "server\\index.js",
       "source_location": "L1",
       "id": "server_index_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "index.js"
     },
     {
@@ -3410,7 +3410,7 @@
       "source_file": "server\\index.js",
       "source_location": "L85",
       "id": "index_requireauthpage",
-      "community": 1,
+      "community": 0,
       "norm_label": "requireauthpage()"
     },
     {
@@ -3419,7 +3419,7 @@
       "source_file": "server\\index.js",
       "source_location": "L92",
       "id": "index_sendhtmlnocache",
-      "community": 1,
+      "community": 0,
       "norm_label": "sendhtmlnocache()"
     },
     {
@@ -3428,7 +3428,7 @@
       "source_file": "server\\index.js",
       "source_location": "L108",
       "id": "index_setheaders",
-      "community": 1,
+      "community": 0,
       "norm_label": "setheaders()"
     },
     {
@@ -3437,7 +3437,7 @@
       "source_file": "server\\middleware\\enforceLimit.js",
       "source_location": "L1",
       "id": "server_middleware_enforcelimit_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "enforcelimit.js"
     },
     {
@@ -3446,7 +3446,7 @@
       "source_file": "server\\middleware\\enforceLimit.js",
       "source_location": "L4",
       "id": "enforcelimit_enforcelimit",
-      "community": 4,
+      "community": 0,
       "norm_label": "enforcelimit()"
     },
     {
@@ -3455,7 +3455,7 @@
       "source_file": "server\\middleware\\requireUser.js",
       "source_location": "L1",
       "id": "server_middleware_requireuser_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "requireuser.js"
     },
     {
@@ -3464,7 +3464,7 @@
       "source_file": "server\\middleware\\requireUser.js",
       "source_location": "L4",
       "id": "requireuser_requireuser",
-      "community": 1,
+      "community": 0,
       "norm_label": "requireuser()"
     },
     {
@@ -3473,7 +3473,7 @@
       "source_file": "server\\prompts\\cardCutter.js",
       "source_location": "L1",
       "id": "server_prompts_cardcutter_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "cardcutter.js"
     },
     {
@@ -3482,7 +3482,7 @@
       "source_file": "server\\prompts\\cardCutter.js",
       "source_location": "L20",
       "id": "cardcutter_buildsystemprompt",
-      "community": 5,
+      "community": 4,
       "norm_label": "buildsystemprompt()"
     },
     {
@@ -3491,7 +3491,7 @@
       "source_file": "server\\prompts\\cardCutter.js",
       "source_location": "L101",
       "id": "cardcutter_stripabstractprelude",
-      "community": 5,
+      "community": 4,
       "norm_label": "stripabstractprelude()"
     },
     {
@@ -3500,7 +3500,7 @@
       "source_file": "server\\prompts\\cardCutter.js",
       "source_location": "L110",
       "id": "cardcutter_stripboilerplatesections",
-      "community": 5,
+      "community": 4,
       "norm_label": "stripboilerplatesections()"
     },
     {
@@ -3509,7 +3509,7 @@
       "source_file": "server\\prompts\\cardCutter.js",
       "source_location": "L124",
       "id": "cardcutter_buildcutprompt",
-      "community": 5,
+      "community": 4,
       "norm_label": "buildcutprompt()"
     },
     {
@@ -3518,7 +3518,7 @@
       "source_file": "server\\prompts\\cardCutter.js",
       "source_location": "L152",
       "id": "cardcutter_buildeditprompt",
-      "community": 5,
+      "community": 4,
       "norm_label": "buildeditprompt()"
     },
     {
@@ -3527,7 +3527,7 @@
       "source_file": "server\\prompts\\chatBrevity.js",
       "source_location": "L1",
       "id": "server_prompts_chatbrevity_js",
-      "community": 33,
+      "community": 35,
       "norm_label": "chatbrevity.js"
     },
     {
@@ -3536,7 +3536,7 @@
       "source_file": "server\\prompts\\chatBrevity.js",
       "source_location": "L11",
       "id": "chatbrevity_pickchatmaxtokens",
-      "community": 33,
+      "community": 35,
       "norm_label": "pickchatmaxtokens()"
     },
     {
@@ -3644,7 +3644,7 @@
       "source_file": "server\\routes\\auth.js",
       "source_location": "L1",
       "id": "server_routes_auth_js",
-      "community": 26,
+      "community": 28,
       "norm_label": "auth.js"
     },
     {
@@ -3653,7 +3653,7 @@
       "source_file": "server\\routes\\auth.js",
       "source_location": "L19",
       "id": "auth_sessionmeta",
-      "community": 26,
+      "community": 28,
       "norm_label": "sessionmeta()"
     },
     {
@@ -3662,7 +3662,7 @@
       "source_file": "server\\routes\\auth.js",
       "source_location": "L26",
       "id": "auth_publicuser",
-      "community": 26,
+      "community": 28,
       "norm_label": "publicuser()"
     },
     {
@@ -3671,7 +3671,7 @@
       "source_file": "server\\routes\\chat.js",
       "source_location": "L1",
       "id": "server_routes_chat_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "chat.js"
     },
     {
@@ -3680,7 +3680,7 @@
       "source_file": "server\\routes\\chat.js",
       "source_location": "L83",
       "id": "chat_extractdocxtext",
-      "community": 5,
+      "community": 4,
       "norm_label": "extractdocxtext()"
     },
     {
@@ -3689,7 +3689,7 @@
       "source_file": "server\\routes\\chat.js",
       "source_location": "L99",
       "id": "chat_extractpdftext",
-      "community": 5,
+      "community": 4,
       "norm_label": "extractpdftext()"
     },
     {
@@ -3698,7 +3698,7 @@
       "source_file": "server\\routes\\chat.js",
       "source_location": "L111",
       "id": "chat_decodexml",
-      "community": 5,
+      "community": 4,
       "norm_label": "decodexml()"
     },
     {
@@ -3707,7 +3707,7 @@
       "source_file": "server\\routes\\contentions.js",
       "source_location": "L1",
       "id": "server_routes_contentions_js",
-      "community": 0,
+      "community": 8,
       "norm_label": "contentions.js"
     },
     {
@@ -3716,7 +3716,7 @@
       "source_file": "server\\routes\\contentions.js",
       "source_location": "L11",
       "id": "contentions_load",
-      "community": 0,
+      "community": 8,
       "norm_label": "load()"
     },
     {
@@ -3725,7 +3725,7 @@
       "source_file": "server\\routes\\contentions.js",
       "source_location": "L15",
       "id": "contentions_save",
-      "community": 0,
+      "community": 8,
       "norm_label": "save()"
     },
     {
@@ -3734,7 +3734,7 @@
       "source_file": "server\\routes\\export.js",
       "source_location": "L1",
       "id": "server_routes_export_js",
-      "community": 34,
+      "community": 36,
       "norm_label": "export.js"
     },
     {
@@ -3743,7 +3743,7 @@
       "source_file": "server\\routes\\export.js",
       "source_location": "L10",
       "id": "export_loadprojects",
-      "community": 34,
+      "community": 36,
       "norm_label": "loadprojects()"
     },
     {
@@ -3752,7 +3752,7 @@
       "source_file": "server\\routes\\history.js",
       "source_location": "L1",
       "id": "server_routes_history_js",
-      "community": 49,
+      "community": 51,
       "norm_label": "history.js"
     },
     {
@@ -3761,7 +3761,7 @@
       "source_file": "server\\routes\\import.js",
       "source_location": "L1",
       "id": "server_routes_import_js",
-      "community": 50,
+      "community": 52,
       "norm_label": "import.js"
     },
     {
@@ -3770,7 +3770,7 @@
       "source_file": "server\\routes\\library.js",
       "source_location": "L1",
       "id": "server_routes_library_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "library.js"
     },
     {
@@ -3779,7 +3779,7 @@
       "source_file": "server\\routes\\library.js",
       "source_location": "L79",
       "id": "library_normkey",
-      "community": 4,
+      "community": 0,
       "norm_label": "_normkey()"
     },
     {
@@ -3788,7 +3788,7 @@
       "source_file": "server\\routes\\library.js",
       "source_location": "L80",
       "id": "library_cacheget",
-      "community": 4,
+      "community": 0,
       "norm_label": "_cacheget()"
     },
     {
@@ -3797,7 +3797,7 @@
       "source_file": "server\\routes\\library.js",
       "source_location": "L87",
       "id": "library_cacheput",
-      "community": 4,
+      "community": 0,
       "norm_label": "_cacheput()"
     },
     {
@@ -3806,7 +3806,7 @@
       "source_file": "server\\routes\\library.js",
       "source_location": "L105",
       "id": "library_sanitizeftsquery",
-      "community": 4,
+      "community": 0,
       "norm_label": "sanitizeftsquery()"
     },
     {
@@ -3815,7 +3815,7 @@
       "source_file": "server\\routes\\library.js",
       "source_location": "L139",
       "id": "library_upsert",
-      "community": 4,
+      "community": 0,
       "norm_label": "upsert()"
     },
     {
@@ -3824,7 +3824,7 @@
       "source_file": "server\\routes\\library.js",
       "source_location": "L218",
       "id": "library_norm",
-      "community": 4,
+      "community": 0,
       "norm_label": "norm()"
     },
     {
@@ -3833,7 +3833,7 @@
       "source_file": "server\\routes\\mine.js",
       "source_location": "L1",
       "id": "server_routes_mine_js",
-      "community": 35,
+      "community": 37,
       "norm_label": "mine.js"
     },
     {
@@ -3842,7 +3842,7 @@
       "source_file": "server\\routes\\mine.js",
       "source_location": "L10",
       "id": "mine_fingerprint",
-      "community": 35,
+      "community": 37,
       "norm_label": "fingerprint()"
     },
     {
@@ -3851,7 +3851,7 @@
       "source_file": "server\\routes\\projects.js",
       "source_location": "L1",
       "id": "server_routes_projects_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "projects.js"
     },
     {
@@ -3860,7 +3860,7 @@
       "source_file": "server\\routes\\projects.js",
       "source_location": "L11",
       "id": "projects_rowtoproject",
-      "community": 4,
+      "community": 0,
       "norm_label": "rowtoproject()"
     },
     {
@@ -3869,7 +3869,7 @@
       "source_file": "server\\routes\\projects.js",
       "source_location": "L33",
       "id": "projects_ownedproject",
-      "community": 4,
+      "community": 0,
       "norm_label": "ownedproject()"
     },
     {
@@ -3878,7 +3878,7 @@
       "source_file": "server\\routes\\rankings.js",
       "source_location": "L1",
       "id": "server_routes_rankings_js",
-      "community": 36,
+      "community": 38,
       "norm_label": "rankings.js"
     },
     {
@@ -3887,7 +3887,7 @@
       "source_file": "server\\routes\\rankings.js",
       "source_location": "L10",
       "id": "rankings_validateevent",
-      "community": 36,
+      "community": 38,
       "norm_label": "_validateevent()"
     },
     {
@@ -3896,7 +3896,7 @@
       "source_file": "server\\routes\\scrape.js",
       "source_location": "L1",
       "id": "server_routes_scrape_js",
-      "community": 0,
+      "community": 1,
       "norm_label": "scrape.js"
     },
     {
@@ -3905,7 +3905,7 @@
       "source_file": "server\\routes\\scrape.js",
       "source_location": "L54",
       "id": "scrape_grab",
-      "community": 0,
+      "community": 1,
       "norm_label": "grab()"
     },
     {
@@ -3914,7 +3914,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L1",
       "id": "server_routes_tabroom_js",
-      "community": 21,
+      "community": 22,
       "norm_label": "tabroom.js"
     },
     {
@@ -3923,7 +3923,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L76",
       "id": "tabroom_ispersonname",
-      "community": 21,
+      "community": 22,
       "norm_label": "ispersonname()"
     },
     {
@@ -3932,7 +3932,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L77",
       "id": "tabroom_isjunkcode",
-      "community": 21,
+      "community": 22,
       "norm_label": "isjunkcode()"
     },
     {
@@ -3941,7 +3941,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L78",
       "id": "tabroom_stripschoolsuffix",
-      "community": 21,
+      "community": 22,
       "norm_label": "stripschoolsuffix()"
     },
     {
@@ -3950,7 +3950,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L82",
       "id": "tabroom_initialsof",
-      "community": 21,
+      "community": 22,
       "norm_label": "initialsof()"
     },
     {
@@ -3959,7 +3959,7 @@
       "source_file": "server\\routes\\tabroom.js",
       "source_location": "L84",
       "id": "tabroom_extractcode",
-      "community": 21,
+      "community": 22,
       "norm_label": "extractcode()"
     },
     {
@@ -3968,7 +3968,7 @@
       "source_file": "server\\routes\\toc.js",
       "source_location": "L1",
       "id": "server_routes_toc_js",
-      "community": 4,
+      "community": 5,
       "norm_label": "toc.js"
     },
     {
@@ -3977,7 +3977,7 @@
       "source_file": "server\\routes\\toc.js",
       "source_location": "L13",
       "id": "toc_validateevent",
-      "community": 4,
+      "community": 5,
       "norm_label": "_validateevent()"
     },
     {
@@ -3986,7 +3986,7 @@
       "source_file": "server\\routes\\toc.js",
       "source_location": "L19",
       "id": "toc_isstale",
-      "community": 4,
+      "community": 5,
       "norm_label": "_isstale()"
     },
     {
@@ -3995,7 +3995,7 @@
       "source_file": "server\\routes\\wiki.js",
       "source_location": "L1",
       "id": "server_routes_wiki_js",
-      "community": 37,
+      "community": 39,
       "norm_label": "wiki.js"
     },
     {
@@ -4004,7 +4004,7 @@
       "source_file": "server\\routes\\wiki.js",
       "source_location": "L11",
       "id": "wiki_safefilename",
-      "community": 37,
+      "community": 39,
       "norm_label": "_safefilename()"
     },
     {
@@ -4013,7 +4013,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L1",
       "id": "server_scripts_classifycards_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "classifycards.js"
     },
     {
@@ -4022,7 +4022,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L76",
       "id": "classifycards_buildcardblob",
-      "community": 5,
+      "community": 4,
       "norm_label": "buildcardblob()"
     },
     {
@@ -4031,7 +4031,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L83",
       "id": "classifycards_classifybatch",
-      "community": 5,
+      "community": 4,
       "norm_label": "classifybatch()"
     },
     {
@@ -4040,7 +4040,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L114",
       "id": "classifycards_saveresult",
-      "community": 5,
+      "community": 4,
       "norm_label": "saveresult()"
     },
     {
@@ -4049,7 +4049,7 @@
       "source_file": "server\\scripts\\classifyCards.js",
       "source_location": "L135",
       "id": "classifycards_main",
-      "community": 5,
+      "community": 4,
       "norm_label": "main()"
     },
     {
@@ -4058,7 +4058,7 @@
       "source_file": "server\\scripts\\cleanTopics.js",
       "source_location": "L1",
       "id": "server_scripts_cleantopics_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "cleantopics.js"
     },
     {
@@ -4067,7 +4067,7 @@
       "source_file": "server\\scripts\\cleanTopics.js",
       "source_location": "L7",
       "id": "cleantopics_main",
-      "community": 1,
+      "community": 0,
       "norm_label": "main()"
     },
     {
@@ -4094,7 +4094,7 @@
       "source_file": "server\\scripts\\ingestAllZips.js",
       "source_location": "L1",
       "id": "server_scripts_ingestallzips_js",
-      "community": 3,
+      "community": 5,
       "norm_label": "ingestallzips.js"
     },
     {
@@ -4103,7 +4103,7 @@
       "source_file": "server\\scripts\\ingestAllZips.js",
       "source_location": "L25",
       "id": "ingestallzips_main",
-      "community": 3,
+      "community": 5,
       "norm_label": "main()"
     },
     {
@@ -4112,7 +4112,7 @@
       "source_file": "server\\scripts\\migrateJsonToSqlite.js",
       "source_location": "L1",
       "id": "server_scripts_migratejsontosqlite_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "migratejsontosqlite.js"
     },
     {
@@ -4121,7 +4121,7 @@
       "source_file": "server\\scripts\\migrateJsonToSqlite.js",
       "source_location": "L19",
       "id": "migratejsontosqlite_run",
-      "community": 1,
+      "community": 0,
       "norm_label": "run()"
     },
     {
@@ -4130,7 +4130,7 @@
       "source_file": "server\\scripts\\renormalizeTags.js",
       "source_location": "L1",
       "id": "server_scripts_renormalizetags_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "renormalizetags.js"
     },
     {
@@ -4139,7 +4139,7 @@
       "source_file": "server\\scripts\\renormalizeTags.js",
       "source_location": "L12",
       "id": "renormalizetags_main",
-      "community": 5,
+      "community": 4,
       "norm_label": "main()"
     },
     {
@@ -4148,7 +4148,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L1",
       "id": "server_services_auth_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "auth.js"
     },
     {
@@ -4157,7 +4157,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L8",
       "id": "auth_newid",
-      "community": 1,
+      "community": 0,
       "norm_label": "_newid()"
     },
     {
@@ -4166,7 +4166,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L12",
       "id": "auth_insertusersync",
-      "community": 1,
+      "community": 0,
       "norm_label": "_insertusersync()"
     },
     {
@@ -4175,7 +4175,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L23",
       "id": "auth_createuser",
-      "community": 1,
+      "community": 0,
       "norm_label": "createuser()"
     },
     {
@@ -4184,7 +4184,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L35",
       "id": "auth_finduserbyemail",
-      "community": 1,
+      "community": 0,
       "norm_label": "finduserbyemail()"
     },
     {
@@ -4193,7 +4193,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L39",
       "id": "auth_finduserbyid",
-      "community": 1,
+      "community": 0,
       "norm_label": "finduserbyid()"
     },
     {
@@ -4202,7 +4202,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L43",
       "id": "auth_finduserbygooglesub",
-      "community": 1,
+      "community": 0,
       "norm_label": "finduserbygooglesub()"
     },
     {
@@ -4211,7 +4211,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L47",
       "id": "auth_linkgooglesub",
-      "community": 1,
+      "community": 0,
       "norm_label": "linkgooglesub()"
     },
     {
@@ -4220,7 +4220,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L51",
       "id": "auth_verifypassword",
-      "community": 1,
+      "community": 0,
       "norm_label": "verifypassword()"
     },
     {
@@ -4229,7 +4229,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L56",
       "id": "auth_createsession",
-      "community": 1,
+      "community": 0,
       "norm_label": "createsession()"
     },
     {
@@ -4238,7 +4238,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L66",
       "id": "auth_validatesession",
-      "community": 1,
+      "community": 0,
       "norm_label": "validatesession()"
     },
     {
@@ -4247,7 +4247,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L80",
       "id": "auth_deletesession",
-      "community": 1,
+      "community": 0,
       "norm_label": "deletesession()"
     },
     {
@@ -4256,7 +4256,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L85",
       "id": "auth_touchsession",
-      "community": 1,
+      "community": 0,
       "norm_label": "touchsession()"
     },
     {
@@ -4265,7 +4265,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L93",
       "id": "auth_listsessions",
-      "community": 0,
+      "community": 1,
       "norm_label": "listsessions()"
     },
     {
@@ -4274,7 +4274,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L99",
       "id": "auth_deleteallsessionsforuser",
-      "community": 1,
+      "community": 0,
       "norm_label": "deleteallsessionsforuser()"
     },
     {
@@ -4283,7 +4283,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L103",
       "id": "auth_updateusername",
-      "community": 1,
+      "community": 0,
       "norm_label": "updateusername()"
     },
     {
@@ -4292,7 +4292,7 @@
       "source_file": "server\\services\\auth.js",
       "source_location": "L123",
       "id": "auth_updatepassword",
-      "community": 1,
+      "community": 0,
       "norm_label": "updatepassword()"
     },
     {
@@ -4427,7 +4427,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L1",
       "id": "server_services_chatcommands_js",
-      "community": 22,
+      "community": 23,
       "norm_label": "chatcommands.js"
     },
     {
@@ -4436,7 +4436,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L5",
       "id": "chatcommands_parsecommand",
-      "community": 22,
+      "community": 23,
       "norm_label": "parsecommand()"
     },
     {
@@ -4445,7 +4445,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L12",
       "id": "chatcommands_buildexplainprompt",
-      "community": 22,
+      "community": 23,
       "norm_label": "buildexplainprompt()"
     },
     {
@@ -4454,7 +4454,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L28",
       "id": "chatcommands_buildanalyticprompt",
-      "community": 22,
+      "community": 23,
       "norm_label": "buildanalyticprompt()"
     },
     {
@@ -4463,7 +4463,7 @@
       "source_file": "server\\services\\chatCommands.js",
       "source_location": "L44",
       "id": "chatcommands_buildblockprompt",
-      "community": 22,
+      "community": 23,
       "norm_label": "buildblockprompt()"
     },
     {
@@ -4472,7 +4472,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L1",
       "id": "server_services_chatretrieval_js",
-      "community": 4,
+      "community": 5,
       "norm_label": "chatretrieval.js"
     },
     {
@@ -4481,7 +4481,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L9",
       "id": "chatretrieval_cacheget",
-      "community": 4,
+      "community": 5,
       "norm_label": "cacheget()"
     },
     {
@@ -4490,7 +4490,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L16",
       "id": "chatretrieval_cacheset",
-      "community": 4,
+      "community": 5,
       "norm_label": "cacheset()"
     },
     {
@@ -4499,7 +4499,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L21",
       "id": "chatretrieval_sanitize",
-      "community": 4,
+      "community": 5,
       "norm_label": "sanitize()"
     },
     {
@@ -4508,7 +4508,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L24",
       "id": "chatretrieval_safejson",
-      "community": 4,
+      "community": 5,
       "norm_label": "safejson()"
     },
     {
@@ -4517,7 +4517,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L26",
       "id": "chatretrieval_retrievecards",
-      "community": 4,
+      "community": 5,
       "norm_label": "retrievecards()"
     },
     {
@@ -4526,7 +4526,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L51",
       "id": "chatretrieval_retrieveanalytics",
-      "community": 4,
+      "community": 5,
       "norm_label": "retrieveanalytics()"
     },
     {
@@ -4535,7 +4535,7 @@
       "source_file": "server\\services\\chatRetrieval.js",
       "source_location": "L67",
       "id": "chatretrieval_retrieveusercontext",
-      "community": 4,
+      "community": 5,
       "norm_label": "retrieveusercontext()"
     },
     {
@@ -4544,7 +4544,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L1",
       "id": "server_services_chatstore_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "chatstore.js"
     },
     {
@@ -4553,7 +4553,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L5",
       "id": "chatstore_now",
-      "community": 4,
+      "community": 5,
       "norm_label": "now()"
     },
     {
@@ -4562,7 +4562,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L7",
       "id": "chatstore_createthread",
-      "community": 1,
+      "community": 0,
       "norm_label": "createthread()"
     },
     {
@@ -4571,7 +4571,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L17",
       "id": "chatstore_getthread",
-      "community": 1,
+      "community": 0,
       "norm_label": "getthread()"
     },
     {
@@ -4589,7 +4589,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L28",
       "id": "chatstore_updatethread",
-      "community": 1,
+      "community": 0,
       "norm_label": "updatethread()"
     },
     {
@@ -4598,7 +4598,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L41",
       "id": "chatstore_deletethread",
-      "community": 1,
+      "community": 0,
       "norm_label": "deletethread()"
     },
     {
@@ -4607,7 +4607,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L45",
       "id": "chatstore_addmessage",
-      "community": 1,
+      "community": 0,
       "norm_label": "addmessage()"
     },
     {
@@ -4625,7 +4625,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L61",
       "id": "chatstore_addcontext",
-      "community": 1,
+      "community": 0,
       "norm_label": "addcontext()"
     },
     {
@@ -4634,7 +4634,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L71",
       "id": "chatstore_getcontext",
-      "community": 1,
+      "community": 0,
       "norm_label": "getcontext()"
     },
     {
@@ -4652,7 +4652,7 @@
       "source_file": "server\\services\\chatStore.js",
       "source_location": "L79",
       "id": "chatstore_deletecontext",
-      "community": 1,
+      "community": 0,
       "norm_label": "deletecontext()"
     },
     {
@@ -4661,7 +4661,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L1",
       "id": "server_services_cutvalidator_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "cutvalidator.js"
     },
     {
@@ -4670,7 +4670,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L17",
       "id": "cutvalidator_stripmarks",
-      "community": 5,
+      "community": 4,
       "norm_label": "stripmarks()"
     },
     {
@@ -4679,7 +4679,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L24",
       "id": "cutvalidator_wordcount",
-      "community": 5,
+      "community": 4,
       "norm_label": "wordcount()"
     },
     {
@@ -4688,7 +4688,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L30",
       "id": "cutvalidator_gethighlightruns",
-      "community": 5,
+      "community": 4,
       "norm_label": "gethighlightruns()"
     },
     {
@@ -4697,7 +4697,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L40",
       "id": "cutvalidator_getunderlineruns",
-      "community": 5,
+      "community": 4,
       "norm_label": "getunderlineruns()"
     },
     {
@@ -4706,7 +4706,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L50",
       "id": "cutvalidator_splitparagraphs",
-      "community": 5,
+      "community": 4,
       "norm_label": "splitparagraphs()"
     },
     {
@@ -4715,7 +4715,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L58",
       "id": "cutvalidator_outsideunderlinespans",
-      "community": 5,
+      "community": 4,
       "norm_label": "outsideunderlinespans()"
     },
     {
@@ -4724,7 +4724,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L71",
       "id": "cutvalidator_normalizeformatch",
-      "community": 5,
+      "community": 4,
       "norm_label": "normalizeformatch()"
     },
     {
@@ -4733,7 +4733,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L82",
       "id": "cutvalidator_buildsourceparagraphindex",
-      "community": 5,
+      "community": 4,
       "norm_label": "buildsourceparagraphindex()"
     },
     {
@@ -4742,7 +4742,7 @@
       "source_file": "server\\services\\cutValidator.js",
       "source_location": "L86",
       "id": "cutvalidator_validatecut",
-      "community": 5,
+      "community": 4,
       "norm_label": "validatecut()"
     },
     {
@@ -4760,7 +4760,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L13",
       "id": "db_getdb",
-      "community": 1,
+      "community": 0,
       "norm_label": "getdb()"
     },
     {
@@ -4778,7 +4778,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L425",
       "id": "db_runmigrations",
-      "community": 4,
+      "community": 5,
       "norm_label": "_runmigrations()"
     },
     {
@@ -4787,7 +4787,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L485",
       "id": "db_ensureanalyzed",
-      "community": 4,
+      "community": 5,
       "norm_label": "_ensureanalyzed()"
     },
     {
@@ -4796,7 +4796,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L505",
       "id": "db_setupcardsfts",
-      "community": 4,
+      "community": 5,
       "norm_label": "_setupcardsfts()"
     },
     {
@@ -4805,7 +4805,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L550",
       "id": "db_backfillhashighlight",
-      "community": 4,
+      "community": 5,
       "norm_label": "_backfillhashighlight()"
     },
     {
@@ -4823,7 +4823,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L577",
       "id": "db_backfillhighlightwordcount",
-      "community": 4,
+      "community": 5,
       "norm_label": "_backfillhighlightwordcount()"
     },
     {
@@ -4895,7 +4895,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L773",
       "id": "db_countcards",
-      "community": 3,
+      "community": 0,
       "norm_label": "countcards()"
     },
     {
@@ -5030,7 +5030,7 @@
       "source_file": "server\\services\\db.js",
       "source_location": "L1009",
       "id": "db_savemeta",
-      "community": 0,
+      "community": 8,
       "norm_label": "savemeta()"
     },
     {
@@ -5039,7 +5039,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L1",
       "id": "server_services_docxbuilder_js",
-      "community": 16,
+      "community": 8,
       "norm_label": "docxbuilder.js"
     },
     {
@@ -5048,7 +5048,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L18",
       "id": "docxbuilder_pt",
-      "community": 16,
+      "community": 8,
       "norm_label": "pt()"
     },
     {
@@ -5057,7 +5057,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L22",
       "id": "docxbuilder_builddocx",
-      "community": 16,
+      "community": 8,
       "norm_label": "builddocx()"
     },
     {
@@ -5066,7 +5066,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L152",
       "id": "docxbuilder_buildprojectdocx",
-      "community": 16,
+      "community": 8,
       "norm_label": "buildprojectdocx()"
     },
     {
@@ -5075,7 +5075,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L191",
       "id": "docxbuilder_buildciteruns",
-      "community": 16,
+      "community": 8,
       "norm_label": "buildciteruns()"
     },
     {
@@ -5084,7 +5084,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L207",
       "id": "docxbuilder_buildbodyparagraphsfromhtml",
-      "community": 0,
+      "community": 8,
       "norm_label": "buildbodyparagraphsfromhtml()"
     },
     {
@@ -5093,7 +5093,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L214",
       "id": "docxbuilder_basestate",
-      "community": 16,
+      "community": 8,
       "norm_label": "basestate()"
     },
     {
@@ -5102,7 +5102,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L218",
       "id": "docxbuilder_htmlchildrentoruns",
-      "community": 16,
+      "community": 8,
       "norm_label": "htmlchildrentoruns()"
     },
     {
@@ -5111,7 +5111,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L226",
       "id": "docxbuilder_htmlnodetoruns",
-      "community": 16,
+      "community": 8,
       "norm_label": "htmlnodetoruns()"
     },
     {
@@ -5120,7 +5120,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L275",
       "id": "docxbuilder_makerun",
-      "community": 16,
+      "community": 8,
       "norm_label": "makerun()"
     },
     {
@@ -5129,7 +5129,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L291",
       "id": "docxbuilder_buildbodyparagraphsfrommarkdown",
-      "community": 16,
+      "community": 8,
       "norm_label": "buildbodyparagraphsfrommarkdown()"
     },
     {
@@ -5138,7 +5138,7 @@
       "source_file": "server\\services\\docxBuilder.js",
       "source_location": "L299",
       "id": "docxbuilder_parseinlinemarkdown",
-      "community": 16,
+      "community": 8,
       "norm_label": "parseinlinemarkdown()"
     },
     {
@@ -5282,7 +5282,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L510",
       "id": "docximport_getouterdirectory",
-      "community": 3,
+      "community": 0,
       "norm_label": "getouterdirectory()"
     },
     {
@@ -5363,7 +5363,7 @@
       "source_file": "server\\services\\docxImport.js",
       "source_location": "L780",
       "id": "docximport_getlibrarydashboard",
-      "community": 4,
+      "community": 0,
       "norm_label": "getlibrarydashboard()"
     },
     {
@@ -5408,7 +5408,7 @@
       "source_file": "server\\services\\emailSender.js",
       "source_location": "L1",
       "id": "server_services_emailsender_js",
-      "community": 27,
+      "community": 29,
       "norm_label": "emailsender.js"
     },
     {
@@ -5417,7 +5417,7 @@
       "source_file": "server\\services\\emailSender.js",
       "source_location": "L5",
       "id": "emailsender_transporter",
-      "community": 27,
+      "community": 29,
       "norm_label": "transporter()"
     },
     {
@@ -5426,7 +5426,7 @@
       "source_file": "server\\services\\emailSender.js",
       "source_location": "L16",
       "id": "emailsender_sendpasswordreset",
-      "community": 27,
+      "community": 29,
       "norm_label": "sendpasswordreset()"
     },
     {
@@ -5435,7 +5435,7 @@
       "source_file": "server\\services\\embedder.js",
       "source_location": "L1",
       "id": "server_services_embedder_js",
-      "community": 14,
+      "community": 4,
       "norm_label": "embedder.js"
     },
     {
@@ -5444,7 +5444,7 @@
       "source_file": "server\\services\\embedder.js",
       "source_location": "L19",
       "id": "embedder_embedtexts",
-      "community": 14,
+      "community": 4,
       "norm_label": "embedtexts()"
     },
     {
@@ -5453,7 +5453,7 @@
       "source_file": "server\\services\\embedder.js",
       "source_location": "L42",
       "id": "embedder_embedone",
-      "community": 14,
+      "community": 4,
       "norm_label": "embedone()"
     },
     {
@@ -5462,7 +5462,7 @@
       "source_file": "server\\services\\fileCache.js",
       "source_location": "L1",
       "id": "server_services_filecache_js",
-      "community": 4,
+      "community": 5,
       "norm_label": "filecache.js"
     },
     {
@@ -5471,7 +5471,7 @@
       "source_file": "server\\services\\fileCache.js",
       "source_location": "L8",
       "id": "filecache_put",
-      "community": 4,
+      "community": 5,
       "norm_label": "put()"
     },
     {
@@ -5480,7 +5480,7 @@
       "source_file": "server\\services\\fileCache.js",
       "source_location": "L14",
       "id": "filecache_get",
-      "community": 4,
+      "community": 0,
       "norm_label": "get()"
     },
     {
@@ -5489,7 +5489,7 @@
       "source_file": "server\\services\\fileCache.js",
       "source_location": "L21",
       "id": "filecache_drop",
-      "community": 4,
+      "community": 5,
       "norm_label": "drop()"
     },
     {
@@ -5498,7 +5498,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L1",
       "id": "server_services_gemini_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "gemini.js"
     },
     {
@@ -5507,7 +5507,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L7",
       "id": "gemini_firstwords",
-      "community": 5,
+      "community": 4,
       "norm_label": "firstwords()"
     },
     {
@@ -5516,7 +5516,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L16",
       "id": "gemini_callgeminijson",
-      "community": 5,
+      "community": 4,
       "norm_label": "callgeminijson()"
     },
     {
@@ -5525,7 +5525,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L29",
       "id": "gemini_rankrelevance",
-      "community": 5,
+      "community": 4,
       "norm_label": "rankrelevance()"
     },
     {
@@ -5534,7 +5534,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L70",
       "id": "gemini_splitintowindows",
-      "community": 5,
+      "community": 4,
       "norm_label": "splitintowindows()"
     },
     {
@@ -5543,7 +5543,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L104",
       "id": "gemini_tokenizeintent",
-      "community": 5,
+      "community": 4,
       "norm_label": "tokenizeintent()"
     },
     {
@@ -5552,7 +5552,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L111",
       "id": "gemini_scorewindowkeyword",
-      "community": 5,
+      "community": 4,
       "norm_label": "scorewindowkeyword()"
     },
     {
@@ -5561,7 +5561,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L122",
       "id": "gemini_warrantsignals",
-      "community": 5,
+      "community": 4,
       "norm_label": "warrantsignals()"
     },
     {
@@ -5570,7 +5570,7 @@
       "source_file": "server\\services\\gemini.js",
       "source_location": "L132",
       "id": "gemini_pickbestwindow",
-      "community": 5,
+      "community": 4,
       "norm_label": "pickbestwindow()"
     },
     {
@@ -5894,7 +5894,7 @@
       "source_file": "server\\services\\libraryQuery.js",
       "source_location": "L97",
       "id": "libraryquery_getlibraryanalytics",
-      "community": 4,
+      "community": 0,
       "norm_label": "getlibraryanalytics()"
     },
     {
@@ -5984,7 +5984,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L1",
       "id": "server_services_limits_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "limits.js"
     },
     {
@@ -5993,7 +5993,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L4",
       "id": "limits_periodutc",
-      "community": 4,
+      "community": 0,
       "norm_label": "periodutc()"
     },
     {
@@ -6002,7 +6002,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L6",
       "id": "limits_nextresetat",
-      "community": 4,
+      "community": 0,
       "norm_label": "nextresetat()"
     },
     {
@@ -6011,7 +6011,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L11",
       "id": "limits_getcount",
-      "community": 4,
+      "community": 0,
       "norm_label": "getcount()"
     },
     {
@@ -6020,7 +6020,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L16",
       "id": "limits_hit",
-      "community": 4,
+      "community": 0,
       "norm_label": "hit()"
     },
     {
@@ -6029,7 +6029,7 @@
       "source_file": "server\\services\\limits.js",
       "source_location": "L27",
       "id": "limits_checkandbudget",
-      "community": 4,
+      "community": 0,
       "norm_label": "checkandbudget()"
     },
     {
@@ -6038,7 +6038,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L1",
       "id": "server_services_llm_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "llm.js"
     },
     {
@@ -6047,7 +6047,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L32",
       "id": "llm_checkdailyreset",
-      "community": 5,
+      "community": 4,
       "norm_label": "checkdailyreset()"
     },
     {
@@ -6056,7 +6056,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L41",
       "id": "llm_recordusage",
-      "community": 5,
+      "community": 4,
       "norm_label": "recordusage()"
     },
     {
@@ -6065,7 +6065,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L50",
       "id": "llm_gettokenstats",
-      "community": 5,
+      "community": 4,
       "norm_label": "gettokenstats()"
     },
     {
@@ -6074,7 +6074,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L61",
       "id": "llm_estimatetokens",
-      "community": 5,
+      "community": 4,
       "norm_label": "estimatetokens()"
     },
     {
@@ -6083,7 +6083,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L63",
       "id": "llm_smarttruncate",
-      "community": 5,
+      "community": 4,
       "norm_label": "smarttruncate()"
     },
     {
@@ -6092,7 +6092,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L91",
       "id": "llm_issoftfailure",
-      "community": 5,
+      "community": 4,
       "norm_label": "issoftfailure()"
     },
     {
@@ -6101,7 +6101,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L110",
       "id": "llm_complete",
-      "community": 5,
+      "community": 4,
       "norm_label": "complete()"
     },
     {
@@ -6110,7 +6110,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L181",
       "id": "llm_parsejson",
-      "community": 5,
+      "community": 4,
       "norm_label": "parsejson()"
     },
     {
@@ -6119,7 +6119,7 @@
       "source_file": "server\\services\\llm.js",
       "source_location": "L208",
       "id": "llm_completestream",
-      "community": 5,
+      "community": 4,
       "norm_label": "completestream()"
     },
     {
@@ -6128,7 +6128,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L1",
       "id": "server_services_nameutil_js",
-      "community": 23,
+      "community": 24,
       "norm_label": "nameutil.js"
     },
     {
@@ -6137,7 +6137,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L5",
       "id": "nameutil_stripschoolsuffix",
-      "community": 23,
+      "community": 24,
       "norm_label": "stripschoolsuffix()"
     },
     {
@@ -6146,7 +6146,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L21",
       "id": "nameutil_shortendisplayname",
-      "community": 23,
+      "community": 24,
       "norm_label": "shortendisplayname()"
     },
     {
@@ -6155,7 +6155,7 @@
       "source_file": "server\\services\\nameUtil.js",
       "source_location": "L72",
       "id": "nameutil_withshortenedname",
-      "community": 23,
+      "community": 24,
       "norm_label": "withshortenedname()"
     },
     {
@@ -6164,7 +6164,7 @@
       "source_file": "server\\services\\rankingsDb.js",
       "source_location": "L1",
       "id": "server_services_rankingsdb_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "rankingsdb.js"
     },
     {
@@ -6173,7 +6173,7 @@
       "source_file": "server\\services\\rankingsDb.js",
       "source_location": "L8",
       "id": "rankingsdb_listseasons",
-      "community": 4,
+      "community": 0,
       "norm_label": "listseasons()"
     },
     {
@@ -6182,7 +6182,7 @@
       "source_file": "server\\services\\rankingsDb.js",
       "source_location": "L17",
       "id": "rankingsdb_leaderboard",
-      "community": 4,
+      "community": 0,
       "norm_label": "leaderboard()"
     },
     {
@@ -6191,7 +6191,7 @@
       "source_file": "server\\services\\rankingsDb.js",
       "source_location": "L123",
       "id": "rankingsdb_rankof",
-      "community": 4,
+      "community": 0,
       "norm_label": "rankof()"
     },
     {
@@ -6200,7 +6200,7 @@
       "source_file": "server\\services\\rankingsDb.js",
       "source_location": "L133",
       "id": "rankingsdb_outof",
-      "community": 4,
+      "community": 0,
       "norm_label": "outof()"
     },
     {
@@ -6209,7 +6209,7 @@
       "source_file": "server\\services\\rankingsDb.js",
       "source_location": "L140",
       "id": "rankingsdb_profile",
-      "community": 4,
+      "community": 0,
       "norm_label": "profile()"
     },
     {
@@ -6218,7 +6218,7 @@
       "source_file": "server\\services\\rankingsDb.js",
       "source_location": "L245",
       "id": "rankingsdb_history",
-      "community": 4,
+      "community": 0,
       "norm_label": "history()"
     },
     {
@@ -6227,7 +6227,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L1",
       "id": "server_services_rankingsengine_js",
-      "community": 19,
+      "community": 20,
       "norm_label": "rankingsengine.js"
     },
     {
@@ -6236,7 +6236,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L21",
       "id": "rankingsengine_expectedscore",
-      "community": 19,
+      "community": 20,
       "norm_label": "expectedscore()"
     },
     {
@@ -6245,7 +6245,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L25",
       "id": "rankingsengine_kbase",
-      "community": 19,
+      "community": 20,
       "norm_label": "kbase()"
     },
     {
@@ -6254,7 +6254,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L31",
       "id": "rankingsengine_kmult",
-      "community": 19,
+      "community": 20,
       "norm_label": "kmult()"
     },
     {
@@ -6263,7 +6263,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L35",
       "id": "rankingsengine_applyelo",
-      "community": 19,
+      "community": 20,
       "norm_label": "applyelo()"
     },
     {
@@ -6272,7 +6272,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L52",
       "id": "rankingsengine_aggregateballotstoresult",
-      "community": 19,
+      "community": 20,
       "norm_label": "aggregateballotstoresult()"
     },
     {
@@ -6281,7 +6281,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L66",
       "id": "rankingsengine_inferelimdepth",
-      "community": 19,
+      "community": 20,
       "norm_label": "inferelimdepth()"
     },
     {
@@ -6290,7 +6290,7 @@
       "source_file": "server\\services\\rankingsEngine.js",
       "source_location": "L74",
       "id": "rankingsengine_recomputeratings",
-      "community": 1,
+      "community": 0,
       "norm_label": "recomputeratings()"
     },
     {
@@ -6299,97 +6299,97 @@
       "source_file": "server\\services\\scraper.js",
       "source_location": "L1",
       "id": "server_services_scraper_js",
-      "community": 0,
+      "community": 1,
       "norm_label": "scraper.js"
     },
     {
       "label": "scrapeUrl()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L54",
+      "source_location": "L57",
       "id": "scraper_scrapeurl",
-      "community": 0,
+      "community": 1,
       "norm_label": "scrapeurl()"
     },
     {
       "label": "scrapePdf()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L117",
+      "source_location": "L130",
       "id": "scraper_scrapepdf",
-      "community": 0,
+      "community": 1,
       "norm_label": "scrapepdf()"
     },
     {
       "label": "extractStructuredBody()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L158",
+      "source_location": "L171",
       "id": "scraper_extractstructuredbody",
-      "community": 0,
+      "community": 1,
       "norm_label": "extractstructuredbody()"
     },
     {
       "label": "makeAnchor()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L208",
+      "source_location": "L221",
       "id": "scraper_makeanchor",
-      "community": 0,
+      "community": 1,
       "norm_label": "makeanchor()"
     },
     {
       "label": "extractJsonLd()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L219",
+      "source_location": "L232",
       "id": "scraper_extractjsonld",
-      "community": 0,
+      "community": 1,
       "norm_label": "extractjsonld()"
     },
     {
       "label": "findLdArticle()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L232",
+      "source_location": "L245",
       "id": "scraper_findldarticle",
-      "community": 0,
+      "community": 1,
       "norm_label": "findldarticle()"
     },
     {
       "label": "extractTitle()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L241",
+      "source_location": "L254",
       "id": "scraper_extracttitle",
-      "community": 0,
+      "community": 1,
       "norm_label": "extracttitle()"
     },
     {
       "label": "extractAuthor()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L253",
+      "source_location": "L266",
       "id": "scraper_extractauthor",
-      "community": 0,
+      "community": 1,
       "norm_label": "extractauthor()"
     },
     {
       "label": "extractDate()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L282",
+      "source_location": "L295",
       "id": "scraper_extractdate",
-      "community": 0,
+      "community": 1,
       "norm_label": "extractdate()"
     },
     {
       "label": "extractSource()",
       "file_type": "code",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L304",
+      "source_location": "L317",
       "id": "scraper_extractsource",
-      "community": 0,
+      "community": 1,
       "norm_label": "extractsource()"
     },
     {
@@ -6398,7 +6398,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L1",
       "id": "server_services_semanticindex_js",
-      "community": 14,
+      "community": 8,
       "norm_label": "semanticindex.js"
     },
     {
@@ -6407,7 +6407,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L8",
       "id": "semanticindex_loadvecext",
-      "community": 14,
+      "community": 8,
       "norm_label": "_loadvecext()"
     },
     {
@@ -6416,7 +6416,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L23",
       "id": "semanticindex_ensureschema",
-      "community": 14,
+      "community": 8,
       "norm_label": "ensureschema()"
     },
     {
@@ -6425,7 +6425,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L42",
       "id": "semanticindex_upsertembedding",
-      "community": 14,
+      "community": 8,
       "norm_label": "upsertembedding()"
     },
     {
@@ -6434,7 +6434,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L61",
       "id": "semanticindex_knn",
-      "community": 14,
+      "community": 8,
       "norm_label": "knn()"
     },
     {
@@ -6443,7 +6443,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L79",
       "id": "semanticindex_alreadyembedded",
-      "community": 14,
+      "community": 0,
       "norm_label": "alreadyembedded()"
     },
     {
@@ -6452,7 +6452,7 @@
       "source_file": "server\\services\\semanticIndex.js",
       "source_location": "L85",
       "id": "semanticindex_extensionstatus",
-      "community": 14,
+      "community": 8,
       "norm_label": "extensionstatus()"
     },
     {
@@ -6461,7 +6461,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L1",
       "id": "server_services_tabroomcrawler_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "tabroomcrawler.js"
     },
     {
@@ -6470,7 +6470,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L13",
       "id": "tabroomcrawler_download_url",
-      "community": 5,
+      "community": 4,
       "norm_label": "download_url()"
     },
     {
@@ -6479,7 +6479,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L19",
       "id": "tabroomcrawler_parseentries",
-      "community": 5,
+      "community": 4,
       "norm_label": "parseentries()"
     },
     {
@@ -6488,7 +6488,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L68",
       "id": "tabroomcrawler_fetchtournament",
-      "community": 5,
+      "community": 4,
       "norm_label": "fetchtournament()"
     },
     {
@@ -6497,7 +6497,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L119",
       "id": "tabroomcrawler_findupcoming",
-      "community": 5,
+      "community": 4,
       "norm_label": "findupcoming()"
     },
     {
@@ -6506,7 +6506,7 @@
       "source_file": "server\\services\\tabroomCrawler.js",
       "source_location": "L170",
       "id": "tabroomcrawler_refreshall",
-      "community": 5,
+      "community": 4,
       "norm_label": "refreshall()"
     },
     {
@@ -6515,7 +6515,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L1",
       "id": "server_services_threatscorer_js",
-      "community": 24,
+      "community": 25,
       "norm_label": "threatscorer.js"
     },
     {
@@ -6524,7 +6524,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L7",
       "id": "threatscorer_placementscore",
-      "community": 24,
+      "community": 25,
       "norm_label": "placementscore()"
     },
     {
@@ -6533,7 +6533,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L21",
       "id": "threatscorer_normalizeminmax",
-      "community": 24,
+      "community": 25,
       "norm_label": "normalizeminmax()"
     },
     {
@@ -6542,7 +6542,7 @@
       "source_file": "server\\services\\threatScorer.js",
       "source_location": "L29",
       "id": "threatscorer_scoreentries",
-      "community": 24,
+      "community": 25,
       "norm_label": "scoreentries()"
     },
     {
@@ -6551,7 +6551,7 @@
       "source_file": "server\\services\\tocCrawler.js",
       "source_location": "L1",
       "id": "server_services_toccrawler_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "toccrawler.js"
     },
     {
@@ -6560,7 +6560,7 @@
       "source_file": "server\\services\\tocCrawler.js",
       "source_location": "L11",
       "id": "toccrawler_throttle",
-      "community": 4,
+      "community": 0,
       "norm_label": "_throttle()"
     },
     {
@@ -6569,7 +6569,7 @@
       "source_file": "server\\services\\tocCrawler.js",
       "source_location": "L17",
       "id": "toccrawler_fetchtoccircuitid",
-      "community": 4,
+      "community": 0,
       "norm_label": "fetchtoccircuitid()"
     },
     {
@@ -6578,7 +6578,7 @@
       "source_file": "server\\services\\tocCrawler.js",
       "source_location": "L26",
       "id": "toccrawler_fetchcircuittournids",
-      "community": 4,
+      "community": 0,
       "norm_label": "fetchcircuittournids()"
     },
     {
@@ -6587,7 +6587,7 @@
       "source_file": "server\\services\\tocCrawler.js",
       "source_location": "L35",
       "id": "toccrawler_fetchtournamentjson",
-      "community": 4,
+      "community": 0,
       "norm_label": "fetchtournamentjson()"
     },
     {
@@ -6596,7 +6596,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L1",
       "id": "server_services_tocdb_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "tocdb.js"
     },
     {
@@ -6605,7 +6605,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L7",
       "id": "tocdb_upserttournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "upserttournament()"
     },
     {
@@ -6614,7 +6614,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L29",
       "id": "tocdb_gettournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "gettournament()"
     },
     {
@@ -6623,7 +6623,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L33",
       "id": "tocdb_listtournaments",
-      "community": 1,
+      "community": 0,
       "norm_label": "listtournaments()"
     },
     {
@@ -6632,7 +6632,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L61",
       "id": "tocdb_listseasons",
-      "community": 1,
+      "community": 0,
       "norm_label": "listseasons()"
     },
     {
@@ -6641,7 +6641,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L68",
       "id": "tocdb_counttournaments",
-      "community": 1,
+      "community": 0,
       "norm_label": "counttournaments()"
     },
     {
@@ -6650,7 +6650,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L72",
       "id": "tocdb_settournamentcrawled",
-      "community": 1,
+      "community": 0,
       "norm_label": "settournamentcrawled()"
     },
     {
@@ -6659,7 +6659,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L79",
       "id": "tocdb_upsertevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "upsertevent()"
     },
     {
@@ -6668,7 +6668,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L92",
       "id": "tocdb_listevents",
-      "community": 1,
+      "community": 0,
       "norm_label": "listevents()"
     },
     {
@@ -6677,7 +6677,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L98",
       "id": "tocdb_upsertentry",
-      "community": 1,
+      "community": 0,
       "norm_label": "upsertentry()"
     },
     {
@@ -6686,7 +6686,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L118",
       "id": "tocdb_cleareventsfortournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "cleareventsfortournament()"
     },
     {
@@ -6695,7 +6695,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L122",
       "id": "tocdb_clearentriesfortournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "clearentriesfortournament()"
     },
     {
@@ -6704,7 +6704,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L126",
       "id": "tocdb_getentry",
-      "community": 1,
+      "community": 0,
       "norm_label": "getentry()"
     },
     {
@@ -6713,7 +6713,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L130",
       "id": "tocdb_listentriesforevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "listentriesforevent()"
     },
     {
@@ -6722,7 +6722,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L139",
       "id": "tocdb_insertballot",
-      "community": 1,
+      "community": 0,
       "norm_label": "insertballot()"
     },
     {
@@ -6731,7 +6731,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L148",
       "id": "tocdb_clearballotsfortournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "clearballotsfortournament()"
     },
     {
@@ -6740,7 +6740,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L154",
       "id": "tocdb_getpairingsforentry",
-      "community": 1,
+      "community": 0,
       "norm_label": "getpairingsforentry()"
     },
     {
@@ -6749,7 +6749,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L235",
       "id": "tocdb_upsertresult",
-      "community": 1,
+      "community": 0,
       "norm_label": "upsertresult()"
     },
     {
@@ -6758,7 +6758,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L250",
       "id": "tocdb_clearresultsfortournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "clearresultsfortournament()"
     },
     {
@@ -6767,7 +6767,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L254",
       "id": "tocdb_listresults",
-      "community": 1,
+      "community": 0,
       "norm_label": "listresults()"
     },
     {
@@ -6776,7 +6776,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L264",
       "id": "tocdb_listspeakerawards",
-      "community": 1,
+      "community": 0,
       "norm_label": "listspeakerawards()"
     },
     {
@@ -6785,7 +6785,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L276",
       "id": "tocdb_rebuildseasonbids",
-      "community": 1,
+      "community": 0,
       "norm_label": "rebuildseasonbids()"
     },
     {
@@ -6794,7 +6794,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L296",
       "id": "tocdb_listrecordsfortournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "listrecordsfortournament()"
     },
     {
@@ -6803,7 +6803,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L320",
       "id": "tocdb_inferresultsfromballots",
-      "community": 1,
+      "community": 0,
       "norm_label": "inferresultsfromballots()"
     },
     {
@@ -6812,7 +6812,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L397",
       "id": "tocdb_listthreats",
-      "community": 1,
+      "community": 0,
       "norm_label": "listthreats()"
     },
     {
@@ -6821,7 +6821,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L415",
       "id": "tocdb_listenrichedthreats",
-      "community": 1,
+      "community": 0,
       "norm_label": "listenrichedthreats()"
     },
     {
@@ -6830,7 +6830,7 @@
       "source_file": "server\\services\\tocDb.js",
       "source_location": "L438",
       "id": "tocdb_listelimrounds",
-      "community": 1,
+      "community": 0,
       "norm_label": "listelimrounds()"
     },
     {
@@ -6839,7 +6839,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L1",
       "id": "server_services_tocindexer_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "tocindexer.js"
     },
     {
@@ -6848,7 +6848,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L22",
       "id": "tocindexer_isnonvarsityevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "_isnonvarsityevent()"
     },
     {
@@ -6857,7 +6857,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L38",
       "id": "tocindexer_canonicalabbrfromtext",
-      "community": 1,
+      "community": 0,
       "norm_label": "_canonicalabbrfromtext()"
     },
     {
@@ -6866,7 +6866,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L50",
       "id": "tocindexer_canonicalabbr",
-      "community": 1,
+      "community": 0,
       "norm_label": "_canonicalabbr()"
     },
     {
@@ -6875,7 +6875,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L53",
       "id": "tocindexer_canonicalfromevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "_canonicalfromevent()"
     },
     {
@@ -6884,7 +6884,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L67",
       "id": "tocindexer_runwithconcurrency",
-      "community": 1,
+      "community": 0,
       "norm_label": "runwithconcurrency()"
     },
     {
@@ -6893,7 +6893,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L80",
       "id": "tocindexer_seedtocindex",
-      "community": 1,
+      "community": 0,
       "norm_label": "seedtocindex()"
     },
     {
@@ -6902,7 +6902,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L111",
       "id": "tocindexer_crawltournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "crawltournament()"
     },
     {
@@ -6911,7 +6911,7 @@
       "source_file": "server\\services\\tocIndexer.js",
       "source_location": "L121",
       "id": "tocindexer_indextournament",
-      "community": 1,
+      "community": 0,
       "norm_label": "indextournament()"
     },
     {
@@ -6920,7 +6920,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L1",
       "id": "server_services_tocparser_js",
-      "community": 1,
+      "community": 17,
       "norm_label": "tocparser.js"
     },
     {
@@ -6929,7 +6929,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L4",
       "id": "tocparser_fnv1a",
-      "community": 1,
+      "community": 17,
       "norm_label": "fnv1a()"
     },
     {
@@ -6938,7 +6938,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L14",
       "id": "tocparser_seasonfor",
-      "community": 1,
+      "community": 17,
       "norm_label": "seasonfor()"
     },
     {
@@ -6947,7 +6947,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L22",
       "id": "tocparser_teamkeyfor",
-      "community": 1,
+      "community": 17,
       "norm_label": "teamkeyfor()"
     },
     {
@@ -6956,7 +6956,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L37",
       "id": "tocparser_inferbidlevel",
-      "community": 1,
+      "community": 17,
       "norm_label": "inferbidlevel()"
     },
     {
@@ -6965,7 +6965,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L59",
       "id": "tocparser_side",
-      "community": 1,
+      "community": 17,
       "norm_label": "_side()"
     },
     {
@@ -6974,7 +6974,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L65",
       "id": "tocparser_result",
-      "community": 1,
+      "community": 17,
       "norm_label": "_result()"
     },
     {
@@ -6983,7 +6983,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L71",
       "id": "tocparser_points",
-      "community": 1,
+      "community": 17,
       "norm_label": "_points()"
     },
     {
@@ -6992,7 +6992,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L78",
       "id": "tocparser_parseballots",
-      "community": 1,
+      "community": 17,
       "norm_label": "parseballots()"
     },
     {
@@ -7001,7 +7001,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L107",
       "id": "tocparser_parseresults",
-      "community": 1,
+      "community": 0,
       "norm_label": "parseresults()"
     },
     {
@@ -7010,7 +7010,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L143",
       "id": "tocparser_tierof",
-      "community": 1,
+      "community": 17,
       "norm_label": "_tierof()"
     },
     {
@@ -7019,7 +7019,7 @@
       "source_file": "server\\services\\tocParser.js",
       "source_location": "L147",
       "id": "tocparser_parseearnedbids",
-      "community": 1,
+      "community": 0,
       "norm_label": "parseearnedbids()"
     },
     {
@@ -7113,12 +7113,39 @@
       "norm_label": "semanticsearch()"
     },
     {
+      "label": "webfetch.js",
+      "file_type": "code",
+      "source_file": "server\\services\\webfetch.js",
+      "source_location": "L1",
+      "id": "server_services_webfetch_js",
+      "community": 1,
+      "norm_label": "webfetch.js"
+    },
+    {
+      "label": "fetchHtml()",
+      "file_type": "code",
+      "source_file": "server\\services\\webfetch.js",
+      "source_location": "L28",
+      "id": "webfetch_fetchhtml",
+      "community": 1,
+      "norm_label": "fetchhtml()"
+    },
+    {
+      "label": "isAvailable()",
+      "file_type": "code",
+      "source_file": "server\\services\\webfetch.js",
+      "source_location": "L55",
+      "id": "webfetch_isavailable",
+      "community": 1,
+      "norm_label": "isavailable()"
+    },
+    {
       "label": "wikiCrawler.js",
       "file_type": "code",
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L1",
       "id": "server_services_wikicrawler_js",
-      "community": 17,
+      "community": 18,
       "norm_label": "wikicrawler.js"
     },
     {
@@ -7127,7 +7154,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L11",
       "id": "wikicrawler_sleep",
-      "community": 17,
+      "community": 18,
       "norm_label": "_sleep()"
     },
     {
@@ -7136,7 +7163,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L15",
       "id": "wikicrawler_login",
-      "community": 17,
+      "community": 18,
       "norm_label": "_login()"
     },
     {
@@ -7145,7 +7172,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L37",
       "id": "wikicrawler_get",
-      "community": 17,
+      "community": 18,
       "norm_label": "_get()"
     },
     {
@@ -7154,7 +7181,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L59",
       "id": "wikicrawler_fetchcaselists",
-      "community": 17,
+      "community": 18,
       "norm_label": "fetchcaselists()"
     },
     {
@@ -7163,7 +7190,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L63",
       "id": "wikicrawler_fetchschools",
-      "community": 17,
+      "community": 18,
       "norm_label": "fetchschools()"
     },
     {
@@ -7172,7 +7199,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L68",
       "id": "wikicrawler_fetchteams",
-      "community": 17,
+      "community": 18,
       "norm_label": "fetchteams()"
     },
     {
@@ -7181,7 +7208,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L73",
       "id": "wikicrawler_fetchrounds",
-      "community": 17,
+      "community": 18,
       "norm_label": "fetchrounds()"
     },
     {
@@ -7190,7 +7217,7 @@
       "source_file": "server\\services\\wikiCrawler.js",
       "source_location": "L78",
       "id": "wikicrawler_fetchcites",
-      "community": 17,
+      "community": 18,
       "norm_label": "fetchcites()"
     },
     {
@@ -7199,7 +7226,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L1",
       "id": "server_services_wikidb_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "wikidb.js"
     },
     {
@@ -7208,7 +7235,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L5",
       "id": "wikidb_slugify",
-      "community": 1,
+      "community": 0,
       "norm_label": "slugify()"
     },
     {
@@ -7217,7 +7244,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L11",
       "id": "wikidb_upsertteam",
-      "community": 1,
+      "community": 0,
       "norm_label": "upsertteam()"
     },
     {
@@ -7226,7 +7253,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L25",
       "id": "wikidb_rebuildteamsfts",
-      "community": 1,
+      "community": 0,
       "norm_label": "rebuildteamsfts()"
     },
     {
@@ -7235,7 +7262,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L29",
       "id": "wikidb_searchteams",
-      "community": 1,
+      "community": 0,
       "norm_label": "searchteams()"
     },
     {
@@ -7244,7 +7271,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L55",
       "id": "wikidb_getteam",
-      "community": 1,
+      "community": 0,
       "norm_label": "getteam()"
     },
     {
@@ -7253,7 +7280,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L59",
       "id": "wikidb_setteamcrawlstatus",
-      "community": 1,
+      "community": 0,
       "norm_label": "setteamcrawlstatus()"
     },
     {
@@ -7262,7 +7289,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L63",
       "id": "wikidb_setteamcrawled",
-      "community": 1,
+      "community": 0,
       "norm_label": "setteamcrawled()"
     },
     {
@@ -7271,7 +7298,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L69",
       "id": "wikidb_isteamstale",
-      "community": 1,
+      "community": 0,
       "norm_label": "isteamstale()"
     },
     {
@@ -7280,7 +7307,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L75",
       "id": "wikidb_countteams",
-      "community": 1,
+      "community": 0,
       "norm_label": "countteams()"
     },
     {
@@ -7289,7 +7316,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L81",
       "id": "wikidb_upsertargument",
-      "community": 1,
+      "community": 0,
       "norm_label": "upsertargument()"
     },
     {
@@ -7298,7 +7325,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L96",
       "id": "wikidb_rebuildargumentsfts",
-      "community": 1,
+      "community": 0,
       "norm_label": "rebuildargumentsfts()"
     },
     {
@@ -7307,7 +7334,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L100",
       "id": "wikidb_getteamarguments",
-      "community": 1,
+      "community": 0,
       "norm_label": "getteamarguments()"
     },
     {
@@ -7316,7 +7343,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L106",
       "id": "wikidb_getargument",
-      "community": 1,
+      "community": 0,
       "norm_label": "getargument()"
     },
     {
@@ -7325,7 +7352,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L112",
       "id": "wikidb_clearteamarguments",
-      "community": 1,
+      "community": 0,
       "norm_label": "clearteamarguments()"
     },
     {
@@ -7334,7 +7361,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L116",
       "id": "wikidb_insertroundreport",
-      "community": 1,
+      "community": 0,
       "norm_label": "insertroundreport()"
     },
     {
@@ -7343,7 +7370,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L123",
       "id": "wikidb_clearroundreports",
-      "community": 1,
+      "community": 0,
       "norm_label": "clearroundreports()"
     },
     {
@@ -7352,7 +7379,7 @@
       "source_file": "server\\services\\wikiDb.js",
       "source_location": "L127",
       "id": "wikidb_listteamsbyevent",
-      "community": 1,
+      "community": 0,
       "norm_label": "listteamsbyevent()"
     },
     {
@@ -7361,7 +7388,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L1",
       "id": "server_services_wikiindexer_js",
-      "community": 1,
+      "community": 0,
       "norm_label": "wikiindexer.js"
     },
     {
@@ -7370,7 +7397,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L11",
       "id": "wikiindexer_scheduleargumentsftsrebuild",
-      "community": 1,
+      "community": 0,
       "norm_label": "_scheduleargumentsftsrebuild()"
     },
     {
@@ -7379,7 +7406,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L20",
       "id": "wikiindexer_seedteamindex",
-      "community": 17,
+      "community": 18,
       "norm_label": "seedteamindex()"
     },
     {
@@ -7388,7 +7415,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L51",
       "id": "wikiindexer_crawlteamdetail",
-      "community": 1,
+      "community": 0,
       "norm_label": "crawlteamdetail()"
     },
     {
@@ -7397,7 +7424,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L155",
       "id": "wikiindexer_visibletextlength",
-      "community": 1,
+      "community": 0,
       "norm_label": "_visibletextlength()"
     },
     {
@@ -7406,7 +7433,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L180",
       "id": "wikiindexer_isjunkarg",
-      "community": 1,
+      "community": 0,
       "norm_label": "_isjunkarg()"
     },
     {
@@ -7415,7 +7442,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L198",
       "id": "wikiindexer_inferside",
-      "community": 1,
+      "community": 0,
       "norm_label": "_inferside()"
     },
     {
@@ -7424,7 +7451,7 @@
       "source_file": "server\\services\\wikiIndexer.js",
       "source_location": "L208",
       "id": "wikiindexer_striptournamentprefix",
-      "community": 1,
+      "community": 0,
       "norm_label": "_striptournamentprefix()"
     },
     {
@@ -7478,7 +7505,7 @@
       "source_file": "server\\services\\cite\\citoid.js",
       "source_location": "L1",
       "id": "server_services_cite_citoid_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "citoid.js"
     },
     {
@@ -7487,7 +7514,7 @@
       "source_file": "server\\services\\cite\\citoid.js",
       "source_location": "L9",
       "id": "citoid_resolve",
-      "community": 4,
+      "community": 0,
       "norm_label": "resolve()"
     },
     {
@@ -7532,7 +7559,7 @@
       "source_file": "server\\services\\sources\\arxiv.js",
       "source_location": "L1",
       "id": "server_services_sources_arxiv_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "arxiv.js"
     },
     {
@@ -7541,7 +7568,7 @@
       "source_file": "server\\services\\sources\\arxiv.js",
       "source_location": "L5",
       "id": "arxiv_search",
-      "community": 4,
+      "community": 0,
       "norm_label": "search()"
     },
     {
@@ -7550,7 +7577,7 @@
       "source_file": "server\\services\\sources\\core.js",
       "source_location": "L1",
       "id": "server_services_sources_core_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "core.js"
     },
     {
@@ -7559,7 +7586,7 @@
       "source_file": "server\\services\\sources\\core.js",
       "source_location": "L5",
       "id": "core_search",
-      "community": 4,
+      "community": 0,
       "norm_label": "search()"
     },
     {
@@ -7568,7 +7595,7 @@
       "source_file": "server\\services\\sources\\crossref.js",
       "source_location": "L1",
       "id": "server_services_sources_crossref_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "crossref.js"
     },
     {
@@ -7577,7 +7604,7 @@
       "source_file": "server\\services\\sources\\crossref.js",
       "source_location": "L7",
       "id": "crossref_search",
-      "community": 4,
+      "community": 0,
       "norm_label": "search()"
     },
     {
@@ -7586,7 +7613,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L1",
       "id": "server_services_sources_domainsearch_js",
-      "community": 0,
+      "community": 8,
       "norm_label": "domainsearch.js"
     },
     {
@@ -7595,7 +7622,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L19",
       "id": "domainsearch_buildsitefilter",
-      "community": 0,
+      "community": 8,
       "norm_label": "buildsitefilter()"
     },
     {
@@ -7604,7 +7631,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L23",
       "id": "domainsearch_unwrapduckduckgourl",
-      "community": 0,
+      "community": 8,
       "norm_label": "unwrapduckduckgourl()"
     },
     {
@@ -7613,7 +7640,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L36",
       "id": "domainsearch_matchsource",
-      "community": 0,
+      "community": 8,
       "norm_label": "matchsource()"
     },
     {
@@ -7622,7 +7649,7 @@
       "source_file": "server\\services\\sources\\domainSearch.js",
       "source_location": "L46",
       "id": "domainsearch_search",
-      "community": 0,
+      "community": 8,
       "norm_label": "search()"
     },
     {
@@ -7631,7 +7658,7 @@
       "source_file": "server\\services\\sources\\exa.js",
       "source_location": "L1",
       "id": "server_services_sources_exa_js",
-      "community": 38,
+      "community": 40,
       "norm_label": "exa.js"
     },
     {
@@ -7640,7 +7667,7 @@
       "source_file": "server\\services\\sources\\exa.js",
       "source_location": "L7",
       "id": "exa_search",
-      "community": 38,
+      "community": 40,
       "norm_label": "search()"
     },
     {
@@ -7649,7 +7676,7 @@
       "source_file": "server\\services\\sources\\gdelt.js",
       "source_location": "L1",
       "id": "server_services_sources_gdelt_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "gdelt.js"
     },
     {
@@ -7658,7 +7685,7 @@
       "source_file": "server\\services\\sources\\gdelt.js",
       "source_location": "L5",
       "id": "gdelt_search",
-      "community": 4,
+      "community": 0,
       "norm_label": "search()"
     },
     {
@@ -7667,7 +7694,7 @@
       "source_file": "server\\services\\sources\\jina.js",
       "source_location": "L1",
       "id": "server_services_sources_jina_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "jina.js"
     },
     {
@@ -7676,7 +7703,7 @@
       "source_file": "server\\services\\sources\\jina.js",
       "source_location": "L9",
       "id": "jina_fetchviajina",
-      "community": 4,
+      "community": 0,
       "norm_label": "fetchviajina()"
     },
     {
@@ -7685,7 +7712,7 @@
       "source_file": "server\\services\\sources\\openAlex.js",
       "source_location": "L1",
       "id": "server_services_sources_openalex_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "openalex.js"
     },
     {
@@ -7694,7 +7721,7 @@
       "source_file": "server\\services\\sources\\openAlex.js",
       "source_location": "L7",
       "id": "openalex_search",
-      "community": 4,
+      "community": 0,
       "norm_label": "search()"
     },
     {
@@ -7703,7 +7730,7 @@
       "source_file": "server\\services\\sources\\semanticScholar.js",
       "source_location": "L1",
       "id": "server_services_sources_semanticscholar_js",
-      "community": 4,
+      "community": 0,
       "norm_label": "semanticscholar.js"
     },
     {
@@ -7712,7 +7739,7 @@
       "source_file": "server\\services\\sources\\semanticScholar.js",
       "source_location": "L7",
       "id": "semanticscholar_search",
-      "community": 4,
+      "community": 0,
       "norm_label": "search()"
     },
     {
@@ -7721,7 +7748,7 @@
       "source_file": "server\\services\\sources\\tavily.js",
       "source_location": "L1",
       "id": "server_services_sources_tavily_js",
-      "community": 39,
+      "community": 41,
       "norm_label": "tavily.js"
     },
     {
@@ -7730,7 +7757,7 @@
       "source_file": "server\\services\\sources\\tavily.js",
       "source_location": "L7",
       "id": "tavily_search",
-      "community": 39,
+      "community": 41,
       "norm_label": "search()"
     },
     {
@@ -7739,7 +7766,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L1",
       "id": "server_services_sources_unpaywall_js",
-      "community": 4,
+      "community": 26,
       "norm_label": "unpaywall.js"
     },
     {
@@ -7748,7 +7775,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L8",
       "id": "unpaywall_pickbestoaurl",
-      "community": 4,
+      "community": 26,
       "norm_label": "pickbestoaurl()"
     },
     {
@@ -7757,7 +7784,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L16",
       "id": "unpaywall_search",
-      "community": 4,
+      "community": 26,
       "norm_label": "search()"
     },
     {
@@ -7766,7 +7793,7 @@
       "source_file": "server\\services\\sources\\unpaywall.js",
       "source_location": "L45",
       "id": "unpaywall_resolvedoi",
-      "community": 4,
+      "community": 26,
       "norm_label": "resolvedoi()"
     },
     {
@@ -7775,7 +7802,7 @@
       "source_file": "server\\services\\__tests__\\tabroomSearch.test.js",
       "source_location": "L1",
       "id": "server_services_tests_tabroomsearch_test_js",
-      "community": 40,
+      "community": 42,
       "norm_label": "tabroomsearch.test.js"
     },
     {
@@ -7784,7 +7811,7 @@
       "source_file": "server\\services\\__tests__\\tabroomSearch.test.js",
       "source_location": "L28",
       "id": "tabroomsearch_test_eschtml",
-      "community": 40,
+      "community": 42,
       "norm_label": "eschtml()"
     },
     {
@@ -7793,7 +7820,7 @@
       "source_file": "server\\services\\__tests__\\threatScorer.test.js",
       "source_location": "L1",
       "id": "server_services_tests_threatscorer_test_js",
-      "community": 51,
+      "community": 53,
       "norm_label": "threatscorer.test.js"
     },
     {
@@ -7820,7 +7847,7 @@
       "source_file": "test\\cardCutter-prompt.test.js",
       "source_location": "L1",
       "id": "test_cardcutter_prompt_test_js",
-      "community": 52,
+      "community": 54,
       "norm_label": "cardcutter-prompt.test.js"
     },
     {
@@ -7829,7 +7856,7 @@
       "source_file": "test\\carousel.test.js",
       "source_location": "L1",
       "id": "test_carousel_test_js",
-      "community": 53,
+      "community": 55,
       "norm_label": "carousel.test.js"
     },
     {
@@ -7838,7 +7865,7 @@
       "source_file": "test\\chat-brevity.test.js",
       "source_location": "L1",
       "id": "test_chat_brevity_test_js",
-      "community": 54,
+      "community": 56,
       "norm_label": "chat-brevity.test.js"
     },
     {
@@ -7847,7 +7874,7 @@
       "source_file": "test\\chatCommands.test.js",
       "source_location": "L1",
       "id": "test_chatcommands_test_js",
-      "community": 55,
+      "community": 57,
       "norm_label": "chatcommands.test.js"
     },
     {
@@ -7856,7 +7883,7 @@
       "source_file": "test\\chatRetrieval.test.js",
       "source_location": "L1",
       "id": "test_chatretrieval_test_js",
-      "community": 56,
+      "community": 58,
       "norm_label": "chatretrieval.test.js"
     },
     {
@@ -7865,7 +7892,7 @@
       "source_file": "test\\chatStore.test.js",
       "source_location": "L1",
       "id": "test_chatstore_test_js",
-      "community": 57,
+      "community": 59,
       "norm_label": "chatstore.test.js"
     },
     {
@@ -7874,7 +7901,7 @@
       "source_file": "test\\clipboard.test.js",
       "source_location": "L1",
       "id": "test_clipboard_test_js",
-      "community": 58,
+      "community": 60,
       "norm_label": "clipboard.test.js"
     },
     {
@@ -7883,7 +7910,7 @@
       "source_file": "test\\evidence-random.test.js",
       "source_location": "L1",
       "id": "test_evidence_random_test_js",
-      "community": 41,
+      "community": 43,
       "norm_label": "evidence-random.test.js"
     },
     {
@@ -7892,7 +7919,7 @@
       "source_file": "test\\evidence-random.test.js",
       "source_location": "L22",
       "id": "evidence_random_test_ids",
-      "community": 41,
+      "community": 43,
       "norm_label": "ids()"
     },
     {
@@ -7901,7 +7928,7 @@
       "source_file": "test\\evidence-search.test.js",
       "source_location": "L1",
       "id": "test_evidence_search_test_js",
-      "community": 59,
+      "community": 61,
       "norm_label": "evidence-search.test.js"
     },
     {
@@ -7910,7 +7937,7 @@
       "source_file": "test\\expand-command.test.js",
       "source_location": "L1",
       "id": "test_expand_command_test_js",
-      "community": 60,
+      "community": 62,
       "norm_label": "expand-command.test.js"
     },
     {
@@ -7919,7 +7946,7 @@
       "source_file": "test\\instant-research.test.js",
       "source_location": "L1",
       "id": "test_instant_research_test_js",
-      "community": 61,
+      "community": 63,
       "norm_label": "instant-research.test.js"
     },
     {
@@ -7928,7 +7955,7 @@
       "source_file": "test\\isDirty.test.js",
       "source_location": "L1",
       "id": "test_isdirty_test_js",
-      "community": 62,
+      "community": 64,
       "norm_label": "isdirty.test.js"
     },
     {
@@ -7937,7 +7964,7 @@
       "source_file": "test\\limits.test.js",
       "source_location": "L1",
       "id": "test_limits_test_js",
-      "community": 63,
+      "community": 65,
       "norm_label": "limits.test.js"
     },
     {
@@ -7946,7 +7973,7 @@
       "source_file": "test\\normalizeTag.smoke.js",
       "source_location": "L1",
       "id": "test_normalizetag_smoke_js",
-      "community": 5,
+      "community": 4,
       "norm_label": "normalizetag.smoke.js"
     },
     {
@@ -7955,7 +7982,7 @@
       "source_file": "test\\normalizeTag.smoke.js",
       "source_location": "L14",
       "id": "normalizetag_smoke_normalizetag",
-      "community": 5,
+      "community": 4,
       "norm_label": "normalizetag()"
     },
     {
@@ -7964,7 +7991,7 @@
       "source_file": "test\\project-cleanup.test.js",
       "source_location": "L1",
       "id": "test_project_cleanup_test_js",
-      "community": 64,
+      "community": 66,
       "norm_label": "project-cleanup.test.js"
     },
     {
@@ -7973,7 +8000,7 @@
       "source_file": "test\\rankingsEngine.test.js",
       "source_location": "L1",
       "id": "test_rankingsengine_test_js",
-      "community": 65,
+      "community": 67,
       "norm_label": "rankingsengine.test.js"
     },
     {
@@ -7982,7 +8009,7 @@
       "source_file": "test\\slash-enter.test.js",
       "source_location": "L1",
       "id": "test_slash_enter_test_js",
-      "community": 66,
+      "community": 68,
       "norm_label": "slash-enter.test.js"
     },
     {
@@ -7991,7 +8018,7 @@
       "source_file": "test\\tocParser.test.js",
       "source_location": "L1",
       "id": "test_tocparser_test_js",
-      "community": 42,
+      "community": 44,
       "norm_label": "tocparser.test.js"
     },
     {
@@ -8000,7 +8027,7 @@
       "source_file": "test\\tocParser.test.js",
       "source_location": "L39",
       "id": "tocparser_test_make",
-      "community": 42,
+      "community": 44,
       "norm_label": "make()"
     },
     {
@@ -8036,7 +8063,7 @@
       "source_file": "test\\wordAt.test.js",
       "source_location": "L1",
       "id": "test_wordat_test_js",
-      "community": 67,
+      "community": 69,
       "norm_label": "wordat.test.js"
     },
     {
@@ -8045,7 +8072,7 @@
       "source_file": "test\\wordSnap.test.js",
       "source_location": "L1",
       "id": "test_wordsnap_test_js",
-      "community": 68,
+      "community": 70,
       "norm_label": "wordsnap.test.js"
     },
     {
@@ -8054,7 +8081,7 @@
       "source_file": "test\\_helpers.js",
       "source_location": "L1",
       "id": "test_helpers_js",
-      "community": 43,
+      "community": 45,
       "norm_label": "_helpers.js"
     },
     {
@@ -8063,7 +8090,7 @@
       "source_file": "test\\_helpers.js",
       "source_location": "L6",
       "id": "helpers_usetempdb",
-      "community": 43,
+      "community": 45,
       "norm_label": "usetempdb()"
     },
     {
@@ -27692,7 +27719,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L54",
+      "source_location": "L57",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_scrapeurl",
@@ -27704,7 +27731,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L117",
+      "source_location": "L130",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_scrapepdf",
@@ -27716,7 +27743,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L158",
+      "source_location": "L171",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_extractstructuredbody",
@@ -27728,7 +27755,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L208",
+      "source_location": "L221",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_makeanchor",
@@ -27740,7 +27767,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L219",
+      "source_location": "L232",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_extractjsonld",
@@ -27752,7 +27779,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L232",
+      "source_location": "L245",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_findldarticle",
@@ -27764,7 +27791,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L241",
+      "source_location": "L254",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_extracttitle",
@@ -27776,7 +27803,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L253",
+      "source_location": "L266",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_extractauthor",
@@ -27788,7 +27815,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L282",
+      "source_location": "L295",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_extractdate",
@@ -27800,7 +27827,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L304",
+      "source_location": "L317",
       "weight": 1.0,
       "_src": "server_services_scraper_js",
       "_tgt": "scraper_extractsource",
@@ -27812,7 +27839,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L56",
+      "source_location": "L59",
       "weight": 1.0,
       "_src": "scraper_scrapeurl",
       "_tgt": "scraper_scrapepdf",
@@ -27824,7 +27851,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L80",
+      "source_location": "L93",
       "weight": 1.0,
       "_src": "scraper_scrapeurl",
       "_tgt": "scraper_extractjsonld",
@@ -27836,7 +27863,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L84",
+      "source_location": "L97",
       "weight": 1.0,
       "_src": "scraper_scrapeurl",
       "_tgt": "scraper_extracttitle",
@@ -27848,7 +27875,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L85",
+      "source_location": "L98",
       "weight": 1.0,
       "_src": "scraper_scrapeurl",
       "_tgt": "scraper_extractauthor",
@@ -27860,7 +27887,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L86",
+      "source_location": "L99",
       "weight": 1.0,
       "_src": "scraper_scrapeurl",
       "_tgt": "scraper_extractdate",
@@ -27872,7 +27899,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L87",
+      "source_location": "L100",
       "weight": 1.0,
       "_src": "scraper_scrapeurl",
       "_tgt": "scraper_extractsource",
@@ -27884,7 +27911,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L98",
+      "source_location": "L111",
       "weight": 1.0,
       "_src": "scraper_scrapeurl",
       "_tgt": "scraper_extractstructuredbody",
@@ -27894,9 +27921,21 @@
     },
     {
       "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "server\\services\\scraper.js",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_src": "scraper_scrapeurl",
+      "_tgt": "webfetch_fetchhtml",
+      "source": "scraper_scrapeurl",
+      "target": "webfetch_fetchhtml"
+    },
+    {
+      "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L242",
+      "source_location": "L255",
       "weight": 1.0,
       "_src": "scraper_extracttitle",
       "_tgt": "scraper_findldarticle",
@@ -27908,7 +27947,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L254",
+      "source_location": "L267",
       "weight": 1.0,
       "_src": "scraper_extractauthor",
       "_tgt": "scraper_findldarticle",
@@ -27920,7 +27959,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "server\\services\\scraper.js",
-      "source_location": "L283",
+      "source_location": "L296",
       "weight": 1.0,
       "_src": "scraper_extractdate",
       "_tgt": "scraper_findldarticle",
@@ -29438,6 +29477,30 @@
       "_tgt": "vectorsearch_embeddocuments",
       "source": "vectorsearch_embeddocuments",
       "target": "vectorsearch_upsertcards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server\\services\\webfetch.js",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_src": "server_services_webfetch_js",
+      "_tgt": "webfetch_fetchhtml",
+      "source": "server_services_webfetch_js",
+      "target": "webfetch_fetchhtml",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server\\services\\webfetch.js",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_src": "server_services_webfetch_js",
+      "_tgt": "webfetch_isavailable",
+      "source": "server_services_webfetch_js",
+      "target": "webfetch_isavailable",
       "confidence_score": 1.0
     },
     {
