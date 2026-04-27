@@ -32,6 +32,20 @@ const LIMIT = (() => {
   return idx !== -1 ? parseInt(args[idx + 1], 10) : Infinity;
 })();
 
+// Mirrors the parser's word-count rule (server/services/docxImport.js).
+// Counts words inside <u>...</u>, **...**, or ==...== markers.
+function countFormattedWords(markdown) {
+  if (!markdown) return 0;
+  const re = /<u>([\s\S]*?)<\/u>|\*\*([\s\S]*?)\*\*|==([\s\S]*?)==/g;
+  let total = 0;
+  let m;
+  while ((m = re.exec(String(markdown))) !== null) {
+    const inner = (m[1] || m[2] || m[3] || '').replace(/<[^>]+>|\*\*|==/g, '');
+    total += inner.split(/\s+/).filter(Boolean).length;
+  }
+  return total;
+}
+
 // ── Prompt ──────────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are a competitive debate expert (LD, Policy, NDTCEDA).
@@ -137,25 +151,37 @@ async function main() {
 
   const CANONICAL_ONLY = args.includes('--canonical');
   const FORMATTED_ONLY = args.includes('--formatted');
+  const FULLCITE_ONLY  = args.includes('--fullcite');
   const whereCanon = CANONICAL_ONLY ? ' AND isCanonical=1' : '';
-  // --formatted: skip cards whose body has no underline/highlight markers.
-  // Cheap proxy for "real evidence card" — debris (orphan paragraphs, blocks
-  // with no markup) gets filtered out so we don't burn LLM cost on it.
+  // --fullcite: cite must be meaningfully longer than shortCite (not just
+  // "Author 'YY"). Matches the bucketing used elsewhere in the codebase.
+  const whereCite = FULLCITE_ONLY
+    ? ' AND length(cite) > length(shortCite) + 5'
+    : '';
+  // --formatted: SQL preselect requires SOME formatting marker in body.
+  // The strict "≥5 formatted words" rule is enforced in JS post-filter below
+  // because counting words inside <u>...</u>/==...== reliably needs regex.
   const whereFmt = FORMATTED_ONLY
     ? " AND (body_markdown LIKE '%<u>%' OR body_markdown LIKE '%==%')"
     : '';
+  const selectCols = 'id, tag, shortCite, cite, body_plain, body_markdown, sourceKind, division, zipPath, topicBucket';
   const query = RECLASSIFY_ALL
-    ? `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards WHERE 1=1${whereCanon}${whereFmt} ORDER BY importedAt DESC`
-    : `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards
+    ? `SELECT ${selectCols} FROM cards WHERE 1=1${whereCanon}${whereFmt}${whereCite} ORDER BY importedAt DESC`
+    : `SELECT ${selectCols} FROM cards
        WHERE (argumentTags IN ('[]', '["none"]')
-          OR argumentTypes IN ('[]', '["none"]'))${whereCanon}${whereFmt}
+          OR argumentTypes IN ('[]', '["none"]'))${whereCanon}${whereFmt}${whereCite}
        ORDER BY importedAt DESC`;
 
   let cards = database.prepare(query).all();
+  const beforeFmt = cards.length;
+  if (FORMATTED_ONLY) {
+    cards = cards.filter(c => countFormattedWords(c.body_markdown) >= 5);
+  }
   if (Number.isFinite(LIMIT)) cards = cards.slice(0, LIMIT);
 
   const total = cards.length;
   console.log(`[classify] ${total} cards to classify (batch=${BATCH_SIZE})`);
+  if (FORMATTED_ONLY) console.log(`[classify] ${beforeFmt - total} cards dropped by JS-side <5-formatted-words filter`);
 
   let done = 0;
   let failed = 0;
