@@ -29,13 +29,17 @@
 
 /* ── Page shell ─────────────────────────────────────────────────────────── */
 
+/* Display rule supports both shells: app-r3.js toggles `.on`, app-main.js toggles `.active` */
 #page-chat {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   background: var(--hd-parchment);
   color: var(--hd-ink);
   font-family: var(--hd-sans);
+}
+#page-chat.on,
+#page-chat.active {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .chat-tab {

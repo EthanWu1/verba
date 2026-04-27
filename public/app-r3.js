@@ -10,7 +10,8 @@ const $$ = (sel, root=document) => root.querySelectorAll(sel);
 
 const NAMES = {
   today:'Today', cutter:'Card Cutter', library:'Library',
-  tournaments:'Tournaments', rankings:'Rankings', team:'Team Profile', settings:'Settings'
+  tournaments:'Tournaments', rankings:'Rankings', team:'Team Profile',
+  chat:'Assistant', settings:'Settings'
 };
 
 const state = {
@@ -109,6 +110,7 @@ function go(p){
   if(p==='library') loadLibrary();
   if(p==='tournaments') loadTournaments();
   if(p==='rankings') loadRankings();
+  if(p==='chat' && window.ChatApp) window.ChatApp.show();
   if(p==='settings') loadSettings();
   // Reset tournaments view when navigating in
   if(p==='tournaments'){ $('t-list-view').style.display='block'; $('t-detail-view').style.display='none'; window.scrollTo(0,0); }
