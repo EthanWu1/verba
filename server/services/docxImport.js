@@ -829,14 +829,33 @@ async function importDocxEntry(zipPath, entryPath) {
 }
 
 async function importZipToLibrary(zipPath, options = {}) {
-  const { maxDocs = Infinity, logEvery = 250 } = options;
+  const { maxDocs = Infinity, logEvery = 250, flushEvery = 5000 } = options;
   await previewZipImport(zipPath, 5);
   const allEntries = await listDocxEntries(zipPath);
 
   const selectedEntries = Number.isFinite(maxDocs) ? allEntries.slice(0, maxDocs) : allEntries;
-  const rawNewCards = [];
+  let pendingCards = [];
   let processedDocs = 0;
   let analyticsCount = 0;
+  let totalNewCards = 0;
+  const affectedGroupSet = new Set();
+
+  // Flush a batch of pending cards: dedup against DB, upsert, clear memory.
+  // Called periodically (every flushEvery cards) to keep heap bounded — large
+  // zips (e.g. 25k+ docs producing 70k+ cards) OOM if accumulated whole.
+  const flushBatch = () => {
+    if (pendingCards.length === 0) return;
+    const candidateFps = pendingCards.map(c => c.contentFingerprint);
+    const existingFingerprints = db.filterExistingFingerprints(candidateFps);
+    const deduped = pendingCards.filter(c => !existingFingerprints.has(c.contentFingerprint));
+    deduped.forEach(c => { c.isCanonical = false; c.variantCount = 1; });
+    db.upsertCards(deduped);
+    for (const c of deduped) {
+      if (c.canonicalGroupKey) affectedGroupSet.add(c.canonicalGroupKey);
+    }
+    totalNewCards += deduped.length;
+    pendingCards = [];
+  };
 
   for (const entryPath of selectedEntries) {
     try {
@@ -845,7 +864,7 @@ async function importZipToLibrary(zipPath, options = {}) {
       const cards = parseCardsFromParagraphs(paragraphs, entryPath, zipPath);
 
       if (maybeStoreAnalytic(paragraphs, entryPath, zipPath, cards)) analyticsCount++;
-      if (cards.length > 0) rawNewCards.push(...cards);
+      if (cards.length > 0) pendingCards.push(...cards);
 
       processedDocs += 1;
     } catch (error) {
@@ -853,26 +872,18 @@ async function importZipToLibrary(zipPath, options = {}) {
     }
 
     if (logEvery && processedDocs % logEvery === 0) {
-      console.log(`[import] ${processedDocs}/${selectedEntries.length} docs, ${rawNewCards.length} cards, ${analyticsCount} analytics`);
+      console.log(`[import] ${processedDocs}/${selectedEntries.length} docs, ${pendingCards.length} pending, ${totalNewCards} flushed, ${analyticsCount} analytics`);
     }
+
+    if (pendingCards.length >= flushEvery) flushBatch();
   }
 
-  // Dedup: only insert cards with fingerprints not already in DB.
-  // Use the candidate-only lookup so we don't load every fingerprint in the
-  // DB (~800k+) into JS memory — which OOMs the import on tight-RAM hosts.
-  const candidateFps = rawNewCards.map(c => c.contentFingerprint);
-  const existingFingerprints = db.filterExistingFingerprints(candidateFps);
-  const deduped = rawNewCards.filter(c => !existingFingerprints.has(c.contentFingerprint));
-
-  // Insert new cards with isCanonical=false initially
-  deduped.forEach(c => { c.isCanonical = false; c.variantCount = 1; });
-  db.upsertCards(deduped);
+  flushBatch();
 
   // Re-elect canonicals for only the affected groups — pure SQL, no JS memory load
-  const affectedGroups = [...new Set(deduped.map(c => c.canonicalGroupKey).filter(Boolean))];
-  db.recanonicalizeGroups(affectedGroups);
+  db.recanonicalizeGroups([...affectedGroupSet]);
 
-  db.logIngestion(zipPath, deduped.length, analyticsCount, processedDocs);
+  db.logIngestion(zipPath, totalNewCards, analyticsCount, processedDocs);
   _zipCache.delete(zipPath); // free memory
 
   // Query stats directly from DB — no in-memory load
@@ -895,7 +906,7 @@ async function importZipToLibrary(zipPath, options = {}) {
   return {
     zipPath,
     processedDocs,
-    newCards: deduped.length,
+    newCards: totalNewCards,
     totalCards,
     analyticsCount,
     citationGroups,
