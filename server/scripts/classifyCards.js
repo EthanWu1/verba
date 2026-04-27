@@ -55,8 +55,8 @@ BROAD TYPE — pick exactly one of:
 - policy   : policymaking args. plan solvency, disadvantages, counterplans, advantages, impact scenarios (deterrence, econ, heg, disease, war). If it argues consequences of a plan/action, it's policy.
 - k        : critical / kritik args. attacks reps, mindsets, assumptions, ontology, epistemology, subject formation, root-cause critiques (cap, settler col, antiblackness, psychoanalysis, biopower, heidegger, etc).
 - phil     : ETHICAL FRAMEWORK ONLY — argues for or against a moral theory itself (util, kant, rawls, virtue ethics, contractualism, deontology, moral realism, metaethics, naming a philosopher as the framework). NOT real-world impacts, NOT war/extinction, NOT settler colonialism, NOT capitalism analysis. If the card discusses a political/material/social problem (even in moral language), it is policy or k, NOT phil. Phil tags must reference a philosopher or moral theory by name.
-- theory   : procedural debate theory. definitions/topicality, fairness, education, condo, pics, dispo, competing interps, reasonability, standards, violations, voters, RVI, disclosure, spec, CP theory.
-- tricks   : a priori / skep / weird paradoxes / framing spikes. truth testing, permissibility, presumption, infinite regress, analytic truths, contraposition, skep triggers, burden spikes.
+- theory   : PROCEDURAL DEBATE THEORY ONLY — arguments about HOW the debate should be conducted, not about the topic. Topicality/definitions, fairness, education, condo, PICs, dispo, competing interps, reasonability, standards, violations, voters, RVI, disclosure, spec, CP theory, new affs bad, etc. NOT framework-first. NOT "X comes first in any framework" — that's phil. NOT impact framing — that's policy or phil.
+- tricks   : SPECIFIC trick arguments only — name the trick. Examples: permissibility, presumption, skep, a priori, truth testing, analytic truths, contraposition, infinite regress, error theory, grain paradox, evaluate the debate after the 1AC, monism, indexicals, NIBs, calc indeterminacy. NEVER use "philosophy" as a tricks topic — that's too generic. If you can't name the specific trick, it's probably phil or none.
 - none     : unclear or card is just an author bio / section header.
 
 TOPICS — pick any number of short, specific labels for what the card is ABOUT. Use lowercase. Examples:
@@ -78,6 +78,7 @@ RULES:
 - If a card argues against settlers / for indigenous sovereignty / decolonization / rewilding through indigenous lens, type=k, topic includes settler colonialism.
 - A REAL WORLD WAR/WEAPONS card (REM, escalation, deterrence, prolif, china, russia, nfu, arms control) is type=policy, NEVER type=phil — even if the tag mentions ethics/morality.
 - If a card defends a NAMED moral theory or philosopher (util, kant, rawls, contractualism, etc.) as framework, type=phil, topic includes that theory.
+- "X comes first in any framework" / "X precedes/outweighs other frameworks" / value-criterion arguments / framework-first claims = type=phil (NOT theory). Theory is ONLY procedural (T, condo, disclosure, dispo, PICs, etc.).
 - If a card says "condo bad", type=theory, topic=condo.
 - If a card says CP solves plus net benefit, type=policy.
 - Politics DAs (elections, midterms, agenda, congress, biden, trump, polls, capital) → topics: "politics", "elections" (whichever fits). NEVER use "general ld" or any "general *" label.
@@ -132,6 +133,10 @@ const VALID_TYPES = new Set(['policy', 'k', 'phil', 'theory', 'tricks', 'none'])
 const FORBIDDEN_TOPICS = new Set([
   'general ld', 'general policy', 'general k', 'general phil', 'general theory',
   'general', 'misc', 'various', 'evidence', 'card', 'unknown', 'n/a', 'none',
+  // 'philosophy' is too generic — name the specific theory (util/kant/etc.)
+  // or the specific trick (permissibility/skep/grain paradox/etc.) instead.
+  'philosophy', 'framework', 'ethics', 'moral theory',
+  'theory', 'argument', 'debate',
 ]);
 
 function saveResult(id, result, sourceRow) {
