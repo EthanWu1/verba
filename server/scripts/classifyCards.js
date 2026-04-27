@@ -54,7 +54,7 @@ Classify each card by its broad TYPE and specific TOPICS.
 BROAD TYPE — pick exactly one of:
 - policy   : policymaking args. plan solvency, disadvantages, counterplans, advantages, impact scenarios (deterrence, econ, heg, disease, war). If it argues consequences of a plan/action, it's policy.
 - k        : critical / kritik args. attacks reps, mindsets, assumptions, ontology, epistemology, subject formation, root-cause critiques (cap, settler col, antiblackness, psychoanalysis, biopower, heidegger, etc).
-- phil     : ethical/philosophical framework. util, kant, rawls, virtue ethics, contractualism, deontology, moral realism, metaethics.
+- phil     : ETHICAL FRAMEWORK ONLY — argues for or against a moral theory itself (util, kant, rawls, virtue ethics, contractualism, deontology, moral realism, metaethics, naming a philosopher as the framework). NOT real-world impacts, NOT war/extinction, NOT settler colonialism, NOT capitalism analysis. If the card discusses a political/material/social problem (even in moral language), it is policy or k, NOT phil. Phil tags must reference a philosopher or moral theory by name.
 - theory   : procedural debate theory. definitions/topicality, fairness, education, condo, pics, dispo, competing interps, reasonability, standards, violations, voters, RVI, disclosure, spec, CP theory.
 - tricks   : a priori / skep / weird paradoxes / framing spikes. truth testing, permissibility, presumption, infinite regress, analytic truths, contraposition, skep triggers, burden spikes.
 - none     : unclear or card is just an author bio / section header.
@@ -62,6 +62,7 @@ BROAD TYPE — pick exactly one of:
 TOPICS — pick any number of short, specific labels for what the card is ABOUT. Use lowercase. Examples:
   deterrence, escalation, miscalc, china, russia, nfu, prolif, arms control, heg, econ, trade,
   climate, ai, cyber, immigration, terrorism, disease, warming, grid,
+  politics, elections, agenda, midterms, congress, biden, trump, capital,
   capitalism, settler colonialism, antiblackness, afropessimism, feminism, queer theory, psychoanalysis,
   heidegger, nietzsche, foucault, biopower, security critique, militarism, orientalism, ableism,
   subject formation, ontology, epistemology, decolonization, indigenous, whiteness,
@@ -74,9 +75,13 @@ RULES:
 - Be SPECIFIC on topics. "nuclear war" is too broad — say "deterrence" or "escalation" or "miscalc".
 - Do NOT use topics like "nuclear war" or "extinction" alone — those are impacts, find the cause.
 - If a card says capitalism causes X, type=k, topic includes capitalism.
-- If a card defends util framework, type=phil, topic=util.
+- If a card argues against settlers / for indigenous sovereignty / decolonization / rewilding through indigenous lens, type=k, topic includes settler colonialism.
+- A REAL WORLD WAR/WEAPONS card (REM, escalation, deterrence, prolif, china, russia, nfu, arms control) is type=policy, NEVER type=phil — even if the tag mentions ethics/morality.
+- If a card defends a NAMED moral theory or philosopher (util, kant, rawls, contractualism, etc.) as framework, type=phil, topic includes that theory.
 - If a card says "condo bad", type=theory, topic=condo.
 - If a card says CP solves plus net benefit, type=policy.
+- Politics DAs (elections, midterms, agenda, congress, biden, trump, polls, capital) → topics: "politics", "elections" (whichever fits). NEVER use "general ld" or any "general *" label.
+- FORBIDDEN topic strings: "general ld", "general policy", "general k", "general", "misc", "various", "evidence", "card". Pick something specific or return empty topics.
 - Do NOT tag aff/neg.
 - Empty/unclear → type=none, topics=[].
 
@@ -124,12 +129,20 @@ async function classifyBatch(cards, model = PRIMARY_MODEL) {
 // ── Update DB ─────────────────────────────────────────────────────────────
 
 const VALID_TYPES = new Set(['policy', 'k', 'phil', 'theory', 'tricks', 'none']);
+const FORBIDDEN_TOPICS = new Set([
+  'general ld', 'general policy', 'general k', 'general phil', 'general theory',
+  'general', 'misc', 'various', 'evidence', 'card', 'unknown', 'n/a', 'none',
+]);
 
 function saveResult(id, result, sourceRow) {
   const rawType = String(result?.type || 'none').toLowerCase().trim();
   const type = VALID_TYPES.has(rawType) ? rawType : 'none';
   const topics = Array.isArray(result?.topics)
-    ? result.topics.map(t => String(t || '').toLowerCase().trim()).filter(Boolean).slice(0, 8)
+    ? result.topics
+        .map(t => String(t || '').toLowerCase().trim())
+        .filter(Boolean)
+        .filter(t => !FORBIDDEN_TOPICS.has(t) && !t.startsWith('general '))
+        .slice(0, 8)
     : [];
   const labels = deriveAllLabels({
     argumentTypes: [type],
@@ -172,16 +185,24 @@ async function main() {
           OR argumentTypes IN ('[]', '["none"]'))${whereCanon}${whereFmt}${whereCite}
        ORDER BY importedAt DESC`;
 
-  let cards = database.prepare(query).all();
-  const beforeFmt = cards.length;
-  if (FORMATTED_ONLY) {
-    cards = cards.filter(c => countFormattedWords(c.body_markdown) >= 5);
+  // Stream rows and apply JS-side filter incrementally so --limit returns fast
+  // without loading all matching rows into memory.
+  const stmt = database.prepare(query);
+  const cards = [];
+  let scanned = 0, skippedFmt = 0;
+  for (const row of stmt.iterate()) {
+    scanned++;
+    if (FORMATTED_ONLY && countFormattedWords(row.body_markdown) < 5) {
+      skippedFmt++;
+      continue;
+    }
+    cards.push(row);
+    if (Number.isFinite(LIMIT) && cards.length >= LIMIT) break;
   }
-  if (Number.isFinite(LIMIT)) cards = cards.slice(0, LIMIT);
 
   const total = cards.length;
   console.log(`[classify] ${total} cards to classify (batch=${BATCH_SIZE})`);
-  if (FORMATTED_ONLY) console.log(`[classify] ${beforeFmt - total} cards dropped by JS-side <5-formatted-words filter`);
+  if (FORMATTED_ONLY) console.log(`[classify] scanned ${scanned}, dropped ${skippedFmt} by <5-formatted-words filter`);
 
   let done = 0;
   let failed = 0;
