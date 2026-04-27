@@ -596,6 +596,24 @@ function looksLikeTag(paragraph, nextParagraph) {
   return false;
 }
 
+// Minimum number of words that must appear inside formatting markers
+// (<u>...</u>, **...**, or ==...==) for a parsed card to be kept. Cards with
+// zero or trivial formatting are debris (orphan paragraphs, malformed blocks,
+// or non-evidence prose) and would pollute the library.
+const MIN_FORMATTED_WORDS = 5;
+
+function countFormattedWords(markdown) {
+  if (!markdown) return 0;
+  const re = /<u>([\s\S]*?)<\/u>|\*\*([\s\S]*?)\*\*|==([\s\S]*?)==/g;
+  let total = 0;
+  let m;
+  while ((m = re.exec(String(markdown))) !== null) {
+    const inner = (m[1] || m[2] || m[3] || '').replace(/<[^>]+>|\*\*|==/g, '');
+    total += inner.split(/\s+/).filter(Boolean).length;
+  }
+  return total;
+}
+
 function parseCardsFromParagraphs(paragraphs, entryPath, zipPath) {
   const cards = [];
   let current = null;          // { tag, cite, body[], bodyText[] }
@@ -638,7 +656,12 @@ function parseCardsFromParagraphs(paragraphs, entryPath, zipPath) {
   };
 
   const flush = () => {
-    if (current && current.cite && current.body.length) cards.push(buildCard());
+    if (current && current.cite && current.body.length) {
+      const card = buildCard();
+      if (countFormattedWords(card.body_markdown) >= MIN_FORMATTED_WORDS) {
+        cards.push(card);
+      }
+    }
     current = null;
     state = 'SEARCHING';
   };
