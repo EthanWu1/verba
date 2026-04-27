@@ -136,12 +136,19 @@ async function main() {
   const database = db.getDb();
 
   const CANONICAL_ONLY = args.includes('--canonical');
+  const FORMATTED_ONLY = args.includes('--formatted');
   const whereCanon = CANONICAL_ONLY ? ' AND isCanonical=1' : '';
+  // --formatted: skip cards whose body has no underline/highlight markers.
+  // Cheap proxy for "real evidence card" — debris (orphan paragraphs, blocks
+  // with no markup) gets filtered out so we don't burn LLM cost on it.
+  const whereFmt = FORMATTED_ONLY
+    ? " AND (body_markdown LIKE '%<u>%' OR body_markdown LIKE '%==%')"
+    : '';
   const query = RECLASSIFY_ALL
-    ? `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards WHERE 1=1${whereCanon} ORDER BY importedAt DESC`
+    ? `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards WHERE 1=1${whereCanon}${whereFmt} ORDER BY importedAt DESC`
     : `SELECT id, tag, shortCite, cite, body_plain, sourceKind, division, zipPath, topicBucket FROM cards
        WHERE (argumentTags IN ('[]', '["none"]')
-          OR argumentTypes IN ('[]', '["none"]'))${whereCanon}
+          OR argumentTypes IN ('[]', '["none"]'))${whereCanon}${whereFmt}
        ORDER BY importedAt DESC`;
 
   let cards = database.prepare(query).all();
