@@ -190,87 +190,74 @@ async function main() {
           OR argumentTypes IN ('[]', '["none"]'))${whereCanon}${whereFmt}${whereCite}
        ORDER BY importedAt DESC`;
 
-  // Stream + process in batches, never accumulating the full card set in memory.
-  // The previous approach loaded all 154k+ matching rows (~770MB) before
-  // classifying — OOMed Node's default ~960MB heap on tight-RAM hosts.
-  const stmt = database.prepare(query);
-  let scanned = 0, skippedFmt = 0, done = 0, failed = 0, batchNum = 0;
-  let buffer = [];
-  let stopReading = false;
+  // Read IDs only (cheap: ~32 bytes each → ~5MB for 154k cards). Avoid the
+  // streaming-iterator+writes conflict with better-sqlite3, and don't load
+  // full rows into memory. Then fetch+classify by ID batches.
+  const idQuery = RECLASSIFY_ALL
+    ? `SELECT id FROM cards WHERE 1=1${whereCanon}${whereFmt}${whereCite} ORDER BY importedAt DESC`
+    : `SELECT id FROM cards
+       WHERE (argumentTags IN ('[]', '["none"]')
+          OR argumentTypes IN ('[]', '["none"]'))${whereCanon}${whereFmt}${whereCite}
+       ORDER BY importedAt DESC`;
+  let allIds = database.prepare(idQuery).pluck().all();
 
-  const processBatch = async (batch) => {
-    batchNum++;
-    let results = await classifyBatch(batch, PRIMARY_MODEL);
-    if (!results) results = await classifyBatch(batch, FALLBACK_MODEL);
-    if (results) {
-      for (let j = 0; j < batch.length; j++) {
-        saveResult(batch[j].id, results[j], batch[j]);
-      }
-      done += batch.length;
-    } else {
-      failed += batch.length;
+  // Apply JS-side ≥5-formatted-words filter. Need to pull body_markdown per id
+  // but only one at a time so memory stays flat.
+  if (FORMATTED_ONLY) {
+    const filtered = [];
+    let scanned = 0, skipped = 0;
+    const fetchBody = database.prepare('SELECT body_markdown FROM cards WHERE id = ?');
+    for (const id of allIds) {
+      scanned++;
+      const row = fetchBody.get(id);
+      if (countFormattedWords(row?.body_markdown) >= 5) filtered.push(id);
+      else skipped++;
+      if (scanned % 10000 === 0) console.log(`[classify] filter: scanned ${scanned}, kept ${filtered.length}, dropped ${skipped}`);
     }
-    if (batchNum % 10 === 0) {
-      console.log(`[classify] batch ${batchNum} | scanned ${scanned}, ${done} tagged, ${failed} failed, ${skippedFmt} skipped (<5 fmt words)`);
-    }
-    await new Promise(r => setTimeout(r, DELAY_MS));
-  };
-
-  for (const row of stmt.iterate()) {
-    scanned++;
-    if (FORMATTED_ONLY && countFormattedWords(row.body_markdown) < 5) {
-      skippedFmt++;
-      continue;
-    }
-    buffer.push(row);
-    if (Number.isFinite(LIMIT) && (done + buffer.length) >= LIMIT) {
-      stopReading = true;
-    }
-    if (buffer.length >= BATCH_SIZE) {
-      await processBatch(buffer);
-      buffer = [];
-      if (stopReading) break;
-    }
+    allIds = filtered;
+    console.log(`[classify] Filter complete: ${allIds.length} cards pass ≥5-formatted-words rule (${skipped} dropped)`);
   }
-  if (buffer.length > 0) await processBatch(buffer);
+
+  if (Number.isFinite(LIMIT)) allIds = allIds.slice(0, LIMIT);
+  const total = allIds.length;
+  console.log(`[classify] ${total} cards to classify (batch=${BATCH_SIZE})`);
+
+  const fetchBatch = database.prepare(
+    `SELECT ${selectCols} FROM cards WHERE id IN (${'?,'.repeat(BATCH_SIZE - 1)}?)`
+  );
+  const fetchSmall = (ids) =>
+    database.prepare(
+      `SELECT ${selectCols} FROM cards WHERE id IN (${ids.map(() => '?').join(',')})`
+    ).all(...ids);
+
+  let done = 0, failed = 0, batchNum = 0;
+  for (let i = 0; i < total; i += BATCH_SIZE) {
+    const idBatch = allIds.slice(i, i + BATCH_SIZE);
+    const batch = idBatch.length === BATCH_SIZE
+      ? fetchBatch.all(...idBatch)
+      : fetchSmall(idBatch);
+    // Preserve order matching idBatch
+    const byId = new Map(batch.map(r => [r.id, r]));
+    const ordered = idBatch.map(id => byId.get(id)).filter(Boolean);
+
+    batchNum++;
+    let results = await classifyBatch(ordered, PRIMARY_MODEL);
+    if (!results) results = await classifyBatch(ordered, FALLBACK_MODEL);
+    if (results) {
+      for (let j = 0; j < ordered.length; j++) {
+        saveResult(ordered[j].id, results[j], ordered[j]);
+      }
+      done += ordered.length;
+    } else {
+      failed += ordered.length;
+    }
+    if (batchNum % 10 === 0 || i + BATCH_SIZE >= total) {
+      console.log(`[classify] batch ${batchNum} | ${done + failed}/${total} — ${done} tagged, ${failed} failed`);
+    }
+    if (i + BATCH_SIZE < total) await new Promise(r => setTimeout(r, DELAY_MS));
+  }
 
   console.log(`[classify] Primary done. ${done} tagged, ${failed} failed.`);
-
-  // Re-pass: query DB for cards classified as 'none' instead of holding them
-  // in memory. argumentTypes='["none"]' is the marker.
-  const reQuery = `SELECT ${selectCols} FROM cards
-    WHERE argumentTypes = '["none"]'${whereCanon}${whereFmt}${whereCite}
-    ORDER BY importedAt DESC`;
-  const reStmt = database.prepare(reQuery);
-  let rescued = 0;
-  let reBuf = [];
-  let reCount = 0;
-
-  const reProcess = async (batch) => {
-    const results = await classifyBatch(batch, FALLBACK_MODEL);
-    if (results) {
-      for (let j = 0; j < batch.length; j++) {
-        const rawType = String(results[j]?.type || 'none').toLowerCase().trim();
-        if (rawType !== 'none') {
-          saveResult(batch[j].id, results[j], batch[j]);
-          rescued++;
-        }
-      }
-    }
-    await new Promise(r => setTimeout(r, DELAY_MS));
-  };
-
-  for (const row of reStmt.iterate()) {
-    reCount++;
-    if (FORMATTED_ONLY && countFormattedWords(row.body_markdown) < 5) continue;
-    reBuf.push(row);
-    if (reBuf.length >= BATCH_SIZE) {
-      await reProcess(reBuf);
-      reBuf = [];
-    }
-  }
-  if (reBuf.length > 0) await reProcess(reBuf);
-  if (reCount > 0) console.log(`[classify] Re-pass scanned ${reCount}, ${rescued} rescued from 'none'.`);
 }
 
 main().catch(err => {
