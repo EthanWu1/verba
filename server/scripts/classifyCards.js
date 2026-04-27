@@ -20,8 +20,8 @@ const db = require('../services/db');
 const { deriveAllLabels } = require('../services/labelDerivation');
 const { complete, parseJSON } = require('../services/llm');
 
-const BATCH_SIZE = 25;
-const DELAY_MS   = 400;
+const BATCH_SIZE = 75;
+const DELAY_MS   = 100;
 const PRIMARY_MODEL  = 'google/gemini-2.5-flash-lite';
 const FALLBACK_MODEL = 'openai/gpt-4o-mini';
 
@@ -88,9 +88,9 @@ No markdown. No explanation. Raw JSON only.`;
 // ── Classify one batch ────────────────────────────────────────────────────
 
 function buildCardBlob(card) {
-  const tag = String(card.tag || '').slice(0, 160);
-  const cite = String(card.shortCite || card.cite || '').slice(0, 80);
-  const body = String(card.body_plain || '').replace(/\s+/g, ' ').slice(0, 250);
+  const tag = String(card.tag || '').slice(0, 120);
+  const cite = String(card.shortCite || card.cite || '').slice(0, 60);
+  const body = String(card.body_plain || '').replace(/\s+/g, ' ').slice(0, 150);
   return `TAG: ${tag}\nCITE: ${cite}\nBODY: ${body}`;
 }
 
@@ -104,7 +104,7 @@ async function classifyBatch(cards, model = PRIMARY_MODEL) {
         { role: 'user',   content: blobs },
       ],
       temperature: 0.1,
-      maxTokens: 2048,
+      maxTokens: 4096,
       forceModel: model,
     });
 
