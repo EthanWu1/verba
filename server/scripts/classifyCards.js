@@ -190,84 +190,87 @@ async function main() {
           OR argumentTypes IN ('[]', '["none"]'))${whereCanon}${whereFmt}${whereCite}
        ORDER BY importedAt DESC`;
 
-  // Stream rows and apply JS-side filter incrementally so --limit returns fast
-  // without loading all matching rows into memory.
+  // Stream + process in batches, never accumulating the full card set in memory.
+  // The previous approach loaded all 154k+ matching rows (~770MB) before
+  // classifying — OOMed Node's default ~960MB heap on tight-RAM hosts.
   const stmt = database.prepare(query);
-  const cards = [];
-  let scanned = 0, skippedFmt = 0;
+  let scanned = 0, skippedFmt = 0, done = 0, failed = 0, batchNum = 0;
+  let buffer = [];
+  let stopReading = false;
+
+  const processBatch = async (batch) => {
+    batchNum++;
+    let results = await classifyBatch(batch, PRIMARY_MODEL);
+    if (!results) results = await classifyBatch(batch, FALLBACK_MODEL);
+    if (results) {
+      for (let j = 0; j < batch.length; j++) {
+        saveResult(batch[j].id, results[j], batch[j]);
+      }
+      done += batch.length;
+    } else {
+      failed += batch.length;
+    }
+    if (batchNum % 10 === 0) {
+      console.log(`[classify] batch ${batchNum} | scanned ${scanned}, ${done} tagged, ${failed} failed, ${skippedFmt} skipped (<5 fmt words)`);
+    }
+    await new Promise(r => setTimeout(r, DELAY_MS));
+  };
+
   for (const row of stmt.iterate()) {
     scanned++;
     if (FORMATTED_ONLY && countFormattedWords(row.body_markdown) < 5) {
       skippedFmt++;
       continue;
     }
-    cards.push(row);
-    if (Number.isFinite(LIMIT) && cards.length >= LIMIT) break;
-  }
-
-  const total = cards.length;
-  console.log(`[classify] ${total} cards to classify (batch=${BATCH_SIZE})`);
-  if (FORMATTED_ONLY) console.log(`[classify] scanned ${scanned}, dropped ${skippedFmt} by <5-formatted-words filter`);
-
-  let done = 0;
-  let failed = 0;
-  const noneCards = [];
-
-  for (let i = 0; i < total; i += BATCH_SIZE) {
-    const batch = cards.slice(i, i + BATCH_SIZE);
-    let results = await classifyBatch(batch, PRIMARY_MODEL);
-
-    if (!results) {
-      results = await classifyBatch(batch, FALLBACK_MODEL);
+    buffer.push(row);
+    if (Number.isFinite(LIMIT) && (done + buffer.length) >= LIMIT) {
+      stopReading = true;
     }
-
-    if (results) {
-      for (let j = 0; j < batch.length; j++) {
-        const r = results[j];
-        saveResult(batch[j].id, r, batch[j]);
-        const rawType = String(r?.type || 'none').toLowerCase().trim();
-        if (rawType === 'none') noneCards.push(batch[j]);
-      }
-      done += batch.length;
-    } else {
-      failed += batch.length;
-    }
-
-    if ((i / BATCH_SIZE) % 10 === 0 || i + BATCH_SIZE >= total) {
-      console.log(`[classify] ${done + failed}/${total} — ${done} tagged, ${failed} failed, ${noneCards.length} queued for re-pass`);
-    }
-
-    if (i + BATCH_SIZE < total) {
-      await new Promise(r => setTimeout(r, DELAY_MS));
+    if (buffer.length >= BATCH_SIZE) {
+      await processBatch(buffer);
+      buffer = [];
+      if (stopReading) break;
     }
   }
+  if (buffer.length > 0) await processBatch(buffer);
 
   console.log(`[classify] Primary done. ${done} tagged, ${failed} failed.`);
 
-  if (noneCards.length) {
-    console.log(`[classify] Re-pass ${noneCards.length} 'none' cards via ${FALLBACK_MODEL}`);
-    let rescued = 0;
-    for (let i = 0; i < noneCards.length; i += BATCH_SIZE) {
-      const batch = noneCards.slice(i, i + BATCH_SIZE);
-      const results = await classifyBatch(batch, FALLBACK_MODEL);
-      if (results) {
-        for (let j = 0; j < batch.length; j++) {
-          const rawType = String(results[j]?.type || 'none').toLowerCase().trim();
-          if (rawType !== 'none') {
-            saveResult(batch[j].id, results[j], batch[j]);
-            rescued++;
-          }
+  // Re-pass: query DB for cards classified as 'none' instead of holding them
+  // in memory. argumentTypes='["none"]' is the marker.
+  const reQuery = `SELECT ${selectCols} FROM cards
+    WHERE argumentTypes = '["none"]'${whereCanon}${whereFmt}${whereCite}
+    ORDER BY importedAt DESC`;
+  const reStmt = database.prepare(reQuery);
+  let rescued = 0;
+  let reBuf = [];
+  let reCount = 0;
+
+  const reProcess = async (batch) => {
+    const results = await classifyBatch(batch, FALLBACK_MODEL);
+    if (results) {
+      for (let j = 0; j < batch.length; j++) {
+        const rawType = String(results[j]?.type || 'none').toLowerCase().trim();
+        if (rawType !== 'none') {
+          saveResult(batch[j].id, results[j], batch[j]);
+          rescued++;
         }
       }
-      if ((i / BATCH_SIZE) % 10 === 0 || i + BATCH_SIZE >= noneCards.length) {
-        console.log(`[classify] Re-pass ${Math.min(i + BATCH_SIZE, noneCards.length)}/${noneCards.length} — ${rescued} rescued`);
-      }
-      if (i + BATCH_SIZE < noneCards.length) {
-        await new Promise(r => setTimeout(r, DELAY_MS));
-      }
     }
-    console.log(`[classify] Re-pass done. ${rescued} rescued from 'none'.`);
+    await new Promise(r => setTimeout(r, DELAY_MS));
+  };
+
+  for (const row of reStmt.iterate()) {
+    reCount++;
+    if (FORMATTED_ONLY && countFormattedWords(row.body_markdown) < 5) continue;
+    reBuf.push(row);
+    if (reBuf.length >= BATCH_SIZE) {
+      await reProcess(reBuf);
+      reBuf = [];
+    }
   }
+  if (reBuf.length > 0) await reProcess(reBuf);
+  if (reCount > 0) console.log(`[classify] Re-pass scanned ${reCount}, ${rescued} rescued from 'none'.`);
 }
 
 main().catch(err => {
