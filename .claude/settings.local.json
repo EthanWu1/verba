@@ -6,7 +6,8 @@
       "Read(//c/Users/ethan/.claude/skills/**)",
       "Bash(gh api *)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(git clone *)"
+      "Bash(git clone *)",
+      "WebFetch(domain:getdesign.md)"
     ]
   }
 }
