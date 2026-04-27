@@ -90,7 +90,7 @@ No markdown. No explanation. Raw JSON only.`;
 function buildCardBlob(card) {
   const tag = String(card.tag || '').slice(0, 120);
   const cite = String(card.shortCite || card.cite || '').slice(0, 60);
-  const body = String(card.body_plain || '').replace(/\s+/g, ' ').slice(0, 150);
+  const body = String(card.body_plain || '').replace(/\s+/g, ' ').slice(0, 200);
   return `TAG: ${tag}\nCITE: ${cite}\nBODY: ${body}`;
 }
 
