@@ -49,7 +49,10 @@ function deriveTopicLabel(card) {
   const tags = parseJsonArray(card.argumentTags);
   const first = String(tags[0] || '').trim();
   if (first) return titleCaseTopic(first);
-  return String(card.topicBucket || '').trim() || 'General LD';
+  // No fallback to topicBucket — the import-time heuristic produces garbage
+  // labels like "Set Col K" / "Cyber DA" that don't match the card content.
+  // No "General LD" default — leave empty so the UI knows it's unclassified.
+  return '';
 }
 
 function deriveSourceLabel(card) {
