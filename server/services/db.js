@@ -890,8 +890,12 @@ function _buildWhere(filters, { tablePrefix = '' } = {}) {
   if (filters.source) {
     where.push(`${p}sourceLabel = ?`); params.push(filters.source);
   }
-  if (filters.canonical === 'true')  where.push(`${p}isCanonical = 1`);
-  if (filters.canonical === 'false') where.push(`${p}isCanonical = 0`);
+  // Default to canonical-only so the library never shows 20 copies of the
+  // same card. Callers can pass canonical='all' to opt out, or canonical='false'
+  // to see only non-canonical variants.
+  if (filters.canonical === 'all')        { /* no filter */ }
+  else if (filters.canonical === 'false') { where.push(`${p}isCanonical = 0`); }
+  else                                    { where.push(`${p}isCanonical = 1`); }
   return { sql: `WHERE ${where.join(' AND ')}`, params };
 }
 
