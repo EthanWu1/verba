@@ -864,6 +864,13 @@ function _buildWhere(filters, { tablePrefix = '' } = {}) {
   const p = tablePrefix ? `${tablePrefix}.` : '';
   const where = [`${p}hasHighlight = 1`];
   const params = [];
+  // Default: hide unclassified cards (typeLabel empty). Opt back in by passing
+  // filters.includeUnclassified='true'. When the caller filters by a specific
+  // typeLabel, that filter naturally excludes the empty-typeLabel rows anyway,
+  // so this default only affects unfiltered library browse.
+  if (filters.includeUnclassified !== 'true') {
+    where.push(`${p}typeLabel IS NOT NULL AND ${p}typeLabel != ''`);
+  }
   if (Number(filters.minHighlight) > 0) {
     where.push(`${p}highlightWordCount >= ?`);
     params.push(Number(filters.minHighlight));
