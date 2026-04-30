@@ -46,12 +46,13 @@
     const card = document.createElement('div');
     card.className = 'chat-file-card';
     card.innerHTML = `
-      <span class="icon">📄</span>
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="6" y="6" width="14" height="14" rx="1.5"/><path d="M16 6V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h2"/></svg></span>
+      <span class="kind">Block</span>
       <div class="meta">
         <div class="tag">${escapeHtml(m.blockJson.tag || '(block)')}</div>
         <div class="cite">${escapeHtml(summarizeCites(m.blockJson))}</div>
       </div>
-      <span>Open ▸</span>`;
+      <span>›</span>`;
     card.addEventListener('click', () => {
       if (global.ChatSplitView && global.ChatSplitView.toggle) {
         global.ChatSplitView.toggle(card, m.blockJson);
