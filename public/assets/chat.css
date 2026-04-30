@@ -3,7 +3,9 @@
    single-line ref boxes for blocks/cards, slide-in card panel,
    animated thread dropdown, icon-only send. */
 
-#page-chat { display:flex; flex-direction:column; height:100%; background:var(--bg, #fff); }
+/* Make the chat page fill the available .content area regardless of the host page system. */
+#page-chat { display:none; }
+#page-chat.on { display:flex !important; position:absolute; inset:0; flex-direction:column; background:var(--bg, #fff); animation:none !important; overflow:hidden; }
 .chat-tab { display:flex; flex-direction:column; flex:1; min-height:0; background:var(--bg, #fff); }
 
 /* Topbar */
