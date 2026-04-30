@@ -75,3 +75,107 @@ img,svg,video,canvas{max-width:100%;height:auto}
 /* My Cards: no hover on mobile — always show copy btn, hide date */
 .mycard .mc-copy-btn{opacity:1}
 .mycard .date{opacity:0}
+
+/* ─────────────────────────────────────────────────────────
+   App shell (app.html) — mobile layout
+   Convert side rail to bottom tab bar; collapse desktop-only
+   topbar widgets; tighten page paddings.
+   ───────────────────────────────────────────────────────── */
+@media (max-width:767px){
+  /* Shell becomes single column with bottom rail */
+  .shell{
+    grid-template-columns:1fr !important;
+    grid-template-rows:1fr auto !important;
+    height:100vh;
+    height:100dvh;
+  }
+
+  /* Rail: side → bottom horizontal bar */
+  .rail{
+    grid-row:2;grid-column:1;
+    flex-direction:row !important;
+    align-items:center;justify-content:space-around;
+    padding:6px 12px calc(6px + var(--safe-b)) !important;
+    border-right:none !important;border-top:1px solid var(--line);
+    height:auto;width:100%;gap:0 !important;
+    background:#fff;
+    z-index:30;
+  }
+  .rail-brand,.rail-spacer,.rail-avatar{display:none !important}
+  .rail-section{
+    flex-direction:row !important;
+    flex:1;justify-content:space-around;
+    gap:0 !important;width:100%;
+  }
+  .rail-btn{
+    width:48px !important;height:44px !important;
+    border-radius:var(--r,8px) !important;
+  }
+  .rail-btn .tip{display:none !important}
+  .rail-btn.on::before{
+    left:50% !important;top:-7px !important;bottom:auto !important;
+    width:18px !important;height:2px !important;
+    transform:translateX(-50%);
+  }
+
+  /* Main column gets row 1, fills remaining height */
+  .main{grid-row:1;grid-column:1}
+
+  /* Topbar: tighter, hide global cmd-K + team chip */
+  .topbar{padding:8px 14px !important;gap:8px !important;height:auto;min-height:42px}
+  .gsearch{display:none !important}
+  .top-actions .team-chip{display:none !important}
+  .crumb{font-size:13px}
+
+  /* Today page: stack hero, shrink kicker spacing */
+  .today-hero{padding-left:14px !important;padding-right:14px !important}
+  .today-grid{grid-template-columns:1fr !important;gap:14px !important}
+  .today-hero .h1,.today-hero h1{font-size:28px !important;line-height:1.15 !important}
+  .quick-actions{flex-wrap:wrap !important;gap:8px !important}
+  .quick-actions > *{flex:0 1 calc(50% - 4px) !important}
+  /* Shorten suggestion / library tags so they don't overflow */
+  .sug-pill,.lib-tag,.suggestion-pill{
+    max-width:100% !important;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    padding:6px 10px !important;font-size:12px !important;
+  }
+
+  /* Cutter page */
+  .cutter-page{padding:14px !important}
+  .cut-input{flex-wrap:wrap;gap:8px;padding:10px}
+  .cut-input input{flex:1 1 100%;min-width:0;order:2}
+  .cut-input .modes{order:3}
+  .cut-input .lead{order:1}
+  .cut-input .upload-btn,.cut-input .send{order:4}
+  .recent-row{grid-template-columns:1fr !important}
+
+  /* Library page: drop side panel, single column list */
+  .lib-shell{grid-template-columns:1fr !important;grid-template-rows:auto auto;height:auto !important}
+  .lib-list-pane{max-height:none !important;border-right:none !important;border-bottom:1px solid var(--line)}
+  .lib-detail-pane{padding:14px !important}
+  .lib-chips,.lib-toolbar{flex-wrap:wrap !important;gap:6px !important}
+  .lib-chip{padding:6px 10px !important;font-size:12px !important;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* Tournaments */
+  .t-shell,.tourn-shell{grid-template-columns:1fr !important}
+  .t-aside,.tourn-aside{border-right:none !important;border-bottom:1px solid var(--line)}
+  .tourn-filters{flex-wrap:wrap;gap:6px}
+
+  /* Rankings */
+  .rk-shell{grid-template-columns:1fr !important}
+  .rk-aside{padding:12px !important;border-right:none !important;border-bottom:1px solid var(--line)}
+  .rk-table{font-size:13px}
+  .rk-table th,.rk-table td{padding:8px 6px !important}
+
+  /* Settings */
+  .set-shell{grid-template-columns:1fr !important;height:auto !important}
+  .set-nav{flex-direction:row !important;flex-wrap:wrap !important;overflow-x:auto;padding:8px 12px !important;border-right:none !important;border-bottom:1px solid var(--line);gap:4px}
+  .set-nav button{flex:0 0 auto;white-space:nowrap;font-size:13px !important}
+  .set-body{padding:14px !important}
+
+  /* Cmd palette becomes full-width sheet */
+  .cmd-bg .cmd{width:96vw !important;max-width:none !important}
+
+  /* Modals */
+  .lnk,.cmd,.modal{width:96vw !important;max-width:none !important}
+}

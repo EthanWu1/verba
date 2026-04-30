@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/chat.css">
+<link rel="stylesheet" href="/assets/mobile.css">
 
 <script>
 const TWEAKS = (function(){
@@ -33,7 +34,7 @@ function persistTweaks(){ try{ localStorage.setItem('verba.tweaks.r3', JSON.stri
   --ok:#047857; --ok-soft:#ECFDF5;
   --warn:#B45309; --warn-soft:#FFF7ED;
   --danger:#B91C1C; --danger-soft:#FEF2F2;
-  --info:#1D4ED8; --info-soft:#EFF6FF;
+  --info:#0F172A; --info-soft:#F3F4F6;
   --shadow-sm:0 1px 2px rgba(16,24,40,0.04),0 1px 1px rgba(16,24,40,0.03);
   --shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -2px rgba(0,0,0,0.04);
   --shadow-lg:0 12px 24px -8px rgba(16,24,40,0.10),0 4px 8px -4px rgba(16,24,40,0.06);
@@ -158,7 +159,7 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .badge.aff{background:var(--ok-soft);color:var(--ok);border-color:#D1FAE5}
 .badge.neg{background:var(--danger-soft);color:var(--danger);border-color:#FECACA}
 .badge.k{background:var(--lilac-soft);color:var(--lilac-ink);border-color:var(--lilac-line)}
-.badge.t{background:var(--info-soft);color:var(--info);border-color:#DBEAFE}
+.badge.t{background:var(--info-soft);color:var(--info);border-color:var(--line-2)}
 .badge.topic{background:#fff;color:var(--ink-2);border-color:var(--line-2);font-weight:500}
 
 .aside-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;box-shadow:var(--shadow-sm);margin-bottom:18px}

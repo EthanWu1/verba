@@ -67,8 +67,22 @@
   }
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 
+  function clear() {
+    currentThreadId = null;
+    if (msgsEl) msgsEl.innerHTML = '';
+    const titleEl = document.getElementById('chat-thread-title');
+    if (titleEl) titleEl.textContent = '';
+  }
+
   async function send() {
-    const text = inputEl.value.trim(); if (!text || !currentThreadId) return;
+    const text = inputEl.value.trim(); if (!text) return;
+    // Lazy-create the thread on first message so we don't pile up empty "New thread" rows.
+    if (!currentThreadId) {
+      const title = text.slice(0, 60);
+      const { thread } = await API.chat.createThread(title);
+      currentThreadId = thread.id;
+      document.getElementById('chat-thread-title').textContent = title;
+    }
     inputEl.value = ''; autogrow();
     renderMessage({ role:'user', content:text, command:null });
     const asstEl = document.createElement('div');
@@ -97,5 +111,5 @@
 
   function scrollBottom() { msgsEl.scrollTop = msgsEl.scrollHeight; }
 
-  global.ChatThread = { init, openThread };
+  global.ChatThread = { init, openThread, clear };
 })(window);
