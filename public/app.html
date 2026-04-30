@@ -966,10 +966,14 @@ body.density-dense .shellpad{padding-top:18px}
       <section class="page" id="page-chat">
         <div id="chat-root" class="chat-tab" style="height:100%;display:flex;flex-direction:column">
           <div class="chat-topbar">
-            <button id="chat-btn-history" class="chat-chip">History</button>
-            <button id="chat-btn-context" class="chat-chip">Context</button>
-            <button id="chat-btn-new"     class="chat-chip">+ New</button>
-            <span id="chat-thread-title" class="chat-thread-title"></span>
+            <button id="chat-btn-history" class="chat-thread-switch" type="button" aria-haspopup="true" title="Switch thread">
+              <span id="chat-thread-title" class="chat-thread-title"></span>
+              <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="chat-topbar-spacer"></div>
+            <button id="chat-btn-new" class="chat-icon-btn" type="button" title="New thread" aria-label="New thread">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
           </div>
           <div class="chat-body">
             <div class="chat-main">
@@ -978,7 +982,16 @@ body.density-dense .shellpad{padding-top:18px}
                 <div class="chat-composer">
                   <textarea id="chat-input" class="chat-input" placeholder="Message or /explain /analytic /block" rows="1"></textarea>
                   <div class="chat-composer-bar">
-                    <div class="chat-composer-tools" aria-hidden="true"></div>
+                    <div class="chat-composer-tools">
+                      <button id="chat-btn-attach" class="chat-tool-btn" type="button" title="Attach file" onclick="document.getElementById('chat-btn-context').click()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                        <span>Attach</span>
+                      </button>
+                      <button id="chat-btn-context" class="chat-tool-btn" type="button" title="Add context source">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span>Context</span>
+                      </button>
+                    </div>
                     <button id="chat-send" class="chat-send" type="button" aria-label="Send message">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
                       <span>Send</span>

@@ -9,10 +9,24 @@
 .chat-tab { display:flex; flex-direction:column; flex:1; min-height:0; background:var(--bg, #fff); }
 
 /* Topbar */
-.chat-topbar { display:flex; gap:6px; padding:8px 18px; height:48px; border-bottom:1px solid var(--line-soft, #F1F2F4); align-items:center; flex:0 0 auto; background:var(--bg, #fff); }
-.chat-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); background:#fff; color:var(--muted, #6B7280); border-radius:var(--r, 8px); cursor:pointer; font:500 12px/1 var(--font-display); transition:color .14s, background .14s, border-color .14s; }
+.chat-topbar { display:flex; gap:6px; padding:8px 18px; height:48px; border-bottom:1px solid var(--line-soft, #F1F2F4); align-items:center; flex:0 0 auto; background:var(--bg, #fff); position:relative; z-index:5; }
+.chat-topbar-spacer { flex:1; }
+
+/* Thread switcher (left side, replaces History chip) */
+.chat-thread-switch { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; background:transparent; border:1px solid transparent; border-radius:var(--r, 8px); color:var(--ink); cursor:pointer; transition:background .14s, border-color .14s; max-width:60%; }
+.chat-thread-switch:hover { background:var(--panel, #F9FAFB); border-color:var(--line); }
+.chat-thread-switch .caret { color:var(--muted-2, #9CA3AF); flex:0 0 auto; transition:transform .14s; }
+.chat-thread-switch[aria-expanded="true"] .caret { transform:rotate(180deg); }
+.chat-thread-title { font:600 13px/1 var(--font-display); color:var(--ink); letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+.chat-thread-title:empty::before { content:"New thread"; color:var(--muted-2, #9CA3AF); font-weight:500; }
+
+/* Topbar icon button (+ New, settings, etc.) */
+.chat-icon-btn { width:32px; height:32px; display:grid; place-items:center; background:transparent; border:1px solid transparent; border-radius:var(--r, 8px); color:var(--muted, #6B7280); cursor:pointer; transition:color .14s, background .14s, border-color .14s; }
+.chat-icon-btn:hover { color:var(--ink); background:var(--panel, #F9FAFB); border-color:var(--line); }
+
+/* Legacy chip class kept for back-compat (hidden if it appears) */
+.chat-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid var(--line); background:#fff; color:var(--muted, #6B7280); border-radius:var(--r, 8px); cursor:pointer; font:500 12px/1 var(--font-display); }
 .chat-chip:hover { color:var(--ink); background:var(--panel, #F9FAFB); border-color:var(--line-2, #D1D5DB); }
-.chat-thread-title { margin-left:auto; font:600 13px/1 var(--font-display); color:var(--ink); letter-spacing:-0.01em; max-width:60%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* Body splits between main column and the slide-in card panel */
 .chat-body { display:flex; flex:1; min-height:0; position:relative; }
@@ -40,7 +54,10 @@
 .chat-input { width:100%; resize:none; padding:12px 14px; border:none; background:transparent; font:400 14px/1.5 var(--font-display); outline:none; min-height:60px; max-height:200px; box-sizing:border-box; color:var(--ink); }
 .chat-input::placeholder { color:var(--muted-2, #9CA3AF); }
 .chat-composer-bar { display:flex; align-items:center; justify-content:flex-end; gap:6px; padding:6px 8px; border-top:1px solid var(--line-soft, #F1F2F4); background:transparent; }
-.chat-composer-tools { flex:1; display:flex; gap:4px; align-items:center; }
+.chat-composer-tools { flex:1; display:flex; gap:2px; align-items:center; }
+.chat-tool-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border:1px solid transparent; background:transparent; color:var(--muted, #6B7280); border-radius:var(--r, 8px); font:500 12px/1 var(--font-display); cursor:pointer; transition:color .14s, background .14s, border-color .14s; }
+.chat-tool-btn:hover { color:var(--ink); background:var(--panel, #F9FAFB); border-color:var(--line); }
+.chat-tool-btn svg { color:inherit; flex:0 0 auto; }
 
 /* Send: icon-only square. Hide the legacy text span. */
 .chat-send { width:34px; height:34px; padding:0; display:grid; place-items:center; border:1px solid var(--line); background:var(--panel, #F9FAFB); color:var(--muted-2, #9CA3AF); border-radius:var(--r, 8px); cursor:pointer; transition:all .14s; }
