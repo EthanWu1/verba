@@ -20,6 +20,8 @@
 
 /* Messages stream */
 .chat-messages { flex:1; overflow-y:auto; padding:8px 0 24px; display:flex; flex-direction:column; gap:0; max-width:880px; margin:0 auto; width:100%; box-sizing:border-box; }
+.chat-messages:empty { display:flex; align-items:center; justify-content:center; }
+.chat-messages:empty::before { content:"Ask about cards, blocks, or arguments. Drop a PDF or paste an article to add context."; display:block; max-width:42ch; text-align:center; color:var(--muted-2, #9CA3AF); font:400 13.5px/1.55 var(--font-display); }
 
 /* Message base */
 .chat-msg { padding:14px 24px; font:400 14.5px/1.65 var(--font-display); color:var(--ink); position:relative; max-width:none; border-radius:0; background:transparent; border:none; }

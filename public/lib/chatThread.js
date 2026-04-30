@@ -27,7 +27,7 @@
     const { messages } = await API.chat.listMessages(id);
     messages.forEach(renderMessage);
     scrollBottom();
-    const threadTitle = (messages[0]?.content || 'Thread').slice(0, 60);
+    const threadTitle = (messages[0]?.content || '').slice(0, 60);
     document.getElementById('chat-thread-title').textContent = threadTitle;
   }
 
