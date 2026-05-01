@@ -15,7 +15,7 @@
 
 <script>
 const TWEAKS = (function(){
-  const def = { highlight:"yellow", density:"comfy", page:"today", format:"cx" };
+  const def = { highlight:"yellow", page:"today", format:"cx" };
   try{ const raw = localStorage.getItem('verba.tweaks.r3'); if(raw) Object.assign(def, JSON.parse(raw)); }catch(e){}
   return def;
 })();
@@ -553,11 +553,9 @@ body.hl-green .hl{background:#1BFC06}
 .lnk-row.linked .nm{color:var(--lilac-ink)}
 .lnk-empty{padding:34px 20px;text-align:center;font:500 13px/1.5 var(--font-display);color:var(--muted)}
 
-body.density-cozy .shellpad{padding-top:24px}
-body.density-dense .shellpad{padding-top:18px}
 </style>
 </head>
-<body class="hl-yellow density-comfy">
+<body class="hl-yellow">
 
 <div class="shell">
 
@@ -923,7 +921,7 @@ body.density-dense .shellpad{padding-top:18px}
 
             <div class="set-section" data-sec="appearance">
               <h2>Appearance</h2>
-              <p class="desc">Highlight color and density.</p>
+              <p class="desc">Highlight color used when cutting cards.</p>
               <div class="set-card">
                 <div class="set-row">
                   <div class="lab">Highlight color<span>Cyan is the Verbatim community default.</span></div>
@@ -932,16 +930,6 @@ body.density-dense .shellpad{padding-top:18px}
                       <div class="swatch cy" data-val="cyan" title="Cyan"></div>
                       <div class="swatch ye" data-val="yellow" title="Yellow"></div>
                       <div class="swatch gr" data-val="green" title="Green"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="set-row">
-                  <div class="lab">Density<span>Tighter rows fit more cards on screen.</span></div>
-                  <div class="val">
-                    <div class="rank-tabs" data-tweak="density">
-                      <button class="rank-tab on" data-val="comfy">Comfy</button>
-                      <button class="rank-tab" data-val="cozy">Cozy</button>
-                      <button class="rank-tab" data-val="dense">Dense</button>
                     </div>
                   </div>
                 </div>

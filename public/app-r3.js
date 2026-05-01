@@ -1354,7 +1354,6 @@ function loadSettings(){
 function applyTweaks(){
   document.body.className = '';
   document.body.classList.add('hl-'+(TWEAKS.highlight||'yellow'));
-  document.body.classList.add('density-'+(TWEAKS.density||'comfy'));
   $$('.swatch-row[data-tweak]').forEach(g => {
     const k = g.dataset.tweak;
     g.querySelectorAll('.swatch').forEach(s => s.classList.toggle('on', s.dataset.val===TWEAKS[k]));

@@ -208,6 +208,18 @@ img,svg,video,canvas{max-width:100%;height:auto}
     min-height:40px;
   }
   .set-body{padding:18px 14px 40px !important;width:100%;min-width:0}
+  /* Settings rows: stack label over value so action buttons aren't squeezed off-screen */
+  .set-row{
+    display:flex !important;flex-direction:column !important;
+    align-items:stretch !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+    padding:14px 16px !important;
+  }
+  .set-row .val{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .set-row .val .btn,.set-row .val .btn-sm{min-height:40px;padding:0 14px}
+  .set-card{box-shadow:none !important}
+  .profile-head{flex-wrap:wrap}
 
   /* Cmd palette becomes full-width sheet */
   .cmd-bg .cmd{width:96vw !important;max-width:none !important}
