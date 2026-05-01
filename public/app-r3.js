@@ -1443,7 +1443,8 @@ async function searchTabroom(){
 function bindCommandPalette(){
   const bg = $('cmd-bg'), inp = $('cmd-in'), list = $('cmd-list');
   const items = ()=> [...list.querySelectorAll('.cmd-item:not([hidden])')];
-  $('cmd-trigger').addEventListener('click', ()=>{ bg.classList.add('on'); setTimeout(()=>inp.focus(),20); });
+  const trig = $('cmd-trigger');
+  if (trig) trig.addEventListener('click', ()=>{ bg.classList.add('on'); setTimeout(()=>inp.focus(),20); });
   bg.addEventListener('click', e => { if(e.target===bg) bg.classList.remove('on'); });
   document.addEventListener('keydown', e => {
     if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); bg.classList.toggle('on'); if(bg.classList.contains('on')) setTimeout(()=>inp.focus(),20); }

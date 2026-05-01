@@ -116,9 +116,12 @@
   .chat-msg.user { margin:5px 16px 5px auto; max-width:calc(100% - 32px); }
   .chat-msg.assistant { padding-left:42px; padding-right:16px; }
   .chat-msg.assistant::before { left:16px; top:16px; }
-  .chat-composer-wrap { padding:10px 12px calc(14px + env(safe-area-inset-bottom, 0px)); gap:8px; }
-  .chat-input { min-height:54px; padding:11px 12px; font-size:15px; }
-  .chat-send { width:36px; height:36px; }
+  .chat-composer-wrap { padding:8px 12px calc(10px + env(safe-area-inset-bottom, 0px)); gap:6px; }
+  .chat-input { min-height:38px !important; padding:8px 12px !important; line-height:1.35 !important; }
+  .chat-composer-bar { padding:4px 6px !important; }
+  .chat-send { width:32px !important; height:32px !important; }
+  .chat-tool-btn { padding:6px 8px !important; min-height:32px !important; }
+  .chat-tool-btn span { display:none; }
 
   /* Card panel: full-screen overlay sliding from bottom */
   .chat-split { position:fixed; left:0; right:0; top:0; bottom:0; width:100%; border-left:none; transform:translateY(0); transition:transform 240ms cubic-bezier(.2,.8,.2,1); z-index:50; }
