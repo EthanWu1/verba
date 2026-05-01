@@ -121,11 +121,8 @@ img,svg,video,canvas{max-width:100%;height:auto}
   /* Main column gets row 1, fills remaining height */
   .main{grid-row:1;grid-column:1}
 
-  /* Topbar: tighter, hide global cmd-K + team chip */
-  .topbar{padding:8px 14px !important;gap:8px !important;height:auto;min-height:42px}
-  .gsearch{display:none !important}
-  .top-actions .team-chip{display:none !important}
-  .crumb{font-size:13px}
+  /* Topbar: hidden entirely on mobile (rail at the bottom is enough nav) */
+  .topbar{display:none !important}
 
   /* Today page: stack hero, shrink kicker spacing */
   .today-hero{padding-left:14px !important;padding-right:14px !important}
