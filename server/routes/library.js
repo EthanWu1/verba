@@ -83,12 +83,16 @@ function _vecHasRows() {
   let has = false;
   try {
     const { getDb } = require('../services/db');
-    const { extensionStatus } = require('../services/semanticIndex');
-    if (extensionStatus().loaded) {
+    const { ensureSchema } = require('../services/semanticIndex');
+    // ensureSchema lazily loads the sqlite-vec extension. Without this, the
+    // first call returns false (extension not yet loaded) and gets cached
+    // for 60s — semantic search stays disabled until something else triggers
+    // the load.
+    if (ensureSchema()) {
       const row = getDb().prepare('SELECT 1 FROM cards_vec LIMIT 1').get();
       has = !!row;
     }
-  } catch { /* extension not loaded or table missing → treat as empty */ }
+  } catch { /* extension load failed or table missing → treat as empty */ }
   _vecCheck = { at: now, has };
   return has;
 }

@@ -99,54 +99,32 @@ function getLibraryAnalytics() {
   if (_analyticsCache.data && now - _analyticsCache.at < ANALYTICS_TTL_MS) return _analyticsCache.data;
 
   const database = db.getDb();
-  // Single query for totals + 3 top-N lists. The top-* lists filter on
-  // hasHighlight=1 so SQLite can use the partial indexes idx_cards_hl_*
-  // (48k rows instead of 832k), which is the dominant cost.
-  // Returns rows tagged by `kind`; we partition in JS.
-  const rows = database.prepare(`
-    WITH t AS (
-      SELECT
-        COUNT(*) AS cards,
-        SUM(CASE WHEN isCanonical = 1 THEN 1 ELSE 0 END) AS canonical,
-        COUNT(DISTINCT school) AS schools,
-        COUNT(DISTINCT resolutionLabel) AS resolutions
-      FROM cards
-    )
-    SELECT 'totals' AS kind, NULL AS label,
-           cards, canonical, schools, resolutions
-    FROM t
-    UNION ALL
-    SELECT * FROM (
-      SELECT 'res' AS kind, resolutionLabel AS label,
-             COUNT(*) AS cards, NULL, NULL, NULL
-      FROM cards WHERE hasHighlight = 1 AND resolutionLabel IS NOT NULL AND resolutionLabel != ''
-      GROUP BY resolutionLabel ORDER BY COUNT(*) DESC, resolutionLabel ASC LIMIT 6
-    )
-    UNION ALL
-    SELECT * FROM (
-      SELECT 'type' AS kind, typeLabel AS label,
-             COUNT(*), NULL, NULL, NULL
-      FROM cards WHERE hasHighlight = 1 AND typeLabel IS NOT NULL AND typeLabel != ''
-      GROUP BY typeLabel ORDER BY COUNT(*) DESC, typeLabel ASC LIMIT 6
-    )
-    UNION ALL
-    SELECT * FROM (
-      SELECT 'topic' AS kind, topicLabel AS label,
-             COUNT(*), NULL, NULL, NULL
-      FROM cards WHERE hasHighlight = 1 AND topicLabel IS NOT NULL AND topicLabel != ''
-      GROUP BY topicLabel ORDER BY COUNT(*) DESC, topicLabel ASC LIMIT 200
-    )
-  `).all();
+  // Split into independent queries. The CTE+UNION-ALL form blew up post-
+  // migration (took >2 min) — SQLite seemed to materialize the totals CTE in
+  // a way that interacted badly with the UNION pieces. Each piece on its own
+  // is sub-second and uses the partial indexes (idx_cards_hl_*).
+  const totalsRow = database.prepare(`SELECT COUNT(*) AS n FROM cards`).get();
+  const canonRow  = database.prepare(`SELECT SUM(CASE WHEN isCanonical=1 THEN 1 ELSE 0 END) AS n FROM cards`).get();
+  const schoolRow = database.prepare(`SELECT COUNT(DISTINCT school) AS n FROM cards`).get();
+  const resRow    = database.prepare(`SELECT COUNT(DISTINCT resolutionLabel) AS n FROM cards`).get();
+  const totals = {
+    cards: totalsRow.n || 0,
+    canonical: canonRow.n || 0,
+    schools: schoolRow.n || 0,
+    resolutions: resRow.n || 0,
+  };
 
-  let totals = { cards: 0, canonical: 0, schools: 0, resolutions: 0 };
-  const topResolutions = [], topTypes = [], topTopics = [];
-  for (const r of rows) {
-    if (r.kind === 'totals') {
-      totals = { cards: r.cards || 0, canonical: r.canonical || 0, schools: r.schools || 0, resolutions: r.resolutions || 0 };
-    } else if (r.kind === 'res')   topResolutions.push({ label: r.label, count: r.cards });
-    else if (r.kind === 'type')    topTypes.push({ label: r.label, count: r.cards });
-    else if (r.kind === 'topic')   topTopics.push({ label: r.label, count: r.cards });
-  }
+  const topQuery = (col, lim) => `
+    SELECT ${col} AS label, COUNT(*) AS cards
+    FROM cards
+    WHERE hasHighlight = 1 AND ${col} IS NOT NULL AND ${col} != ''
+    GROUP BY ${col}
+    ORDER BY COUNT(*) DESC, ${col} ASC
+    LIMIT ${lim}
+  `;
+  const topResolutions = database.prepare(topQuery('resolutionLabel', 6)).all().map(r => ({ label: r.label, count: r.cards }));
+  const topTypes       = database.prepare(topQuery('typeLabel',       6)).all().map(r => ({ label: r.label, count: r.cards }));
+  const topTopics      = database.prepare(topQuery('topicLabel',     200)).all().map(r => ({ label: r.label, count: r.cards }));
 
   const data = { totals, topResolutions, topTypes, topTopics };
   _analyticsCache = { at: now, data };
