@@ -162,15 +162,15 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .badge.neg{background:var(--danger-soft);color:var(--danger);border-color:#FECACA}
 .badge.k{background:var(--lilac-soft);color:var(--lilac-ink);border-color:var(--lilac-line)}
 .badge.t{background:var(--info-soft);color:var(--info);border-color:var(--line-2)}
-/* Per-debate-type badge colors — applied via [data-tag-type]. Overrides the
-   generic .badge.t neutral above. */
-.badge.t[data-tag-type="Policy"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
-.badge.t[data-tag-type="K"]{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
-.badge.t[data-tag-type="Theory"]{background:#FEF3C7;color:#92400E;border-color:#FDE68A}
-.badge.t[data-tag-type="Tricks"]{background:#0A0A0A;color:#fff;border-color:#0A0A0A}
-.badge.t[data-tag-type="Phil"]{background:#F5F5F4;color:#44403C;border-color:#D6D3D1}
-.badge.t[data-tag-type="HS Policy"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
-.badge.t[data-tag-type="NDT/CEDA"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
+/* Per-debate-type badge colors — applied via [data-tag-type].
+   Policy=blue, K=green, Theory=orange, Tricks=red, Phil=purple. */
+.badge.t[data-tag-type="Policy"]{background:#DBEAFE;color:#1E40AF;border-color:#93C5FD}
+.badge.t[data-tag-type="K"]{background:#DCFCE7;color:#166534;border-color:#86EFAC}
+.badge.t[data-tag-type="Theory"]{background:#FFEDD5;color:#C2410C;border-color:#FDBA74}
+.badge.t[data-tag-type="Tricks"]{background:#FEE2E2;color:#B91C1C;border-color:#FCA5A5}
+.badge.t[data-tag-type="Phil"]{background:#F3E8FF;color:#6B21A8;border-color:#D8B4FE}
+.badge.t[data-tag-type="HS Policy"]{background:#DBEAFE;color:#1E40AF;border-color:#93C5FD}
+.badge.t[data-tag-type="NDT/CEDA"]{background:#DBEAFE;color:#1E40AF;border-color:#93C5FD}
 .badge.topic{background:#fff;color:var(--ink-2);border-color:var(--line-2);font-weight:500}
 
 .aside-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;box-shadow:var(--shadow-sm);margin-bottom:18px}
@@ -204,24 +204,23 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .topic-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:var(--panel);border:1px solid var(--line);font:500 12px/1 var(--font-display);color:var(--ink-2);cursor:pointer;transition:all .12s}
 .topic-chip:hover{background:#fff;border-color:var(--lilac-line);color:var(--ink)}
 .topic-chip .ct{font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
-/* Per-debate-type tag colors. Targets [data-topic] on .topic-chip and the
-   same naming on tag spans elsewhere. Keep colors restrained: each gets a
-   soft tint background + bold accent text. */
-.topic-chip[data-topic="Policy"], [data-tag-type="Policy"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
-.topic-chip[data-topic="Policy"]:hover, [data-tag-type="Policy"]:hover{background:#D1FAE5;border-color:#6EE7B7}
-.topic-chip[data-topic="K"], [data-tag-type="K"]{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
-.topic-chip[data-topic="K"]:hover, [data-tag-type="K"]:hover{background:#FEE2E2;border-color:#FCA5A5}
-.topic-chip[data-topic="Theory"], [data-tag-type="Theory"]{background:#FEF3C7;color:#92400E;border-color:#FDE68A}
-.topic-chip[data-topic="Theory"]:hover, [data-tag-type="Theory"]:hover{background:#FDE68A;border-color:#FCD34D}
-.topic-chip[data-topic="Tricks"], [data-tag-type="Tricks"]{background:#0A0A0A;color:#fff;border-color:#0A0A0A}
-.topic-chip[data-topic="Tricks"]:hover, [data-tag-type="Tricks"]:hover{background:#262626;border-color:#262626}
-.topic-chip[data-topic="Phil"], [data-tag-type="Phil"]{background:#F5F5F4;color:#44403C;border-color:#D6D3D1}
-.topic-chip[data-topic="Phil"]:hover, [data-tag-type="Phil"]:hover{background:#E7E5E4;border-color:#A8A29E}
-.topic-chip[data-topic="Policy"] .ct, [data-tag-type="Policy"] .ct{color:#047857;opacity:.7}
-.topic-chip[data-topic="K"] .ct, [data-tag-type="K"] .ct{color:#B91C1C;opacity:.7}
-.topic-chip[data-topic="Theory"] .ct, [data-tag-type="Theory"] .ct{color:#92400E;opacity:.7}
-.topic-chip[data-topic="Tricks"] .ct, [data-tag-type="Tricks"] .ct{color:#fff;opacity:.7}
-.topic-chip[data-topic="Phil"] .ct, [data-tag-type="Phil"] .ct{color:#44403C;opacity:.7}
+/* Per-debate-type tag colors. Policy=blue, K=green, Theory=orange,
+   Tricks=red, Phil=purple. Soft tint background + bold accent text. */
+.topic-chip[data-topic="Policy"], [data-tag-type="Policy"]{background:#DBEAFE;color:#1E40AF;border-color:#93C5FD}
+.topic-chip[data-topic="Policy"]:hover, [data-tag-type="Policy"]:hover{background:#BFDBFE;border-color:#60A5FA}
+.topic-chip[data-topic="K"], [data-tag-type="K"]{background:#DCFCE7;color:#166534;border-color:#86EFAC}
+.topic-chip[data-topic="K"]:hover, [data-tag-type="K"]:hover{background:#BBF7D0;border-color:#4ADE80}
+.topic-chip[data-topic="Theory"], [data-tag-type="Theory"]{background:#FFEDD5;color:#C2410C;border-color:#FDBA74}
+.topic-chip[data-topic="Theory"]:hover, [data-tag-type="Theory"]:hover{background:#FED7AA;border-color:#FB923C}
+.topic-chip[data-topic="Tricks"], [data-tag-type="Tricks"]{background:#FEE2E2;color:#B91C1C;border-color:#FCA5A5}
+.topic-chip[data-topic="Tricks"]:hover, [data-tag-type="Tricks"]:hover{background:#FECACA;border-color:#F87171}
+.topic-chip[data-topic="Phil"], [data-tag-type="Phil"]{background:#F3E8FF;color:#6B21A8;border-color:#D8B4FE}
+.topic-chip[data-topic="Phil"]:hover, [data-tag-type="Phil"]:hover{background:#E9D5FF;border-color:#C084FC}
+.topic-chip[data-topic="Policy"] .ct, [data-tag-type="Policy"] .ct{color:#1E40AF;opacity:.7}
+.topic-chip[data-topic="K"] .ct, [data-tag-type="K"] .ct{color:#166534;opacity:.7}
+.topic-chip[data-topic="Theory"] .ct, [data-tag-type="Theory"] .ct{color:#C2410C;opacity:.7}
+.topic-chip[data-topic="Tricks"] .ct, [data-tag-type="Tricks"] .ct{color:#B91C1C;opacity:.7}
+.topic-chip[data-topic="Phil"] .ct, [data-tag-type="Phil"] .ct{color:#6B21A8;opacity:.7}
 
 /* CUTTER */
 .cutter-page{padding:32px clamp(28px,4vw,52px) 56px;max-width:1080px;margin:0 auto}
