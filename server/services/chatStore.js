@@ -19,9 +19,18 @@ function getThread(id, userId) {
 }
 
 function listThreads(userId, { includeArchived = false } = {}) {
-  const sql = includeArchived
-    ? 'SELECT * FROM chat_threads WHERE userId = ? ORDER BY updatedAt DESC'
-    : 'SELECT * FROM chat_threads WHERE userId = ? AND archived = 0 ORDER BY updatedAt DESC';
+  // Hide threads with no messages — they're either lazy-creates that never sent
+  // or stale rows from an earlier auto-create flow.
+  const archivedClause = includeArchived ? '' : 'AND t.archived = 0';
+  const sql = `
+    SELECT t.*, COUNT(m.id) AS messageCount
+    FROM chat_threads t
+    LEFT JOIN chat_messages m ON m.threadId = t.id
+    WHERE t.userId = ? ${archivedClause}
+    GROUP BY t.id
+    HAVING messageCount > 0
+    ORDER BY t.updatedAt DESC
+  `;
   return getDb().prepare(sql).all(userId);
 }
 

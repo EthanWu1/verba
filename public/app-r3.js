@@ -10,7 +10,8 @@ const $$ = (sel, root=document) => root.querySelectorAll(sel);
 
 const NAMES = {
   today:'Today', cutter:'Card Cutter', library:'Library',
-  tournaments:'Tournaments', rankings:'Rankings', team:'Team Profile', settings:'Settings'
+  tournaments:'Tournaments', rankings:'Rankings', team:'Team Profile',
+  chat:'Assistant', settings:'Settings'
 };
 
 const state = {
@@ -110,6 +111,7 @@ function go(p){
   if(p==='tournaments') loadTournaments();
   if(p==='rankings') loadRankings();
   if(p==='settings') loadSettings();
+  if(p==='chat' && window.ChatApp && window.ChatApp.show) window.ChatApp.show();
   // Reset tournaments view when navigating in
   if(p==='tournaments'){ $('t-list-view').style.display='block'; $('t-detail-view').style.display='none'; window.scrollTo(0,0); }
 }
@@ -1352,7 +1354,6 @@ function loadSettings(){
 function applyTweaks(){
   document.body.className = '';
   document.body.classList.add('hl-'+(TWEAKS.highlight||'yellow'));
-  document.body.classList.add('density-'+(TWEAKS.density||'comfy'));
   $$('.swatch-row[data-tweak]').forEach(g => {
     const k = g.dataset.tweak;
     g.querySelectorAll('.swatch').forEach(s => s.classList.toggle('on', s.dataset.val===TWEAKS[k]));
@@ -1442,7 +1443,8 @@ async function searchTabroom(){
 function bindCommandPalette(){
   const bg = $('cmd-bg'), inp = $('cmd-in'), list = $('cmd-list');
   const items = ()=> [...list.querySelectorAll('.cmd-item:not([hidden])')];
-  $('cmd-trigger').addEventListener('click', ()=>{ bg.classList.add('on'); setTimeout(()=>inp.focus(),20); });
+  const trig = $('cmd-trigger');
+  if (trig) trig.addEventListener('click', ()=>{ bg.classList.add('on'); setTimeout(()=>inp.focus(),20); });
   bg.addEventListener('click', e => { if(e.target===bg) bg.classList.remove('on'); });
   document.addEventListener('keydown', e => {
     if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); bg.classList.toggle('on'); if(bg.classList.contains('on')) setTimeout(()=>inp.focus(),20); }

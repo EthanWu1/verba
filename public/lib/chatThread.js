@@ -27,7 +27,7 @@
     const { messages } = await API.chat.listMessages(id);
     messages.forEach(renderMessage);
     scrollBottom();
-    const threadTitle = (messages[0]?.content || 'Thread').slice(0, 60);
+    const threadTitle = (messages[0]?.content || '').slice(0, 60);
     document.getElementById('chat-thread-title').textContent = threadTitle;
   }
 
@@ -46,12 +46,13 @@
     const card = document.createElement('div');
     card.className = 'chat-file-card';
     card.innerHTML = `
-      <span class="icon">📄</span>
+      <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="6" y="6" width="14" height="14" rx="1.5"/><path d="M16 6V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h2"/></svg></span>
+      <span class="kind">Block</span>
       <div class="meta">
         <div class="tag">${escapeHtml(m.blockJson.tag || '(block)')}</div>
         <div class="cite">${escapeHtml(summarizeCites(m.blockJson))}</div>
       </div>
-      <span>Open ▸</span>`;
+      <span>›</span>`;
     card.addEventListener('click', () => {
       if (global.ChatSplitView && global.ChatSplitView.toggle) {
         global.ChatSplitView.toggle(card, m.blockJson);
@@ -66,8 +67,22 @@
   }
   function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 
+  function clear() {
+    currentThreadId = null;
+    if (msgsEl) msgsEl.innerHTML = '';
+    const titleEl = document.getElementById('chat-thread-title');
+    if (titleEl) titleEl.textContent = '';
+  }
+
   async function send() {
-    const text = inputEl.value.trim(); if (!text || !currentThreadId) return;
+    const text = inputEl.value.trim(); if (!text) return;
+    // Lazy-create the thread on first message so we don't pile up empty "New thread" rows.
+    if (!currentThreadId) {
+      const title = text.slice(0, 60);
+      const { thread } = await API.chat.createThread(title);
+      currentThreadId = thread.id;
+      document.getElementById('chat-thread-title').textContent = title;
+    }
     inputEl.value = ''; autogrow();
     renderMessage({ role:'user', content:text, command:null });
     const asstEl = document.createElement('div');
@@ -96,5 +111,5 @@
 
   function scrollBottom() { msgsEl.scrollTop = msgsEl.scrollHeight; }
 
-  global.ChatThread = { init, openThread };
+  global.ChatThread = { init, openThread, clear };
 })(window);
