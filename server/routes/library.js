@@ -179,18 +179,27 @@ router.get('/semantic-search', async (req, res) => {
     if (ftsQuery) {
       let ftsRows = [];
       try {
+        // Top-N CTE keeps random row reads bounded. Without this, queries like
+        // 'trump' (~109k FTS hits on prod) spent 30+ seconds on disk I/O
+        // pulling every match's body_plain just to throw most of them away.
+        // Inner cap is the post-filter target × a generous filter-rejection
+        // headroom so the result set stays fully populated.
+        const FTS_INNER_CAP = Math.max(2000, k * 40);
         ftsRows = db.prepare(`
-          SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain,
-                 bm25(cards_fts) AS bm25_rank
-          FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid
-          WHERE cards_fts MATCH ?
-            AND c.isCanonical = 1
+          WITH t AS (
+            SELECT rowid, bm25(cards_fts) AS rank
+            FROM cards_fts WHERE cards_fts MATCH ?
+            ORDER BY rank ASC LIMIT ?
+          )
+          SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain, t.rank AS bm25_rank
+          FROM t JOIN cards c ON c.rowid = t.rowid
+          WHERE c.isCanonical = 1
             AND c.hasHighlight = 1
             AND c.highlightWordCount >= ?
             AND c.tag IS NOT NULL AND TRIM(c.tag) != ''
-          ORDER BY bm25_rank ASC
+          ORDER BY t.rank ASC
           LIMIT ?
-        `).all(ftsQuery, MIN_HL_WORDS, k * 4);
+        `).all(ftsQuery, FTS_INNER_CAP, MIN_HL_WORDS, k * 4);
       } catch (e) { /* bad FTS query — skip stage */ }
       let rank = 0;
       for (const r of ftsRows) {
