@@ -474,6 +474,13 @@ function _runMigrations(db) {
     -- Composite for default list sort: ORDER BY hasHighlight DESC, isCanonical DESC, variantCount DESC, importedAt DESC
     -- Without this, every unfiltered list scan sorts 157k rows (8s+).
     CREATE INDEX IF NOT EXISTS idx_cards_default_sort ON cards(hasHighlight DESC, isCanonical DESC, variantCount DESC, importedAt DESC);
+
+    -- Covering partial index for default library browse COUNT(*).
+    -- The page filter is hasHighlight=1 AND isCanonical=1 AND typeLabel != ''.
+    -- Without this index, COUNT had to read ~133k row bodies for the typeLabel
+    -- check on a 28GB DB — 100s+ on prod. With it, the planner picks
+    -- 'COVERING INDEX' and finishes in <20ms.
+    CREATE INDEX IF NOT EXISTS idx_cards_browse ON cards(typeLabel) WHERE hasHighlight = 1 AND isCanonical = 1;
   `);
   if (needBackfill) _backfillDerivedLabels(db);
   if (needHighlightBackfill) _backfillHasHighlight(db);
