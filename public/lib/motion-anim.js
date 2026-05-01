@@ -50,16 +50,15 @@ if (!reduce) {
     if (initial) animatePageEnter(initial);
   });
 
-  // Run when any .page gets the .on class
+  // Run when any .page gets the .on class — only on first entry per session.
+  // Re-entries skip the animation (otherwise tab-switching feels laggy).
   const pageObs = new MutationObserver((muts) => {
     for (const m of muts) {
       if (m.attributeName !== 'class') continue;
       const el = m.target;
-      if (el.classList.contains('on') && !el.dataset.animatedAt) {
+      if (el.classList.contains('on') && !el.dataset.animatedOnce) {
+        el.dataset.animatedOnce = '1';
         animatePageEnter(el);
-        el.dataset.animatedAt = String(Date.now());
-        // Allow re-animating on re-entry — clear flag after a beat
-        setTimeout(() => delete el.dataset.animatedAt, 600);
       }
     }
   });
@@ -86,7 +85,9 @@ if (!reduce) {
   document.addEventListener('DOMContentLoaded', wireChatStream);
 
   /* ── 3-4. Generic list-item entrance ───────────────── */
-  // Watch a few known list containers and fade in late-added rows.
+  // Watch a few known list containers and fade in their FIRST batch only.
+  // Subsequent batches (paginated "Show more", filter changes) are skipped
+  // so clicks don't feel laggy/repetitive.
   const listSelectors = [
     '#continue-list',
     '#topic-list',
@@ -100,10 +101,20 @@ if (!reduce) {
       const el = document.querySelector(sel);
       if (!el || el.dataset.motionWired) return;
       el.dataset.motionWired = '1';
+      let firstBatchSeen = false;
+      let lastBatchAt = 0;
       new MutationObserver((muts) => {
         const newNodes = [];
         for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) newNodes.push(n);
-        if (newNodes.length) staggerFadeUp(newNodes, { duration: 0.3 });
+        if (!newNodes.length) return;
+        const now = Date.now();
+        // Skip if we've already animated a batch — pagination/filter swaps shouldn't re-animate.
+        if (firstBatchSeen) return;
+        // Skip "empty" placeholder rows.
+        if (newNodes.length === 1 && newNodes[0].classList?.contains('empty')) return;
+        firstBatchSeen = true;
+        lastBatchAt = now;
+        staggerFadeUp(newNodes, { duration: 0.3 });
       }).observe(el, { childList: true });
     });
   };

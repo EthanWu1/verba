@@ -1022,6 +1022,13 @@ function renderEloChart(history){
 
 /* ── LIBRARY ────────────────────────────────────────────── */
 function bindLibraryControls(){
+  // Close button on the mobile preview overlay
+  const closeBtn = $('lib-pv-close');
+  if (closeBtn) closeBtn.addEventListener('click', () => {
+    const pane = document.querySelector('.lib-preview');
+    if (pane) pane.classList.remove('is-active');
+  });
+
   $('lib-q').addEventListener('input', debounce(()=>{
     const q = $('lib-q').value.trim();
     if(q.length===0) loadLibrary();
@@ -1140,6 +1147,11 @@ function renderLibList(){
     $$('.lib-row', list).forEach(x => x.classList.remove('on'));
     r.classList.add('on');
     showLibPreview(state.libCards[Number(r.dataset.idx)]);
+    // On mobile, surface the preview as a fullscreen overlay.
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      const pane = document.querySelector('.lib-preview');
+      if (pane) pane.classList.add('is-active');
+    }
   }));
   if(state.libCards[0]) showLibPreview(state.libCards[0]);
 }

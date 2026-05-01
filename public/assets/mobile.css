@@ -141,14 +141,23 @@ img,svg,video,canvas{max-width:100%;height:auto}
     padding:6px 10px !important;font-size:12px !important;
   }
   .topic-list{gap:6px !important}
-  /* Declutter: hide the small "This week" pulse-grid aside on phones —
-     it's noise next to the main thread. The "Up next" tournament card stays. */
-  .aside-card:has(.pulse-grid){display:none !important}
+  /* Declutter Today on mobile — keep only what's actionable */
+  .aside-card:has(.pulse-grid){display:none !important}      /* "This week" pulse */
+  /* Hide the "Topics in your library" section entirely — chips are still
+     accessible via the Library tab, and on mobile this section just adds noise */
+  .today-grid > div > .section:nth-child(2){display:none !important}
+  .today-h1{font-size:24px !important;line-height:1.18 !important;padding-top:6px}
+  .today-sub{font-size:13px !important;margin-top:6px !important}
+  .today-hero{padding-top:14px !important;padding-bottom:10px !important}
   /* Compact countdown timer */
   .tourn-counter{gap:6px !important}
   .tourn-counter .tc{padding:6px 4px !important}
   .tourn-counter .tc b{font-size:18px !important}
   .tourn-counter .tc span{font-size:9.5px !important}
+  /* Tourn-card on mobile: less padding, smaller name */
+  .tourn-card{padding:14px !important}
+  .tourn-card h3{font-size:11px !important}
+  .tourn-name{font-size:16px !important}
 
   /* Cutter page — clean two-row input: text on top, controls below */
   .cutter-page{padding:14px !important}
@@ -190,11 +199,32 @@ img,svg,video,canvas{max-width:100%;height:auto}
   .cut-mode{padding:6px 14px !important;font-size:12.5px !important}
   .recent-row{grid-template-columns:1fr !important}
 
-  /* Library page: drop side panel, single column list */
-  .lib-shell{grid-template-columns:1fr !important;grid-template-rows:auto auto;height:auto !important}
-  .lib-list-pane{max-height:none !important;border-right:none !important;border-bottom:1px solid var(--line)}
+  /* Library page: list takes the full viewport; preview becomes a fullscreen
+     overlay that slides up when a card is tapped (driven by .is-active) */
+  .lib-shell{display:block !important;grid-template-columns:1fr !important;height:auto !important}
+  .lib-list-pane{max-height:none !important;border-right:none !important;border-bottom:none !important}
   .lib-list-head{padding:14px 14px 10px !important;position:static !important}
-  .lib-detail-pane,.lib-preview{padding:14px !important}
+  .lib-detail-pane{padding:14px !important}
+  .lib-preview{
+    position:fixed !important;left:0;right:0;top:0;bottom:0;z-index:60;
+    background:#fff !important;
+    transform:translateY(100%);transition:transform 240ms cubic-bezier(.2,.8,.2,1);
+    pointer-events:none;
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    overflow-y:auto;
+    display:flex !important;flex-direction:column;gap:14px;
+  }
+  .lib-preview.is-active{transform:translateY(0);pointer-events:auto}
+  .lib-pv-close{
+    position:absolute;top:10px;right:10px;
+    width:36px;height:36px;border-radius:50%;display:grid;place-items:center;
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    cursor:pointer;z-index:2;
+  }
+  .lib-pv-close:hover{background:var(--panel-2)}
+  .lib-pv-head{padding-right:48px}
+  /* On desktop, hide the close button (overlay isn't used) */
+
   .lib-search{padding:8px 12px !important;margin-top:10px !important}
   .lib-search input{font-size:16px !important;min-width:0}
   .lib-chips,.lib-toolbar{flex-wrap:wrap !important;gap:6px !important;padding:10px 14px 0 !important}
@@ -237,18 +267,26 @@ img,svg,video,canvas{max-width:100%;height:auto}
   .pp-block{margin-top:18px !important}
   .pp-block h3{font-size:14px !important}
 
-  /* Rankings — single col, compact table, ellipsis on team names */
-  .rk-shell{grid-template-columns:1fr !important;height:auto !important}
-  .rk-aside{padding:10px 14px !important;border-right:none !important;border-bottom:1px solid var(--line);position:static !important}
-  .rk-aside .rk-select{font-size:14px !important;padding:8px 10px !important}
-  .rk-meta{display:none !important}
-  .rk-main{padding:10px 14px 80px !important}
-  .rk-table{font-size:13px;width:100%}
-  .rk-table th,.rk-table td{padding:9px 8px !important}
-  .rk-table .rk-col-rank{width:32px !important;padding-left:4px !important}
-  .rk-table .rk-col-num{width:64px !important;text-align:right !important}
-  .rk-table tbody td:nth-child(2){max-width:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .rk-pagination-host{padding:14px 0 !important}
+  /* Rankings (leaderboard `.lb`) — collapse from 5 cols to 3: rank + team + elo.
+     Hide Δ30d and Record on mobile. Team name + school stack with ellipsis. */
+  .lb{margin:0 -2px !important}
+  .lb-head, .lb-row{
+    grid-template-columns:34px minmax(0,1fr) 70px !important;
+    padding:11px 14px !important;
+    gap:10px !important;
+  }
+  .lb-head > :nth-child(4), .lb-head > :nth-child(5),
+  .lb-row > :nth-child(4), .lb-row > :nth-child(5){display:none !important}
+  .lb-head > :nth-child(1){padding-left:0 !important}
+  .lb-rank{font-size:14px !important}
+  .lb-team{min-width:0;flex-direction:column !important;align-items:flex-start !important;gap:2px !important}
+  .lb-team .name{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;letter-spacing:-0.01em}
+  .lb-team .school{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .lb-elo{font-size:14px !important;text-align:right;white-space:nowrap}
+  /* Hide ranking eyebrow (it duplicates the page title) and tighten the format tabs */
+  #rank-eyebrow{display:none !important}
+  /* Bottom padding so the last row isn't hidden behind the bottom rail */
+  #page-rankings .shellpad{padding-bottom:80px !important}
 
   /* Settings — single column, horizontal-scroll nav (NOT sticky, doesn't overlap body) */
   .set-shell{

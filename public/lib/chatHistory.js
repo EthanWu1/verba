@@ -3,8 +3,13 @@
   'use strict';
   const API = global.API;
   let dropdown = null;
+  let openAnchor = null;
   async function open(anchor) {
+    // Toggle: if the menu is open and the user clicks the same trigger again,
+    // just close it instead of re-opening.
+    if (dropdown && openAnchor === anchor) { close(); return; }
     close();
+    openAnchor = anchor;
     const { threads } = await API.chat.listThreads();
     dropdown = document.createElement('div');
     dropdown.className = 'chat-dropdown';
@@ -22,7 +27,11 @@
     document.body.appendChild(dropdown);
     setTimeout(() => document.addEventListener('click', outsideClose, true), 0);
   }
-  function close() { if (dropdown) { dropdown.remove(); dropdown = null; document.removeEventListener('click', outsideClose, true); } }
-  function outsideClose(e) { if (dropdown && !dropdown.contains(e.target)) close(); }
+  function close() { if (dropdown) { dropdown.remove(); dropdown = null; openAnchor = null; document.removeEventListener('click', outsideClose, true); } }
+  function outsideClose(e) {
+    // Don't close on a click on the trigger — open() handles toggle.
+    if (openAnchor && openAnchor.contains(e.target)) return;
+    if (dropdown && !dropdown.contains(e.target)) close();
+  }
   global.ChatHistory = { open, close };
 })(window);

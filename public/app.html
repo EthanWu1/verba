@@ -195,6 +195,24 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .topic-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;background:var(--panel);border:1px solid var(--line);font:500 12px/1 var(--font-display);color:var(--ink-2);cursor:pointer;transition:all .12s}
 .topic-chip:hover{background:#fff;border-color:var(--lilac-line);color:var(--ink)}
 .topic-chip .ct{font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+/* Per-debate-type tag colors. Targets [data-topic] on .topic-chip and the
+   same naming on tag spans elsewhere. Keep colors restrained: each gets a
+   soft tint background + bold accent text. */
+.topic-chip[data-topic="Policy"], [data-tag-type="Policy"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
+.topic-chip[data-topic="Policy"]:hover, [data-tag-type="Policy"]:hover{background:#D1FAE5;border-color:#6EE7B7}
+.topic-chip[data-topic="K"], [data-tag-type="K"]{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
+.topic-chip[data-topic="K"]:hover, [data-tag-type="K"]:hover{background:#FEE2E2;border-color:#FCA5A5}
+.topic-chip[data-topic="Theory"], [data-tag-type="Theory"]{background:#FEF3C7;color:#92400E;border-color:#FDE68A}
+.topic-chip[data-topic="Theory"]:hover, [data-tag-type="Theory"]:hover{background:#FDE68A;border-color:#FCD34D}
+.topic-chip[data-topic="Tricks"], [data-tag-type="Tricks"]{background:#0A0A0A;color:#fff;border-color:#0A0A0A}
+.topic-chip[data-topic="Tricks"]:hover, [data-tag-type="Tricks"]:hover{background:#262626;border-color:#262626}
+.topic-chip[data-topic="Phil"], [data-tag-type="Phil"]{background:#F5F5F4;color:#44403C;border-color:#D6D3D1}
+.topic-chip[data-topic="Phil"]:hover, [data-tag-type="Phil"]:hover{background:#E7E5E4;border-color:#A8A29E}
+.topic-chip[data-topic="Policy"] .ct, [data-tag-type="Policy"] .ct{color:#047857;opacity:.7}
+.topic-chip[data-topic="K"] .ct, [data-tag-type="K"] .ct{color:#B91C1C;opacity:.7}
+.topic-chip[data-topic="Theory"] .ct, [data-tag-type="Theory"] .ct{color:#92400E;opacity:.7}
+.topic-chip[data-topic="Tricks"] .ct, [data-tag-type="Tricks"] .ct{color:#fff;opacity:.7}
+.topic-chip[data-topic="Phil"] .ct, [data-tag-type="Phil"] .ct{color:#44403C;opacity:.7}
 
 /* CUTTER */
 .cutter-page{padding:32px clamp(28px,4vw,52px) 56px;max-width:1080px;margin:0 auto}
@@ -202,16 +220,20 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .cutter-title{font:700 26px/1.15 var(--font-display);letter-spacing:-0.025em;margin:0 0 6px;color:var(--ink)}
 .cutter-sub{margin:0 0 24px;color:var(--muted);font-size:14px}
 
-.cut-input{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 8px 6px 16px;box-shadow:var(--shadow-sm);transition:border-color .14s, box-shadow .14s}
-.cut-input:focus-within{border-color:var(--lilac-ink);box-shadow:0 0 0 3px rgba(15,23,42,0.08)}
-.cut-input .lead{display:flex;align-items:center;gap:6px;color:var(--muted)}
-.cut-input .modes{display:flex;gap:2px;padding:0 6px;border-left:1px solid var(--line);margin-left:6px;height:26px;align-items:center}
-.cut-mode{padding:5px 9px;border-radius:5px;font:500 11.5px/1 var(--font-display);color:var(--muted);transition:all .12s}
-.cut-mode:hover{color:var(--ink);background:var(--panel)}
-.cut-mode.on{background:var(--ink);color:#fff}
-.cut-input input{flex:1;font-size:14.5px;color:var(--ink);font-family:var(--font-display);min-width:0;padding:8px 0;background:transparent;border:0;outline:0}
+.cut-input{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 10px 8px 18px;box-shadow:0 1px 2px rgba(0,0,0,0.04);transition:border-color .14s, box-shadow .14s}
+.cut-input:focus-within{border-color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,0.04), 0 0 0 3px rgba(10,10,10,0.06)}
+.cut-input .lead{display:flex;align-items:center;gap:6px;color:var(--muted-2)}
+.cut-input .lead svg{width:15px;height:15px}
+.cut-input .modes{display:flex;gap:2px;padding:2px;border:1px solid var(--line);background:var(--panel);border-radius:8px;margin-left:4px;height:30px;align-items:center}
+.cut-mode{padding:0 11px;height:24px;display:inline-flex;align-items:center;border-radius:6px;font:500 11.5px/1 var(--font-display);color:var(--muted);transition:all .12s}
+.cut-mode:hover{color:var(--ink)}
+.cut-mode.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,0.06)}
+.cut-input input{flex:1;font-size:14.5px;color:var(--ink);font-family:var(--font-display);min-width:0;padding:9px 0;background:transparent;border:0;outline:0}
 .cut-input input::placeholder{color:var(--muted-2)}
-.cut-input .upload-btn,.cut-input .send{width:34px;height:34px;border-radius:7px;display:grid;place-items:center;color:var(--muted);transition:all .12s;flex:none;background:none;border:0}
+.cut-input .upload-btn,.cut-input .send{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--muted);transition:all .12s;flex:none;background:var(--panel);border:1px solid var(--line)}
+.cut-input .upload-btn:hover{color:var(--ink);background:var(--panel-2);border-color:var(--line-2)}
+.cut-input .send{background:var(--ink);color:#fff;border-color:var(--ink)}
+.cut-input .send:hover{background:#000}
 .cut-input .upload-btn:hover{background:var(--panel);color:var(--ink)}
 .cut-input .send{background:var(--ink);color:#fff}
 .cut-input .send:hover{background:#000}
@@ -256,10 +278,11 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 
 .recent-section{margin-top:36px}
 .recent-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.recent-card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px;cursor:pointer;transition:all .18s ease;display:flex;flex-direction:column;gap:8px}
+.recent-card{background:#fff;border:1px solid var(--line);border-radius:9px;padding:14px 14px 30px;cursor:pointer;transition:all .18s ease;display:flex;flex-direction:column;gap:8px;position:relative}
 .recent-card:hover{border-color:var(--lilac-line);box-shadow:var(--shadow);transform:translateY(-2px)}
 .recent-card .head{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.recent-card .head .when{margin-left:auto;font:500 10.5px/1 var(--font-mono);color:var(--muted)}
+.recent-card .head .when{position:absolute;bottom:10px;right:14px;margin:0;font:500 10.5px/1 var(--font-mono);color:var(--muted)}
+.lib-pv-close{display:none}
 .recent-card .tag{font:600 13.5px/1.4 var(--font-display);color:var(--ink);letter-spacing:-0.005em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:pretty}
 .recent-card .cite{font:500 11.5px/1 var(--font-display);color:var(--muted)}
 
@@ -781,6 +804,9 @@ body.hl-green .hl{background:#1BFC06}
             </div>
           </div>
           <div class="lib-preview">
+            <button class="lib-pv-close" id="lib-pv-close" type="button" aria-label="Close preview">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
             <div class="lib-pv-head">
               <div class="meta" id="lib-pv-meta">Select a card</div>
               <div class="actions">
