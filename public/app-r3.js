@@ -1134,7 +1134,9 @@ function renderLibList(){
     const sideBadge = side==='aff' ? `<span class="badge aff">Aff</span>`
                     : side==='neg' ? `<span class="badge neg">Neg</span>`
                     : side==='k'   ? `<span class="badge k">K</span>` : '';
-    const type = (c.typeLabel && !['aff','neg','k'].includes(c.typeLabel.toLowerCase())) ? `<span class="badge t">${escapeHTML(c.typeLabel)}</span>` : '';
+    const type = (c.typeLabel && !['aff','neg','k'].includes(c.typeLabel.toLowerCase()))
+      ? `<span class="badge t" data-tag-type="${escapeHTML(c.typeLabel)}">${escapeHTML(c.typeLabel)}</span>`
+      : '';
     const topic = c.topicLabel ? `<span class="badge topic">${escapeHTML(c.topicLabel)}</span>` : '';
     return `
       <div class="lib-row${i===0?' on':''}" data-idx="${i}">

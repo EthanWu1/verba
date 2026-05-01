@@ -162,6 +162,15 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .badge.neg{background:var(--danger-soft);color:var(--danger);border-color:#FECACA}
 .badge.k{background:var(--lilac-soft);color:var(--lilac-ink);border-color:var(--lilac-line)}
 .badge.t{background:var(--info-soft);color:var(--info);border-color:var(--line-2)}
+/* Per-debate-type badge colors — applied via [data-tag-type]. Overrides the
+   generic .badge.t neutral above. */
+.badge.t[data-tag-type="Policy"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
+.badge.t[data-tag-type="K"]{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
+.badge.t[data-tag-type="Theory"]{background:#FEF3C7;color:#92400E;border-color:#FDE68A}
+.badge.t[data-tag-type="Tricks"]{background:#0A0A0A;color:#fff;border-color:#0A0A0A}
+.badge.t[data-tag-type="Phil"]{background:#F5F5F4;color:#44403C;border-color:#D6D3D1}
+.badge.t[data-tag-type="HS Policy"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
+.badge.t[data-tag-type="NDT/CEDA"]{background:#ECFDF5;color:#047857;border-color:#A7F3D0}
 .badge.topic{background:#fff;color:var(--ink-2);border-color:var(--line-2);font-weight:500}
 
 .aside-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px;box-shadow:var(--shadow-sm);margin-bottom:18px}
