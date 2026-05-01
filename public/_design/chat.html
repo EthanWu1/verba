@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Verba — Chat (design mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Tokens copied from app.html — not redefined */
+  --bg:#FFFFFF; --paper:#FBFAF7; --panel:#F9FAFB; --panel-2:#F3F4F6;
+  --line:#E5E7EB; --line-2:#D1D5DB; --line-soft:#F1F2F4;
+  --ink:#0F172A; --ink-2:#1F2937; --muted:#6B7280; --muted-2:#9CA3AF; --muted-3:#C7CAD1;
+  --hl-yellow-soft:#FEF3C7; --hl-cyan-soft:#CFFAFE;
+  --shadow-sm:0 1px 2px rgba(16,24,40,0.04),0 1px 1px rgba(16,24,40,0.03);
+  --shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -2px rgba(0,0,0,0.04);
+  --shadow-lg:0 12px 24px -8px rgba(16,24,40,0.10),0 4px 8px -4px rgba(16,24,40,0.06);
+  --r-sm:4px; --r:8px; --r-lg:12px;
+  --font-display:'Inter',system-ui,-apple-system,sans-serif;
+  --font-serif:'Newsreader','Iowan Old Style',Georgia,serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-display);-webkit-font-smoothing:antialiased}
+body{height:100vh;overflow:hidden;font-size:14px;line-height:1.5}
+button,input,textarea{font:inherit;color:inherit;background:none;border:0;outline:0}
+button{cursor:pointer}
+::selection{background:rgba(15,23,42,0.18);color:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(15,23,42,0.10);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(15,23,42,0.22);background-clip:padding-box;border:2px solid transparent}
+
+/* Shell */
+.shell{display:grid;grid-template-columns:60px minmax(0,1fr);height:100vh;background:var(--bg)}
+
+/* Global rail (matches app.html pattern) */
+.rail{background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0 12px;gap:4px}
+.rail-brand{width:34px;height:34px;border-radius:9px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;color:var(--ink);font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:-0.04em;box-shadow:var(--shadow-sm);margin-bottom:10px}
+.rail-section{display:flex;flex-direction:column;gap:2px;align-items:center;width:100%}
+.rail-btn{width:40px;height:36px;border-radius:7px;display:grid;place-items:center;color:var(--muted);position:relative;transition:color .14s, background .14s}
+.rail-btn:hover{color:var(--ink);background:var(--panel)}
+.rail-btn.on{color:var(--ink)}
+.rail-btn.on::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:2px;background:var(--ink);border-radius:0 2px 2px 0}
+.rail-btn svg{stroke-width:1.5;width:18px;height:18px}
+.rail-spacer{flex:1}
+.rail-avatar{width:30px;height:30px;border-radius:50%;background:var(--panel);color:var(--ink);display:grid;place-items:center;font:600 11px/1 var(--font-display);border:1px solid var(--line)}
+
+/* Main column */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--bg);position:relative}
+
+/* Topbar */
+.chat-topbar{display:flex;align-items:center;gap:12px;padding:10px 24px;height:48px;border-bottom:1px solid var(--line-soft);flex:0 0 auto;background:var(--bg);position:relative;z-index:5}
+.thread-switcher{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--r);cursor:pointer;color:var(--ink);transition:background .14s}
+.thread-switcher:hover{background:var(--panel)}
+.thread-switcher .label{font:600 13px var(--font-display);letter-spacing:-0.01em}
+.thread-switcher .count{font:500 11px var(--font-mono);color:var(--muted-2);margin-left:6px}
+.thread-switcher .caret{color:var(--muted-2);transition:transform .14s}
+.thread-switcher.open .caret{transform:rotate(180deg)}
+.topbar-spacer{flex:1}
+.topbar-actions{display:flex;gap:2px}
+.icon-btn{width:32px;height:32px;border-radius:var(--r);display:grid;place-items:center;color:var(--muted);transition:color .14s, background .14s}
+.icon-btn:hover{color:var(--ink);background:var(--panel)}
+.icon-btn svg{width:16px;height:16px;stroke-width:1.6}
+
+/* Thread dropdown */
+.thread-dropdown{position:absolute;top:46px;left:14px;width:340px;max-height:60vh;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column;z-index:20;opacity:0;visibility:hidden;transform:translateY(-8px) scale(.98);transform-origin:top left;pointer-events:none;transition:opacity 160ms cubic-bezier(.2,.8,.2,1), transform 160ms cubic-bezier(.2,.8,.2,1), visibility 0s linear 160ms}
+.thread-dropdown.open{opacity:1;visibility:visible;transform:translateY(0) scale(1);pointer-events:auto;transition:opacity 180ms cubic-bezier(.2,.8,.2,1), transform 180ms cubic-bezier(.2,.8,.2,1), visibility 0s}
+.thread-search{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+.thread-search input{flex:1;font:14px var(--font-display);color:var(--ink)}
+.thread-search input::placeholder{color:var(--muted-2)}
+.thread-search svg{color:var(--muted-2);width:14px;height:14px;stroke-width:1.8}
+.thread-new{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-soft);font:500 13px var(--font-display);color:var(--ink);cursor:pointer;transition:background .14s}
+.thread-new:hover{background:var(--panel)}
+.thread-new svg{color:var(--muted);width:14px;height:14px;stroke-width:1.8}
+.thread-list{flex:1;overflow:auto;padding:4px 0}
+.thread-row{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;cursor:pointer;position:relative;transition:background .14s}
+.thread-row:hover{background:var(--panel)}
+.thread-row.active{background:var(--panel)}
+.thread-row.active::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;background:var(--ink);border-radius:0 2px 2px 0}
+.thread-row .meta{min-width:0;flex:1}
+.thread-row .title{font:500 13px var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread-row .preview{font:400 11.5px var(--font-display);color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread-row .ts{font:500 10.5px var(--font-mono);color:var(--muted-2);margin-left:10px;flex:0 0 auto}
+
+/* Chat page area */
+.chat-page{flex:1;min-height:0;display:flex;flex-direction:column;position:relative}
+
+/* Stream */
+.chat-stream{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:8px 0 24px}
+.chat-column{width:100%;max-width:720px;margin:0 auto;padding:0 24px}
+@media (min-width:1280px){ .chat-column{max-width:880px} }
+
+/* Turns */
+.turn{padding:14px 0;position:relative}
+.turn .body{font:400 14.5px/1.65 var(--font-display);color:var(--ink)}
+.turn .body p{margin:0 0 10px}
+.turn .body p:last-child{margin-bottom:0}
+.turn .ts{position:absolute;top:18px;font:500 10.5px/1 var(--font-mono);color:var(--muted-2);opacity:0;transition:opacity .14s;pointer-events:none}
+.turn:hover .ts{opacity:1}
+
+/* User: right-aligned bubble */
+.turn.user{display:flex;flex-direction:column;align-items:flex-end}
+.turn.user .body{max-width:min(56ch, 100%);background:var(--panel);border:1px solid var(--line);padding:12px 16px;border-radius:14px 14px 4px 14px}
+.turn.user .ts{right:calc(50% - 56ch/2 + 18px);right:18px}
+
+/* Assistant: full-width text, no bubble; small green Verba mark on the left */
+.turn.assistant{padding-left:30px;position:relative}
+.turn.assistant::before{content:"";position:absolute;left:2px;top:22px;width:18px;height:18px;border-radius:50%;background:var(--ok-soft);border:1px solid var(--ok);background-image:radial-gradient(circle at 50% 55%, var(--ok) 0%, var(--ok) 28%, transparent 30%)}
+.turn.assistant .body{max-width:72ch}
+.turn.assistant .ts{left:30px;top:6px}
+.turn .body p{margin:0 0 10px}
+.turn .body p:last-child{margin-bottom:0}
+
+/* Card / Block reference box — single-line, label + tag */
+.ref-box{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:12px 0;background:#fff;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;transition:background .14s, border-color .14s, box-shadow .14s;width:100%;text-align:left;min-width:0}
+.ref-box:hover{background:var(--panel);border-color:var(--line-2)}
+.ref-box.open{border-color:var(--ink);position:relative}
+.ref-box.open::before{content:"";position:absolute;left:-1px;top:6px;bottom:6px;width:2px;background:var(--ink);border-radius:0 2px 2px 0}
+.ref-box .ico{flex:0 0 auto;display:grid;place-items:center;width:18px;height:18px;color:var(--muted)}
+.ref-box .ico svg{width:14px;height:14px;stroke-width:1.8}
+.ref-box .kind{flex:0 0 auto;font:600 10.5px/1 var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted-2);padding:3px 6px;border-radius:var(--r-sm);background:var(--panel-2)}
+.ref-box .tag{flex:1;min-width:0;font:500 13.5px/1.3 var(--font-display);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ref-box .chev{flex:0 0 auto;color:var(--muted-2);transition:transform .14s, color .14s}
+.ref-box:hover .chev{color:var(--muted)}
+.ref-box.open .chev{transform:rotate(90deg);color:var(--ink)}
+.ref-box.is-block{box-shadow:3px 3px 0 0 var(--line)}
+.ref-box.is-block:hover{box-shadow:3px 3px 0 0 var(--line-2)}
+.ref-box.is-block .kind{background:var(--ink);color:#fff}
+
+/* Composer */
+.composer-wrap{flex:0 0 auto;padding:12px 24px calc(16px + var(--safe-b));border-top:1px solid var(--line-soft);background:var(--bg)}
+.composer-inner{max-width:720px;margin:0 auto}
+@media (min-width:1280px){ .composer-inner{max-width:880px} }
+.composer{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);transition:box-shadow .14s, border-color .14s;display:flex;flex-direction:column}
+.composer:focus-within{border-color:var(--line-2);box-shadow:0 0 0 3px rgba(15,23,42,0.06)}
+.composer textarea{width:100%;min-height:60px;max-height:200px;padding:12px 14px;font:14px/1.5 var(--font-display);color:var(--ink);resize:none}
+.composer textarea::placeholder{color:var(--muted-2)}
+.composer-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-top:1px solid var(--line-soft)}
+.composer-tools{display:flex;gap:2px}
+.tool-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:var(--r);color:var(--muted);font:500 12px var(--font-display);transition:color .14s, background .14s}
+.tool-btn:hover{color:var(--ink);background:var(--panel)}
+.tool-btn svg{width:14px;height:14px;stroke-width:1.8}
+.send-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);background:var(--panel);color:var(--muted-2);border-radius:var(--r);transition:all .14s}
+.send-btn:hover{color:var(--ink);border-color:var(--line-2);background:var(--panel-2)}
+.send-btn svg{width:15px;height:15px;stroke-width:1.8}
+.composer.has-content .send-btn{background:var(--ink);color:#fff;border-color:var(--ink)}
+.composer.has-content .send-btn:hover{background:#000}
+
+/* Card panel — desktop slide-in */
+.card-panel{position:absolute;top:0;right:0;bottom:0;width:380px;background:var(--bg);border-left:1px solid var(--line);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 220ms cubic-bezier(.2,.8,.2,1);z-index:10}
+.card-panel.open{transform:translateX(0)}
+.card-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line-soft)}
+.card-panel-header .h-meta{min-width:0;flex:1}
+.card-panel-header .h-tag{font:600 14px/1.3 var(--font-display);color:var(--ink);margin-bottom:3px}
+.card-panel-header .h-source{font:500 11.5px/1.3 var(--font-mono);color:var(--muted)}
+.card-panel-handle{display:none}
+.card-panel-body{flex:1;overflow-y:auto;padding:18px;font:400 15px/1.55 var(--font-serif);color:var(--ink-2);text-align:justify}
+.card-panel-body .hl-y{background:var(--hl-yellow-soft);padding:0 1px}
+.card-panel-body .hl-c{background:var(--hl-cyan-soft);padding:0 1px}
+.card-panel-body p{margin:0 0 14px;max-width:58ch}
+/* When card panel is open, chat-page content shifts to leave room (desktop) */
+@media (min-width:1024px){
+  .chat-page.has-card .chat-stream,
+  .chat-page.has-card .composer-wrap{padding-right:404px}
+  .chat-page.has-card .chat-column,
+  .chat-page.has-card .composer-inner{margin-left:auto;margin-right:auto}
+}
+
+/* Mobile */
+@media (max-width:767px){
+  .shell{grid-template-columns:1fr}
+  .rail{display:none}
+  .chat-topbar{padding:10px 14px;height:46px}
+  .thread-switcher{padding:6px 8px}
+  .thread-dropdown{position:fixed;left:8px;right:8px;top:50px;width:auto;max-height:70vh}
+  .chat-column{padding:0 16px}
+  .turn{padding:18px 0}
+  .turn .label{margin-bottom:8px}
+  .turn .body{font-size:15px}
+  .composer-wrap{padding:10px 16px calc(14px + var(--safe-b))}
+  .composer textarea{min-height:54px;font-size:15px;padding:11px 12px}
+  .send-btn{padding:8px 14px;min-height:36px}
+  .tool-btn{padding:8px 10px;min-height:36px}
+
+  /* Mobile card panel: full-screen overlay sliding from bottom */
+  .card-panel{width:100%;left:0;right:0;border-left:none;transform:translateY(100%);transition:transform 240ms cubic-bezier(.2,.8,.2,1)}
+  .card-panel.open{transform:translateY(0)}
+  .card-panel-handle{display:flex;justify-content:center;padding:8px 0 6px}
+  .card-panel-handle::before{content:"";width:40px;height:4px;border-radius:4px;background:var(--muted-3)}
+  .card-panel-header{padding-top:6px}
+  .card-panel-body{font-size:16px;line-height:1.6;padding:16px 18px 24px}
+
+  .chat-page.has-card .chat-stream,
+  .chat-page.has-card .composer-wrap{padding-right:0}
+}
+
+/* Small viewport between mobile and tablet — gentler */
+@media (min-width:768px) and (max-width:1023px){
+  .chat-column{max-width:640px;padding:0 20px}
+  .composer-inner{max-width:640px}
+  .card-panel{width:340px}
+  .chat-page.has-card .chat-stream,
+  .chat-page.has-card .composer-wrap{padding-right:340px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- Global rail (matches app.html) -->
+  <aside class="rail" aria-label="Primary navigation">
+    <div class="rail-brand">V</div>
+    <div class="rail-section">
+      <button class="rail-btn" title="Today" aria-label="Today">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      </button>
+      <button class="rail-btn" title="Cutter" aria-label="Cutter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </button>
+      <button class="rail-btn" title="Library" aria-label="Library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/></svg>
+      </button>
+      <button class="rail-btn on" title="Chat" aria-label="Chat" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <button class="rail-btn" title="Tournaments" aria-label="Tournaments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+      </button>
+    </div>
+    <div class="rail-spacer"></div>
+    <div class="rail-avatar" title="ezw">E</div>
+  </aside>
+
+  <main class="main">
+    <!-- Topbar -->
+    <header class="chat-topbar">
+      <button class="thread-switcher" id="thread-switcher" aria-haspopup="true" aria-expanded="false">
+        <span class="label">Conditionality bad: fairness arguments</span>
+        <span class="count">14</span>
+        <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="topbar-spacer"></div>
+      <div class="topbar-actions">
+        <button class="icon-btn" title="Copy thread" aria-label="Copy thread">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="icon-btn" title="Export thread" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        </button>
+        <button class="icon-btn" title="Thread settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+
+      <!-- Thread dropdown (closed by default; toggle via JS) -->
+      <div class="thread-dropdown" id="thread-dropdown" role="menu">
+        <div class="thread-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Search threads">
+        </div>
+        <button class="thread-new">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>
+          New thread
+        </button>
+        <div class="thread-list">
+          <div class="thread-row active">
+            <div class="meta">
+              <div class="title">Conditionality bad: fairness arguments</div>
+              <div class="preview">Find me a more recent card from a Wake camp file</div>
+            </div>
+            <span class="ts">2m</span>
+          </div>
+          <div class="thread-row">
+            <div class="meta">
+              <div class="title">PIC theory: textual competition</div>
+              <div class="preview">Branse 2023 looks promising, want me to pull the next page?</div>
+            </div>
+            <span class="ts">1h</span>
+          </div>
+          <div class="thread-row">
+            <div class="meta">
+              <div class="title">Kant NC: frontlines to util responses</div>
+              <div class="preview">Three sequencing options for the 1AR, ranked.</div>
+            </div>
+            <span class="ts">yest</span>
+          </div>
+          <div class="thread-row">
+            <div class="meta">
+              <div class="title">Topicality: extra T on prevention</div>
+              <div class="preview">Dictionary lit overwhelmingly cuts against the aff interp.</div>
+            </div>
+            <span class="ts">Tue</span>
+          </div>
+          <div class="thread-row">
+            <div class="meta">
+              <div class="title">Set-col K: perm grafts</div>
+              <div class="preview">Tuck and Yang foreclose method perms; try a no-link.</div>
+            </div>
+            <span class="ts">Apr 22</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Chat page -->
+    <section class="chat-page has-card" id="chat-page">
+      <div class="chat-stream" id="chat-stream">
+        <div class="chat-column">
+
+          <!-- Turn 1: user -->
+          <div class="turn user">
+            <span class="ts">2:14 PM</span>
+            <div class="body">
+              <p>What's the strongest fairness argument against unlimited conditionality in LD? Looking for a card I can frontline with, ideally from a 2022+ camp file.</p>
+            </div>
+          </div>
+
+          <!-- Turn 2: assistant with one card -->
+          <div class="turn assistant">
+            <span class="ts">2:14 PM</span>
+            <div class="body">
+              <p>The cleanest fairness argument runs through 2AR strategic skew, not just time-tradeoff. Here's the Solt block from the Wake 2021 release; it's the version most circuits have caught up to:</p>
+
+              <button class="ref-box open" data-card="solt-2021">
+                <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                <span class="kind">Card</span>
+                <span class="tag">Conditionality kills 2AR strategy — Solt 2021</span>
+                <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+
+              <p>The substance is sharper than the older 2018 cards because Solt isolates 2AR-specific skew, which sidesteps the "just answer faster" reflex from neg blocks. If you want a more recent angle, I can pull from the Branse 2023 release on infinite regress.</p>
+            </div>
+          </div>
+
+          <!-- Turn 3: user -->
+          <div class="turn user">
+            <span class="ts">2:15 PM</span>
+            <div class="body">
+              <p>Yeah pull the Branse one and also do you have a 1AR block ready for util neg?</p>
+            </div>
+          </div>
+
+          <!-- Turn 4: assistant with card + block -->
+          <div class="turn assistant">
+            <span class="ts">2:15 PM</span>
+            <div class="body">
+              <p>Branse runs a different warrant: infinite regress as a procedural fairness violation rather than 2AR skew. Against util neg specifically, Branse outperforms because it doesn't require you to win 2AR-specific offense first:</p>
+
+              <button class="ref-box" data-card="branse-2023">
+                <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                <span class="kind">Card</span>
+                <span class="tag">Infinite regress = procedural fairness violation, Branse 2023</span>
+                <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+
+              <p>And here's a stitched 1AR block calibrated for util neg, sequenced with internal links plus framing tieback:</p>
+
+              <button class="ref-box is-block" data-block="1ar-cond-util">
+                <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="6" y="6" width="14" height="14" rx="1.5"/><path d="M16 6V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h2"/></svg></span>
+                <span class="kind">Block</span>
+                <span class="tag">Conditionality bad: 1AR vs util neg (3 cards, 2 frames)</span>
+                <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+
+              <p>Pairing logic: lead with Solt for top-level shell, extend Branse in the 1AR…</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Composer pinned to bottom -->
+      <div class="composer-wrap">
+        <div class="composer-inner">
+          <div class="composer" id="composer">
+            <textarea id="composer-input" placeholder="Ask about cards, blocks, or arguments. Drop a PDF or paste an article to attach context." rows="1"></textarea>
+            <div class="composer-bar">
+              <div class="composer-tools">
+                <button class="tool-btn" title="Attach file">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                  Attach
+                </button>
+                <button class="tool-btn" title="Add context source">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Context
+                </button>
+              </div>
+              <button class="send-btn" aria-label="Send">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card panel (desktop slide-in / mobile bottom sheet) -->
+      <aside class="card-panel open" id="card-panel" aria-label="Card detail">
+        <div class="card-panel-handle" aria-hidden="true"></div>
+        <header class="card-panel-header">
+          <div class="h-meta">
+            <div class="h-tag">Conditionality kills 2AR strategy</div>
+            <div class="h-source">Solt 2021 · Wake LD · p.412</div>
+          </div>
+          <button class="icon-btn" id="card-close" title="Close" aria-label="Close card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </header>
+        <div class="card-panel-body">
+          <p>Conditional advocacy in Lincoln-Douglas creates a structural inequity that runs deeper than the time-tradeoff arguments most negatives are prepared to answer. <span class="hl-y">The 2AR is forced to invest offense across every shell the negative may or may not extend, producing a pre-allocation tax that scales with conditionality and that no 1AR pre-empt can recover.</span> The result is not merely a strategic disadvantage but a procedural one: the affirmative cannot run a coherent strategy when the negative's ground is contingent on the very speech that was supposed to resolve it.</p>
+          <p><span class="hl-c">Critics counter that conditional advocacy improves topic exploration and that the 2AR may simply prioritize, but this assumes the affirmative knows in advance which positions the negative will collapse on.</span> In practice, late-breaking kicks render 1AR investments worthless and 2AR concessions strategically lethal.</p>
+          <p>The fairness violation, then, is not the speed of the round but the architecture of the round. Conditionality changes what arguments mean by making their persistence conditional on a future negative speech the affirmative cannot influence. That is a procedural violation distinct from the educational ones, and it grounds the strongest version of the conditionality-bad shell.</p>
+        </div>
+      </aside>
+
+    </section>
+  </main>
+</div>
+
+<script>
+// Minimal interaction so the mockup demonstrates state transitions.
+const $ = s => document.querySelector(s);
+const switcher = $('#thread-switcher');
+const dropdown = $('#thread-dropdown');
+const cardPanel = $('#card-panel');
+const cardClose = $('#card-close');
+const chatPage = $('#chat-page');
+const composer = $('#composer');
+const input = $('#composer-input');
+
+switcher.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = dropdown.classList.toggle('open');
+  switcher.classList.toggle('open', open);
+  switcher.setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', (e) => {
+  if (!dropdown.contains(e.target) && !switcher.contains(e.target)) {
+    dropdown.classList.remove('open');
+    switcher.classList.remove('open');
+    switcher.setAttribute('aria-expanded', 'false');
+  }
+});
+
+// Card box click → opens panel + sets open state
+document.querySelectorAll('.ref-box').forEach(box => {
+  box.addEventListener('click', () => {
+    document.querySelectorAll('.ref-box.open').forEach(b => b.classList.remove('open'));
+    box.classList.add('open');
+    cardPanel.classList.add('open');
+    chatPage.classList.add('has-card');
+  });
+});
+
+cardClose?.addEventListener('click', () => {
+  cardPanel.classList.remove('open');
+  chatPage.classList.remove('has-card');
+  document.querySelectorAll('.ref-box.open').forEach(b => b.classList.remove('open'));
+});
+
+// Composer fill state
+const updateComposer = () => composer.classList.toggle('has-content', input.value.trim().length > 0);
+input.addEventListener('input', updateComposer);
+
+// Auto-grow textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+});
+</script>
+</body>
+</html>
