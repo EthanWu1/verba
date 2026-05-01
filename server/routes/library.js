@@ -73,6 +73,30 @@ router.get('/analytics', (req, res) => {
   return res.json(getLibraryAnalytics());
 });
 
+// Cheap "is the vec table populated?" cache. Without it, every search pays
+// for a query embedding + KNN against zero rows. Recheck every 60s so a
+// freshly-run indexer is picked up without restart.
+let _vecCheck = { at: 0, has: false };
+function _vecHasRows() {
+  const now = Date.now();
+  if (now - _vecCheck.at < 60_000) return _vecCheck.has;
+  let has = false;
+  try {
+    const { getDb } = require('../services/db');
+    const { ensureSchema } = require('../services/semanticIndex');
+    // ensureSchema lazily loads the sqlite-vec extension. Without this, the
+    // first call returns false (extension not yet loaded) and gets cached
+    // for 60s — semantic search stays disabled until something else triggers
+    // the load.
+    if (ensureSchema()) {
+      const row = getDb().prepare('SELECT 1 FROM cards_vec LIMIT 1').get();
+      has = !!row;
+    }
+  } catch { /* extension load failed or table missing → treat as empty */ }
+  _vecCheck = { at: now, has };
+  return has;
+}
+
 const _qCache = new Map();
 const Q_CACHE_MAX = 4096;
 // Normalize so "Nuclear", "nuclear ", "NUCLEAR" share one cache slot.
@@ -103,10 +127,12 @@ const MIN_HL_WORDS = 6;       // ~1 short sentence's worth of highlighted text
 const SEM_MIN_SCORE = 0.05;   // cosine floor — below this is essentially noise
 
 function sanitizeFtsQuery(q) {
-  // strip FTS5 special chars + tokenize, AND across tokens
+  // strip FTS5 special chars + tokenize, AND across tokens.
+  // Prefix '*' so 'psychoanalysis' also matches 'psychoanalytic'/'psychoanalyst'
+  // — unicode61 doesn't stem, so without the prefix every morphology miss.
   const tokens = String(q).replace(/["'\\\-:()*]/g, ' ').split(/\s+/).filter(Boolean);
   if (!tokens.length) return null;
-  return tokens.map(t => `"${t}"`).join(' AND ');
+  return tokens.map(t => `"${t}"*`).join(' AND ');
 }
 
 router.get('/semantic-search', async (req, res) => {
@@ -116,7 +142,12 @@ router.get('/semantic-search', async (req, res) => {
 
   if (diag) {
     const { extensionStatus } = require('../services/semanticIndex');
-    return res.json({ ok: true, extension: extensionStatus(), cacheSize: _qCache.size });
+    return res.json({
+      ok: true,
+      extension: extensionStatus(),
+      vecPopulated: _vecHasRows(),
+      cacheSize: _qCache.size,
+    });
   }
 
   if (q.length < 1) return res.json({ results: [] });
@@ -148,18 +179,27 @@ router.get('/semantic-search', async (req, res) => {
     if (ftsQuery) {
       let ftsRows = [];
       try {
+        // Top-N CTE keeps random row reads bounded. Without this, queries like
+        // 'trump' (~109k FTS hits on prod) spent 30+ seconds on disk I/O
+        // pulling every match's body_plain just to throw most of them away.
+        // Inner cap is the post-filter target × a generous filter-rejection
+        // headroom so the result set stays fully populated.
+        const FTS_INNER_CAP = Math.max(2000, k * 40);
         ftsRows = db.prepare(`
-          SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain,
-                 bm25(cards_fts) AS bm25_rank
-          FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid
-          WHERE cards_fts MATCH ?
-            AND c.isCanonical = 1
+          WITH t AS (
+            SELECT rowid, bm25(cards_fts) AS rank
+            FROM cards_fts WHERE cards_fts MATCH ?
+            ORDER BY rank ASC LIMIT ?
+          )
+          SELECT c.rowid, c.id, c.tag, c.cite, c.shortCite, c.body_plain, t.rank AS bm25_rank
+          FROM t JOIN cards c ON c.rowid = t.rowid
+          WHERE c.isCanonical = 1
             AND c.hasHighlight = 1
             AND c.highlightWordCount >= ?
             AND c.tag IS NOT NULL AND TRIM(c.tag) != ''
-          ORDER BY bm25_rank ASC
+          ORDER BY t.rank ASC
           LIMIT ?
-        `).all(ftsQuery, MIN_HL_WORDS, k * 4);
+        `).all(ftsQuery, FTS_INNER_CAP, MIN_HL_WORDS, k * 4);
       } catch (e) { /* bad FTS query — skip stage */ }
       let rank = 0;
       for (const r of ftsRows) {
@@ -172,7 +212,10 @@ router.get('/semantic-search', async (req, res) => {
     }
 
     // ── Semantic KNN (skipped for very short queries) ────────
-    if (allowSemantic) {
+    // Also skipped when cards_vec is empty — embedding the query costs an
+    // OpenRouter round-trip (up to 60s on cold/timeout) and KNNing an empty
+    // table returns nothing anyway. _vecHasRows caches the count for 60s.
+    if (allowSemantic && _vecHasRows()) {
       const { embedOne } = require('../services/embedder');
       const { knn } = require('../services/semanticIndex');
       let vec = _cacheGet(q);

@@ -890,8 +890,12 @@ function _buildWhere(filters, { tablePrefix = '' } = {}) {
   if (filters.source) {
     where.push(`${p}sourceLabel = ?`); params.push(filters.source);
   }
-  if (filters.canonical === 'true')  where.push(`${p}isCanonical = 1`);
-  if (filters.canonical === 'false') where.push(`${p}isCanonical = 0`);
+  // Default to canonical-only so the library never shows 20 copies of the
+  // same card. Callers can pass canonical='all' to opt out, or canonical='false'
+  // to see only non-canonical variants.
+  if (filters.canonical === 'all')        { /* no filter */ }
+  else if (filters.canonical === 'false') { where.push(`${p}isCanonical = 0`); }
+  else                                    { where.push(`${p}isCanonical = 1`); }
   return { sql: `WHERE ${where.join(' AND ')}`, params };
 }
 
@@ -932,17 +936,44 @@ function queryCards({ filters = {}, sort = 'relevance', page = 1, limit = 40, li
   const ftsMatch = filters.q ? _buildFtsMatch(filters.q) : null;
 
   if (ftsMatch) {
+    // The naive FTS+JOIN+ORDER pattern was 30-60s on prod ('trump' → 109k FTS
+    // hits → 109k random row reads on a 24GB DB → temp B-tree sort). The
+    // CTE form caps the FTS scan to a top-N-by-bm25 set, then joins+filters
+    // only those rows. Inner cap is sized so even pages deep into the result
+    // (page * limit) plus a 50× headroom for filter rejection still fits.
+    const INNER_CAP = Math.max(5000, page * limit * 50);
     const { sql: whereBase, params } = _buildWhere(filters, { tablePrefix: 'c' });
-    const whereSql = `${whereBase} AND cards_fts MATCH ?`;
     const orderSql = _orderByWithRank(sort, filters.randomSeed);
     const prefixed = (lite ? LIST_COLS : '*')
       .split(',').map(s => s.trim())
       .map(s => s === '*' ? 'c.*' : `c.${s}`)
       .join(', ');
-    const totalSql = `SELECT COUNT(*) AS n FROM cards c JOIN cards_fts ON cards_fts.rowid = c.rowid ${whereSql}`;
-    const selSql = `SELECT ${prefixed} FROM cards c JOIN cards_fts ON cards_fts.rowid = c.rowid ${whereSql} ${orderSql} LIMIT ? OFFSET ?`;
-    const total = db.prepare(totalSql).get(...params, ftsMatch).n;
-    const rows = db.prepare(selSql).all(...params, ftsMatch, limit, (page - 1) * limit);
+    // Wrap so 'bm25(cards_fts)' inside the original ORDER refers to the CTE rank.
+    const orderSqlMapped = orderSql.replace(/bm25\(cards_fts\)/g, 't.rank');
+
+    const totalSql = `
+      WITH t AS (
+        SELECT rowid, bm25(cards_fts) AS rank
+        FROM cards_fts WHERE cards_fts MATCH ?
+        ORDER BY rank ASC LIMIT ?
+      )
+      SELECT COUNT(*) AS n
+      FROM t JOIN cards c ON c.rowid = t.rowid
+      ${whereBase}
+    `;
+    const selSql = `
+      WITH t AS (
+        SELECT rowid, bm25(cards_fts) AS rank
+        FROM cards_fts WHERE cards_fts MATCH ?
+        ORDER BY rank ASC LIMIT ?
+      )
+      SELECT ${prefixed}, t.rank AS _bm25 FROM t JOIN cards c ON c.rowid = t.rowid
+      ${whereBase}
+      ${orderSqlMapped}
+      LIMIT ? OFFSET ?
+    `;
+    const total = db.prepare(totalSql).get(ftsMatch, INNER_CAP, ...params).n;
+    const rows = db.prepare(selSql).all(ftsMatch, INNER_CAP, ...params, limit, (page - 1) * limit);
     return { total, rows: rows.map(_parseCard) };
   }
 
