@@ -507,10 +507,24 @@ form{display:flex;flex-direction:column;gap:14px}
             catch (err) { showErr(err.message || 'Google sign-in failed'); }
           },
         });
-        window.google.accounts.id.renderButton(
-          document.getElementById('gsi-button-wrap'),
-          { theme: 'outline', size: 'large', text: 'continue_with', width: 400 }
-        );
+        const wrap = document.getElementById('gsi-button-wrap');
+        // GSI button needs an integer width — clamp to the actual wrap width
+        // (or 400 desktop max) so it doesn't overflow on phones.
+        const renderGoogleBtn = () => {
+          const w = Math.min(400, Math.max(240, Math.floor(wrap.getBoundingClientRect().width)));
+          wrap.innerHTML = '';
+          window.google.accounts.id.renderButton(
+            wrap,
+            { theme: 'outline', size: 'large', text: 'continue_with', width: w }
+          );
+        };
+        renderGoogleBtn();
+        // Re-render on resize/orientation change so the button always matches its container.
+        let rerenderT;
+        window.addEventListener('resize', () => {
+          clearTimeout(rerenderT);
+          rerenderT = setTimeout(renderGoogleBtn, 150);
+        });
         return;
       }
       if (++tries < 40) setTimeout(waitGIS, 150);

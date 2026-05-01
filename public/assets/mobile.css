@@ -90,12 +90,12 @@ img,svg,video,canvas{max-width:100%;height:auto}
     height:100dvh;
   }
 
-  /* Rail: side → bottom horizontal bar */
+  /* Rail: side → bottom horizontal bar (slightly lifted from the edge) */
   .rail{
     grid-row:2;grid-column:1;
     flex-direction:row !important;
     align-items:center;justify-content:space-around;
-    padding:6px 12px calc(6px + var(--safe-b)) !important;
+    padding:8px 14px calc(14px + var(--safe-b)) !important;
     border-right:none !important;border-top:1px solid var(--line);
     height:auto;width:100%;gap:0 !important;
     background:#fff;
@@ -141,47 +141,114 @@ img,svg,video,canvas{max-width:100%;height:auto}
     padding:6px 10px !important;font-size:12px !important;
   }
   .topic-list{gap:6px !important}
+  /* Declutter: hide the small "This week" pulse-grid aside on phones —
+     it's noise next to the main thread. The "Up next" tournament card stays. */
+  .aside-card:has(.pulse-grid){display:none !important}
+  /* Compact countdown timer */
+  .tourn-counter{gap:6px !important}
+  .tourn-counter .tc{padding:6px 4px !important}
+  .tourn-counter .tc b{font-size:18px !important}
+  .tourn-counter .tc span{font-size:9.5px !important}
 
-  /* Cutter page */
+  /* Cutter page — clean two-row input: text on top, controls below */
   .cutter-page{padding:14px !important}
-  .cut-input{flex-wrap:wrap;gap:8px;padding:10px}
-  .cut-input input{flex:1 1 100%;min-width:0;order:2}
-  .cut-input .modes{order:3}
-  .cut-input .lead{order:1}
-  .cut-input .upload-btn,.cut-input .send{order:4}
+  .cut-input{
+    display:grid !important;
+    grid-template-columns:auto 1fr auto !important;
+    grid-template-rows:auto auto !important;
+    align-items:center !important;
+    gap:8px !important;
+    padding:10px 12px !important;
+    flex-wrap:nowrap !important;
+  }
+  .cut-input .lead{grid-column:1;grid-row:1;color:var(--muted)}
+  .cut-input input{
+    grid-column:2;grid-row:1;
+    flex:none;width:100%;min-width:0;padding:6px 0 !important;
+    font-size:16px !important;
+  }
+  .cut-input .send{
+    grid-column:3;grid-row:1;
+    width:34px !important;height:34px !important;
+    border-radius:50% !important;
+    background:var(--ink) !important;color:#fff !important;
+  }
+  .cut-input .send svg{width:14px;height:14px}
+  .cut-input .modes{
+    grid-column:1/3;grid-row:2;
+    margin:0 !important;padding:0 !important;border-left:none !important;
+    height:32px !important;gap:4px !important;
+    border-top:1px solid var(--line-soft) !important;padding-top:8px !important;
+  }
+  .cut-input .upload-btn{
+    grid-column:3;grid-row:2;
+    width:34px !important;height:34px !important;
+    border:1px solid var(--line) !important;border-radius:8px !important;
+    background:#fff !important;
+    margin-top:8px !important;
+  }
+  .cut-mode{padding:6px 14px !important;font-size:12.5px !important}
   .recent-row{grid-template-columns:1fr !important}
 
   /* Library page: drop side panel, single column list */
   .lib-shell{grid-template-columns:1fr !important;grid-template-rows:auto auto;height:auto !important}
   .lib-list-pane{max-height:none !important;border-right:none !important;border-bottom:1px solid var(--line)}
-  .lib-detail-pane{padding:14px !important}
-  .lib-chips,.lib-toolbar{flex-wrap:wrap !important;gap:6px !important}
-  .lib-chip{padding:6px 10px !important;font-size:12px !important;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lib-list-head{padding:14px 14px 10px !important;position:static !important}
+  .lib-detail-pane,.lib-preview{padding:14px !important}
+  .lib-search{padding:8px 12px !important;margin-top:10px !important}
+  .lib-search input{font-size:16px !important;min-width:0}
+  .lib-chips,.lib-toolbar{flex-wrap:wrap !important;gap:6px !important;padding:10px 14px 0 !important}
+  .lib-chip{padding:6px 10px !important;font-size:12px !important;max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lib-list .lib-card,.lib-list > div{min-width:0}
+  .lib-list .lib-card *{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .lib-pv-head{flex-wrap:wrap !important;gap:8px !important}
 
   /* Tournaments — fit in viewport without horizontal scroll */
   .t-shell,.tourn-shell{grid-template-columns:1fr !important}
   .t-aside,.tourn-aside{border-right:none !important;border-bottom:1px solid var(--line)}
   .tourn-filters{flex-wrap:wrap;gap:6px}
-  .shellpad{padding:18px 14px 40px !important}
+  .shellpad{padding:14px 14px 80px !important}
   .tourn-grid{grid-template-columns:1fr !important;gap:10px !important}
+  .tourn-grid .tourn-card,.tourn-grid > *{min-width:0}
+  .tourn-grid > * *{min-width:0}
   /* Collapse the 4-column tt-table into 2 columns: tournament + status; hide date/location */
+  .tt-table{overflow:hidden}
   .tt-head,.tt-row{
-    grid-template-columns:1fr auto !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
     gap:10px !important;padding:11px 14px !important;
+    min-width:0 !important;
   }
   .tt-head > :nth-child(2),.tt-head > :nth-child(3),
   .tt-row > :nth-child(2),.tt-row > :nth-child(3){display:none !important}
-  .tt-row > :nth-child(1){white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .t-toolbar{flex-direction:column !important;align-items:stretch !important;gap:8px !important}
+  .tt-row > :nth-child(1),.tt-head > :nth-child(1){min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tt-row > :nth-child(4),.tt-head > :nth-child(4){font-size:11px !important;white-space:nowrap}
+  .t-toolbar{flex-direction:column !important;align-items:stretch !important;gap:8px !important;margin-bottom:10px !important}
   .t-search{width:100%}
+  .t-search input{font-size:16px !important;min-width:0}
   .rank-tabs{flex-wrap:wrap;gap:4px}
-  .section-band{padding:10px 0 !important}
+  .rank-tab{font-size:12.5px !important;padding:6px 10px !important;min-height:36px}
+  .section-band{padding:10px 0 6px !important;font-size:11.5px !important}
+  .section-band .lbl{font-size:11px !important;letter-spacing:.08em !important}
+  /* Tournament detail */
+  .pp-head{flex-direction:column;gap:8px}
+  .pp-head h1{font-size:22px !important;line-height:1.15 !important;word-break:break-word}
+  .pp-head .sub{font-size:12.5px !important}
+  .pp-stats{grid-template-columns:repeat(2, 1fr) !important;gap:8px !important}
+  .pp-block{margin-top:18px !important}
+  .pp-block h3{font-size:14px !important}
 
-  /* Rankings */
-  .rk-shell{grid-template-columns:1fr !important}
-  .rk-aside{padding:12px !important;border-right:none !important;border-bottom:1px solid var(--line)}
-  .rk-table{font-size:13px}
-  .rk-table th,.rk-table td{padding:8px 6px !important}
+  /* Rankings — single col, compact table, ellipsis on team names */
+  .rk-shell{grid-template-columns:1fr !important;height:auto !important}
+  .rk-aside{padding:10px 14px !important;border-right:none !important;border-bottom:1px solid var(--line);position:static !important}
+  .rk-aside .rk-select{font-size:14px !important;padding:8px 10px !important}
+  .rk-meta{display:none !important}
+  .rk-main{padding:10px 14px 80px !important}
+  .rk-table{font-size:13px;width:100%}
+  .rk-table th,.rk-table td{padding:9px 8px !important}
+  .rk-table .rk-col-rank{width:32px !important;padding-left:4px !important}
+  .rk-table .rk-col-num{width:64px !important;text-align:right !important}
+  .rk-table tbody td:nth-child(2){max-width:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rk-pagination-host{padding:14px 0 !important}
 
   /* Settings — single column, horizontal-scroll nav (NOT sticky, doesn't overlap body) */
   .set-shell{
@@ -223,4 +290,18 @@ img,svg,video,canvas{max-width:100%;height:auto}
 
   /* Modals */
   .lnk,.cmd,.modal{width:96vw !important;max-width:none !important}
+
+  /* General overflow guard — long unbreakable strings (URLs, citations,
+     tournament names) must not blow out the layout. */
+  .lib-list-pane h2, .lib-list-pane h3, .lib-list-pane .meta,
+  .pp-head h1, .pp-head .sub,
+  .tourn-name, .tourn-where,
+  .cont-item, .cont-item *,
+  .topic-pill, .topic-chip,
+  #profile-name, #profile-meta{
+    overflow-wrap:anywhere;
+    min-width:0;
+  }
+  /* Page-level safety: nothing below the rail should be touchable through it */
+  .page{padding-bottom:8px}
 }
