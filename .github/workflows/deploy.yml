@@ -1,0 +1,48 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # lets you re-run from the Actions tab
+
+# Don't let two deploys run at once
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH + pull + pm2 restart
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          port:     ${{ secrets.SSH_PORT || 22 }}
+          # Run with `set -e` so any failing step aborts the deploy.
+          script: |
+            set -e
+            cd ${{ secrets.SERVER_PATH }}
+            echo "── Pulling main ──"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "── Installing deps (only if package-lock changed) ──"
+            if ! git diff --quiet HEAD@{1} HEAD -- package-lock.json package.json 2>/dev/null; then
+              npm ci --omit=dev
+            else
+              echo "package-lock unchanged, skipping npm ci"
+            fi
+
+            echo "── Restarting pm2 process ──"
+            pm2 restart ${{ secrets.PM2_PROCESS_NAME }} --update-env
+            pm2 save
+
+            echo "── Boot log (last 20 lines) ──"
+            pm2 logs ${{ secrets.PM2_PROCESS_NAME }} --lines 20 --nostream || true
+            echo "── Done ──"
