@@ -30,6 +30,11 @@ async function getLibraryCards(filters = {}) {
 
   let items;
   let total;
+  // FTS extras (only meaningful when filters.q is non-empty). hasMore tells
+  // the UI the result set was capped — it should render "X+" not exact total.
+  let ftsTotal;
+  let hasMore = false;
+  let innerCap;
 
   const wantSemantic = filters.q && filters.sort === 'semantic' && isConfigured();
   if (wantSemantic) {
@@ -47,15 +52,21 @@ async function getLibraryCards(filters = {}) {
       console.warn('[VECTOR] semanticSearch failed, falling back to keyword:', err.message);
       const out = db.queryCards({ filters, sort: filters.sort || 'relevance', page, limit, lite: true });
       total = out.total;
+      ftsTotal = out.ftsTotal;
+      hasMore = !!out.hasMore;
+      innerCap = out.innerCap;
       items = out.rows.map(hydrateRow);
     }
   } else {
     const out = db.queryCards({ filters, sort: filters.sort || 'relevance', page, limit, lite: true });
     total = out.total;
+    ftsTotal = out.ftsTotal;
+    hasMore = !!out.hasMore;
+    innerCap = out.innerCap;
     items = out.rows.map(hydrateRow);
   }
 
-  return {
+  const result = {
     total,
     page,
     limit,
@@ -63,6 +74,14 @@ async function getLibraryCards(filters = {}) {
     filters: getCachedFacets(),
     meta: loadMeta(),
   };
+  // Only attach FTS-specific telemetry on FTS queries — leaves the response
+  // shape unchanged for legacy callers paging the full library.
+  if (filters.q) {
+    if (ftsTotal !== undefined) result.ftsTotal = ftsTotal;
+    if (hasMore) result.hasMore = true;
+    if (innerCap !== undefined) result.innerCap = innerCap;
+  }
+  return result;
 }
 
 const ANALYTICS_TTL_MS = 10 * 60 * 1000;

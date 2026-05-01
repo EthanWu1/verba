@@ -443,11 +443,13 @@ function computeWarrantDensity(bodyMarkdown) {
   return Number((emphasizedWords.length / allWords.length).toFixed(4));
 }
 
+// Delegates to services/fingerprint so docxImport, the migration, and the
+// dry-run stats script all share the same normalization. Drift between
+// importer and migration was the original "20 dupes" bug — never re-derive
+// here.
+const { loosenedFingerprint, groupKey: _groupKey } = require('./fingerprint');
 function fingerprintBody(text) {
-  return crypto
-    .createHash('sha1')
-    .update(normalizeWhitespace(String(text || '').toLowerCase()))
-    .digest('hex');
+  return loosenedFingerprint(text);
 }
 
 function parseRuns(paragraphXml) {
@@ -651,7 +653,11 @@ function parseCardsFromParagraphs(paragraphs, entryPath, zipPath) {
       argumentTags: inferArgumentTags(cleanTag, bodyPlain),
       sourceKind: 'wiki',
       isCanonical: false,
-      canonicalGroupKey: shortCite && bodyFingerprint ? `${shortCite}::${bodyFingerprint}` : '',
+      // Group key uses the loosened cite + body fingerprint from
+      // services/fingerprint so the importer agrees with the offline
+      // migration on what counts as a duplicate. shortCite (above) keeps
+      // its strict "Smith '24" form for display.
+      canonicalGroupKey: _groupKey({ body_plain: bodyPlain, cite: current.cite, shortCite }),
     };
   };
 

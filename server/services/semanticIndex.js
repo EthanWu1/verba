@@ -35,7 +35,26 @@ function ensureSchema() {
       updatedAt TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_cards_embed_hash ON cards_embed_meta(textHash);
+
+    -- Auto-cleanup on cards mutations. cards has a TEXT primary key, so
+    -- INSERT OR REPLACE in the importer does a DELETE+INSERT internally,
+    -- which assigns a new rowid. Without these triggers, cards_vec /
+    -- cards_embed_meta rows keyed by the prior rowid become stale garbage
+    -- — KNN returns rowids the route can't hydrate, costing top-K slots
+    -- and silently degrading semantic recall over time.
+    CREATE TRIGGER IF NOT EXISTS cards_vec_after_delete
+      AFTER DELETE ON cards
+      BEGIN
+        DELETE FROM cards_vec        WHERE card_id = OLD.rowid;
+        DELETE FROM cards_embed_meta WHERE card_id = OLD.rowid;
+      END;
   `);
+  // No one-time sweep here — the NOT IN anti-join against 832k rows on a
+  // cold cache made first-hit /semantic-search take 12+ seconds. The
+  // trigger keeps things consistent going forward; past staleness shows
+  // up as KNN rowids the route can't hydrate (filtered out, mild recall
+  // hit, not correctness). Run scripts/indexCardsVec.js to do an explicit
+  // sweep when desired — its repair pass is identical.
   return true;
 }
 

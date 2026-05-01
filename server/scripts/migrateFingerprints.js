@@ -26,45 +26,12 @@ require('dotenv').config({
     || require('path').resolve(__dirname, '../../.env'),
 });
 
-const crypto = require('crypto');
 const dbModule = require('../services/db');
+const { loosenedFingerprint, loosenedShortCite, groupKey: newGroupKey } = require('../services/fingerprint');
 
 const argv = process.argv.slice(2);
 const COMMIT = argv.includes('--commit');
 const SKIP_RECANON = argv.includes('--no-recanon');
-
-function loosenedFingerprint(text) {
-  const normalized = String(text || '')
-    .normalize('NFKD').replace(/[̀-ͯ]/g, '')   // strip combining marks
-    .replace(/[‘’‚‛]/g, "'")          // smart single quotes
-    .replace(/[“”„‟]/g, '"')          // smart double quotes
-    .replace(/[‐-―]/g, '-')                     // hyphens & dashes
-    .replace(/[…]/g, '...')                          // ellipsis
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');                           // drop ALL else
-  return crypto.createHash('sha1').update(normalized).digest('hex');
-}
-
-function loosenedShortCite(cite) {
-  // Author + year is what should glue copies together. The existing
-  // normalizeShortCite is fine when its regex matches, but its fallback
-  // returns the whole cite verbatim — that's where variants diverge.
-  // Strip to author surname + 2-digit year to be tolerant.
-  const value = String(cite || '').replace(/[‘’]/g, "'").trim();
-  const m = value.match(/([A-Z][A-Za-z.\-]+)\s*(?:'|\s)(\d{2})\b/)
-         || value.match(/([A-Z][A-Za-z.\-]+)\s+(\d{2}|\d{4})\b/);
-  if (m) {
-    const yy = m[2].length === 4 ? m[2].slice(-2) : m[2];
-    return `${m[1].toLowerCase()} ${yy}`;
-  }
-  return value.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 80);
-}
-
-function newGroupKey(card) {
-  const fp = loosenedFingerprint(card.body_plain);
-  const sc = loosenedShortCite(card.cite || card.shortCite || '');
-  return sc && fp ? `${sc}::${fp}` : '';
-}
 
 async function main() {
   const db = dbModule.getDb();

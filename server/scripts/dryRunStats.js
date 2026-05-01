@@ -11,31 +11,8 @@ require('dotenv').config({
     || require('path').resolve(__dirname, '../../.env'),
 });
 
-const crypto = require('crypto');
 const dbModule = require('../services/db');
-
-function loosenedFingerprint(text) {
-  const normalized = String(text || '')
-    .normalize('NFKD').replace(/[̀-ͯ]/g, '')
-    .replace(/[‘’‚‛]/g, "'")
-    .replace(/[“”„‟]/g, '"')
-    .replace(/[‐-―]/g, '-')
-    .replace(/[…]/g, '...')
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-  return crypto.createHash('sha1').update(normalized).digest('hex');
-}
-
-function loosenedShortCite(cite) {
-  const value = String(cite || '').replace(/[‘’]/g, "'").trim();
-  const m = value.match(/([A-Z][A-Za-z.\-]+)\s*(?:'|\s)(\d{2})\b/)
-         || value.match(/([A-Z][A-Za-z.\-]+)\s+(\d{2}|\d{4})\b/);
-  if (m) {
-    const yy = m[2].length === 4 ? m[2].slice(-2) : m[2];
-    return `${m[1].toLowerCase()} ${yy}`;
-  }
-  return value.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 80);
-}
+const { loosenedFingerprint, loosenedShortCite } = require('../services/fingerprint');
 
 const db = dbModule.getDb();
 

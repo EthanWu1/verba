@@ -68,16 +68,28 @@ async function main() {
          AND tag IS NOT NULL
          AND TRIM(tag) != ''`;
 
-  // Repair pass: drop metadata for rows whose vector is missing. Without
-  // this, alreadyEmbedded() returns true for orphaned metadata and the
-  // skip-loop never re-queues the row — the prior cards_vec rebuild path
-  // (rebuildDb.js) and any interrupted upsert can both produce this state.
+  // ── Repair pass 1: orphan metadata (hash present, vector missing) ──
+  // Without this, alreadyEmbedded() returns true for orphaned metadata
+  // and the skip-loop never re-queues the row. The prior cards_vec rebuild
+  // path (rebuildDb.js) and any interrupted upsert can both produce this.
   const orphans = db.prepare(`
     DELETE FROM cards_embed_meta
     WHERE card_id NOT IN (SELECT card_id FROM cards_vec)
   `).run();
   if (orphans.changes > 0) {
     console.log(`Repaired ${orphans.changes} orphaned metadata rows (had hash, no vector).`);
+  }
+
+  // ── Repair pass 2: stale vec rows (rowid no longer points at any card) ──
+  // cards has a TEXT primary key; INSERT OR REPLACE on the same id does
+  // a DELETE+INSERT internally, which can change the rowid. Old vec rows
+  // keyed by the prior rowid become unreachable garbage that wastes
+  // top-K slots and skews KNN results. Clean any vec rows whose card_id
+  // is no longer a live cards.rowid. Same sweep for metadata.
+  const staleVec  = db.prepare(`DELETE FROM cards_vec        WHERE card_id NOT IN (SELECT rowid FROM cards)`).run();
+  const staleMeta = db.prepare(`DELETE FROM cards_embed_meta WHERE card_id NOT IN (SELECT rowid FROM cards)`).run();
+  if (staleVec.changes > 0 || staleMeta.changes > 0) {
+    console.log(`Repaired ${staleVec.changes} stale vec rows + ${staleMeta.changes} stale meta rows (rowid churn).`);
   }
 
   const total = db.prepare(`SELECT COUNT(*) AS n FROM cards ${filter}`).get().n;

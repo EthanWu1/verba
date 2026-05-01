@@ -474,6 +474,13 @@ function _runMigrations(db) {
     -- Composite for default list sort: ORDER BY hasHighlight DESC, isCanonical DESC, variantCount DESC, importedAt DESC
     -- Without this, every unfiltered list scan sorts 157k rows (8s+).
     CREATE INDEX IF NOT EXISTS idx_cards_default_sort ON cards(hasHighlight DESC, isCanonical DESC, variantCount DESC, importedAt DESC);
+
+    -- Covering partial index for default library browse COUNT(*).
+    -- The page filter is hasHighlight=1 AND isCanonical=1 AND typeLabel != ''.
+    -- Without this index, COUNT had to read ~133k row bodies for the typeLabel
+    -- check on a 28GB DB — 100s+ on prod. With it, the planner picks
+    -- 'COVERING INDEX' and finishes in <20ms.
+    CREATE INDEX IF NOT EXISTS idx_cards_browse ON cards(typeLabel) WHERE hasHighlight = 1 AND isCanonical = 1;
   `);
   if (needBackfill) _backfillDerivedLabels(db);
   if (needHighlightBackfill) _backfillHasHighlight(db);
@@ -972,9 +979,36 @@ function queryCards({ filters = {}, sort = 'relevance', page = 1, limit = 40, li
       ${orderSqlMapped}
       LIMIT ? OFFSET ?
     `;
-    const total = db.prepare(totalSql).get(ftsMatch, INNER_CAP, ...params).n;
+    // The capped count tells us how many of the top-INNER_CAP FTS rows
+    // pass our filters. That's what powers paging through the result.
+    const totalInCap = db.prepare(totalSql).get(ftsMatch, INNER_CAP, ...params).n;
+    // Cheap UNFILTERED FTS count (sub-200ms even for huge match sets — no
+    // JOIN to cards). Lets us tell the caller "there are way more matches
+    // than we can rank" without paying for a filtered scan over 100k rows.
+    let ftsTotal = totalInCap;
+    let hasMore = false;
+    try {
+      ftsTotal = db.prepare('SELECT COUNT(*) AS n FROM cards_fts WHERE cards_fts MATCH ?').get(ftsMatch).n;
+      hasMore = ftsTotal > INNER_CAP;
+    } catch { /* keep totalInCap as the safe lower bound */ }
     const rows = db.prepare(selSql).all(ftsMatch, INNER_CAP, ...params, limit, (page - 1) * limit);
-    return { total, rows: rows.map(_parseCard) };
+    return {
+      // total: post-filter count from the top-N cap (accurate for paging
+      //   inside the cap). When hasMore=true, true total is unknowable
+      //   without the slow scan we just opted out of.
+      total: totalInCap,
+      // ftsTotal: unfiltered match count (every row that hit the FTS index,
+      //   pre canonical/highlight filter). Useful as an "X+ matches" hint.
+      ftsTotal,
+      // hasMore: capped scan didn't see the full FTS hit list. Frontend
+      //   should display "1000+" / "many" rather than treating total as exact.
+      hasMore,
+      // innerCap: surface the limit so a caller paging deeper than this
+      //   knows to widen their query (extra keyword) rather than asking
+      //   for page=200.
+      innerCap: INNER_CAP,
+      rows: rows.map(_parseCard),
+    };
   }
 
   const { sql: whereSql, params } = _buildWhere(filters);
