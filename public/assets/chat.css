@@ -90,7 +90,7 @@
 .chat-split-header #chat-split-title { flex:1; font:600 14px/1.3 var(--font-display); color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .chat-split-header button { padding:6px 10px; border-radius:var(--r, 8px); background:transparent; border:1px solid transparent; color:var(--muted, #6B7280); font:500 12px var(--font-display); cursor:pointer; transition:color .14s, background .14s, border-color .14s; }
 .chat-split-header button:hover { color:var(--ink); background:var(--panel, #F9FAFB); border-color:var(--line); }
-.chat-split-body { padding:18px; overflow-y:auto; flex:1; font:400 15px/1.55 var(--font-serif, Georgia, serif); color:var(--ink-2, #1F2937); }
+.chat-split-body { padding:18px; overflow-y:auto; flex:1; font:400 15px/1.55 var(--font-serif, Georgia, serif); color:var(--ink-2, #262626); }
 .chat-split-body p { margin:0 0 14px; max-width:58ch; }
 .chat-split-body h4 { font:600 14px/1.3 var(--font-display) !important; color:var(--ink); margin:14px 0 6px; }
 
