@@ -43,10 +43,9 @@
 /* User: right-aligned soft bubble (Claude-style) */
 .chat-msg.user { align-self:flex-end; max-width:min(48ch, calc(100% - 24px)); margin:8px 24px 8px auto; padding:11px 16px; background:var(--panel, #F9FAFB); border:1px solid var(--line); border-radius:18px 18px 4px 18px; font-size:14.5px; }
 
-/* Assistant: full-width text. Tiny green "V" sigil on left margin (subtle,
-   not an avatar). Falls back to invisible when text is short enough. */
-.chat-msg.assistant { align-self:stretch; padding-left:42px; padding-right:24px; padding-top:18px; padding-bottom:22px; min-height:24px; }
-.chat-msg.assistant::before { content:""; position:absolute; left:24px; top:26px; width:8px; height:8px; border-radius:50%; background:var(--ok, #047857); }
+/* Assistant: full-width text, no avatar / no dot. Alignment is the only
+   differentiator (right user bubble vs left full-width text). */
+.chat-msg.assistant { align-self:stretch; padding-left:24px; padding-right:24px; padding-top:18px; padding-bottom:22px; min-height:24px; }
 .chat-msg.assistant + .chat-msg.user { margin-top:14px; }
 .chat-msg.user + .chat-msg.assistant { margin-top:6px; }
 
@@ -118,8 +117,7 @@
   .chat-messages { padding:14px 0 20px; }
   .chat-msg { padding:12px 14px; font-size:14.5px; line-height:1.6; }
   .chat-msg.user { margin:6px 14px 6px auto; max-width:calc(100% - 28px); padding:10px 14px; border-radius:16px 16px 4px 16px; }
-  .chat-msg.assistant { padding-left:30px; padding-right:14px; padding-top:14px; padding-bottom:18px; }
-  .chat-msg.assistant::before { left:14px; top:22px; width:7px; height:7px; }
+  .chat-msg.assistant { padding-left:14px; padding-right:14px; padding-top:14px; padding-bottom:18px; }
   .chat-composer-wrap { padding:6px 12px calc(10px + env(safe-area-inset-bottom, 0px)); gap:6px; }
   .chat-composer { border-radius:20px; }
   .chat-input { min-height:40px !important; padding:11px 16px 4px !important; line-height:1.4 !important; }
