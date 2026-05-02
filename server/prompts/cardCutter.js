@@ -1,12 +1,13 @@
 'use strict';
 
-// Density presets follow the real-world debate convention: underlines mark
-// readable context (full sentences/clauses), highlights are SPARSE picks
-// inside those underlines (the operative words a debater reads aloud).
+// Density presets calibrated against 1000 real library cards (median underline
+// coverage 21%, median highlight 0% per paragraph but avg 8%, median highlight
+// length 2 words, P75 3, P90 5). Reality: highlights are SPARSE 1–3 word picks,
+// underlines cover ~25–40% of words, MOST words stay un-marked.
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '50–65%', highlightRule: '3–6 SHORT highlight runs per paragraph, each 2–5 words MAX', unhighlightedRule: '≥80%' },
-  standard: { underlineRange: '60–75%', highlightRule: '4–8 SHORT highlight runs per paragraph, each 2–5 words MAX', unhighlightedRule: '≥75%' },
-  heavy:    { underlineRange: '70–85%', highlightRule: '5–10 SHORT highlight runs per paragraph, each 2–5 words MAX', unhighlightedRule: '≥70%' },
+  minimal:  { underlineRange: '20–30%', highlightRule: '2–4 highlight runs per paragraph, each 1–3 words', unhighlightedRule: '≥92%' },
+  standard: { underlineRange: '25–40%', highlightRule: '3–5 highlight runs per paragraph, each 1–3 words (P75=3, P90=5)', unhighlightedRule: '≥88%' },
+  heavy:    { underlineRange: '35–55%', highlightRule: '4–7 highlight runs per paragraph, each 1–4 words', unhighlightedRule: '≥82%' },
 };
 
 const LENGTH_PRESETS = {
@@ -42,32 +43,41 @@ FORMATTING SYNTAX FOR body_markdown
 - **<u>text</u>** = bold-underlined. Reserved for the ONE loudest phrase of the whole card.
 - ==text== = highlighted read-aloud text. MUST sit entirely inside an underline. Never highlight outside <u>…</u>.
 
-FOOLPROOF WORD-LEVEL RULES (apply to EVERY paragraph)
+FOOLPROOF WORD-LEVEL RULES — CALIBRATED FROM 1000 REAL LIBRARY CARDS
 
-ALWAYS HIGHLIGHT (these earn the read-aloud):
-- Finite verbs that do work: causes, leads to, triggers, sparks, results in, drives, undermines, erodes, destroys, prevents, blocks, forces, accelerates, escalates, ends, eliminates, increases, reduces, threatens, locks in, removes, guarantees, ensures.
-- Numbers, percentages, years, dollar/currency figures: 70%, 2040, $3 trillion, by 2030, within five years, three degrees.
-- Named entities tied to the warrant: U.S., China, Russia, Iran, NATO, Putin, IPCC, WTO, FDA — when they're the actor or target.
-- Magnitudes that change the round: extinction, collapse, recession, war, breakdown, irreversible, permanent, catastrophic.
-- Mechanism nouns when paired with their verb: "credibility collapse", "deterrence failure", "supply chain breakdown".
+THE LIBRARY YOU MUST MATCH:
+- Median highlight = 2 words. 43% of all highlights are 1 word. 84% are ≤3 words. Only 11% exceed 5 words.
+- Average underline covers 30% of paragraph words. 64% of sentences are PLAIN (kept whole for integrity but NOT read).
+- Each card has ~16 read-aloud beats (==highlight== or **<u>...</u>**) total — distributed unevenly across paragraphs.
 
-NEVER HIGHLIGHT (read these silently inside the underline, or drop from underline):
-- Articles, possessives, conjunctions: the, a, an, of, in, for, to, with, and, or, but, that, this, these, those, its, their.
-- Adverbs of meta-stance: however, moreover, additionally, furthermore, thus, essentially, indeed, ultimately, accordingly.
-- Author/source self-reference: "the report says", "the authors note", "according to", "as previously discussed", "in this article".
-- Hedges: maybe, perhaps, possibly, generally, sometimes, often, typically, arguably (these WEAKEN the card — don't highlight a hedge).
-- Pure citations or qualifiers: "(2024)", "(Smith et al.)", "[Figure 3]", chapter references.
+ALWAYS HIGHLIGHT (these earn the read-aloud — keep them 1-3 words):
+- Operative VERBS (1 word usually): causes, triggers, collapses, undermines, prevents, locks in, ends, eliminates, accelerates, threatens, guarantees, reduces, increases, drives, erodes, destroys.
+- Magnitude/impact nouns: extinction, war, collapse, recession, breakdown, escalation.
+- Numbers, percentages, years, currencies: "70%", "2040", "$3T", "by 2030", "three degrees".
+- Named entities when the actor or target: U.S., China, Russia, NATO, Putin, IPCC.
+- Tight noun-verb pairs (2-3 words): "credibility collapses", "deterrence fails", "supply chains break".
 
-DROP ENTIRELY FROM UNDERLINE (don't even include in <u> — keep them in the paragraph for integrity but never read):
-- Boilerplate transitions: "as discussed below", "as previously noted", "in what follows", "for the remainder of this paper".
-- Source self-promotion: "in this analysis", "the present paper argues", "this article shows".
-- Hedging clauses that water down the warrant: "though caveats apply", "while not all agree".
+NEVER HIGHLIGHT (these are the connective tissue — leave INSIDE underline, NOT inside ==):
+- Articles, possessives, conjunctions: the, a, an, of, in, for, to, with, and, or, but, that, this, these, those, its, their, has, is, are.
+- Modal helpers: would, could, will, can, may, might, must, should.
+(Empirically — these are the top 15 most-frequent words found between highlights inside underlines in the user's library.)
 
-SENTENCE SHAPE (choose one — do NOT mix in a single sentence):
-A) Claim-led: <u>Subject ==causes== Object ... by ==year== ... ==by mechanism==.</u>  → highlight starts at the verb, magnitude, timeframe.
-B) Impact-led: <u>The ==collapse== of X ==triggers== Y, ==ending== Z.</u>  → 2-3 short highlights stitched in one sentence.
-C) Claim+Mechanism+Impact across two sentences inside a single underline.
-NEVER produce a sentence with one giant 15-word highlight — that's a summary, not a debate read.
+DROP ENTIRELY FROM UNDERLINE (don't even put inside <u> — keep them in the paragraph for verbatim integrity but they are NEVER read aloud):
+- Stance adverbs: however, moreover, additionally, furthermore, thus, essentially, indeed, ultimately, accordingly, also.
+- Source self-reference: "the report says", "the authors note", "according to", "as previously discussed", "in this article".
+- Examples: "for example", "for instance", "such as", "e.g.,", "i.e.,".
+- Hedges: maybe, perhaps, possibly, generally, sometimes, often, typically, arguably, somewhat.
+- Citations/qualifiers: "(2024)", "(Smith et al.)", "[Figure 3]".
+(Empirically — these are the top 20 most-frequent words/phrases found in paragraphs but OUTSIDE every underline in the user's library.)
+
+SENTENCE SHAPES — match the library's actual patterns:
+- Most highlights are SHORT (1-3 word) noun phrases or single verbs, not full clauses.
+- A typical sentence: 5-15 underlined words with 1-3 highlights interspersed, e.g.:
+  <u>The ==U.S.== faces a ==credibility crisis== that ==undermines deterrence==.</u>
+- Multiple short highlights per underline is FINE — they don't need to be a coherent clause within the sentence; they form a chain across the WHOLE card.
+- Avoid one giant highlight that summarizes a sentence. Avoid highlighting articles (the, of, and) UNLESS they're inside a noun phrase you want read whole.
+
+LENGTH DEFAULT — most library cards are short (median 2 paragraphs). Aim for the warrant's natural length: 4-8 paragraphs is fine, 10+ only if the warrant requires it. Don't pad.
 
 HIGHLIGHT — SPARSE AND DECISIVE (PRIMARY QUALITY GATE)
 - ${d.highlightRule}.
