@@ -24,8 +24,24 @@ function hit(userId, kind, period = periodUtc()) {
   return 1;
 }
 
+// Hardcoded unlimited-tier allowlist. Bypasses every kind of rate limit
+// (cutCard, chat, etc.) regardless of the user's stored `tier` column.
+// Comma-separated emails in UNLIMITED_EMAILS env override / supplement this.
+const HARDCODED_UNLIMITED_EMAILS = new Set([
+  'ethanzhouwu@gmail.com',
+]);
+function isUnlimitedEmail(email) {
+  if (!email) return false;
+  const e = String(email).toLowerCase().trim();
+  if (HARDCODED_UNLIMITED_EMAILS.has(e)) return true;
+  const fromEnv = String(process.env.UNLIMITED_EMAILS || '')
+    .split(',').map(s => s.toLowerCase().trim()).filter(Boolean);
+  return fromEnv.includes(e);
+}
+
 function checkAndBudget(userId, kind, limit, user = null) {
   if (user && user.tier && user.tier !== 'free') return { allowed: true, remaining: Infinity, limit };
+  if (user && isUnlimitedEmail(user.email)) return { allowed: true, remaining: Infinity, limit };
   const used = getCount(userId, kind);
   const remaining = Math.max(0, limit - used);
   return { allowed: used < limit, remaining, used, limit };
