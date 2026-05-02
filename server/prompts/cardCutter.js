@@ -1,20 +1,22 @@
 'use strict';
 
-// Density presets calibrated against 1000 real library cards (median underline
-// coverage 21%, median highlight 0% per paragraph but avg 8%, median highlight
-// length 2 words, P75 3, P90 5). Reality: highlights are SPARSE 1–3 word picks,
-// underlines cover ~25–40% of words, MOST words stay un-marked.
+// Density presets recalibrated against 33 hand-cut Vanguard cards
+// (1217 highlights, 892 bolds): median highlight = 1 word, 72% are 1 word,
+// 86% are ≤2 words, P90=3. 23% of highlight words are stopwords/articles —
+// they get included BECAUSE they're glue inside a phrase being read whole.
+// Bolds are heavy: ~6-8 per paragraph, almost always nested inside highlights.
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '20–30%', highlightRule: '2–4 highlight runs per paragraph, each 1–3 words', unhighlightedRule: '≥92%' },
-  standard: { underlineRange: '25–40%', highlightRule: '3–5 highlight runs per paragraph, each 1–3 words (P75=3, P90=5)', unhighlightedRule: '≥88%' },
-  heavy:    { underlineRange: '35–55%', highlightRule: '4–7 highlight runs per paragraph, each 1–4 words', unhighlightedRule: '≥82%' },
+  minimal:  { underlineRange: '40–55%', highlightRule: '4–8 highlights per paragraph, mostly 1–2 words each',  unhighlightedRule: '≥80%' },
+  standard: { underlineRange: '50–65%', highlightRule: '6–12 highlights per paragraph, mostly 1–2 words each (median 1, P75 2)', unhighlightedRule: '≥70%' },
+  heavy:    { underlineRange: '60–75%', highlightRule: '8–15 highlights per paragraph, mostly 1–2 words each — short fragments that stitch into a coherent read-aloud chain', unhighlightedRule: '≥65%' },
 };
 
+// Paragraph counts recalibrated against the same 33 cards: median = 3,
+// P25 = 3, P75 = 5. Real cards are MUCH shorter than the previous presets.
 const LENGTH_PRESETS = {
-  short:  { paragraphRule: '4–6 complete source paragraphs',  maxWords: 800 },
-  medium: { paragraphRule: '6–9 complete source paragraphs',  maxWords: 1500 },
-  // 'long' is the default: longer cuts so the warrant has room to breathe.
-  long:   { paragraphRule: '8–14 complete source paragraphs (err LONG — better to keep too many than too few)', maxWords: 5000 },
+  short:  { paragraphRule: '2–3 complete source paragraphs',                                                  maxWords: 600 },
+  medium: { paragraphRule: '3–5 complete source paragraphs',                                                  maxWords: 1200 },
+  long:   { paragraphRule: '4–7 complete source paragraphs (only go longer if the warrant truly needs it)',    maxWords: 2500 },
 };
 
 function buildSystemPrompt({ density = 'heavy', length = 'long', calibration = '' } = {}) {
@@ -151,57 +153,71 @@ function buildSelectionSystemPrompt({ density = 'heavy', length = 'long', calibr
   const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
   const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
   const calBlock = calibration ? `\n\n${calibration}\n` : '';
-  return `You are an LD debate evidence card cutter. You select WHICH source paragraphs to include and WHERE to place underline / highlight / bold marks. The server pulls the source paragraphs verbatim and inserts your marks at word offsets — you NEVER write source words yourself.${calBlock}
+  return `You are an LD debate evidence card cutter. You SELECT which source paragraphs to use and PLACE underline / highlight / bold marks at word offsets. The server pulls the source paragraphs verbatim and inserts your marks — you NEVER write source words yourself.${calBlock}
 
-OUTPUT — JSON ONLY, matching the schema. No prose. No code fence. No commentary.
+OUTPUT — JSON ONLY. No prose. No fence. No commentary.
 
 {
-  "tag":   "Offensive strategic claim that wins the round (1–2 sentences). Matches DEBATER INTENT.",
+  "tag":   "Offensive claim that wins the round. ~9–17 words. Two sentences if needed: causal mechanism then magnitude.",
   "cite":  "Last 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]",
   "picks": [
-    { "p": 3, "u": [[0, 22]], "h": [[3, 6], [9, 12]], "b": [[9, 12]] },
-    { "p": 7, "u": [[0, 18]], "h": [[2, 4], [11, 14]], "b": [[2, 4]] }
+    { "p": 3, "u": [[0, 22]], "h": [[3, 4], [5, 6], [9, 11]], "b": [[3, 4], [9, 11]] }
   ],
-  "loudest": { "p": 3, "from": 9, "to": 12 }
+  "loudest": { "p": 3, "from": 9, "to": 11 }
 }
 
 KEY DEFINITIONS
-- "p" is the paragraph index from the CANDIDATES list below (0-indexed). You MAY only use indices that exist in CANDIDATES.
-- "u", "h", "b" are arrays of [from, to) word ranges over that paragraph's whitespace-tokenised words (punctuation attached). Words are 0-indexed. "to" is exclusive.
-  Example: paragraph "The U.S. faces a credibility crisis." has 6 words [The, U.S., faces, a, credibility, crisis.]. To highlight "credibility crisis." use [4, 6].
-- "loudest" is the single bold-underlined "loudest phrase" of the entire card — the one read-aloud beat the debater wants the judge to hear.
+- "p" = paragraph index from the CANDIDATES list below (0-indexed). Only use indices that exist there.
+- "u" / "h" / "b" = arrays of [from, to) word ranges over the paragraph's whitespace-tokenised words. "to" is exclusive.
+  Example: paragraph "The U.S. faces a credibility crisis." → words [The, U.S., faces, a, credibility, crisis.]. To highlight "credibility" use [4,5]. To highlight "credibility crisis." use [4,6].
+- "loudest" = the single phrase that is the LOUDEST READ-ALOUD beat of the whole card. Server emits it as **<u>...</u>**.
 
-HARD RULES (server enforces, but follow them so your work survives)
-- Highlights and bolds MUST sit fully inside an underline. Floating ones get dropped.
-- Each highlight run is 1–${MAX_RUN_WORDS_HINT} words. Runs longer than ${MAX_RUN_WORDS_HINT} words get trimmed.
-- Per-paragraph density caps: underline ≤ ${Math.round((UNDERLINE_HINT[density] ?? 0.72) * 100)}%, highlight ≤ ${Math.round((HIGHLIGHT_HINT[density] ?? 0.30) * 100)}% of paragraph words. Excess marks get trimmed by lowest priority.
-- Pick ${l.paragraphRule}. Output max ${l.maxWords} body words across all picks.
+HARD RULES (server enforces — follow them so your work survives)
+- Highlights and bolds MUST sit inside an underline. Floating ones get dropped.
+- Per-paragraph caps: underline ≤ ${Math.round((UNDERLINE_HINT[density] ?? 0.72) * 100)}%, highlight ≤ ${Math.round((HIGHLIGHT_HINT[density] ?? 0.30) * 100)}% of paragraph words.
+- Pick ${l.paragraphRule}. Cap at ${l.maxWords} body words across all picks.
 
 PARAGRAPH SELECTION
-- Choose paragraphs that carry the warrant for the DEBATER INTENT. Skip filler, transitions, repetition, methodology boilerplate.
-- Prefer body paragraphs over abstracts and bios.
-- Stay close to the natural length of the warrant. Don't pad.
+- Choose paragraphs that carry the warrant for the DEBATER INTENT. Skip filler, transitions, methodology, repetition.
+- Prefer body paragraphs; avoid abstracts and author bios.
+- Real Vanguard cards are SHORT: median 3 paragraphs, P75=5. Don't pad.
 
-WHERE TO UNDERLINE (target ${d.underlineRange} of paragraph words)
-- Underline only the clauses that carry the warrant. Leave transitional / setup / filler sentences UN-underlined (they remain in the paragraph for integrity but aren't read).
-- Multiple <u> spans per paragraph are normal when warrant clauses are split by connective prose.
+UNDERLINING (${d.underlineRange} per paragraph)
+- Underline what the debater intends to read or refer to. Leave only true filler unmarked.
+- Multiple <u> spans per paragraph are fine; the underlined region can span most of a sentence.
 
-WHERE TO HIGHLIGHT (the read-aloud beats — ${d.highlightRule})
-- Each highlight is 1–${MAX_RUN_WORDS_HINT} words, ALWAYS inside an underline.
-- Stitched together in document order across the whole card, the highlights must sound like a coherent argument.
-- ALWAYS HIGHLIGHT: operative verbs (causes, triggers, undermines, locks in, ends, eliminates), magnitude nouns (extinction, war, collapse, recession, escalation), numbers / years / percentages / currencies, named entities (U.S., China, NATO, Putin), tight noun-verb pairs ("credibility collapses", "deterrence fails").
-- NEVER HIGHLIGHT: articles, conjunctions, modal helpers (the, a, of, in, would, could), filler adverbs (however, ultimately, accordingly).
+HIGHLIGHTING — THE READ-ALOUD CHAIN (this is the most important rule)
+- ${d.highlightRule}.
+- Highlights are NOT noun phrases or "complete thoughts". They are SHORT FRAGMENTS — typically a single word, sometimes two — that STITCH TOGETHER across the paragraph (and across the whole card) into a continuous read-aloud sentence.
+- Read all your highlights aloud in document order. They should form a grammatical, coherent argument that delivers the warrant in 1/4 the words of the original.
+- HIGHLIGHT FREELY: operative verbs (causes, triggers, undermines, locks in), magnitude nouns (extinction, war, collapse), numbers/years/percentages, named entities (U.S., China, Israel, Iran, NATO), connector words (to, of, in, with, and, would, could, the, a) — INCLUDE the connector when it's part of the spoken read-aloud chain. Real cards highlight stopwords ~23% of the time precisely because they're the glue of speech.
+- Highlights can be 1 word, 2 words, occasionally 3. Going beyond 3 is rare; runs over 5 words get auto-trimmed.
+- Example of stitched highlights from a real card: ==Israel==, ==need==, ==to==, ==assess==, ==nuclear deterrence==, ==regarding==, ==biological==, ==war==, ==EMP==, ==massive==, ==conventional==, ==attacks==. Read aloud: "Israel … need to assess nuclear deterrence regarding … biological war … EMP … massive conventional attacks." Each highlight is 1–2 words; together they speak the warrant.
 
-WHERE TO BOLD
-- ≥2 bold ranges per paragraph, all inside an underline.
-- Bolds typically wrap a highlight (most calibration data shows them coinciding).
-- Use "loudest" once per card for the single most important phrase.
+BOLDING
+- Bolds nearly always sit INSIDE highlights — they're emphasis on the most punchy words inside an already-highlighted phrase.
+- ~6–8 bolds per paragraph in real cards. Don't be shy.
+- Use "loudest" once per card for the SINGLE peak word/phrase the debater wants the judge to hear above all others.
 
-WORD COUNTING — DOUBLE-CHECK
-- Each candidate paragraph below is shown with its words pre-prefixed by index, e.g. "[0]The [1]U.S. [2]faces ...". Use those numbers directly. Do NOT re-tokenise.
+WORD COUNTING
+- Each candidate is shown with words prefixed: "[0]The [1]U.S. [2]faces …". Use those numbers directly. DO NOT re-tokenise.
 
 CITE
 - Extract from SOURCE METADATA. Format: Last 'YY [Full Name; Credentials; "Title"; Source; Date; URL]. Omit missing fields. Never invent.
+
+WORKED EXAMPLE — STUDY THE STITCHING
+
+Source paragraph (24 words, 0-indexed):
+[0]For [1]the [2]immediate [3]future, [4]a [5]limited [6]nuclear [7]war [8]between [9]Israel [10]and [11]Iran [12]would [13]be [14]asymmetrical, [15]forcing [16]Jerusalem [17]to [18]assess [19]nuclear [20]deterrence [21]against [22]Iranian [23]threats.
+
+A heavy cut:
+{ "p": 0,
+  "u": [[0, 24]],
+  "h": [[5, 8], [9, 10], [10, 12], [12, 13], [16, 17], [17, 18], [18, 19], [19, 21], [22, 24]],
+  "b": [[5, 8], [9, 10], [16, 17], [19, 21], [22, 24]]
+}
+
+Read-aloud chain: "limited nuclear war … Israel … and Iran … would … Jerusalem … to … assess … nuclear deterrence … Iranian threats." Notice ==and==, ==to==, ==would== are stopwords that GET highlighted because they connect the spoken chain. That's the Vanguard style.
 
 If you cannot find a usable warrant, still return JSON with picks=[] and a tag describing the source. The server will degrade gracefully.`;
 }

@@ -32,8 +32,13 @@
  *  - Exactly one **<u>...</u>** "loudest" mark survives per card.
  */
 
-const HIGHLIGHT_CAPS = { minimal: 0.20, standard: 0.25, heavy: 0.30 };
-const UNDERLINE_CAPS = { minimal: 0.40, standard: 0.55, heavy: 0.72 };
+// Caps recalibrated against 33 hand-cut Vanguard cards. Real cards push
+// highlight density to ~30–45% on heavy-style cuts (many short fragments
+// stitched together) and underline coverage to ~60–75%. The previous caps
+// (highlight=0.30 heavy / underline=0.72 heavy) were trimming aggressively
+// and dropping legitimate stitched-chain highlights.
+const HIGHLIGHT_CAPS = { minimal: 0.25, standard: 0.35, heavy: 0.50 };
+const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.85 };
 const MAX_HIGHLIGHT_RUN_WORDS = 5;
 
 // Words that signal an operative claim — gives priority when trimming highlights
