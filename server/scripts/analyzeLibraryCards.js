@@ -147,14 +147,73 @@ function classifyHighlight(phrase) {
   };
 }
 
-// Rough position in containing paragraph: where (0–1) does the highlight sit?
-function positionInParagraph(highlight, paraText) {
-  const idx = paraText.toLowerCase().indexOf(highlight.toLowerCase());
-  if (idx === -1) return null;
-  const plain = stripFormatMarks(paraText);
-  if (!plain.length) return null;
-  const plainIdx = stripFormatMarks(paraText.slice(0, idx)).length;
-  return Math.min(1, Math.max(0, plainIdx / Math.max(1, plain.length)));
+// ── WORD-KIND CLASSIFIER ─────────────────────────────────────────────
+// Breaks each word into a rough part-of-speech / function class so we can
+// compute "what KIND of word tends to be highlighted vs skipped".
+
+const STOPWORDS = new Set([
+  'the','a','an','of','in','for','to','with','and','or','but','at','on','by',
+  'from','as','that','this','these','those','it','its','their','his','her',
+  'they','them','we','us','our','you','your','i','me','my','he','she',
+  'is','are','was','were','be','been','being','am','do','does','did','done',
+  'have','has','had','having','will','would','could','should','may','might',
+  'can','must','shall','than','then','so','if','because','while','when',
+  'where','who','what','which','how','why','some','any','all','each','every',
+  'no','not','also','just','only','very','more','most','less','least','too',
+  'into','onto','upon','about','across','after','against','before','between',
+  'during','through','under','over','out','off','up','down','here','there',
+]);
+
+const COMMON_VERBS = new Set([
+  // already in VERB_LIST but kept here for word-kind classification too
+  'cause','causes','caused','causing','lead','leads','led','leading',
+  'trigger','triggers','triggered','spark','sparks','sparked',
+  'result','results','resulted','drive','drives','drove','driven',
+  'collapse','collapses','collapsing','undermine','undermines','undermined',
+  'erode','erodes','eroded','destroy','destroys','destroyed','prevent','prevents',
+  'block','blocks','blocked','accelerate','accelerates','escalate','escalates',
+  'end','ends','ended','eliminate','eliminates','make','makes','made','force',
+  'forces','forced','compel','compels','require','requires','increase',
+  'increases','reduce','reduces','rise','rises','fall','falls','grow','grows',
+  'shrink','shrinks','concludes','concluded','argues','argued','shows','showed',
+  'demonstrates','finds','found','reveals','revealed','warns','warned','predicts',
+  'remains','remained','say','says','said','believes','believe','found','show',
+  'find','threaten','threatens','threatened','create','creates','created',
+  'mean','means','meant','allow','allows','allowed','enable','enables',
+]);
+
+function wordKind(rawWord) {
+  const w = String(rawWord || '').toLowerCase().replace(/[.,;:!?'"()\[\]]/g, '');
+  if (!w) return null;
+  if (/^\d+(?:[.,]\d+)?(?:%)?$/.test(w) || /^\d{4}$/.test(w)) return 'number';
+  if (STOPWORDS.has(w)) return 'stopword';
+  if (COMMON_VERBS.has(w)) return 'verb';
+  if (/^[A-Z][a-z]/.test(rawWord)) return 'proper_noun';
+  if (/(?:tion|ment|ness|ity|ism|ence|ance)s?$/.test(w)) return 'noun_abstract';
+  if (/(?:ing|ed|ly|ize|ate)$/.test(w)) return 'verb_or_adverb';
+  return 'noun_or_other';
+}
+
+// Split a paragraph into rough sentences (heuristic — splits on . ! ? + space).
+function splitSentences(paraText) {
+  // Avoid splitting on abbreviations (Mr., e.g., U.S., 3.5) — rough but ok.
+  return paraText
+    .replace(/([.!?])\s+(?=[A-Z(])/g, '$1\x01')
+    .split('\x01')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+// Returns sentence-level classification for a paragraph:
+//   highlighted    — sentence contains at least one ==…==
+//   underlined     — sentence has <u>…</u> but no ==
+//   plain          — sentence has neither
+function classifySentence(sent) {
+  const hasHl = /==[^=\n]+?==/.test(sent);
+  const hasUl = /<u>[\s\S]+?<\/u>/.test(sent);
+  if (hasHl) return 'highlighted';
+  if (hasUl) return 'underlined';
+  return 'plain';
 }
 
 // Build a frequency map of n-gram phrases (for "what gets highlighted most often")
@@ -191,7 +250,6 @@ function analyzeCard(body) {
     const classified = highlights.map(h => ({
       text: h,
       ...classifyHighlight(h),
-      position: positionInParagraph(h, para),
       paraIdx,
     }));
 
@@ -200,6 +258,30 @@ function analyzeCard(body) {
     for (const b of bolds) {
       const bl = b.toLowerCase();
       if (highlights.some(h => h.toLowerCase().includes(bl))) boldsInsideHighlights++;
+    }
+
+    // Sentence-level classification (highlighted / underlined / plain)
+    const sentences = splitSentences(para);
+    const sentClasses = sentences.map(classifySentence);
+
+    // Word-level kind tracking: which kinds of words END UP IN highlights
+    // vs end up in plain underlined context vs are dropped from underlines.
+    const allParaWords = stripFormatMarks(para).split(/\s+/).filter(Boolean);
+    const hlWords = new Set(highlights.flatMap(h => h.toLowerCase().split(/\s+/).filter(Boolean).map(w => w.replace(/[.,;:!?'"()]/g, ''))));
+    const ulPlain = underlines.map(stripFormatMarks).join(' ').toLowerCase();
+    const wordKinds = { all: {}, highlighted: {}, underlined: {}, dropped: {} };
+    for (const raw of allParaWords) {
+      const k = wordKind(raw);
+      if (!k) continue;
+      wordKinds.all[k] = (wordKinds.all[k] || 0) + 1;
+      const cleanW = raw.toLowerCase().replace(/[.,;:!?'"()]/g, '');
+      if (hlWords.has(cleanW)) {
+        wordKinds.highlighted[k] = (wordKinds.highlighted[k] || 0) + 1;
+      } else if (ulPlain.includes(cleanW)) {
+        wordKinds.underlined[k] = (wordKinds.underlined[k] || 0) + 1;
+      } else {
+        wordKinds.dropped[k] = (wordKinds.dropped[k] || 0) + 1;
+      }
     }
 
     allHighlights.push(...classified);
@@ -216,6 +298,8 @@ function analyzeCard(body) {
       underlineRatio: totalWords ? underlineWords / totalWords : 0,
       highlightRatio: totalWords ? highlightWords / totalWords : 0,
       classified,
+      sentenceClasses: sentClasses,
+      wordKinds,
     };
   });
 
@@ -280,15 +364,75 @@ function summarize(allStats) {
   const allClassified = cards.flatMap(c => c.allHighlights || []);
   const allHighlightTexts = allClassified.map(h => h.text).filter(Boolean);
 
-  // Position-in-paragraph bins (start 0–0.33, mid 0.33–0.66, end 0.66–1.0)
-  const positions = allClassified.map(h => h.position).filter(p => p != null);
-  const posBins = { start: 0, mid: 0, end: 0 };
-  for (const p of positions) {
-    if (p < 0.33) posBins.start++;
-    else if (p < 0.66) posBins.mid++;
-    else posBins.end++;
+  // ── SENTENCE-LEVEL STATS ─────────────────────────────────────────
+  // Aggregate sentence classifications across every paragraph.
+  const sentBuckets = { highlighted: 0, underlined: 0, plain: 0 };
+  for (const p of allParas) {
+    for (const c of p.sentenceClasses || []) sentBuckets[c]++;
   }
-  const posTotal = positions.length || 1;
+  const sentTotal = sentBuckets.highlighted + sentBuckets.underlined + sentBuckets.plain || 1;
+  const sentencePct = {
+    highlightedPct: +(sentBuckets.highlighted / sentTotal * 100).toFixed(1),
+    underlinedOnlyPct: +(sentBuckets.underlined / sentTotal * 100).toFixed(1),
+    plainPct:          +(sentBuckets.plain      / sentTotal * 100).toFixed(1),
+  };
+
+  // ── WORD-KIND HIGHLIGHT RATES ────────────────────────────────────
+  // For each kind of word (verb / noun / number / stopword / proper noun),
+  // what fraction of occurrences end up highlighted vs underlined vs dropped?
+  const kindAggregate = {};
+  for (const p of allParas) {
+    for (const cat of ['all', 'highlighted', 'underlined', 'dropped']) {
+      for (const [k, v] of Object.entries(p.wordKinds?.[cat] || {})) {
+        kindAggregate[k] = kindAggregate[k] || { all: 0, highlighted: 0, underlined: 0, dropped: 0 };
+        kindAggregate[k][cat] += v;
+      }
+    }
+  }
+  const wordKindRates = {};
+  for (const [k, counts] of Object.entries(kindAggregate)) {
+    if (!counts.all) continue;
+    wordKindRates[k] = {
+      total: counts.all,
+      highlightRatePct: +(counts.highlighted / counts.all * 100).toFixed(1),
+      underlineRatePct: +(counts.underlined / counts.all * 100).toFixed(1),
+      droppedPct:       +(counts.dropped    / counts.all * 100).toFixed(1),
+    };
+  }
+
+  // ── COMPRESSION EFFICIENCY ───────────────────────────────────────
+  // Per-card: total words, underlined words, highlighted words.
+  const efficiency = {
+    avgUnderlineFraction: +avg(allParas.map(p => p.underlineRatio)).toFixed(3),
+    avgHighlightFraction: +avg(allParas.map(p => p.highlightRatio)).toFixed(3),
+    // What % of "read-aloud time" (= highlighted words) compresses the
+    // total card body? Lower = more efficient.
+    avgReadCompression: +avg(allParas.map(p => p.totalWords ? p.highlightWords / p.totalWords : 0)).toFixed(3),
+    // Words-per-highlight = how "dense" each operative phrase is (avg).
+    avgWordsPerHighlight: +avg(allHlLens).toFixed(2),
+  };
+
+  // ── WITHIN-CARD REDUNDANCY ───────────────────────────────────────
+  // For each card, count duplicate highlight phrases (case-insensitive).
+  // Reports the % of highlights that are repeats — a card with 0% repeats
+  // is maximally information-dense. Real cards usually 5–15%.
+  const repeatRates = cards.map(c => {
+    const counts = new Map();
+    for (const h of c.allHighlights || []) {
+      const k = h.text.toLowerCase().trim();
+      counts.set(k, (counts.get(k) || 0) + 1);
+    }
+    const total = c.allHighlights?.length || 0;
+    const repeats = [...counts.values()].reduce((s, v) => s + Math.max(0, v - 1), 0);
+    return total ? repeats / total : 0;
+  });
+  const withinCardRepeatPct = +avg(repeatRates).toFixed(3);
+
+  // ── WHAT'S IGNORED ───────────────────────────────────────────────
+  // Among included paragraphs, what fraction of sentences receive NO
+  // markup? These are the connective-tissue sentences the cutter chose to
+  // include for paragraph integrity but not to read aloud.
+  const ignoredSentencePct = sentencePct.plainPct;
 
   // Operative-class taxonomy
   const kindCounts = {};
@@ -348,16 +492,17 @@ function summarize(allStats) {
         max:    Math.max(0, ...allHlLens),
       },
       lengthHistogram: bucket(allHlLens, [1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 20, 30]),
-      // QUALITATIVE
-      positionInParagraph: {
-        startPct: +(posBins.start / posTotal * 100).toFixed(1),
-        midPct:   +(posBins.mid   / posTotal * 100).toFixed(1),
-        endPct:   +(posBins.end   / posTotal * 100).toFixed(1),
-      },
       operativeKindPct: kindPct,
       linguistic,
       topBigrams:  top2,
       topTrigrams: top3,
+    },
+    sentenceStructure: sentencePct,
+    wordKindRates,
+    efficiency,
+    redundancy: {
+      withinCardRepeatPct,
+      ignoredSentencePct,
     },
     bolds: {
       perParagraph: {
@@ -421,16 +566,22 @@ function prettyReport(s) {
     lines.push(`  ${k.padEnd(8)} ${v}`);
   }
   lines.push(``);
-  lines.push(`── HIGHLIGHT POSITION (where in the paragraph) ──`);
-  const pp = s.highlights.positionInParagraph;
-  lines.push(`Start of paragraph (0–33%): ${pp.startPct}%`);
-  lines.push(`Middle (33–66%):            ${pp.midPct}%`);
-  lines.push(`End (66–100%):              ${pp.endPct}%`);
-  if (pp.endPct > pp.startPct + 15) lines.push(`  → highlights cluster toward paragraph END (impact-heavy reads)`);
-  else if (pp.startPct > pp.endPct + 15) lines.push(`  → highlights cluster toward paragraph START (claim-led reads)`);
-  else lines.push(`  → highlights distributed evenly (balanced reads)`);
+  lines.push(`── SENTENCE STRUCTURE (what % of sentences are…) ──`);
+  const ss = s.sentenceStructure;
+  lines.push(`Highlighted (has ==…==):     ${ss.highlightedPct}%`);
+  lines.push(`Underlined-only (<u> no ==): ${ss.underlinedOnlyPct}%`);
+  lines.push(`Plain (ignored):             ${ss.plainPct}%`);
+  if (ss.plainPct > 30) lines.push(`  → cards include lots of context that's NOT read — paragraph-integrity-driven`);
+  else if (ss.plainPct < 10) lines.push(`  → almost everything is at least underlined — dense reads`);
   lines.push(``);
-  lines.push(`── HIGHLIGHT KIND (what's being marked) ──`);
+  lines.push(`── WORD-KIND HIGHLIGHT RATES (% of each kind of word that ends up highlighted) ──`);
+  // Sort by total occurrences so we see the high-volume kinds first
+  const wkr = Object.entries(s.wordKindRates || {}).sort((a, b) => b[1].total - a[1].total);
+  for (const [kind, r] of wkr) {
+    lines.push(`  ${kind.padEnd(18)} (n=${String(r.total).padStart(5)})  ${r.highlightRatePct}% highlighted, ${r.underlineRatePct}% underlined-only, ${r.droppedPct}% dropped`);
+  }
+  lines.push(``);
+  lines.push(`── HIGHLIGHT KIND (what concept the highlight carries) ──`);
   for (const [kind, pct] of Object.entries(s.highlights.operativeKindPct).sort((a, b) => b[1] - a[1])) {
     lines.push(`  ${kind.padEnd(28)} ${pct}%`);
   }
@@ -452,9 +603,21 @@ function prettyReport(s) {
     lines.push(`Loudest **<u>...</u>** typically sits in: ${where} of the card (avg position ${lpp})`);
   }
   lines.push(``);
-  lines.push(`── DENSITY ──`);
-  lines.push(`Underline fraction:  avg ${s.densityRatios.underlineFraction.avg}, median ${s.densityRatios.underlineFraction.median}`);
-  lines.push(`Highlight fraction:  avg ${s.densityRatios.highlightFraction.avg}, median ${s.densityRatios.highlightFraction.median}`);
+  lines.push(`── COMPRESSION EFFICIENCY ──`);
+  const ef = s.efficiency;
+  lines.push(`Underline coverage: ${(ef.avgUnderlineFraction * 100).toFixed(0)}% of paragraph words sit inside <u>`);
+  lines.push(`Highlight coverage: ${(ef.avgHighlightFraction * 100).toFixed(0)}% of paragraph words are highlighted`);
+  lines.push(`Avg words per highlight: ${ef.avgWordsPerHighlight}  (lower = tighter operative phrases)`);
+  lines.push(`Read-aloud compression:  ${(ef.avgReadCompression * 100).toFixed(1)}% of total card body is actually read aloud`);
+  lines.push(``);
+  lines.push(`── REDUNDANCY ──`);
+  const rd = s.redundancy;
+  lines.push(`Repeated highlight phrases within a card: ${(rd.withinCardRepeatPct * 100).toFixed(1)}%`);
+  if (rd.withinCardRepeatPct > 0.15) lines.push(`  → high — cards re-highlight the same phrase often (consider varying the read)`);
+  else if (rd.withinCardRepeatPct < 0.05) lines.push(`  → low — every highlight advances new content (efficient)`);
+  else lines.push(`  → moderate (typical)`);
+  lines.push(`Plain (ignored) sentences in included paragraphs: ${rd.ignoredSentencePct}%`);
+  lines.push(`  → these are connective-tissue sentences kept for paragraph integrity but NOT read aloud`);
   lines.push(``);
   lines.push(`── CHAIN COHERENCE ──`);
   if (s.chainCoherence.avgAdjacentHighlightOverlap !== null) {
