@@ -277,17 +277,18 @@ test('selection prompt: annotateParagraphWithRuler shows char positions', () => 
 });
 
 test('selection prompt: HARDCODED_CALIBRATION includes empirical patterns', () => {
-  assert.match(HARDCODED_CALIBRATION, /85 hand-cut Vanguard cards/);
+  assert.match(HARDCODED_CALIBRATION, /Vanguard cards/i);
   assert.match(HARDCODED_CALIBRATION, /Median highlight = 1 WORD/);
   assert.match(HARDCODED_CALIBRATION, /partial-word/i);
   assert.match(HARDCODED_CALIBRATION, /U\.S\./);
+  assert.match(HARDCODED_CALIBRATION, /SELECTIVITY/i);
 });
 
 test('selection prompt: system prompt embeds calibration and char-offset language', () => {
   const p = buildSelectionSystemPrompt({ density: 'heavy', length: 'long' });
   assert.match(p, /CHARACTER offsets/i);
   assert.match(p, /partial-word/i);
-  assert.match(p, /85 hand-cut Vanguard cards/);
+  assert.match(p, /Vanguard cards/i);
   assert.match(p, /JSON/);
 });
 

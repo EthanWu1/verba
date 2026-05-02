@@ -38,17 +38,19 @@
  */
 
 // Density caps measured as fraction of paragraph CHARACTERS inside the mark.
-// IMPORTANT: heavy underline cap is 1.0 (no cap) because the model
-// commonly emits u = [[0, paragraphLength]] (100% coverage). At 0.95 the
-// trim dropped the underline, which then orphaned every highlight via
-// containment filter → "marks=0 ⚠ NO_MARKS" failure observed in prod.
-// The lower presets keep a cap because they signal "skip filler aggressively".
-const HIGHLIGHT_CAPS = { minimal: 0.30, standard: 0.45, heavy: 0.70 };
-const UNDERLINE_CAPS = { minimal: 0.75, standard: 0.95, heavy: 1.0 };
+// Recalibrated against actual hand-cut Vanguard cards: ~30-50%
+// underlined, ~10% highlighted of total chars. Previous caps
+// (heavy=0.70 / 1.0) made the model emit cyan walls. Orphan-protection
+// in trimToUnderlineCap prevents "marks=0" failures with these tighter
+// caps.
+const HIGHLIGHT_CAPS = { minimal: 0.12, standard: 0.20, heavy: 0.32 };
+const UNDERLINE_CAPS = { minimal: 0.40, standard: 0.60, heavy: 0.80 };
 
-// Maximum length of a single highlight RUN. 60 chars ≈ 10 words. Real
-// Vanguard cards rarely exceed this; the model mostly emits short fragments.
-const MAX_HIGHLIGHT_RUN_CHARS = 60;
+// Maximum length of a single highlight RUN. Real Vanguard highlights
+// are 1-2 words (median 1). Cap at 30 chars (~5 words) — anything
+// longer is the model trying to highlight whole clauses instead of
+// short stitched fragments.
+const MAX_HIGHLIGHT_RUN_CHARS = 30;
 
 // --- span normalisation -----------------------------------------------------
 

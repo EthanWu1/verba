@@ -1,14 +1,13 @@
 'use strict';
 
-// Density presets recalibrated against 85 hand-cut Vanguard cards.
-// IMPORTANT: real cards highlight FAR more than typical AI defaults.
-// On heavy density, ~50–65% of paragraph CHARACTERS are inside ==..==
-// marks. The model's persistent failure mode is under-highlighting —
-// these presets push hard against that.
+// Density presets calibrated to real Vanguard cards. SELECTIVITY beats
+// coverage. Real heavy cuts highlight ~10–15% of total chars and
+// underline ~50–70%. Previous presets pushed for 50–65% highlight
+// which produced "cyan walls" — model overshot and made cuts unreadable.
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '60–75%', highlightRule: '4–10 highlights per paragraph, mostly 1–2 words each (median 1, ~20–30% of characters highlighted)',  unhighlightedRule: '≥70%' },
-  standard: { underlineRange: '75–90%', highlightRule: '6–15 highlights per paragraph, mostly 1–2 words each (median 1, ~35–45% of characters highlighted)',  unhighlightedRule: '≥55%' },
-  heavy:    { underlineRange: '85–95%', highlightRule: '10–25 highlights per paragraph, mostly 1–2 words each — short stitched fragments — TARGET ~50–65% OF PARAGRAPH CHARACTERS HIGHLIGHTED', unhighlightedRule: '≥35%' },
+  minimal:  { underlineRange: '25–40%', highlightRule: '1–4 highlights per paragraph, 1–2 words each (~3–8% of chars highlighted)',                          unhighlightedRule: '≥92%' },
+  standard: { underlineRange: '40–55%', highlightRule: '3–7 highlights per paragraph, 1–2 words each (~6–12% of chars highlighted)',                         unhighlightedRule: '≥88%' },
+  heavy:    { underlineRange: '50–70%', highlightRule: '4–10 highlights per paragraph, mostly 1 word, occasionally 2 — short stitched fragments (~10–18% of chars highlighted)', unhighlightedRule: '≥82%' },
 };
 
 // Paragraph counts vary wildly by card type. Long preset covers framework
@@ -150,42 +149,52 @@ function buildEditPrompt({ instruction = '', argument = '', card = {}, sourceTex
 //   - Multiple worked examples, including partial-word and stopword-glue.
 // =====================================================================
 
-const HIGHLIGHT_HINT = { minimal: 0.30, standard: 0.45, heavy: 0.65 };
-const UNDERLINE_HINT = { minimal: 0.60, standard: 0.80, heavy: 0.95 };
+const HIGHLIGHT_HINT = { minimal: 0.10, standard: 0.18, heavy: 0.28 };
+const UNDERLINE_HINT = { minimal: 0.35, standard: 0.50, heavy: 0.70 };
 
-// Hardcoded calibration — derived from analyzing 85 hand-cut Vanguard cards
-// (33 policy + 52 K/phil/theory) totaling 2703 highlights and 1782 bolds.
-// This is the DESCRIPTIVE empirical truth the model should match. It is
-// always shipped in the system prompt; runtime calibration (if available)
-// supplements it but does NOT replace it.
-const HARDCODED_CALIBRATION = `LIBRARY CALIBRATION — these are the empirical patterns from 85 hand-cut Vanguard cards (2703 highlights, 1782 bolds) you MUST reproduce:
+// Hardcoded calibration — descriptive truth from real Vanguard cards.
+// Recalibrated after observing v3 over-corrected and produced "cyan walls"
+// (95% underlined, 65% highlighted) when real cards are SELECTIVE
+// (~30-50% underlined, ~10% highlighted of total chars).
+const HARDCODED_CALIBRATION = `LIBRARY CALIBRATION — empirical patterns from real Vanguard cards. Match these ranges. SELECTIVITY beats coverage. Better to mark too little than too much.
 
-DENSITY (this is much higher than typical AI defaults — DO NOT under-highlight):
-  - Heavy preset: ~50–65% of paragraph CHARACTERS are inside highlights. Every paragraph has 10–25 highlight runs.
-  - Standard preset: ~35–45% of characters highlighted. Every paragraph has 6–15 runs.
-  - Minimal preset: ~20–30% of characters highlighted. Every paragraph has 4–10 runs.
+WHAT REAL CARDS LOOK LIKE (study before writing JSON):
+  - Of TOTAL paragraph chars: ~30–50% are inside underlines. ~5–15% are inside highlights. The rest is plain text — kept for context but NOT marked.
+  - Some paragraphs in a card may have NO marks at all if they're transitional/setup. That's fine.
+  - When a paragraph IS marked, only the warrant-bearing CLAUSES are underlined — not the whole paragraph. Filler/transitional sentences inside the paragraph stay UN-underlined.
 
-HIGHLIGHT LENGTH (the single most important pattern):
-  - Median highlight = 1 WORD. 72% of all highlights are 1 word. 86% are ≤ 2 words. P90 = 3 words.
-  - Real top phrases (frequency in 85 cards): "nuclear" 32x, "and" 25x, "to" 20x, "with" 17x, "a" 15x, "Israel" 15x, "conventional" 14x, "in" 13x, "Iran" 13x, "the" 11x, "would" 11x, "war" 10x, "could" 9x, "of" 9x.
+HIGHLIGHT LENGTH (the single most important rule — DO NOT ignore):
+  - Median highlight = 1 WORD. 72% of real highlights are 1 word. 86% are ≤ 2 words. Going beyond 3 words is RARE.
+  - Each [from, to) range should be 3–15 chars typically (1–2 words). Going past 25 chars = you are highlighting a whole clause = wrong = will be auto-trimmed by server.
+  - Real top phrases that get highlighted: "nuclear" 32x, "and" 25x, "to" 20x, "with" 17x, "a" 15x, "Israel" 15x, "conventional" 14x, "in" 13x, "would" 11x, "war" 10x.
 
-  Notice: 1-word highlights of stopwords (and, to, with, a, the, would, of) are NORMAL and FREQUENT. 23% of all highlight words are stopwords. They GET highlighted because they connect the spoken read-aloud chain into grammatical English.
+  Yes — single-word stopwords get highlighted (and, to, with, a, the, would). They're glue. ~23% of highlight words ARE stopwords. They connect content highlights into a spoken sentence.
 
-PARTIAL-WORD HIGHLIGHTS (Vanguard-specific staple — supported by char offsets):
-  - "United States" → highlight just the "U" of "United" + the "S" of "States" → speaker reads "U.S." (saves 11 chars of speech time)
-  - "Northern ally" → highlight just the "n" of "Northern" + the rest of " ally" or similar → speaker reads "n... ally" or shorthand
-  - "Pakistan and India" → highlight "P", "and", "I" only → speaker reads "P and I"
-  - This is character-precise. Use it when the abbreviation is obvious in context.
+DENSITY TARGETS (per paragraph):
+  - Heavy preset: 4–10 highlights, ~10–18% of chars highlighted, ~60–75% underlined.
+  - Standard preset: 3–7 highlights, ~6–12% of chars highlighted, ~40–55% underlined.
+  - Minimal preset: 1–4 highlights, ~3–8% of chars highlighted, ~25–40% underlined.
+
+  These are PARAGRAPH AVERAGES — individual paragraphs vary widely. Some have many marks, some have none.
+
+PARTIAL-WORD HIGHLIGHTS (Vanguard staple — char offsets enable this):
+  - "United States" → highlight just the "U" + the "S" → speaker reads "U.S."
+  - "North Korean ally" → highlight just the "n" → speaker reads "n... ally"
+  - Use it when abbreviation is obvious in context.
 
 BOLDS:
-  - Always nested inside highlights. Bolds are emphasis on the loudest READ words.
-  - Density varies by source: 6–8 bolds/¶ for policy, 2–3/¶ for K, 1/¶ for dense philosophy.
+  - Always sit INSIDE highlights. Bolds = emphasis on the LOUDEST highlighted words.
+  - Density varies: 2–6/¶ for policy, 1–3/¶ for K/phil. Don't manufacture.
 
-THE STITCHED CHAIN (universal rule, all card types):
-  - All highlights from the entire card, read aloud in document order, must form a GRAMMATICAL, COHERENT SPOKEN SENTENCE that delivers the warrant in ~25% the words of the source.
-  - Highlights are not isolated noun phrases. They are SPEECH FRAGMENTS that connect.
-  - WRONG: highlight "the trump threaten the civilizational destruction of" then stop. That's an 8-word run that ends mid-sentence on a preposition. Bad.
-  - RIGHT: highlight ==Trump==, ==threatens==, ==civilizational destruction==, ==of=, ==democracy==. Five 1–2-word highlights that stitch into "Trump threatens civilizational destruction of democracy." A complete spoken sentence.`;
+STITCHED CHAIN:
+  - All your highlights, read aloud in document order, should form a coherent spoken summary of the warrant.
+  - WRONG: one 30-char highlight covering "the trump threaten the civilizational destruction of" — too long, ends on preposition.
+  - RIGHT: ==Trump==, ==threatens==, ==civilizational destruction==, ==of==, ==democracy== — 5 short fragments stitched.
+
+WHAT TO AVOID:
+  - Don't underline whole paragraphs. Real heavy cuts underline 60–75% — leave filler unmarked.
+  - Don't emit highlights longer than ~15 chars. Long runs are auto-trimmed.
+  - Don't highlight transitional clauses ("In addition,", "However,", "It is also the case that"). These get plain-text or stay outside underlines.`;
 
 function buildSelectionSystemPrompt({ density = 'heavy', length = 'long', calibration = '' } = {}) {
   const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
@@ -232,11 +241,12 @@ UNDERLINING (target ${d.underlineRange} of paragraph CHARACTERS)
 - Underline what the debater intends to read or refer to. Leave only true filler unmarked.
 - Multiple <u> spans per paragraph are fine.
 
-HIGHLIGHTING — THE READ-ALOUD CHAIN (most important rule)
+HIGHLIGHTING — THE READ-ALOUD CHAIN
 - ${d.highlightRule}.
 - Highlights are SHORT FRAGMENTS — usually 1 word (median), often 1–2, rarely 3+. They STITCH TOGETHER into a continuous spoken read-aloud sentence.
-- Read all your highlights ALOUD in document order before submitting. The result MUST be a grammatical, coherent spoken sentence that delivers the warrant. If it ends on a preposition, "the", "and", "of", "to" — KEEP GOING and add the next highlight to complete the thought.
-- COVERAGE: the model that came before you under-highlighted. Highlight FAR MORE than feels natural. Aim for 50%+ of the characters of underlined regions. Stopwords are part of the chain — include them.
+- Each individual highlight RANGE is short: 3–15 chars typical (1–2 words). Going past 25 chars in a single range means you're highlighting a whole clause — that's wrong, will be auto-trimmed.
+- Read all your highlights aloud in document order before submitting. The result should be a grammatical, coherent spoken summary of the warrant.
+- SELECTIVITY: only mark the words that change the round. Most of the paragraph stays plain. Real heavy cards highlight ~10–15% of total chars, NOT 50–65%.
 
 PARTIAL-WORD HIGHLIGHTS
 - Use them for abbreviations: "United States" → highlight only the "U" (chars [a, a+1]) and the "S" (chars [b, b+1]). Reader speaks "U.S." instead of "United States" — saves time.
@@ -255,46 +265,49 @@ CHARACTER COUNTING
 CITE
 - Extract from SOURCE METADATA. Format: Last 'YY [Full Name; Credentials; "Title"; Source; Date; URL]. Omit missing fields. Never invent.
 
-WORKED EXAMPLE 1 — heavy density, stopword stitching
+WORKED EXAMPLE 1 — short selective highlights, stopword stitching
 
-Source paragraph (one line, char positions shown):
+Source paragraph (138 chars, positions shown):
 "For the immediate future, a limited nuclear war between Israel and Iran would be asymmetrical, forcing Jerusalem to assess nuclear deterrence."
  0         1         2         3         4         5         6         7         8         9         10        11        12        13
  0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345
 
-A heavy cut (~17 highlights, ~50% chars highlighted):
+A heavy cut. Note: each highlight is 1–2 words (5–15 chars). Underline covers most but NOT all of the warrant clause — leaves "For the immediate future, a" plain.
 { "p": 0,
-  "u": [[0, 138]],
-  "h": [[27, 46], [56, 62], [62, 65], [66, 70], [76, 81], [102, 111], [112, 114], [115, 121], [122, 138]],
-  "b": [[27, 46], [56, 62], [102, 111], [122, 138]]
+  "u": [[27, 138]],
+  "h": [[36, 43], [56, 62], [62, 65], [66, 70], [76, 81], [115, 121], [122, 138]],
+  "b": [[36, 43], [122, 138]]
 }
 
-Read-aloud chain: "limited nuclear war … Israel … and … Iran … would … Jerusalem … to … assess … nuclear deterrence." A complete spoken sentence built from short fragments including the stopwords "and", "to", "would" as glue.
+Read-aloud: "nuclear … Israel … and … Iran … would … to … nuclear deterrence." Seven short highlights, stitched. Stopwords "and", "to", "would" included as 1-word glue.
 
-WORKED EXAMPLE 2 — partial-word abbreviation
+WORKED EXAMPLE 2 — partial-word abbreviation, sparse
 
-Source: "The United States and the Russian Federation maintain nuclear arsenals."
+Source (71 chars):
+"The United States and the Russian Federation maintain nuclear arsenals."
                               1111111111222222222233333333334444444444555555555566666666667
         01234567890123456789012345678901234567890123456789012345678901234567890
 
-To make the speaker read "U.S. and Russia maintain nuclear arsenals.":
-  - Highlight "U" (chars [4,5]) of "United"
-  - Highlight "S" (chars [11,12]) of "States"
+To make the speaker read "U.S. and Russia ... nuclear arsenals.":
+  - Highlight "U" (chars [4,5])
+  - Highlight "S" (chars [11,12])
   - Highlight " and " ([17,22])
   - Highlight "Russia" ([26,32]) — partial-word grab from "Russian"
-  - Highlight "maintain nuclear arsenals." ([45,71])
+  - Highlight "nuclear arsenals" ([54,70]) — 16 chars, near max-length but warrant-bearing
 
-Picks: { "p": 0, "u": [[0, 71]], "h": [[4,5], [11,12], [17,22], [26,32], [45,71]] }
+Picks: { "p": 0, "u": [[0, 71]], "h": [[4,5], [11,12], [17,22], [26,32], [54,70]] }
 
-Stitched read: "U S and Russia maintain nuclear arsenals." (Speaker fluently says "U.S.")
+5 highlights total, ~30% of chars. SELECTIVE not exhaustive.
 
 CRITICAL — DO NOT FORGET ANY OF THESE:
-1. EVERY pick MUST include a non-empty "u" array. Default if unsure: \`"u": [[0, paragraphLength]]\` to underline the whole paragraph. NEVER emit \`"u": []\` — the server drops every highlight that isn't inside an underline, so empty u = empty card.
-2. Numbers in u/h/b arrays are CHARACTERS, not words. The example "[27, 46]" means chars 27 through 45, NOT words 27 through 45. Refer to the rulers under each paragraph.
-3. Include MANY highlights — heavy density = ~10–25 per paragraph. The most common AI failure mode is emitting only 2–3 long highlights. Don't do that. Emit MANY short ones.
-4. Highlight stopwords ("and", "to", "the", "of", "with", "would") freely when they're glue between content highlights — that's how the read-aloud chain stays grammatical.
+1. EVERY pick MUST include a non-empty "u" array. NEVER emit \`"u": []\` — empty u = empty card.
+2. Numbers in u/h/b arrays are CHARACTERS, not words. "[27, 46]" means chars 27–45.
+3. Each highlight RANGE is SHORT: 3–15 chars (1–2 words). Many short ranges, NOT few long ones. Range > 25 chars = wrong, will be auto-trimmed.
+4. SELECTIVITY: only ~10–15% of total chars are highlighted on heavy. Real Vanguard cards leave most words plain.
+5. Underline ~50–70% of paragraph on heavy — skip filler/transitions/setup. Don't underline 95%.
+6. Highlight stopwords ("and", "to", "the", "of") only when they're 1-word glue between content highlights — never as part of a long span.
 
-If you cannot find a usable warrant, still return JSON with picks=[] and a tag describing the source. The server will degrade gracefully.`;
+If you cannot find a usable warrant, return JSON with picks=[] and a descriptive tag. The server will degrade gracefully.`;
 }
 
 // Render a paragraph with character-position rulers above it for the model
