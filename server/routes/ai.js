@@ -1013,6 +1013,15 @@ ${truncated}
   }
 });
 
+// Returns the persisted calibration summary (aggregate stats only — no
+// individual card content). Used to inspect what the analyzer learned
+// from the library so we can bake high-value findings into the prompt.
+router.get('/cutter-calibration', (_req, res) => {
+  const cal = getCalibration();
+  if (!cal) return res.status(404).json({ error: 'no_calibration_yet' });
+  res.json(cal);
+});
+
 router.get('/tokens', (req, res) => res.json(getTokenStats()));
 
 router.get('/health', (req, res) => res.json({
