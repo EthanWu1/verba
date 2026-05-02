@@ -238,11 +238,11 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
   }
 
   const truncated = smartTruncate(bodyText, budget.input);
-  // Pull library calibration so the prompt carries the user's empirical
-  // voice: typical paragraph counts, highlight density, top dropped words,
-  // common sentence skeletons. Cached for 1 hour. Falls back to no-calibration
-  // when the library has fewer than 8 saved cards.
-  const calibration = buildCalibrationSnippet(getCalibration({ userId: req.user && req.user.id }));
+  // Pull library calibration — globally aggregated patterns from the entire
+  // saved-cards table (typical paragraph counts, highlight density, top
+  // dropped words, common sentence skeletons). Cached for 1 hour. Skips
+  // calibration when the library has fewer than 8 saved cards.
+  const calibration = buildCalibrationSnippet(getCalibration());
   const systemPrompt = buildSystemPrompt({ density, length, calibration });
   const userMsg = buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length });
 
@@ -663,11 +663,11 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
   const density = normalizeDensity(req.query.density);
   const length = normalizeLength(req.query.length);
   const budget = LENGTH_BUDGETS[length];
-  // Pull library calibration so the prompt carries the user's empirical
-  // voice: typical paragraph counts, highlight density, top dropped words,
-  // common sentence skeletons. Cached for 1 hour. Falls back to no-calibration
-  // when the library has fewer than 8 saved cards.
-  const calibration = buildCalibrationSnippet(getCalibration({ userId: req.user && req.user.id }));
+  // Pull library calibration — globally aggregated patterns from the entire
+  // saved-cards table (typical paragraph counts, highlight density, top
+  // dropped words, common sentence skeletons). Cached for 1 hour. Skips
+  // calibration when the library has fewer than 8 saved cards.
+  const calibration = buildCalibrationSnippet(getCalibration());
   const systemPrompt = buildSystemPrompt({ density, length, calibration });
 
   if (!query.trim() && !url.trim() && !fileToken.trim()) {
