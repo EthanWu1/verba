@@ -30,15 +30,24 @@ const LIMIT = Number(flag('limit', '1000'));
 const USER  = flag('user', null);
 const AS_JSON = has('json');
 
-function findBodyColumn(db) {
-  // Different schema versions name the body column differently. Probe.
+// Detect storage layout. Two known schemas:
+//   A) payload-JSON: user_saved_cards.payload = { tag, cite, body_markdown, ... } as JSON
+//   B) direct columns: body_markdown / body etc.
+function detectSchema(db) {
   const cols = db.prepare(`PRAGMA table_info(user_saved_cards)`).all();
   if (!cols.length) return null;
   const names = new Set(cols.map(c => c.name));
+  if (names.has('payload')) return { kind: 'payload' };
   for (const cand of ['body_markdown', 'bodyMarkdown', 'body', 'body_md']) {
-    if (names.has(cand)) return cand;
+    if (names.has(cand)) return { kind: 'column', bodyCol: cand };
   }
   return null;
+}
+
+// Backwards compat shim — older callers expected a string column name.
+function findBodyColumn(db) {
+  const s = detectSchema(db);
+  return s ? (s.kind === 'payload' ? 'payload' : s.bodyCol) : null;
 }
 
 // Quality filter — only pull cards that look like real, well-cut evidence:
@@ -49,39 +58,52 @@ function findBodyColumn(db) {
 //   5) tag and cite present (skips drafts / failures)
 // Sample is pulled from the WHOLE table, randomized so we don't bias to one
 // epoch or one user's style. Returns up to LIMIT cards.
-function pickCards(db, bodyCol) {
-  const where = USER ? 'WHERE userId = ? AND' : 'WHERE';
+// Pull a quality sample. Returns [{ id, body }] where body is body_markdown
+// extracted from the appropriate place (payload JSON or a direct column).
+function pickCards(db, _ignoredBodyCol) {
+  const schema = detectSchema(db);
+  if (!schema) return [];
+  const userClause = USER ? 'userId = ? AND' : '';
   const params = USER ? [USER] : [];
+
+  if (schema.kind === 'payload') {
+    // Quality filter applies AFTER JSON-parse, so over-pull then filter in JS.
+    const pool = db.prepare(`
+      SELECT id, payload
+      FROM user_saved_cards
+      WHERE ${userClause} payload IS NOT NULL
+      ORDER BY RANDOM()
+      LIMIT ?
+    `).all(...params, Math.max(LIMIT * 3, 600));
+    const out = [];
+    for (const r of pool) {
+      let p; try { p = JSON.parse(r.payload); } catch { continue; }
+      const body = p && (p.body_markdown || p.bodyMarkdown || p.body);
+      if (!body || typeof body !== 'string') continue;
+      if (body.length < 800 || body.length > 8000) continue;
+      if (!body.includes('==') || !body.includes('<u>')) continue;
+      const tag = String(p.tag || '').trim();
+      if (!tag || /untitled/i.test(tag)) continue;
+      const cite = String(p.cite || '').trim();
+      if (!cite) continue;
+      out.push({ id: r.id, body });
+      if (out.length >= LIMIT) break;
+    }
+    return out;
+  }
+
+  const bc = schema.bodyCol;
   const sql = `
-    SELECT id, ${bodyCol} AS body
+    SELECT id, ${bc} AS body
     FROM user_saved_cards
-    ${where}
-      ${bodyCol} IS NOT NULL
-      AND length(${bodyCol}) BETWEEN 800 AND 8000
-      AND ${bodyCol} LIKE '%==%'
-      AND ${bodyCol} LIKE '%<u>%'
-      AND tag IS NOT NULL AND length(trim(tag)) > 0 AND tag NOT LIKE '%untitled%'
-      AND cite IS NOT NULL AND length(trim(cite)) > 0
+    WHERE ${userClause} ${bc} IS NOT NULL
+      AND length(${bc}) BETWEEN 800 AND 8000
+      AND ${bc} LIKE '%==%'
+      AND ${bc} LIKE '%<u>%'
     ORDER BY RANDOM()
     LIMIT ?
   `;
-  try {
-    return db.prepare(sql).all(...params, LIMIT);
-  } catch (e) {
-    // Schema variants may not have tag/cite columns — fall back to a softer filter.
-    const fallback = `
-      SELECT id, ${bodyCol} AS body
-      FROM user_saved_cards
-      ${where}
-        ${bodyCol} IS NOT NULL
-        AND length(${bodyCol}) BETWEEN 800 AND 8000
-        AND ${bodyCol} LIKE '%==%'
-        AND ${bodyCol} LIKE '%<u>%'
-      ORDER BY RANDOM()
-      LIMIT ?
-    `;
-    return db.prepare(fallback).all(...params, LIMIT);
-  }
+  return db.prepare(sql).all(...params, LIMIT);
 }
 
 function stripFormatMarks(s) {
@@ -877,42 +899,45 @@ function prettyReport(s) {
   return lines.join('\n');
 }
 
-// Public API for server-side calibration. Pulls QUALITY cards (random
-// sample, not 'most recent') with the same filter the CLI uses: must have
-// highlights, underlines, real tag + cite, body length 800–8000.
+// Public API for server-side calibration. Random quality-card sample with
+// schema autodetect (payload-JSON or direct body column).
 function summarizeFromDb({ limit = 300, userId = null } = {}) {
   const db = getDb();
-  const bodyCol = findBodyColumn(db);
-  if (!bodyCol) return { cards: 0 };
+  const schema = detectSchema(db);
+  if (!schema) return { cards: 0 };
   const userClause = userId ? 'userId = ? AND' : '';
   const params = userId ? [userId] : [];
-  const fullSql = `
-    SELECT id, ${bodyCol} AS body
-    FROM user_saved_cards
-    WHERE ${userClause}
-          ${bodyCol} IS NOT NULL
-      AND length(${bodyCol}) BETWEEN 800 AND 8000
-      AND ${bodyCol} LIKE '%==%'
-      AND ${bodyCol} LIKE '%<u>%'
-      AND tag  IS NOT NULL AND length(trim(tag))  > 0 AND tag  NOT LIKE '%untitled%'
-      AND cite IS NOT NULL AND length(trim(cite)) > 0
-    ORDER BY RANDOM()
-    LIMIT ?
-  `;
-  const fallbackSql = `
-    SELECT id, ${bodyCol} AS body
-    FROM user_saved_cards
-    WHERE ${userClause}
-          ${bodyCol} IS NOT NULL
-      AND length(${bodyCol}) BETWEEN 800 AND 8000
-      AND ${bodyCol} LIKE '%==%'
-      AND ${bodyCol} LIKE '%<u>%'
-    ORDER BY RANDOM()
-    LIMIT ?
-  `;
-  let rows;
-  try { rows = db.prepare(fullSql).all(...params, limit); }
-  catch { rows = db.prepare(fallbackSql).all(...params, limit); }
+
+  let rows = [];
+  if (schema.kind === 'payload') {
+    const pool = db.prepare(`
+      SELECT id, payload FROM user_saved_cards
+      WHERE ${userClause} payload IS NOT NULL
+      ORDER BY RANDOM() LIMIT ?
+    `).all(...params, Math.max(limit * 3, 600));
+    for (const r of pool) {
+      let p; try { p = JSON.parse(r.payload); } catch { continue; }
+      const body = p && (p.body_markdown || p.bodyMarkdown || p.body);
+      if (!body || typeof body !== 'string') continue;
+      if (body.length < 800 || body.length > 8000) continue;
+      if (!body.includes('==') || !body.includes('<u>')) continue;
+      const tag = String(p.tag || '').trim();
+      if (!tag || /untitled/i.test(tag)) continue;
+      const cite = String(p.cite || '').trim();
+      if (!cite) continue;
+      rows.push({ id: r.id, body });
+      if (rows.length >= limit) break;
+    }
+  } else {
+    const bc = schema.bodyCol;
+    rows = db.prepare(`
+      SELECT id, ${bc} AS body FROM user_saved_cards
+      WHERE ${userClause} ${bc} IS NOT NULL
+        AND length(${bc}) BETWEEN 800 AND 8000
+        AND ${bc} LIKE '%==%' AND ${bc} LIKE '%<u>%'
+      ORDER BY RANDOM() LIMIT ?
+    `).all(...params, limit);
+  }
   const stats = rows.map(r => analyzeCard(r.body));
   return summarize(stats);
 }
