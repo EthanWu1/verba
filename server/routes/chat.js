@@ -124,16 +124,14 @@ const { parseCommand, buildExplainPrompt, buildAnalyticPrompt, buildBlockPrompt 
 const retrieval = require('../services/chatRetrieval');
 const { complete, completeStream, parseJSON } = require('../services/llm');
 
-// Defaults chosen for cost/quality balance:
+// Defaults — chosen by VERIFIED OpenRouter availability + cost/quality:
 //   FAST: gemini-2.5-flash — strong reasoning at ~$0.30/$2.50 per 1M; fast TTFT.
-//   BLOCK: claude-haiku-4.6 — Anthropic instruction-following discipline for
-//          /block which must produce strict JSON + verbatim card refs. Haiku
-//          is ~$0.80/$4.00 per 1M, a fraction of Sonnet, while staying highly
-//          reliable on structured output. The chat code falls back across
-//          the chain on soft errors, so a 400 from one model isn't fatal.
+//   BLOCK: claude-sonnet-4.6 — confirmed-working Anthropic ID. Haiku-4.6 was
+//          rejected by OpenRouter ("not a valid model ID") so we use Sonnet
+//          for /block until a verified cheaper Anthropic ID is identified.
 // Override either via CHAT_MODEL_FAST / CHAT_MODEL_BLOCK env vars.
 const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'google/gemini-2.5-flash';
-const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'anthropic/claude-haiku-4.6';
+const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'anthropic/claude-sonnet-4.6';
 
 // Pull selected context docs (full text) so the LLM grounds its answer in the
 // user's attached files rather than only the FTS-recalled snippet.

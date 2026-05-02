@@ -31,6 +31,51 @@
     document.getElementById('chat-thread-title').textContent = threadTitle;
   }
 
+  // Minimal but solid markdown → HTML for chat replies. Handles bold, italic,
+  // headings (# ##), inline code, code fences, bullet/numbered lists, blockquotes,
+  // links, paragraphs. Escapes HTML first to prevent injection.
+  function renderMarkdown(src) {
+    let s = String(src || '');
+    // Escape HTML
+    s = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Code fences ```lang\ncode\n```
+    s = s.replace(/```([a-z0-9_+-]*)?\n([\s\S]*?)```/gi, (_, lang, code) =>
+      `<pre><code${lang ? ` class="lang-${lang}"` : ''}>${code.replace(/\n$/, '')}</code></pre>`);
+    // Inline code `x`
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+    // Headings (line-leading)
+    s = s.replace(/^###### (.+)$/gm, '<h6>$1</h6>')
+         .replace(/^##### (.+)$/gm, '<h5>$1</h5>')
+         .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+         .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+         .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+         .replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    // Bold **x**
+    s = s.replace(/\*\*([^*\n][^*]*?)\*\*/g, '<strong>$1</strong>');
+    // Italic *x* (must come AFTER bold; avoid eating the asterisk in lists)
+    s = s.replace(/(^|[^*\w])\*(?!\s)([^*\n]+?)\*(?!\w)/g, '$1<em>$2</em>');
+    // Links [text](url)
+    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Bullet / numbered lists — group consecutive list lines
+    s = s.replace(/(?:^[ \t]*(?:[-*+] |\d+\. ).+(?:\n|$))+/gm, (block) => {
+      const items = block.trim().split('\n').map(line =>
+        '<li>' + line.replace(/^[ \t]*(?:[-*+] |\d+\. )/, '') + '</li>'
+      ).join('');
+      const isOrdered = /^\s*\d+\. /.test(block);
+      return `<${isOrdered ? 'ol' : 'ul'}>${items}</${isOrdered ? 'ol' : 'ul'}>`;
+    });
+    // Blockquotes
+    s = s.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    // Paragraphs: split on double newlines, wrap if not already a block element
+    s = s.split(/\n{2,}/).map(part => {
+      const t = part.trim();
+      if (!t) return '';
+      if (/^<(h\d|ul|ol|pre|blockquote)/.test(t)) return t;
+      return '<p>' + t.replace(/\n/g, '<br>') + '</p>';
+    }).join('\n');
+    return s;
+  }
+
   function renderMessage(m) {
     if (m.command === '/block' && m.blockJson) {
       msgsEl.appendChild(blockCard(m));
@@ -38,7 +83,12 @@
     }
     const el = document.createElement('div');
     el.className = 'chat-msg ' + m.role;
-    el.textContent = m.content;
+    if (m.role === 'assistant') {
+      el.innerHTML = renderMarkdown(m.content || '');
+    } else {
+      // User messages stay as plain text — no markdown rendering on input.
+      el.textContent = m.content;
+    }
     msgsEl.appendChild(el);
   }
 
@@ -109,19 +159,79 @@
     inputEl.value = ''; autogrow();
     renderMessage({ role:'user', content:text, command:null });
     const asstEl = document.createElement('div');
-    asstEl.className = 'chat-msg assistant';
+    asstEl.className = 'chat-msg assistant pending';
+    asstEl.innerHTML = '<span class="chat-label">Assistant</span><div class="thinking"><span class="thinking-dot"></span><span class="thinking-text"></span></div>';
     msgsEl.appendChild(asstEl);
     scrollBottom();
 
+    // Rotating "thinking" messages while waiting for first token. Replaces a
+    // generic "Thinking…" with debate-flavored variations that swap every 1.8s.
+    const THINKING_LINES = [
+      'Pulling threads of the argument',
+      'Stress-testing the warrant',
+      'Hunting for a tighter answer',
+      'Walking through the logic',
+      'Weighing the impact calculus',
+      'Looking up source paragraphs',
+      'Sorting offense from defense',
+      'Building the chain',
+      'Checking for turn-around risk',
+      'Refining the response',
+      'Tracing the link story',
+      'Drafting carefully',
+    ];
+    const thinkingTextEl = asstEl.querySelector('.thinking-text');
+    let thinkingIdx = Math.floor(Math.random() * THINKING_LINES.length);
+    if (thinkingTextEl) thinkingTextEl.textContent = THINKING_LINES[thinkingIdx];
+    const thinkingTimer = setInterval(() => {
+      if (!asstEl.classList.contains('pending')) { clearInterval(thinkingTimer); return; }
+      thinkingIdx = (thinkingIdx + 1 + Math.floor(Math.random() * 3)) % THINKING_LINES.length;
+      if (thinkingTextEl) thinkingTextEl.textContent = THINKING_LINES[thinkingIdx];
+    }, 1800);
+
+    // Smooth typewriter: SSE tokens often arrive in chunks (5–80 chars). Buffer
+    // them and reveal at a steady rate via requestAnimationFrame so the UI
+    // feels like character-by-character typing instead of jumpy bursts.
     let streamed = '';
+    let revealed = '';
+    let revealRaf = null;
+    let bodyEl = null;
+    const REVEAL_CHARS_PER_FRAME = 3;
+    const ensureBody = () => {
+      if (bodyEl) return bodyEl;
+      asstEl.classList.remove('pending');
+      asstEl.innerHTML = '<span class="chat-label">Assistant</span><div class="chat-msg-body"></div>';
+      bodyEl = asstEl.querySelector('.chat-msg-body');
+      return bodyEl;
+    };
+    const tickReveal = () => {
+      revealRaf = null;
+      if (revealed.length >= streamed.length) return;
+      revealed = streamed.slice(0, revealed.length + REVEAL_CHARS_PER_FRAME);
+      ensureBody().innerHTML = renderMarkdown(revealed);
+      scrollBottom();
+      if (revealed.length < streamed.length) revealRaf = requestAnimationFrame(tickReveal);
+    };
+
     const contextIds = (global.ChatContext && global.ChatContext.getSelectedIds)
       ? Array.from(global.ChatContext.getSelectedIds())
       : [];
     await global.ChatStream.stream(currentThreadId, text, {
       extra: { contextIds },
       onStart: () => {},
-      onToken: (t) => { streamed += t; asstEl.textContent = streamed; scrollBottom(); },
+      onToken: (t) => {
+        streamed += t;
+        if (!revealRaf) revealRaf = requestAnimationFrame(tickReveal);
+      },
       onDone: async (payload) => {
+        clearInterval(thinkingTimer);
+        // Flush any remaining unrevealed text immediately so the user sees the full reply.
+        if (revealRaf) { cancelAnimationFrame(revealRaf); revealRaf = null; }
+        revealed = streamed;
+        if (streamed) {
+          ensureBody().innerHTML = renderMarkdown(streamed);
+          scrollBottom();
+        }
         if (payload && payload.assistantMessage && payload.assistantMessage.command === '/block') {
           asstEl.remove();
           renderMessage(payload.assistantMessage);
@@ -137,11 +247,14 @@
         if (typeof global.refreshUsage === 'function') global.refreshUsage();
       },
       onError: (e) => {
+        clearInterval(thinkingTimer);
+        if (revealRaf) { cancelAnimationFrame(revealRaf); revealRaf = null; }
+        asstEl.classList.remove('pending');
         if (e && e.status === 429) {
-          asstEl.textContent = '⚠ Free plan: 20 messages / month reached. Upgrade to keep chatting.';
+          asstEl.innerHTML = '<span class="chat-label">Assistant</span><div class="chat-msg-body">⚠ Free plan: 20 messages / month reached. Upgrade to keep chatting.</div>';
           if (typeof global.refreshUsage === 'function') global.refreshUsage();
         } else {
-          asstEl.textContent = '⚠ ' + (e.message || 'error');
+          asstEl.innerHTML = '<span class="chat-label">Assistant</span><div class="chat-msg-body">⚠ ' + (e.message || 'error') + '</div>';
         }
       },
     });

@@ -1,0 +1,49 @@
+{
+  "url": "http://localhost:8765/public/_design/chat-integration-test.html",
+  "timestamp": "2026-04-30T22:39:29.930Z",
+  "shots": [
+    {
+      "viewport": "desktop",
+      "png": "C:\\Users\\ethan\\OneDrive\\Desktop\\verba\\.claude\\worktrees\\frosty-bhaskara-7011fe\\docs\\design\\visual-checks\\chat-integration-desktop.png",
+      "loadError": null,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "checks": {
+        "overflow": false,
+        "brokenImgs": [],
+        "missingAlt": 0,
+        "tinyText": 2,
+        "fixedClipping": 0
+      }
+    },
+    {
+      "viewport": "tablet",
+      "png": "C:\\Users\\ethan\\OneDrive\\Desktop\\verba\\.claude\\worktrees\\frosty-bhaskara-7011fe\\docs\\design\\visual-checks\\chat-integration-tablet.png",
+      "loadError": null,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "checks": {
+        "overflow": false,
+        "brokenImgs": [],
+        "missingAlt": 0,
+        "tinyText": 2,
+        "fixedClipping": 0
+      }
+    },
+    {
+      "viewport": "mobile",
+      "png": "C:\\Users\\ethan\\OneDrive\\Desktop\\verba\\.claude\\worktrees\\frosty-bhaskara-7011fe\\docs\\design\\visual-checks\\chat-integration-mobile.png",
+      "loadError": null,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "checks": {
+        "overflow": false,
+        "brokenImgs": [],
+        "missingAlt": 0,
+        "tinyText": 2,
+        "fixedClipping": 0
+      }
+    }
+  ],
+  "failures": []
+}

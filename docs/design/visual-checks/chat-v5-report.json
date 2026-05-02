@@ -1,0 +1,49 @@
+{
+  "url": "http://localhost:8765/public/_design/chat.html",
+  "timestamp": "2026-04-30T22:29:57.280Z",
+  "shots": [
+    {
+      "viewport": "desktop",
+      "png": "C:\\Users\\ethan\\OneDrive\\Desktop\\verba\\.claude\\worktrees\\frosty-bhaskara-7011fe\\docs\\design\\visual-checks\\chat-v5-desktop.png",
+      "loadError": null,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "checks": {
+        "overflow": false,
+        "brokenImgs": [],
+        "missingAlt": 0,
+        "tinyText": 13,
+        "fixedClipping": 0
+      }
+    },
+    {
+      "viewport": "tablet",
+      "png": "C:\\Users\\ethan\\OneDrive\\Desktop\\verba\\.claude\\worktrees\\frosty-bhaskara-7011fe\\docs\\design\\visual-checks\\chat-v5-tablet.png",
+      "loadError": null,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "checks": {
+        "overflow": false,
+        "brokenImgs": [],
+        "missingAlt": 0,
+        "tinyText": 13,
+        "fixedClipping": 0
+      }
+    },
+    {
+      "viewport": "mobile",
+      "png": "C:\\Users\\ethan\\OneDrive\\Desktop\\verba\\.claude\\worktrees\\frosty-bhaskara-7011fe\\docs\\design\\visual-checks\\chat-v5-mobile.png",
+      "loadError": null,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "checks": {
+        "overflow": false,
+        "brokenImgs": [],
+        "missingAlt": 0,
+        "tinyText": 13,
+        "fixedClipping": 0
+      }
+    }
+  ],
+  "failures": []
+}
