@@ -124,10 +124,16 @@ const { parseCommand, buildExplainPrompt, buildAnalyticPrompt, buildBlockPrompt 
 const retrieval = require('../services/chatRetrieval');
 const { complete, completeStream, parseJSON } = require('../services/llm');
 
-// google/gemini-2.5-flash-lite was a preview that went 400 once retired.
-// Defaults below are known-good on OpenRouter as of 2026-04; override with env.
-const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'google/gemini-2.0-flash-001';
-const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'deepseek/deepseek-chat';
+// Defaults chosen for cost/quality balance:
+//   FAST: gemini-2.5-flash — strong reasoning at ~$0.30/$2.50 per 1M; fast TTFT.
+//   BLOCK: claude-haiku-4.6 — Anthropic instruction-following discipline for
+//          /block which must produce strict JSON + verbatim card refs. Haiku
+//          is ~$0.80/$4.00 per 1M, a fraction of Sonnet, while staying highly
+//          reliable on structured output. The chat code falls back across
+//          the chain on soft errors, so a 400 from one model isn't fatal.
+// Override either via CHAT_MODEL_FAST / CHAT_MODEL_BLOCK env vars.
+const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'google/gemini-2.5-flash';
+const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'anthropic/claude-haiku-4.6';
 
 router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), async (req, res) => {
   const userId = req.user.id;
