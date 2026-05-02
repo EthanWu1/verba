@@ -142,39 +142,27 @@ async function cutCardV2({
   const systemPrompt = buildSelectionSystemPrompt({ density, length, calibration });
   const userPrompt = buildSelectionUserPrompt({ argument, candidates, meta, cite, density, length });
 
-  // Stage 3 — single LLM call, strict json_schema, prompt-cached system.
+  // Stage 3 — single LLM call.
+  //  - response_format: json_object (broadly supported; json_schema strict
+  //    causes 400s on Haiku 4.5 via some OpenRouter backends).
+  //  - cache_control: ephemeral on the system message (forces Anthropic-direct
+  //    routing inside complete() so prompt caching actually activates).
+  //  - The reconstructor's defensive validation drops any malformed spans,
+  //    so strict schema enforcement is unnecessary.
   const t0 = Date.now();
-  let llmResult;
-  try {
-    llmResult = await llm.completeJSON({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userPrompt },
-      ],
-      schema: CARD_PICKS_JSON_SCHEMA,
-      temperature: 0.1,
-      maxTokens: 1500,
-      forceModel: primaryModel,
-      fallbackModel,
-      cacheSystem: true,
-    });
-  } catch (err) {
-    // Even json_schema strict can fail if the provider rejects schema mode.
-    // Try one degraded call without schema; reconstructor's defensive
-    // validation will drop any garbage spans.
-    console.warn('[cutCardV2] schema mode failed, retrying without schema:', err.message);
-    llmResult = await llm.completeJSON({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: userPrompt },
-      ],
-      schema: null,
-      temperature: 0.1,
-      maxTokens: 1500,
-      forceModel: fallbackModel,
-      cacheSystem: true,
-    });
-  }
+  const llmResult = await llm.completeJSON({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user',   content: userPrompt },
+    ],
+    schema: null,                  // use json_object mode — universal compat
+    temperature: 0.1,
+    maxTokens: 1500,
+    forceModel: primaryModel,
+    fallbackModel,
+    cacheSystem: true,
+    // provider hint is auto-set inside complete() for Anthropic models
+  });
   const elapsed = Date.now() - t0;
 
   // Stage 4 — deterministic reconstruction.
@@ -213,6 +201,24 @@ async function cutCardV2({
     elapsedMs: elapsed,
     cached: false,
   };
+
+  // One-line success log — visible at-a-glance in PM2/journalctl so you can
+  // monitor model usage, cache hit rate, and pipeline health in production.
+  const u = llmResult.usage || {};
+  const cacheRead = u.prompt_tokens_details?.cached_tokens || 0;
+  const cacheWrite = u.prompt_tokens_details?.cache_write_tokens || 0;
+  const cacheHitRate = u.prompt_tokens
+    ? Math.round((cacheRead / u.prompt_tokens) * 100)
+    : 0;
+  console.log(
+    `[cutCardV2] ok in ${elapsed}ms model=${llmResult.model} ` +
+    `paragraphs=${rebuilt.stats.paragraphs} ` +
+    `prompt=${u.prompt_tokens || '?'}tok completion=${u.completion_tokens || '?'}tok ` +
+    `cache=${cacheHitRate}%(read=${cacheRead}/write=${cacheWrite}) ` +
+    `cost=$${(u.cost || 0).toFixed(5)}` +
+    (rebuilt.fallback ? ' FALLBACK' : '') +
+    (llmResult.fallback ? ' SCHEMA_FALLBACK' : '')
+  );
 
   if (useCache) cacheSet(key, payload);
   return payload;
