@@ -1,0 +1,73 @@
+name: Run library migrations on Hetzner
+
+# Manual trigger only. The migrations rewrite hundreds of thousands of rows
+# and take 30-90 minutes; do not run on every push. Workflow_dispatch lets
+# you pick which migration to run from the Actions tab UI.
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: 'Which migration to run'
+        required: true
+        type: choice
+        default: 'all'
+        options:
+          - all                       # full chain: fingerprints → containment → indexer
+          - fingerprints               # rewrite contentFingerprint + canonicalGroupKey
+          - containment                # collapse same-article variant clusters
+          - indexer                    # populate cards_vec via OpenRouter embeddings
+          - dry-run-fingerprints       # preview only, no DB writes
+          - dry-run-containment        # preview only, no DB writes
+
+concurrency:
+  group: migrate-prod
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: SSH + run selected migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    steps:
+      - name: Migrate
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_PRIVATE_KEY }}
+          port:     ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 240m
+          script: |
+            set -e
+            cd ${{ secrets.SERVER_PATH }}
+            echo "── Pulling main (so migration scripts are current) ──"
+            git fetch origin main && git reset --hard origin/main
+
+            STEP="${{ inputs.step }}"
+            echo "── Running step: $STEP ──"
+
+            run_fp()       { node server/scripts/migrateFingerprints.js --commit; }
+            run_cont()     { node server/scripts/migrateContainment.js  --commit; }
+            run_idx()      { node server/scripts/indexCardsVec.js; }
+            run_fp_dry()   { node server/scripts/migrateFingerprints.js; }
+            run_cont_dry() { node server/scripts/migrateContainment.js;  }
+
+            case "$STEP" in
+              all)
+                run_fp
+                run_cont
+                run_idx
+                ;;
+              fingerprints)         run_fp ;;
+              containment)          run_cont ;;
+              indexer)              run_idx ;;
+              dry-run-fingerprints) run_fp_dry ;;
+              dry-run-containment)  run_cont_dry ;;
+              *) echo "Unknown step: $STEP"; exit 1 ;;
+            esac
+
+            echo "── Migration complete; restarting pm2 so prepared statements re-plan ──"
+            pm2 restart ${{ secrets.PM2_PROCESS_NAME }} --update-env || true
+            echo "── Done ──"

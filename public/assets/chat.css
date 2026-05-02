@@ -41,13 +41,47 @@
 .chat-msg { padding:14px 24px; font:400 15px/1.7 var(--font-display); color:var(--ink); position:relative; max-width:none; border-radius:0; background:transparent; border:none; }
 
 /* User: right-aligned soft bubble (Claude-style) */
-.chat-msg.user { align-self:flex-end; max-width:min(48ch, calc(100% - 24px)); margin:8px 24px 8px auto; padding:11px 16px; background:var(--panel, #F9FAFB); border:1px solid var(--line); border-radius:18px 18px 4px 18px; font-size:14.5px; }
+.chat-msg.user { align-self:flex-end; max-width:min(40ch, calc(100% - 24px)); margin:8px 24px 8px auto; padding:8px 14px; background:var(--panel, #F9FAFB); border:1px solid var(--line); border-radius:14px 14px 4px 14px; font-size:13.5px; line-height:1.5; }
 
 /* Assistant: full-width text, no avatar / no dot. Alignment is the only
    differentiator (right user bubble vs left full-width text). */
-.chat-msg.assistant { align-self:stretch; padding-left:24px; padding-right:24px; padding-top:18px; padding-bottom:22px; min-height:24px; }
+.chat-msg.assistant { align-self:stretch; padding:14px 24px 22px; min-height:24px; }
 .chat-msg.assistant + .chat-msg.user { margin-top:14px; }
 .chat-msg.user + .chat-msg.assistant { margin-top:6px; }
+.chat-msg.assistant .chat-label { display:block; font:600 10.5px/1 var(--font-mono); text-transform:uppercase; letter-spacing:.14em; color:var(--ok, #047857); margin-bottom:10px; }
+.chat-msg.assistant .chat-msg-body { font:400 14.5px/1.65 var(--font-display); color:var(--ink); }
+.chat-msg.assistant .chat-msg-body p { margin:0 0 10px; }
+.chat-msg.assistant .chat-msg-body p:last-child { margin-bottom:0; }
+.chat-msg.assistant .chat-msg-body h1,
+.chat-msg.assistant .chat-msg-body h2,
+.chat-msg.assistant .chat-msg-body h3,
+.chat-msg.assistant .chat-msg-body h4 { font:600 15.5px/1.3 var(--font-display); margin:14px 0 6px; color:var(--ink); letter-spacing:-0.01em; }
+.chat-msg.assistant .chat-msg-body h1 { font-size:18px; }
+.chat-msg.assistant .chat-msg-body h2 { font-size:16.5px; }
+.chat-msg.assistant .chat-msg-body ul,
+.chat-msg.assistant .chat-msg-body ol { margin:6px 0 12px; padding-left:22px; }
+.chat-msg.assistant .chat-msg-body li { margin:3px 0; }
+.chat-msg.assistant .chat-msg-body li > p { margin:0; display:inline; }
+.chat-msg.assistant .chat-msg-body strong { font-weight:600; color:var(--ink); }
+.chat-msg.assistant .chat-msg-body em { font-style:italic; }
+.chat-msg.assistant .chat-msg-body code { font:500 13px/1 var(--font-mono, ui-monospace, monospace); background:var(--panel); border:1px solid var(--line-soft); border-radius:4px; padding:1px 5px; }
+.chat-msg.assistant .chat-msg-body pre { background:var(--panel); border:1px solid var(--line-soft); border-radius:8px; padding:10px 12px; overflow-x:auto; margin:8px 0; }
+.chat-msg.assistant .chat-msg-body pre code { background:none; border:none; padding:0; font-size:12.5px; }
+.chat-msg.assistant .chat-msg-body blockquote { border-left:2px solid var(--line-2); padding:0 0 0 12px; margin:8px 0; color:var(--muted); }
+.chat-msg.assistant .chat-msg-body a { color:var(--ink); text-decoration:underline; text-decoration-color:var(--line-2); text-underline-offset:3px; }
+.chat-msg.assistant .chat-msg-body a:hover { text-decoration-color:var(--ink); }
+
+/* Rotating "thinking" messages while assistant is generating */
+.chat-msg.assistant.pending .thinking { font:italic 500 13.5px/1.5 var(--font-display); color:var(--muted); display:inline-block; min-height:20px; transition:opacity .25s; }
+.chat-msg.assistant.pending .thinking::after { content:""; display:inline-block; width:0; }
+.chat-msg.assistant.pending .thinking-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:var(--ok, #047857); margin-right:8px; vertical-align:middle; animation:chat-pulse 1.2s ease-in-out infinite; }
+@keyframes chat-pulse {
+  0%, 100% { opacity:.3; transform:scale(.8); }
+  50% { opacity:1; transform:scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-msg.assistant.pending .thinking-dot { animation:none; opacity:.7; }
+}
 
 /* Composer — rounded card, claude-style */
 .chat-composer-wrap { padding:8px 24px 24px; background:var(--bg, #fff); max-width:760px; margin:0 auto; width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; flex:0 0 auto; }

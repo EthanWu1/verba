@@ -35,10 +35,10 @@ const { reachable } = require('../services/urlCheck');
 const fileCache = require('../services/fileCache');
 const { saveCutCardForUser } = require('../services/autoSaveCard');
 
-// Card cutting: try Haiku first (cheap), escalate to Sonnet on hedge / parse
-// failure / fidelity miss. Override via env: CARD_CUT_MODEL is the cheap
-// first-try, CARD_CUT_FALLBACK_MODEL is the premium retry.
-const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-haiku-4.6';
+// Card cutting: claude-haiku-latest auto-resolves to the newest valid Haiku
+// on OpenRouter (avoids the haiku-4.6 "not a valid model ID" issue). Falls
+// back to verified Sonnet-4.6 on hedge / parse failure.
+const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-haiku-latest';
 const CARD_CUT_FALLBACK_MODEL = process.env.CARD_CUT_FALLBACK_MODEL || 'anthropic/claude-sonnet-4.6';
 
 // Detect refusal / hedge text in raw model output so we can escalate even
@@ -106,12 +106,31 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
     });
 
     let card;
+    let rawContent = result.content;
     let parsedOk = false;
-    try { card = parseJSON(result.content); parsedOk = true; } catch {}
+    try { card = parseJSON(rawContent); parsedOk = true; } catch {}
 
-    // Escalate to Sonnet if Haiku hedged, returned non-JSON, or produced an
-    // empty body. Same prompt + same source — usually fixes it on the retry.
-    if (!parsedOk || isLikelyHedge(result.content) || !card?.body_markdown) {
+    // Retry 1: same model with explicit "JSON only" nudge if parse failed.
+    if (!parsedOk) {
+      try {
+        const retry = await complete({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMsg },
+            { role: 'user', content: 'IMPORTANT: your previous reply was NOT valid JSON. Reply NOW with the JSON object only — must start with `{`, end with `}`, no markdown fence, no commentary, no prose preamble. Re-cut the same source text from scratch.' },
+          ],
+          temperature: 0.05,
+          maxTokens: budget.output,
+          forceModel: CARD_CUT_MODEL,
+        });
+        rawContent = retry.content;
+        try { card = parseJSON(rawContent); parsedOk = true; } catch {}
+      } catch {}
+    }
+
+    // Retry 2: escalate to Sonnet if Haiku still produced non-JSON, hedged,
+    // or returned an empty body. Same prompt — usually clean output here.
+    if (!parsedOk || isLikelyHedge(rawContent) || !card?.body_markdown) {
       console.warn(`[cut-card] escalating to ${CARD_CUT_FALLBACK_MODEL} (hedge/parse failure on ${CARD_CUT_MODEL})`);
       try {
         const escalated = await complete({
@@ -123,8 +142,8 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
           maxTokens: budget.output,
           forceModel: CARD_CUT_FALLBACK_MODEL,
         });
-        try { card = parseJSON(escalated.content); parsedOk = true; }
-        catch { parsedOk = false; }
+        rawContent = escalated.content;
+        try { card = parseJSON(rawContent); parsedOk = true; } catch {}
       } catch (e) {
         console.warn(`[cut-card] fallback model failed:`, e.message);
       }
@@ -132,15 +151,15 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
 
     if (!parsedOk) {
       return res.status(502).json({
-        error: 'AI returned malformed JSON. Try again - models sometimes need a second attempt.',
-        raw: (card ? JSON.stringify(card) : result.content || '').slice(0, 400),
+        error: 'AI returned malformed JSON twice in a row. Try again — sometimes the model needs a third attempt, or use the paste fallback.',
+        raw: rawContent.slice(0, 400),
       });
     }
 
     if (!card.body_markdown && !card.tag) {
       return res.status(502).json({
         error: 'AI output is missing required fields (tag/body_markdown).',
-        raw: result.content.slice(0, 300),
+        raw: rawContent.slice(0, 300),
       });
     }
 

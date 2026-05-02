@@ -21,6 +21,8 @@ const state = {
   pastResults:  [],
   pastShown:    10,
   links:        [],
+  linksLoaded:  false,  // true once /api/me/tabroom-link has resolved at least once
+
   rankings:     { event: (TWEAKS.format||'cx').toUpperCase(), season: '', rows: [] },
   libCards:     [],
   libSelected:  null,
@@ -153,6 +155,7 @@ async function loadUser(){
 async function loadLinks(){
   const data = await fetchJSON('/api/me/tabroom-link');
   state.links = (data && data.links) || [];
+  state.linksLoaded = true;
   renderTeamChip();
 }
 function renderTeamChip(){
@@ -171,11 +174,14 @@ function renderTeamChip(){
 /* ── TODAY ──────────────────────────────────────────────── */
 async function loadToday(){
   setTodayKicker();
+  // Scope counts/topics to the user's own saved cards (user_saved_cards) —
+  // the global /api/library/* endpoints reflect the imported corpus, which
+  // overstated "your library" by a factor of 1000+ on the Today page.
   const [hist, upcoming, analytics, count] = await Promise.all([
     fetchJSON('/api/history'),
     fetchJSON('/api/me/tabroom/upcoming'),
-    fetchJSON('/api/library/analytics'),
-    fetchJSON('/api/library/count'),
+    fetchJSON('/api/mine/analytics'),
+    fetchJSON('/api/mine/count'),
   ]);
   state.history    = (hist && hist.items) || [];
   state.upcoming   = (upcoming && upcoming.tournaments) || [];
@@ -256,7 +262,9 @@ function renderTopicList(analytics){
     meta.textContent = total ? `${total.toLocaleString()} cards` : '';
     return;
   }
-  meta.textContent = total ? `${total.toLocaleString()} cards across hundreds of topics` : 'Across hundreds of topics';
+  meta.textContent = total
+    ? `${total.toLocaleString()} card${total===1?'':'s'} · ${topics.length} topic${topics.length===1?'':'s'}`
+    : 'Cut a card to populate this list.';
   root.innerHTML = topics.map(t => {
     const label = t.label || t.name || '';
     const count = t.count || 0;
@@ -350,6 +358,84 @@ async function loadTournaments(){
   state.upcoming = (up && up.tournaments) || [];
   renderUpcomingGrid();
   loadAllTournaments();
+  loadMyTournaments();
+}
+
+// "Your tournaments" — past tournaments for the linked Tabroom debater. Each
+// row opens the pairings view for that entry, keeping parity with the rest of
+// the tournaments page. No-op when no debater is linked.
+async function loadMyTournaments(){
+  const root = $('my-tourn-list');
+  const lbl  = $('my-tourn-lbl');
+  if(!root) return;
+  // If loadLinks hasn't resolved yet, show a loading state and re-run once it
+  // does. Otherwise a fast tab-switch into Tournaments races loadLinks() and
+  // shows "No debater linked" even when one is configured.
+  if(!state.linksLoaded){
+    lbl.textContent = 'Your tournaments';
+    root.innerHTML = `<div class="empty"><b>Loading…</b></div>`;
+    setTimeout(loadMyTournaments, 200);
+    return;
+  }
+  if(!state.links || !state.links.length){
+    lbl.textContent = 'Your tournaments';
+    root.innerHTML = `<div class="empty"><b>No debater linked</b>Link a Tabroom team in the top bar to see your tournaments.</div>`;
+    return;
+  }
+  root.innerHTML = `<div class="empty"><b>Loading your tournaments…</b></div>`;
+  const data = await fetchJSON('/api/me/tabroom/results');
+  const tournaments = (data && data.tournaments) || [];
+  if(!tournaments.length){
+    lbl.textContent = 'Your tournaments · 0';
+    root.innerHTML = `<div class="empty"><b>No past tournaments yet</b>Tabroom hasn't recorded results for the linked debater this season.</div>`;
+    return;
+  }
+  // Sort newest first (server already does, but defensive in case).
+  tournaments.sort((a,b) => String(b.startDate||'').localeCompare(String(a.startDate||'')));
+  lbl.textContent = `Your tournaments · ${tournaments.length}`;
+  // Each tournament can have multiple entries (e.g. linked code competed in LD
+  // and PF). Flatten to one row per entry so each pairings view is reachable.
+  const rows = [];
+  for(const t of tournaments){
+    for(const e of (t.entries || [])){
+      rows.push({
+        tournId:    t.tournId,
+        name:       t.name,
+        startDate:  t.startDate,
+        endDate:    t.endDate,
+        eventAbbr:  e.eventAbbr,
+        entryId:    e.entryId,
+        teamCode:   e.teamCode,
+        schoolName: e.schoolName,
+      });
+    }
+  }
+  if(!rows.length){
+    root.innerHTML = `<div class="empty"><b>No entries</b>The linked debater has no recorded entries.</div>`;
+    return;
+  }
+  root.innerHTML = `
+    <div class="tr-head" style="grid-template-columns:1.6fr 100px 110px 80px"><span>Tournament</span><span>Date</span><span>Event</span><span></span></div>
+    ${rows.map((r, i) => {
+      const range = fmtDateRange(r.startDate, r.endDate);
+      return `
+        <div class="tr-row" data-myidx="${i}" style="grid-template-columns:1.6fr 100px 110px 80px;cursor:pointer">
+          <div class="tr-team"><span class="nm">${escapeHTML(r.name||'Tournament')}</span>${r.teamCode?`<span class="sch">${escapeHTML(r.teamCode)}</span>`:''}</div>
+          <span class="tr-cell mono">${escapeHTML(range || '—')}</span>
+          <span class="tr-cell mono">${escapeHTML((r.eventAbbr||'').toUpperCase() || '—')}</span>
+          <span class="tr-cell" style="color:var(--muted);text-align:right">Pairings →</span>
+        </div>`;
+    }).join('')}`;
+  $$('.tr-row[data-myidx]', root).forEach(el => {
+    el.addEventListener('click', () => {
+      const r = rows[Number(el.dataset.myidx)];
+      if(!r || !r.entryId){ showToast('No pairings available for this entry'); return; }
+      // Clear the toc detail context so the pairings "back" button returns to
+      // the tournaments list rather than a stale TOC detail view.
+      state.tocDetail = null;
+      openEntryPairings(r.entryId, r.eventAbbr || '');
+    });
+  });
 }
 
 function bindAllTournamentsControls(){
@@ -1812,13 +1898,15 @@ async function runCutterPaste(){
   if(bodyText.length < 50){ showToast('Paste at least 50 characters'); return; }
   const cite = $('cut-paste-cite').value.trim();
   const url = state.pasteUrl || '';
+  const argument = ($('cut-arg') && $('cut-arg').value || '').trim();
 
   termOpen('verba cut · pasted text');
   termLine('$', 'verba cut · ' + bodyText.length.toLocaleString() + ' chars');
-  termLine('→', 'cut-card · LLM passage selection + highlight');
-  const cut = await runCutLLM({ bodyText, cite, meta: { url, source: url ? new URL(url).host : 'pasted' } });
+  if (argument) termLine('→', 'argument · ' + argument.slice(0, 120));
+  termLine('→', 'cut-card · selecting strongest passage');
+  const cut = await runCutLLM({ argument, bodyText, cite, meta: { url, source: url ? new URL(url).host : 'pasted' } });
   if(!cut) return;
-  termClose();
+  setTimeout(termClose, 1200);
   $('cut-paste').classList.remove('on');
   showCutResult({ url, cite, bodyText, ...cut });
 }
@@ -1838,18 +1926,18 @@ function loadCutter(){
 function renderCutterRecent(){
   const root = $('cut-recent');
   const meta = $('cut-recent-meta');
-  const items = (state.history || []).slice(0, 8);
+  const items = (state.history || []).filter(h => h.kind === 'cut').slice(0, 8);
   if(!items.length){
     root.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>No recent cuts</b>Paste a URL above to get started.</div>`;
     meta.textContent = '';
     return;
   }
-  meta.textContent = `${state.history.length} recent`;
-  root.innerHTML = items.map(it => {
+  meta.textContent = `${items.length} recent`;
+  root.innerHTML = items.map((it, i) => {
     const tag  = it.tag || it.title || it.query || it.url || '(untitled)';
     const cite = shortCiteFor(it) || it.author || it.host || '';
     return `
-      <div class="recent-card">
+      <div class="recent-card" data-recent-idx="${i}" role="button" tabindex="0">
         <div class="head">
           <span class="when">${escapeHTML(fmtRel(it.at))}</span>
         </div>
@@ -1857,6 +1945,37 @@ function renderCutterRecent(){
         ${cite ? `<div class="cite">${escapeHTML(cite)}</div>` : ''}
       </div>`;
   }).join('');
+  $$('.recent-card[data-recent-idx]', root).forEach(el => {
+    const open = () => openRecentCut(items[Number(el.dataset.recentIdx)]);
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); } });
+  });
+}
+
+// Open a card from the "Recently cut" rail. Prefers the saved card id (which
+// lives in user_saved_cards via /api/library/cards/:id), falling back to the
+// raw history entry so even pre-cardId rows still preview something.
+async function openRecentCut(entry){
+  if(!entry) return;
+  let card = null;
+  if (entry.cardId){
+    try {
+      const detail = await fetchJSON(`/api/library/cards/${encodeURIComponent(entry.cardId)}`);
+      if (detail && detail.card) card = detail.card;
+    } catch {}
+  }
+  if (!card){
+    // Synthesize a minimal card from the history entry.
+    card = {
+      tag: entry.tag || entry.title || '(untitled)',
+      cite: entry.cite || '',
+      url: entry.url || '',
+      body_markdown: '',
+    };
+  }
+  showCutResult({ card, url: card.url || entry.url || '', cite: card.cite || entry.cite || '' });
+  const cardEl = $('cut-card');
+  if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function termOpen(label){
@@ -1878,12 +1997,14 @@ async function runCutterScrape(){
   const url = $('cut-q').value.trim();
   if(!url){ $('cut-q').focus(); return; }
   if(!/^https?:\/\//i.test(url)){ showToast('Paste a full http(s) URL'); return; }
+  const argument = ($('cut-arg') && $('cut-arg').value || '').trim();
 
   let host = url;
   try { host = new URL(url).host.replace(/^www\./,''); } catch {}
   termOpen('verba cut · ' + host);
   await new Promise(r => setTimeout(r, 60));
   termLine('$', 'verba scrape ' + host);
+  if (argument) termLine('→', 'argument · ' + argument.slice(0, 120));
   termLine('→', 'GET ' + url);
 
   let scraped;
@@ -1917,13 +2038,14 @@ async function runCutterScrape(){
     return;
   }
   termLine('✓', 'fetched ' + (scraped.title || 'article'));
-  if(scraped.author) termLine('✓', 'author: ' + scraped.author);
-  if(scraped.date)   termLine('✓', 'date: ' + scraped.date);
-  termLine('✓', `body: ${(scraped.bodyText||'').length.toLocaleString()} chars`);
-  termLine('→', 'cut-card · LLM passage selection + highlight');
+  if(scraped.author) termLine('✓', 'author · ' + scraped.author);
+  if(scraped.date)   termLine('✓', 'date · ' + scraped.date);
+  termLine('✓', `body · ${(scraped.bodyText||'').length.toLocaleString()} chars`);
+  termLine('→', 'cut-card · selecting strongest passage');
 
   // Chain to LLM cut
   const cut = await runCutLLM({
+    argument,
     bodyText: scraped.bodyText || '',
     cite:     scraped.cite     || '',
     meta:     {
@@ -1935,7 +2057,8 @@ async function runCutterScrape(){
     },
   });
   if(!cut){ return; }
-  termClose();
+  // Hold the terminal open a beat longer so the user can read the cut summary.
+  setTimeout(termClose, 1200);
   showCutResult({ ...scraped, ...cut });
 }
 
@@ -1976,15 +2099,30 @@ async function runCutLLM({ bodyText, cite, meta, argument = '' }){
     termLine('!', 'no card returned', 'err');
     return null;
   }
-  termLine('✓', 'card cut · ' + (data.card.tag || '').slice(0,60));
-  if(data.fidelity) termLine('✓', `fidelity: ${(data.fidelity.score || 0).toFixed(2)}`);
-  termLine('✓', 'saved to library', 'done');
+  // Per-step lines so the user actually sees what the LLM produced.
+  const tag = (data.card.tag || '').trim();
+  const cardCite = (data.card.cite || data.card.shortCite || cite || '').trim();
+  const md = String(data.card.body_markdown || '');
+  const paras = md.split(/\n{2,}/).filter(Boolean).length;
+  const wordCount = md.replace(/<\/?u>|==|\*\*/g, ' ').split(/\s+/).filter(Boolean).length;
+  const hlMatch = md.match(/==[\s\S]+?==/g) || [];
+  const hlWords = hlMatch.reduce((n, h) => n + h.replace(/=+/g, '').split(/\s+/).filter(Boolean).length, 0);
+  const hlPct = wordCount ? Math.round((hlWords / wordCount) * 100) : 0;
+
+  if (tag) termLine('✓', 'tag · ' + tag.slice(0, 90));
+  if (cardCite) termLine('✓', 'cite · ' + cardCite.replace(/\s+/g, ' ').slice(0, 120));
+  termLine('✓', `highlight · ${hlPct}% read-aloud across ${paras} paragraph${paras===1?'':'s'} (${wordCount} words)`);
+  if(data.fidelity) termLine('✓', `fidelity · ${(data.fidelity.matchRate || data.fidelity.score || 0).toFixed(2)} verbatim`);
+  if(data.saved && data.saved.duplicate) termLine('✓', 'duplicate · already in your library', 'done');
+  else termLine('✓', 'saved to your library', 'done');
   return data;
 }
 
 async function runCutterFile(file){
+  const argument = ($('cut-arg') && $('cut-arg').value || '').trim();
   termOpen('verba cut · ' + (file.name||'file'));
   termLine('$', 'verba parse ' + file.name);
+  if (argument) termLine('→', 'argument · ' + argument.slice(0, 120));
 
   // /api/scrape/file returns a token + preview + chars; the full body is held
   // in a server-side cache and exposed via the streaming /research-source-stream
@@ -2006,17 +2144,18 @@ async function runCutterFile(file){
     showToast('Could not read file');
     return;
   }
-  termLine('✓', `parsed ${parsed.chars?.toLocaleString()||'?'} chars`);
-  termLine('✓', 'cite: ' + (parsed.cite || ''));
-  termLine('→', 'cut-card · LLM passage selection + highlight');
+  termLine('✓', `parsed · ${parsed.chars?.toLocaleString()||'?'} chars`);
+  termLine('✓', 'cite · ' + (parsed.cite || ''));
+  termLine('→', 'cut-card · selecting strongest passage');
 
   const cut = await runCutLLM({
+    argument,
     bodyText: parsed.preview || '',
     cite:     parsed.cite || '',
     meta:     { title: parsed.title, source: parsed.filename },
   });
   if(!cut) return;
-  termClose();
+  setTimeout(termClose, 1200);
   showCutResult({
     title:    parsed.title,
     cite:     parsed.cite,
