@@ -35,11 +35,20 @@ const { reachable } = require('../services/urlCheck');
 const fileCache = require('../services/fileCache');
 const { saveCutCardForUser } = require('../services/autoSaveCard');
 
-// Card cutting demands strict instruction-following (verbatim quoting,
-// highlight markup, structured output) — but Sonnet 4.6 was overkill.
-// Haiku 4.6 inherits the same Anthropic verbatim discipline at ~25% the
-// cost. Override via CARD_CUT_MODEL env var to upgrade per request.
-const CARD_CUT_MODEL = process.env.CARD_CUT_MODEL || 'anthropic/claude-haiku-4.6';
+// Card cutting: try Haiku first (cheap), escalate to Sonnet on hedge / parse
+// failure / fidelity miss. Override via env: CARD_CUT_MODEL is the cheap
+// first-try, CARD_CUT_FALLBACK_MODEL is the premium retry.
+const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-haiku-4.6';
+const CARD_CUT_FALLBACK_MODEL = process.env.CARD_CUT_FALLBACK_MODEL || 'anthropic/claude-sonnet-4.6';
+
+// Detect refusal / hedge text in raw model output so we can escalate even
+// when JSON parsing technically succeeded but the body is empty or apologetic.
+function isLikelyHedge(content) {
+  if (!content) return true;
+  const t = String(content).toLowerCase();
+  return /\b(i (cannot|can't|am unable)|sorry|as an ai|i'?m unable|cannot produce|refuse)\b/.test(t)
+      || t.length < 80;
+}
 
 function stripFormatMarks(md) {
   return String(md || '')
@@ -97,12 +106,34 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
     });
 
     let card;
-    try {
-      card = parseJSON(result.content);
-    } catch {
+    let parsedOk = false;
+    try { card = parseJSON(result.content); parsedOk = true; } catch {}
+
+    // Escalate to Sonnet if Haiku hedged, returned non-JSON, or produced an
+    // empty body. Same prompt + same source — usually fixes it on the retry.
+    if (!parsedOk || isLikelyHedge(result.content) || !card?.body_markdown) {
+      console.warn(`[cut-card] escalating to ${CARD_CUT_FALLBACK_MODEL} (hedge/parse failure on ${CARD_CUT_MODEL})`);
+      try {
+        const escalated = await complete({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMsg },
+          ],
+          temperature: 0.1,
+          maxTokens: budget.output,
+          forceModel: CARD_CUT_FALLBACK_MODEL,
+        });
+        try { card = parseJSON(escalated.content); parsedOk = true; }
+        catch { parsedOk = false; }
+      } catch (e) {
+        console.warn(`[cut-card] fallback model failed:`, e.message);
+      }
+    }
+
+    if (!parsedOk) {
       return res.status(502).json({
         error: 'AI returned malformed JSON. Try again - models sometimes need a second attempt.',
-        raw: result.content.slice(0, 400),
+        raw: (card ? JSON.stringify(card) : result.content || '').slice(0, 400),
       });
     }
 
@@ -150,7 +181,10 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
     const MAX_FID_RETRIES = 2;
     while (!fidelity.ok && attempts < MAX_FID_RETRIES) {
       attempts++;
-      console.warn(`[cut-card] fidelity ${(fidelity.matchRate || 0).toFixed(3)} — strict retry ${attempts}/${MAX_FID_RETRIES}`);
+      // Escalate to the premium model on the LAST attempt — gives Haiku a
+      // chance first (cheap), then Sonnet to clean up if it can't.
+      const retryModel = attempts >= MAX_FID_RETRIES ? CARD_CUT_FALLBACK_MODEL : CARD_CUT_MODEL;
+      console.warn(`[cut-card] fidelity ${(fidelity.matchRate || 0).toFixed(3)} — strict retry ${attempts}/${MAX_FID_RETRIES} on ${retryModel}`);
       const fidCritique =
         `FIDELITY FAIL — your previous output altered, skipped, or re-ordered source words. ` +
         `Examples missing from SOURCE: ${(fidelity.missing || []).slice(0,5).map(m => '"' + m + '"').join(', ') || '(none surfaced)'}. ` +
@@ -163,7 +197,7 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
           ],
           temperature: 0,
           maxTokens: budget.output,
-          forceModel: CARD_CUT_MODEL,
+          forceModel: retryModel,
         });
         try {
           const retryCard = parseJSON(retry.content);
