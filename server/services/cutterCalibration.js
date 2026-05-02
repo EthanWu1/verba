@@ -23,10 +23,19 @@ const TTL_MS = 60 * 60 * 1000;   // 1 hour
 function getCalibration({ force = false, limit = 300, userId = null } = {}) {
   const now = Date.now();
   if (!force && _cache && now - _cacheAt < TTL_MS) return _cache;
+  const started = Date.now();
   try {
     const summary = summarizeFromDb({ limit, userId });
-    _cache = summary && summary.cards >= 8 ? summary : null;
-    _cacheAt = now;
+    const elapsed = Date.now() - started;
+    if (summary && summary.cards >= 8) {
+      _cache = summary;
+      _cacheAt = now;
+      console.log(`[cutterCalibration] refreshed from ${summary.cards} quality cards in ${elapsed}ms (cached 1h)`);
+    } else {
+      _cache = null;
+      _cacheAt = now;
+      console.log(`[cutterCalibration] only ${summary && summary.cards || 0} quality cards found — skipping calibration (need >=8)`);
+    }
     return _cache;
   } catch (e) {
     console.warn('[cutterCalibration] summarize failed:', e.message);
