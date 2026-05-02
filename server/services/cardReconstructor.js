@@ -38,19 +38,18 @@
  */
 
 // Density caps measured as fraction of paragraph CHARACTERS inside the mark.
-// Recalibrated against actual hand-cut Vanguard cards: ~30-50%
-// underlined, ~10% highlighted of total chars. Previous caps
-// (heavy=0.70 / 1.0) made the model emit cyan walls. Orphan-protection
-// in trimToUnderlineCap prevents "marks=0" failures with these tighter
-// caps.
+// Calibrated against actual hand-cut Vanguard cards: ~30-50% underlined,
+// ~10% highlighted, ~5% bolded.
 const HIGHLIGHT_CAPS = { minimal: 0.12, standard: 0.20, heavy: 0.32 };
 const UNDERLINE_CAPS = { minimal: 0.40, standard: 0.60, heavy: 0.80 };
+// Bold cap added to prevent the "every paragraph has 6+ bolds" failure mode.
+// Real cards: ~1 bold per ¶ on K/phil, 2-3 on policy.
+const BOLD_CAPS      = { minimal: 0.05, standard: 0.08, heavy: 0.12 };
 
 // Maximum length of a single highlight RUN. Real Vanguard highlights
-// are 1-2 words (median 1). Cap at 30 chars (~5 words) — anything
-// longer is the model trying to highlight whole clauses instead of
-// short stitched fragments.
-const MAX_HIGHLIGHT_RUN_CHARS = 30;
+// are 1-2 words (median 1). 20 chars ≈ 3-4 words — anything longer
+// is the model trying to highlight whole clauses.
+const MAX_HIGHLIGHT_RUN_CHARS = 20;
 
 // --- span normalisation -----------------------------------------------------
 
@@ -91,6 +90,38 @@ function trimMaxRun(spans, maxChars = MAX_HIGHLIGHT_RUN_CHARS) {
   return spans
     .map(s => (s[1] - s[0] > maxChars ? [s[0], s[0] + maxChars] : s))
     .filter(s => s[1] > s[0]);
+}
+
+// Snap a span to nearest word boundaries. The model emits char offsets that
+// often cut through the middle of words ("exte|nded" instead of "extended").
+// Snap conservatively — shrink mid-word edges inward to preserve readability.
+//
+// Rules:
+//  - If `from` is mid-word (text[from-1] AND text[from] are both word chars),
+//    move from forward until we hit a word boundary.
+//  - If `to` is mid-word (text[to-1] AND text[to] are both word chars),
+//    move to backward until we hit a word boundary.
+//  - If span collapses to empty after snapping, return null (drop).
+//  - Punctuation and whitespace are NOT word chars, so they act as boundaries.
+//  - Single-char highlights at word boundaries (e.g. "U" of "United" with a
+//    space before and "." after) are PRESERVED — that's the partial-word
+//    abbreviation feature.
+function snapToWordBoundaries(span, text) {
+  if (!span) return null;
+  let [from, to] = span;
+  const isWord = (i) => i >= 0 && i < text.length && /[a-zA-Z0-9]/.test(text[i]);
+
+  // Snap 'from' forward if mid-word.
+  while (from < to && isWord(from - 1) && isWord(from)) from++;
+  // Snap 'to' backward if mid-word.
+  while (to > from && isWord(to - 1) && isWord(to)) to--;
+
+  if (to <= from) return null;
+  return [from, to];
+}
+
+function snapSpansToWordBoundaries(spans, text) {
+  return spans.map(s => snapToWordBoundaries(s, text)).filter(Boolean);
 }
 
 // --- priority scoring (used when over cap) ----------------------------------
@@ -294,24 +325,33 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     const N = paragraphText.length;
     if (!N) continue;
 
-    let underlines = mergeSpans((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean));
-    let highlights = mergeSpans((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean));
-    let bolds      = mergeSpans((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean));
+    // Pipeline order:
+    //   clamp → SNAP TO WORD BOUNDARIES → merge → empty-u defense
+    //     → contain-filter → max-run trim → highlight-cap trim
+    //     → underline-cap trim → re-contain filter → bold-cap trim
+    //
+    // Snapping fixes the model's char-offset off-by-N errors that
+    // produced gibberish like "with U.S. exte" / "nded deterrence".
+    // The model emits arbitrary char positions; the server snaps them
+    // back to word boundaries so highlights are coherent.
+    const boldCap = BOLD_CAPS[density] ?? BOLD_CAPS.heavy;
 
-    // DEFENSIVE: if the model omitted underlines but emitted highlights or
-    // bolds, default to underlining the entire paragraph. Without this, the
-    // containment filter would drop every highlight/bold and the user sees
-    // a plain paragraph with no marks. This was the root cause of the
-    // "nothing formatted" failure right after the v3 char-offset switch.
+    let underlines = mergeSpans(
+      snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
+    );
+    let highlights = mergeSpans(
+      snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
+    );
+    let bolds = mergeSpans(
+      snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
+    );
+
+    // DEFENSIVE: empty u with highlights/bolds → default to whole-paragraph
+    // underline so the marks aren't orphaned by containment filter.
     if (!underlines.length && (highlights.length || bolds.length)) {
       underlines = [[0, N]];
     }
-    // Also defensive: if model emitted highlights but they all clamped out
-    // (e.g. all out-of-range) AND we still have an underline, leave it —
-    // an empty cut paragraph is better than a silent error.
     if (!underlines.length && !highlights.length && !bolds.length) {
-      // Model emitted nothing useful for this pick. Default to underlining
-      // the whole paragraph anyway so the reader sees the source clearly.
       underlines = [[0, N]];
     }
 
@@ -323,10 +363,17 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     stats.dropped.bolds      += beforeBo - bolds.length;
 
     highlights = trimMaxRun(highlights, MAX_HIGHLIGHT_RUN_CHARS);
+    bolds      = trimMaxRun(bolds, MAX_HIGHLIGHT_RUN_CHARS);
 
     const beforeHiCap = highlights.length;
     highlights = trimToHighlightCap(highlights, highlightCap, N, paragraphText);
     stats.dropped.highlights += beforeHiCap - highlights.length;
+
+    // NEW: bold-cap trim — prevents over-bolding ("Howe", "rea", "sev"
+    // failure mode where every paragraph had 6+ random bolds).
+    const beforeBoCap = bolds.length;
+    bolds = trimToHighlightCap(bolds, boldCap, N, paragraphText);
+    stats.dropped.bolds += beforeBoCap - bolds.length;
 
     const beforeUCap = underlines.length;
     underlines = trimToUnderlineCap(underlines, highlights, underlineCap, N);
@@ -414,6 +461,7 @@ module.exports = {
   CARD_PICKS_JSON_SCHEMA,
   HIGHLIGHT_CAPS,
   UNDERLINE_CAPS,
+  BOLD_CAPS,
   MAX_HIGHLIGHT_RUN_CHARS,
   // exposed for tests:
   clampSpan,
@@ -422,4 +470,6 @@ module.exports = {
   applyMarks,
   trimToHighlightCap,
   trimToUnderlineCap,
+  snapToWordBoundaries,
+  snapSpansToWordBoundaries,
 };
