@@ -41,17 +41,47 @@ function findBodyColumn(db) {
   return null;
 }
 
+// Quality filter — only pull cards that look like real, well-cut evidence:
+//   1) has at least one ==highlight==
+//   2) has at least one <u>underline</u>
+//   3) body length between 800 and 8000 chars (skips stubs and walls of text)
+//   4) at least 3 paragraphs (skips single-line cuts)
+//   5) tag and cite present (skips drafts / failures)
+// Sample is pulled from the WHOLE table, randomized so we don't bias to one
+// epoch or one user's style. Returns up to LIMIT cards.
 function pickCards(db, bodyCol) {
-  const where = USER ? 'WHERE userId = ?' : '';
+  const where = USER ? 'WHERE userId = ? AND' : 'WHERE';
   const params = USER ? [USER] : [];
   const sql = `
     SELECT id, ${bodyCol} AS body
     FROM user_saved_cards
     ${where}
-    ORDER BY rowid DESC
+      ${bodyCol} IS NOT NULL
+      AND length(${bodyCol}) BETWEEN 800 AND 8000
+      AND ${bodyCol} LIKE '%==%'
+      AND ${bodyCol} LIKE '%<u>%'
+      AND tag IS NOT NULL AND length(trim(tag)) > 0 AND tag NOT LIKE '%untitled%'
+      AND cite IS NOT NULL AND length(trim(cite)) > 0
+    ORDER BY RANDOM()
     LIMIT ?
   `;
-  return db.prepare(sql).all(...params, LIMIT);
+  try {
+    return db.prepare(sql).all(...params, LIMIT);
+  } catch (e) {
+    // Schema variants may not have tag/cite columns — fall back to a softer filter.
+    const fallback = `
+      SELECT id, ${bodyCol} AS body
+      FROM user_saved_cards
+      ${where}
+        ${bodyCol} IS NOT NULL
+        AND length(${bodyCol}) BETWEEN 800 AND 8000
+        AND ${bodyCol} LIKE '%==%'
+        AND ${bodyCol} LIKE '%<u>%'
+      ORDER BY RANDOM()
+      LIMIT ?
+    `;
+    return db.prepare(fallback).all(...params, LIMIT);
+  }
 }
 
 function stripFormatMarks(s) {
@@ -847,22 +877,42 @@ function prettyReport(s) {
   return lines.join('\n');
 }
 
-// Public API for server-side calibration: returns the same summary the CLI
-// produces, callable from anywhere in the app. Cached at the call site.
-function summarizeFromDb({ limit = 200, userId = null } = {}) {
+// Public API for server-side calibration. Pulls QUALITY cards (random
+// sample, not 'most recent') with the same filter the CLI uses: must have
+// highlights, underlines, real tag + cite, body length 800–8000.
+function summarizeFromDb({ limit = 300, userId = null } = {}) {
   const db = getDb();
   const bodyCol = findBodyColumn(db);
   if (!bodyCol) return { cards: 0 };
-  const where = userId ? 'WHERE userId = ?' : '';
+  const userClause = userId ? 'userId = ? AND' : '';
   const params = userId ? [userId] : [];
-  const sql = `
+  const fullSql = `
     SELECT id, ${bodyCol} AS body
     FROM user_saved_cards
-    ${where}
-    ORDER BY rowid DESC
+    WHERE ${userClause}
+          ${bodyCol} IS NOT NULL
+      AND length(${bodyCol}) BETWEEN 800 AND 8000
+      AND ${bodyCol} LIKE '%==%'
+      AND ${bodyCol} LIKE '%<u>%'
+      AND tag  IS NOT NULL AND length(trim(tag))  > 0 AND tag  NOT LIKE '%untitled%'
+      AND cite IS NOT NULL AND length(trim(cite)) > 0
+    ORDER BY RANDOM()
     LIMIT ?
   `;
-  const rows = db.prepare(sql).all(...params, limit);
+  const fallbackSql = `
+    SELECT id, ${bodyCol} AS body
+    FROM user_saved_cards
+    WHERE ${userClause}
+          ${bodyCol} IS NOT NULL
+      AND length(${bodyCol}) BETWEEN 800 AND 8000
+      AND ${bodyCol} LIKE '%==%'
+      AND ${bodyCol} LIKE '%<u>%'
+    ORDER BY RANDOM()
+    LIMIT ?
+  `;
+  let rows;
+  try { rows = db.prepare(fullSql).all(...params, limit); }
+  catch { rows = db.prepare(fallbackSql).all(...params, limit); }
   const stats = rows.map(r => analyzeCard(r.body));
   return summarize(stats);
 }
