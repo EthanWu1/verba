@@ -19,11 +19,11 @@ const LENGTH_BUDGETS = {
   medium: { input: 9000,  output: 4500 },
   long:   { input: 16000, output: 8000 },
 };
-// Defaults: 'standard' density (45–65% underline) is the preferred read-aloud
-// weight; 'medium' length keeps cards focused on the operative warrant rather
-// than copying the whole article.
+// Defaults: 'standard' density (60–75% underline) gives plenty of read-aloud
+// context; 'long' length keeps generous paragraph counts so the warrant has
+// room to breathe.
 function normalizeDensity(v) { return DENSITY_PRESETS[v] ? v : 'standard'; }
-function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'medium'; }
+function normalizeLength(v)  { return LENGTH_PRESETS[v]  ? v : 'long'; }
 const { validateCut } = require('../services/cutValidator');
 const { buildChatContext } = require('../services/libraryQuery');
 const { buildCite, validateCiteMatchesMeta } = require('../services/autocite');
@@ -74,6 +74,59 @@ function normalizeForCompare(s) {
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Highlight-quality enforcement: trims the model's output to match the
+// "short decisive highlights inside underlines" convention. Two rules:
+//   1) Strip any ==highlight== run >5 words. Long highlights are summaries,
+//      not read-alouds. The server breaks them into shorter clauses or drops
+//      them outright (depends on whether useful sub-spans exist).
+//   2) Strip any ==highlight== that's NOT inside <u>…</u>. Unwraps the marks
+//      so the underlying source words are kept but un-highlighted.
+function enforceHighlightDiscipline(bodyMd) {
+  if (!bodyMd) return bodyMd;
+  let s = String(bodyMd);
+
+  // Pass 1: split highlights >5 words. We do this BEFORE the inside-underline
+  // check so a long highlight that straddles a paragraph boundary gets
+  // trimmed first.
+  s = s.replace(/==([^=\n]{1,4000}?)==/g, (m, inner) => {
+    const words = inner.split(/\s+/).filter(Boolean);
+    if (words.length <= 5) return m;
+    // Keep the first 5 words highlighted; the remainder gets dropped from the
+    // highlight (reverts to plain underlined text).
+    const head = words.slice(0, 5).join(' ');
+    const tail = words.slice(5).join(' ');
+    // Preserve original spacing roughly: lead with `==head==` then space + tail.
+    return '==' + head + '== ' + tail;
+  });
+
+  // Pass 2: identify <u>…</u> spans and accept only highlights INSIDE them.
+  // Any ==…== outside an underline gets unwrapped.
+  // (Strategy: for each line, find ranges spanned by <u>…</u>, then strip ==
+  // markers whose center index falls outside any of those ranges.)
+  s = s.split('\n').map(line => {
+    const uRanges = [];
+    const uRe = /<u>[\s\S]*?<\/u>/g;
+    let m;
+    while ((m = uRe.exec(line)) !== null) {
+      uRanges.push({ start: m.index, end: m.index + m[0].length });
+    }
+    if (!uRanges.length) {
+      // No underlines at all on this line — strip every highlight.
+      return line.replace(/==([^=\n]+?)==/g, '$1');
+    }
+    // Walk highlights; if a highlight isn't fully inside any underline span,
+    // strip its == markers.
+    return line.replace(/==([^=\n]+?)==/g, (full, inner, idx) => {
+      const innerStart = idx + 2;
+      const innerEnd = idx + full.length - 2;
+      const insideU = uRanges.some(r => innerStart >= r.start && innerEnd <= r.end);
+      return insideU ? full : inner;
+    });
+  }).join('\n');
+
+  return s;
 }
 
 // Paragraph-integrity enforcement — server is the source of truth for the
@@ -369,6 +422,15 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       }
     } catch (e) {
       console.warn('[cut-card] enforceParagraphIntegrity threw:', e.message);
+    }
+
+    // Highlight-quality enforcement: trim long highlights (>5 words), strip
+    // highlights outside underlines. Runs AFTER paragraph integrity so all
+    // marks are anchored to verbatim source words.
+    try {
+      card.body_markdown = enforceHighlightDiscipline(card.body_markdown || '');
+    } catch (e) {
+      console.warn('[cut-card] enforceHighlightDiscipline threw:', e.message);
     }
 
     if (!fidelity.ok) {
