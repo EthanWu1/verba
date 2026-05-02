@@ -38,18 +38,19 @@ FORMATTING SYNTAX FOR body_markdown
 - **<u>text</u>** = bold-underlined. Reserved for the ONE loudest phrase of the whole card.
 - ==text== = highlighted read-aloud text. MUST sit entirely inside an underline. Never highlight outside <u>…</u>.
 
-HIGHLIGHT — SPARSE AND DECISIVE (THIS IS THE PRIMARY QUALITY GATE)
+HIGHLIGHT — SPARSE AND DECISIVE (PRIMARY QUALITY GATE)
 - ${d.highlightRule}.
-- HARD CAP: NEVER highlight more than 5 consecutive words. If you find yourself wanting to highlight a 6+ word run, you are doing it wrong — break it into 2 shorter highlights with un-highlighted underlined text between them.
-- Highlights are the words a DEBATER READS ALOUD, not the words that summarize the source. If a highlighted span doesn't change the round when read aloud, drop it.
-- Each highlight = a single operative concept: an actor, a causal verb, a mechanism, a magnitude, a timeframe, an impact. Pick the SHORTEST verbatim phrase that conveys it.
-  - GOOD: ==causes extinction==, ==collapse triggers recession==, ==by 2040==, ==U.S. credibility==, ==locks in catastrophic warming==
-  - BAD (too long, summarizing): ==The report concludes that nuclear exchange between major powers causes extinction with no meaningful recovery possible within a century==
-  - BAD (one word, no concept): ==extinction==, ==collapse== (alone — extend by ~1 word: ==causes extinction==, ==economic collapse==)
-- Multiple SHORT highlights per underline are normal and encouraged. Stitch them together in reading order: the result should be a terse, telegraphic warrant chain.
+- The 2–5 word target is a RULE OF THUMB, not a hard cap. The actual rule: cut every word that doesn't change the round when read aloud. Most operative phrases are 2–5 words — but a 6 or 7-word clause is fine when those words ARE the argument (e.g., ==locks in catastrophic warming above 3 degrees==). Don't pad just to extend; don't fragment a coherent claim just to shorten.
+- Highlights are READ-ALOUDS, not summaries. Each one carries one operative beat: actor, causal verb, mechanism, magnitude, timeframe, impact, internal link, or warrant tag.
+  - GOOD short: ==causes extinction==, ==by 2040==, ==U.S. credibility==, ==collapse triggers recession==
+  - GOOD longer (because the words ARE the claim): ==locks in catastrophic warming==, ==removes any window for recovery==
+  - BAD (summarizing): ==The report concludes that nuclear exchange between major powers causes extinction with no meaningful recovery possible within a century== (this is a sentence summary, not a debate read)
+  - BAD (decoration, no concept): ==extinction== alone, ==collapse== alone (extend by 1 word so it's a claim: ==causes extinction==, ==economic collapse==)
+- THE READ-ALOUD CHAIN — KEY RULE: Stitched together in document order, ALL highlights from the entire card should sound like a coherent argument. They don't have to live in one paragraph or one sentence — you can highlight the actor in paragraph 1, the causal verb in paragraph 3, and the impact in paragraph 5, as long as the chain reads cleanly when spoken.
+- Multiple SHORT highlights per underline are normal and encouraged. Plain underlined words between them = the silent context that frames the read.
 - ${d.unhighlightedRule} of words in each paragraph stay UN-highlighted (under the underline, but not in ==).
-- HIGHLIGHTS MUST SIT INSIDE <u>…</u>. Never highlight outside an underline. The server WILL strip any highlights that are outside underlines or longer than 5 words — don't make it do that.
-- EFFICIENCY: pretend each highlighted word costs you one second of speech time. Use them like that.
+- HIGHLIGHTS MUST SIT INSIDE <u>…</u>. Highlights outside an underline get stripped server-side.
+- EFFICIENCY: every highlighted word costs the debater speech time. Spend like that.
 
 BOLD RULES
 - All bold must sit INSIDE <u>…</u>. No naked bolds.
