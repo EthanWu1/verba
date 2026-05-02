@@ -291,6 +291,7 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .recent-card .head{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .recent-card .head .when{position:absolute;bottom:10px;right:14px;margin:0;font:500 10.5px/1 var(--font-mono);color:var(--muted)}
 .lib-pv-close{display:none}
+.lib-pv-handle{display:none}
 .recent-card .tag{font:600 13.5px/1.4 var(--font-display);color:var(--ink);letter-spacing:-0.005em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:pretty}
 .recent-card .cite{font:500 11.5px/1 var(--font-display);color:var(--muted)}
 
@@ -812,6 +813,7 @@ body.hl-green .hl{background:#1BFC06}
             </div>
           </div>
           <div class="lib-preview">
+            <div class="lib-pv-handle" id="lib-pv-handle" aria-hidden="true"><span></span></div>
             <button class="lib-pv-close" id="lib-pv-close" type="button" aria-label="Close preview">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
