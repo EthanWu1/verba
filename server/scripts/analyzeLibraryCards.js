@@ -941,5 +941,25 @@ if (require.main === module) {
     } else {
       console.log(prettyReport(summary));
     }
+
+    // --regenerate: force the persisted calibration file to update so the
+    // running cutter uses these new patterns immediately (no server restart).
+    if (has('regenerate')) {
+      const path = require('path');
+      const fs = require('fs');
+      const DATA_DIR = process.env.DATA_DIR
+        ? path.resolve(process.env.DATA_DIR)
+        : path.resolve(__dirname, '..', '..', 'data');
+      const CAL_FILE = path.join(DATA_DIR, 'cutter-calibration.json');
+      try {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        fs.writeFileSync(CAL_FILE, JSON.stringify(summary, null, 2));
+        console.log(`\n[regenerate] wrote calibration to ${CAL_FILE} (${summary.cards} cards)`);
+        console.log('[regenerate] restart pm2 to pick it up: pm2 restart verba');
+      } catch (e) {
+        console.error('[regenerate] failed:', e.message);
+        process.exit(1);
+      }
+    }
   })();
 }

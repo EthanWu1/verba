@@ -2,44 +2,76 @@
 /**
  * cutterCalibration.js
  *
- * Pulls the analyzer's summary against the user's saved library and
- * caches it. The cardCutter prompt builder reads this and bakes
- * library-specific examples + numbers into the system prompt so the
- * cutter copies the user's voice empirically (not just generic rules).
+ * One-and-done analyzer. The first time anything calls getCalibration()
+ * (or the server is started without a calibration file present), it pulls
+ * 300 random quality cards from the library, runs the analyzer, writes
+ * the summary to disk, and uses it forever after. Subsequent boots load
+ * the persisted JSON from disk — no re-analysis.
  *
- * Cache: in-memory, 60-minute TTL. Refreshes lazily.
+ * To re-run: delete data/cutter-calibration.json (or pass force:true,
+ * or run `node server/scripts/analyzeLibraryCards.js --regenerate`).
  */
 
+const fs = require('fs');
+const path = require('path');
 const { summarizeFromDb } = require('../scripts/analyzeLibraryCards');
 
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.resolve(__dirname, '..', '..', 'data');
+const CAL_FILE = path.join(DATA_DIR, 'cutter-calibration.json');
+
 let _cache = null;
-let _cacheAt = 0;
-const TTL_MS = 60 * 60 * 1000;   // 1 hour
+
+// Try to load persisted calibration on module load — happens once per server boot.
+function loadFromDisk() {
+  try {
+    if (fs.existsSync(CAL_FILE)) {
+      _cache = JSON.parse(fs.readFileSync(CAL_FILE, 'utf8'));
+      if (_cache && _cache.cards) {
+        console.log(`[cutterCalibration] loaded ${_cache.cards}-card calibration from ${CAL_FILE}`);
+      }
+    }
+  } catch (e) {
+    console.warn('[cutterCalibration] could not load persisted calibration:', e.message);
+    _cache = null;
+  }
+}
+loadFromDisk();
+
+function saveToDisk(summary) {
+  try {
+    fs.mkdirSync(path.dirname(CAL_FILE), { recursive: true });
+    fs.writeFileSync(CAL_FILE, JSON.stringify(summary, null, 2));
+    console.log(`[cutterCalibration] persisted ${summary.cards}-card calibration to ${CAL_FILE}`);
+  } catch (e) {
+    console.warn('[cutterCalibration] could not persist calibration:', e.message);
+  }
+}
 
 // Pull from the WHOLE database (no userId filter). The voice reference is
 // shared — patterns from any well-cut card teach the model how to format,
 // and a new user with an empty library still gets the benefit. Override
 // with userId if you ever want a per-user voice instead.
 function getCalibration({ force = false, limit = 300, userId = null } = {}) {
-  const now = Date.now();
-  if (!force && _cache && now - _cacheAt < TTL_MS) return _cache;
+  // Already calibrated? Use the cached/persisted result. No expiration.
+  if (!force && _cache) return _cache;
   const started = Date.now();
   try {
     const summary = summarizeFromDb({ limit, userId });
     const elapsed = Date.now() - started;
     if (summary && summary.cards >= 8) {
       _cache = summary;
-      _cacheAt = now;
-      console.log(`[cutterCalibration] refreshed from ${summary.cards} quality cards in ${elapsed}ms (cached 1h)`);
+      saveToDisk(summary);
+      console.log(`[cutterCalibration] one-time analysis complete: ${summary.cards} quality cards studied in ${elapsed}ms`);
     } else {
       _cache = null;
-      _cacheAt = now;
-      console.log(`[cutterCalibration] only ${summary && summary.cards || 0} quality cards found — skipping calibration (need >=8)`);
+      console.log(`[cutterCalibration] only ${summary && summary.cards || 0} quality cards found — running with static rules only (need >=8)`);
     }
     return _cache;
   } catch (e) {
-    console.warn('[cutterCalibration] summarize failed:', e.message);
-    return _cache;   // stale is better than nothing
+    console.warn('[cutterCalibration] analysis failed:', e.message);
+    return _cache;   // whatever we had
   }
 }
 
