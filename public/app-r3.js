@@ -1975,7 +1975,16 @@ async function openRecentCut(entry){
       body_markdown: '',
     };
   }
-  showCutResult({ card, url: card.url || entry.url || '', cite: card.cite || entry.cite || '' });
+  // Pass `fromHistory: true` so showCutResult doesn't re-log the click as a
+  // new history entry (was creating duplicate "Recently cut" rows on every
+  // re-open). Also short-circuit body resolution: prefer markdown then plain.
+  showCutResult({
+    card,
+    url: card.url || entry.url || '',
+    cite: card.cite || entry.cite || '',
+    bodyText: card.body_plain || '',
+    fromHistory: true,
+  });
   const cardEl = $('cut-card');
   if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -2224,12 +2233,16 @@ function showCutResult(data){
     if (!ok) { showToast('Copy failed'); throw new Error('Copy failed'); }
   });
 
-  // Log to history (server already saved the card via saveCutCardForUser).
-  fetchJSON('/api/history', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ entry: { kind:'cut', tag, cite, url, cardId: data.saved?.id, host: (function(){ try{return new URL(url||'').host}catch{return ''} })() } }),
-  }).then(()=> loadCutter());
+  // Log to history ONLY for fresh cuts. Re-opening a card from the
+  // "Recently cut" list passes fromHistory=true and must NOT create a
+  // duplicate row.
+  if (!data.fromHistory) {
+    fetchJSON('/api/history', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ entry: { kind:'cut', tag, cite, url, cardId: data.saved?.id, host: (function(){ try{return new URL(url||'').host}catch{return ''} })() } }),
+    }).then(()=> loadCutter());
+  }
 
   card.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
