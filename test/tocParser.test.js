@@ -25,20 +25,26 @@ test('fnv1a is deterministic hex', () => {
   assert.notStrictEqual(fnv1a('hello'), fnv1a('world'));
 });
 
-test('teamKeyFor uses schoolId + sorted student ids', () => {
+test('teamKeyFor uses sorted student ids (schoolId-independent)', () => {
+  // Per the tocParser design note: student IDs are globally unique in tabroom,
+  // so the team key is keyed on them — not the schoolId. This keeps a team
+  // mergeable across tournaments even when tabroom assigns different
+  // schoolIds to the same school at different sites.
   const k = teamKeyFor({ students: ['3','1','2'] }, { id: 797828 });
-  assert.strictEqual(k, '797828:1,2,3');
+  assert.strictEqual(k, 's:1,2,3');
+  // Same students, different schoolId → same key.
+  assert.strictEqual(teamKeyFor({ students: ['3','1','2'] }, { id: 12345 }), 's:1,2,3');
 });
 
-test('teamKeyFor falls back to hashed school name when schoolId missing', () => {
+test('teamKeyFor uses students even when schoolId missing', () => {
   const k = teamKeyFor({ students: ['5'] }, { id: null, name: 'Greenhill' });
-  assert.match(k, /^h:[0-9a-f]+:5$/);
+  assert.strictEqual(k, 's:5');
 });
 
 test('inferBidLevel maps full bid count → round name', () => {
   const make = (n) => ({ result_sets: [{ label: 'TOC Qualifying Bids',
     results: Array.from({ length: n }, () => ({ values: [{ value: 'Full' }] })) }] });
-  assert.deepStrictEqual(inferBidLevel(make(16)), { bidLevel: 'Octas', fullBids: 16, partialBids: 0 });
+  assert.deepStrictEqual(inferBidLevel(make(16)), { bidLevel: 'Octos', fullBids: 16, partialBids: 0 });
   assert.deepStrictEqual(inferBidLevel(make(8)), { bidLevel: 'Quarters', fullBids: 8, partialBids: 0 });
   assert.deepStrictEqual(inferBidLevel(make(4)), { bidLevel: 'Semis', fullBids: 4, partialBids: 0 });
   assert.deepStrictEqual(inferBidLevel(make(2)), { bidLevel: 'Finals', fullBids: 2, partialBids: 0 });
@@ -82,14 +88,17 @@ test('parseBallots handles bye (one ballot in section)', () => {
   assert.strictEqual(rows[0].result, 'W');
 });
 
-test('teamKeyFor falls back to entry.id when students array is empty', () => {
-  const a = teamKeyFor({ students: [], id: 42 }, { id: 797828 });
-  const b = teamKeyFor({ students: [], id: 43 }, { id: 797828 });
-  assert.strictEqual(a, '797828:e42');
+test('teamKeyFor falls back to school-name + entry-name hash when students missing', () => {
+  // No student ids → key is `h:<school-name-hash>:c:<entry-code-or-name-hash>`.
+  // Different entry codes from the same school produce different keys.
+  const a = teamKeyFor({ students: [], code: 'AB' }, { id: 797828, name: 'Greenhill' });
+  const b = teamKeyFor({ students: [], code: 'CD' }, { id: 797828, name: 'Greenhill' });
+  assert.match(a, /^h:[0-9a-f]+:c:[0-9a-f]+$/);
+  assert.match(b, /^h:[0-9a-f]+:c:[0-9a-f]+$/);
   assert.notStrictEqual(a, b);
 });
 
-test('teamKeyFor falls back to hashed entry.code when both students and id missing', () => {
-  const k = teamKeyFor({ students: [], code: 'Foo AB' }, { id: 797828 });
-  assert.match(k, /^797828:ec:[0-9a-f]+$/);
+test('teamKeyFor falls back to entry.name hash when entry.code is missing too', () => {
+  const k = teamKeyFor({ students: [], name: 'Foo AB' }, { id: 797828, name: 'Greenhill' });
+  assert.match(k, /^h:[0-9a-f]+:c:[0-9a-f]+$/);
 });

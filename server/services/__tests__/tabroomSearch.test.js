@@ -1,31 +1,36 @@
 'use strict';
 
-// Regression tests for the Tabroom search-results renderer in public/app.html.
+// Regression tests for the Tabroom team-search renderer.
 //
 // Backstory: a /codex:adversarial-review caught XSS via unescaped `e.abbr`
 // in renderSearchResults — a malicious Tabroom event abbr like
-// `<img src=x onerror=alert(1)>` would execute in the app origin (commit
-// 9adafe7 fixed it). These tests guard the fix.
+// `<img src=x onerror=alert(1)>` would execute in the app origin. The fix
+// wraps the field with the project's HTML-escape helper.
 //
-// We can't easily import the IIFE-wrapped renderer, and the project has no
-// jsdom dep. Instead we lint the source: the renderer must call escHtml on
-// every server-provided field it interpolates, and escHtml itself must
-// neutralize HTML metacharacters.
+// The renderer was later moved out of public/app.html into public/app-r3.js
+// (the modal-based linker) and the helper was renamed escHtml → escapeHTML.
+// This test no longer cares which file it lives in — it just enforces:
+//   1. Every escape helper defined under public/ neutralizes <, >, &, "
+//   2. The Tabroom team-search renderer escapes `e.abbr` (or the equivalent
+//      events-array spread) before interpolating into innerHTML.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const APP_HTML = fs.readFileSync(
-  path.resolve(__dirname, '..', '..', '..', 'public', 'app.html'),
-  'utf8'
-);
+const PUBLIC_DIR = path.resolve(__dirname, '..', '..', '..', 'public');
 
-// Re-implement escHtml here matching public/app.html's definition.
-// If app.html's escHtml ever diverges from this, the source-snapshot test
-// below will catch it.
-function escHtml(s) {
+function read(rel) {
+  return fs.readFileSync(path.join(PUBLIC_DIR, rel), 'utf8');
+}
+
+const APP_HTML = read('app.html');
+const APP_R3   = read('app-r3.js');
+const APP_MAIN = read('app-main.js');
+
+// Re-implement the escape helper here matching the project's definitions.
+function escapeHTML(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -33,49 +38,62 @@ function escHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-test('escHtml neutralizes script-injection metacharacters', () => {
+test('escapeHTML neutralizes script-injection metacharacters', () => {
   assert.equal(
-    escHtml('<img src=x onerror=alert(1)>'),
+    escapeHTML('<img src=x onerror=alert(1)>'),
     '&lt;img src=x onerror=alert(1)&gt;'
   );
-  assert.equal(escHtml('"<>&'), '&quot;&lt;&gt;&amp;');
-  assert.equal(escHtml(null), '');
-  assert.equal(escHtml(undefined), '');
+  assert.equal(escapeHTML('"<>&'), '&quot;&lt;&gt;&amp;');
+  assert.equal(escapeHTML(null), '');
+  assert.equal(escapeHTML(undefined), '');
 });
 
-test('Tabroom event abbr is wrapped in escHtml in renderSearchResults', () => {
-  // The exact production line. If someone reverts the fix, this fails.
+test('Tabroom team-search renderer escapes e.abbr before innerHTML', () => {
+  // Current production renderer (in public/app-r3.js, the link-debater modal):
+  // it builds the events string by spreading `m.events` and joining abbrs,
+  // then escapes the whole thing with escapeHTML(...) before injecting.
+  // If someone removes the wrapping escapeHTML call, this fails.
   assert.match(
-    APP_HTML,
-    /\(m\.events \|\| \[\]\)\.map\(function \(e\) \{ return escHtml\(e && e\.abbr \|\| ''\); \}\)/,
-    'renderSearchResults must escape e.abbr; raw `return e.abbr` re-introduces XSS'
+    APP_R3,
+    /escapeHTML\(\s*\(m\.events\s*\|\|\s*\[\]\)\.map\(\s*e\s*=>\s*e\.abbr\s*\|\|\s*e\.name\s*\)\.join\(\s*['"`]\s*·\s*['"`]\s*\)\s*\)/,
+    'team-search renderer must wrap the joined event abbrs with escapeHTML — raw interpolation re-introduces XSS'
   );
-
-  // Belt-and-suspenders: there must be no surviving raw `return e.abbr`
-  // in the renderer block (lines 3400–3425 area).
-  const block = APP_HTML.slice(
-    APP_HTML.indexOf('function renderSearchResults'),
-    APP_HTML.indexOf('function renderSearchResults') + 1500
+  // Belt-and-suspenders: no raw `${m.events.map(...)}` (without escapeHTML
+  // around it) sneaking back into the link-debater renderer.
+  const renderBlock = APP_R3.slice(
+    Math.max(0, APP_R3.indexOf("class=\"lnk-row\"") - 200),
+    APP_R3.indexOf("class=\"lnk-row\"") + 1200
   );
   assert.doesNotMatch(
-    block,
-    /return e\.abbr\s*[;}]/,
-    'Found unescaped `return e.abbr` in renderSearchResults — XSS regression'
+    renderBlock,
+    /\$\{[^}]*m\.events[^}]*\}/m.flags ? /\$\{(?!escapeHTML)[^}]*m\.events[^}]*\}/ : /\$\{[^}]*m\.events[^}]*\}/,
+    'Found unescaped m.events interpolation in lnk-row renderer — XSS regression'
   );
 });
 
-test('every escHtml definition in app.html escapes <, >, &, "', () => {
-  // Function declarations hoist within their IIFE, so escHtml can sit before
-  // OR after the call site — sweep all definitions instead of guessing order.
-  const re = /function\s+escHtml\s*\([^)]*\)\s*\{[\s\S]*?\n\s{0,4}\}/g;
-  const defs = APP_HTML.match(re) || [];
-  assert.ok(defs.length >= 1, 'expected at least one escHtml definition in app.html');
-  for (const def of defs) {
-    for (const needle of ['&amp;', '&lt;', '&gt;', '&quot;']) {
-      assert.ok(
-        def.includes(needle),
-        `an escHtml definition is missing ${needle} replacement: ${def.slice(0, 80)}…`
-      );
+test('every HTML-escape helper defined in public/ escapes <, >, &, "', () => {
+  // Sweep every file we ship to the browser. The helper has gone by
+  // `escHtml`, `escHTML`, and `escapeHTML` over time — match any of them.
+  const sources = [
+    { name: 'app.html',     src: APP_HTML },
+    { name: 'app-r3.js',    src: APP_R3   },
+    { name: 'app-main.js',  src: APP_MAIN },
+  ];
+  // Function declarations OR arrow assignments. The body is followed by a
+  // statement boundary so we don't over-eat.
+  const re = /(?:function\s+(?:escHtml|escHTML|escapeHTML)\s*\([^)]*\)\s*\{[\s\S]*?\n\s{0,6}\}|(?:const|let|var|function)\s+(?:escHtml|escHTML|escapeHTML)\s*[=(][\s\S]*?(?:\}|;)\s*\n)/g;
+  let total = 0;
+  for (const { name, src } of sources) {
+    const defs = src.match(re) || [];
+    for (const def of defs) {
+      total++;
+      for (const needle of ['&amp;', '&lt;', '&gt;', '&quot;']) {
+        assert.ok(
+          def.includes(needle),
+          `escape helper in ${name} is missing ${needle}: ${def.slice(0, 100)}…`
+        );
+      }
     }
   }
+  assert.ok(total >= 1, 'expected at least one escape-helper definition under public/');
 });
