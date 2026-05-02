@@ -293,6 +293,18 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .lib-pv-close{display:none}
 .lib-pv-handle{display:none}
 
+/* Prevent horizontal scroll inside the library card preview. Long URLs,
+   unbroken citations, code blocks, and wide tables/images all get clamped
+   to the panel width and wrap (or scroll within their own block). */
+.lib-preview{overflow-x:hidden}
+.lib-pv-body{overflow-x:hidden;word-break:normal;overflow-wrap:anywhere}
+.lib-pv-body *{max-width:100%;min-width:0}
+.lib-pv-body img,.lib-pv-body video,.lib-pv-body iframe{height:auto}
+.lib-pv-body pre,.lib-pv-body code{white-space:pre-wrap;overflow-wrap:anywhere}
+.lib-pv-body table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.lib-pv-body a{overflow-wrap:anywhere}
+.lib-pv-meta{overflow-wrap:anywhere;min-width:0}
+
 /* ── Animated Copy → Check button ─────────────────────────
    Themed to match the rest of the app (white surface + line border,
    ink fill on .copied as confirmation). Two icons share one 18×18
