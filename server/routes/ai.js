@@ -76,57 +76,33 @@ function normalizeForCompare(s) {
     .trim();
 }
 
-// Highlight-quality enforcement: trims the model's output to match the
-// "short decisive highlights inside underlines" convention. Two rules:
-//   1) Strip any ==highlight== run >5 words. Long highlights are summaries,
-//      not read-alouds. The server breaks them into shorter clauses or drops
-//      them outright (depends on whether useful sub-spans exist).
-//   2) Strip any ==highlight== that's NOT inside <u>…</u>. Unwraps the marks
-//      so the underlying source words are kept but un-highlighted.
+// Highlight-quality enforcement. The 5-word target is a rule of thumb in the
+// prompt — we DO NOT truncate at the server. The only hard rule we enforce
+// is structural: highlights must sit inside <u>…</u>. Long-but-valid clauses
+// pass through unchanged; bare ==highlight== outside an underline gets
+// unwrapped (text preserved, markup stripped).
 function enforceHighlightDiscipline(bodyMd) {
   if (!bodyMd) return bodyMd;
   let s = String(bodyMd);
 
-  // Pass 1: split highlights >5 words. We do this BEFORE the inside-underline
-  // check so a long highlight that straddles a paragraph boundary gets
-  // trimmed first.
-  s = s.replace(/==([^=\n]{1,4000}?)==/g, (m, inner) => {
-    const words = inner.split(/\s+/).filter(Boolean);
-    if (words.length <= 5) return m;
-    // Keep the first 5 words highlighted; the remainder gets dropped from the
-    // highlight (reverts to plain underlined text).
-    const head = words.slice(0, 5).join(' ');
-    const tail = words.slice(5).join(' ');
-    // Preserve original spacing roughly: lead with `==head==` then space + tail.
-    return '==' + head + '== ' + tail;
+  // Identify <u>…</u> spans across the WHOLE body (highlights are allowed
+  // to flow across paragraphs as long as each one sits inside an underline).
+  const uRanges = [];
+  const uRe = /<u>[\s\S]*?<\/u>/g;
+  let m;
+  while ((m = uRe.exec(s)) !== null) {
+    uRanges.push({ start: m.index, end: m.index + m[0].length });
+  }
+  if (!uRanges.length) {
+    // No underlines anywhere — strip every highlight (markers only).
+    return s.replace(/==([^=\n]+?)==/g, '$1');
+  }
+  return s.replace(/==([^=\n]+?)==/g, (full, inner, idx) => {
+    const innerStart = idx + 2;
+    const innerEnd = idx + full.length - 2;
+    const insideU = uRanges.some(r => innerStart >= r.start && innerEnd <= r.end);
+    return insideU ? full : inner;
   });
-
-  // Pass 2: identify <u>…</u> spans and accept only highlights INSIDE them.
-  // Any ==…== outside an underline gets unwrapped.
-  // (Strategy: for each line, find ranges spanned by <u>…</u>, then strip ==
-  // markers whose center index falls outside any of those ranges.)
-  s = s.split('\n').map(line => {
-    const uRanges = [];
-    const uRe = /<u>[\s\S]*?<\/u>/g;
-    let m;
-    while ((m = uRe.exec(line)) !== null) {
-      uRanges.push({ start: m.index, end: m.index + m[0].length });
-    }
-    if (!uRanges.length) {
-      // No underlines at all on this line — strip every highlight.
-      return line.replace(/==([^=\n]+?)==/g, '$1');
-    }
-    // Walk highlights; if a highlight isn't fully inside any underline span,
-    // strip its == markers.
-    return line.replace(/==([^=\n]+?)==/g, (full, inner, idx) => {
-      const innerStart = idx + 2;
-      const innerEnd = idx + full.length - 2;
-      const insideU = uRanges.some(r => innerStart >= r.start && innerEnd <= r.end);
-      return insideU ? full : inner;
-    });
-  }).join('\n');
-
-  return s;
 }
 
 // Paragraph-integrity enforcement — server is the source of truth for the
