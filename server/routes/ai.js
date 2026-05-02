@@ -35,7 +35,11 @@ const { reachable } = require('../services/urlCheck');
 const fileCache = require('../services/fileCache');
 const { saveCutCardForUser } = require('../services/autoSaveCard');
 
-const CARD_CUT_MODEL = process.env.CARD_CUT_MODEL || 'anthropic/claude-sonnet-4.6';
+// Card cutting demands strict instruction-following (verbatim quoting,
+// highlight markup, structured output) — but Sonnet 4.6 was overkill.
+// Haiku 4.6 inherits the same Anthropic verbatim discipline at ~25% the
+// cost. Override via CARD_CUT_MODEL env var to upgrade per request.
+const CARD_CUT_MODEL = process.env.CARD_CUT_MODEL || 'anthropic/claude-haiku-4.6';
 
 function stripFormatMarks(md) {
   return String(md || '')
