@@ -1,20 +1,19 @@
 'use strict';
 
+// Density presets follow the real-world debate convention: underlines mark
+// readable context (full sentences/clauses), highlights are SPARSE picks
+// inside those underlines (the operative words a debater reads aloud).
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '30–45%', highlightRule: '2–3 highlight runs per paragraph, each a complete clause (10–25 words)', unhighlightedRule: '≥70%' },
-  standard: { underlineRange: '45–65%', highlightRule: '2–4 highlight runs per paragraph, each a complete clause (15–35 words)', unhighlightedRule: '≥55%' },
-  heavy:    { underlineRange: '60–80%', highlightRule: '3–5 highlight runs per paragraph, each a complete clause (20–50 words)', unhighlightedRule: '≥40%' },
+  minimal:  { underlineRange: '50–65%', highlightRule: '3–6 SHORT highlight runs per paragraph, each 2–5 words MAX', unhighlightedRule: '≥80%' },
+  standard: { underlineRange: '60–75%', highlightRule: '4–8 SHORT highlight runs per paragraph, each 2–5 words MAX', unhighlightedRule: '≥75%' },
+  heavy:    { underlineRange: '70–85%', highlightRule: '5–10 SHORT highlight runs per paragraph, each 2–5 words MAX', unhighlightedRule: '≥70%' },
 };
 
 const LENGTH_PRESETS = {
-  short:  { paragraphRule: '3–5 complete source paragraphs', maxWords: 500 },
-  medium: { paragraphRule: '5–8 complete source paragraphs', maxWords: 1000 },
-  // 'long' is the default: pick as many whole source paragraphs as the warrant
-  // requires. Err on the longer side. If the operative warrant is in two
-  // adjacent paragraphs, use just those. If it's spread across separated
-  // sections, include the connective paragraphs so the read makes sense.
-  // No hard cap — judgment-based.
-  long:   { paragraphRule: 'as many complete source paragraphs as the warrant actually needs (typical 5–12; err longer over shorter; never trim a paragraph mid-flight)', maxWords: 4000 },
+  short:  { paragraphRule: '4–6 complete source paragraphs',  maxWords: 800 },
+  medium: { paragraphRule: '6–9 complete source paragraphs',  maxWords: 1500 },
+  // 'long' is the default: longer cuts so the warrant has room to breathe.
+  long:   { paragraphRule: '8–14 complete source paragraphs (err LONG — better to keep too many than too few)', maxWords: 5000 },
 };
 
 function buildSystemPrompt({ density = 'heavy', length = 'long' } = {}) {
@@ -39,21 +38,18 @@ FORMATTING SYNTAX FOR body_markdown
 - **<u>text</u>** = bold-underlined. Reserved for the ONE loudest phrase of the whole card.
 - ==text== = highlighted read-aloud text. MUST sit entirely inside an underline. Never highlight outside <u>…</u>.
 
-HIGHLIGHT IS DENSE, COHESIVE, AND THOUGHT-COMPLETE — STRICT
+HIGHLIGHT — SPARSE AND DECISIVE (THIS IS THE PRIMARY QUALITY GATE)
 - ${d.highlightRule}.
-- Each run is a COMPLETE THOUGHT — a clause or sentence with an explicit subject, verb, and object. Target 20–50 words per run. Avoid 1–5 word bullets; avoid dangling noun phrases. A judge must be able to read each highlighted span as a self-contained sentence.
-- PARTIAL-WORD CUTS ALLOWED inside long runs to compress: you MAY highlight through the middle of a word when it preserves the clause. Examples: ==The report shows nuc==lear ==war causes extinction==, ==U==nited ==States econ==omic ==collapse triggers global recession==. Partial-word cuts are a COMPRESSION tool, not a substitute for the long clause; keep the full thought highlighted.
-- ${d.unhighlightedRule} of the words in each paragraph remain UNHIGHLIGHTED.
-- Runs are non-contiguous; leave plain connective/setup text between them. The unhighlighted text supplies the paragraph's context, not the argument.
-- EVERY HIGHLIGHT RUN MUST CARRY PURPOSE: advance a distinct link in the warrant chain — new actor, causal verb, mechanism, magnitude, timeframe, or impact. Do not highlight restatements of an already-highlighted claim.
-- COHESIVE ARGUMENT — HARD RULE (this is the #1 quality gate): Stitched together in reading order, the highlighted clauses MUST form a SELF-CONTAINED, READABLE paragraph that narrates the warrant from premise → mechanism → impact. A judge reading ONLY the highlighted text out loud must hear COMPLETE SENTENCES, not a list.
-- VERB-REQUIRED CHECK: every run must contain at least one finite verb (causes, leads to, triggers, ends, collapses, prevents, undermines, spreads, accelerates, blocks, guarantees, etc.). Noun-phrase chains are a FAIL. If you drafted a run with no verb, extend it until a verb + object are included.
-  - BAD (bulleted impacts, no verb): "impacts of nuclear war … extinction … no recovery"
-  - GOOD (full clauses): "The report concludes nuclear exchange between powers causes extinction … no meaningful recovery is possible within a century"
-  - BAD: "economic collapse … global recession … unemployment"
-  - GOOD: "The tariffs trigger economic collapse across allied economies … which spreads into a global recession lasting a decade"
-- SUBJECT-LED: every highlighted clause inside a paragraph must state its own subject explicitly, even if the surrounding plain text already named the actor. Don't rely on the reader to infer.
-- LONGER IS DEFAULT: if a highlight run is under 10 words, ask whether you've actually captured a complete thought. Usually the answer is no — extend it until the clause carries subject + verb + object. Short runs are only appropriate when the clause itself is genuinely short in the source.
+- HARD CAP: NEVER highlight more than 5 consecutive words. If you find yourself wanting to highlight a 6+ word run, you are doing it wrong — break it into 2 shorter highlights with un-highlighted underlined text between them.
+- Highlights are the words a DEBATER READS ALOUD, not the words that summarize the source. If a highlighted span doesn't change the round when read aloud, drop it.
+- Each highlight = a single operative concept: an actor, a causal verb, a mechanism, a magnitude, a timeframe, an impact. Pick the SHORTEST verbatim phrase that conveys it.
+  - GOOD: ==causes extinction==, ==collapse triggers recession==, ==by 2040==, ==U.S. credibility==, ==locks in catastrophic warming==
+  - BAD (too long, summarizing): ==The report concludes that nuclear exchange between major powers causes extinction with no meaningful recovery possible within a century==
+  - BAD (one word, no concept): ==extinction==, ==collapse== (alone — extend by ~1 word: ==causes extinction==, ==economic collapse==)
+- Multiple SHORT highlights per underline are normal and encouraged. Stitch them together in reading order: the result should be a terse, telegraphic warrant chain.
+- ${d.unhighlightedRule} of words in each paragraph stay UN-highlighted (under the underline, but not in ==).
+- HIGHLIGHTS MUST SIT INSIDE <u>…</u>. Never highlight outside an underline. The server WILL strip any highlights that are outside underlines or longer than 5 words — don't make it do that.
+- EFFICIENCY: pretend each highlighted word costs you one second of speech time. Use them like that.
 
 BOLD RULES
 - All bold must sit INSIDE <u>…</u>. No naked bolds.
@@ -82,23 +78,23 @@ Return a single valid JSON object only:
 
 NEVER PRECEDE OR FOLLOW THE JSON WITH PROSE. NEVER WRAP IT IN A CODE FENCE. NEVER include the words "Sorry", "I can't", "I cannot", "as an AI", "this source", "however", or "limitation" anywhere in your response. If something looks impossible, find the BEST possible card given the constraints and emit the JSON. Silence and JSON only — that is the contract.
 
---- EXAMPLES ---
+--- EXAMPLES (study these — this is the EXACT format) ---
 
-EXAMPLE 1 (GOOD — complete-thought highlights):
+EXAMPLE 1 (GOOD — short decisive highlights inside long underline):
 SOURCE: "The report concludes that, despite decades of arms control, the risk of an accidental nuclear exchange between nuclear powers remains substantial and is growing each year because of shrinking decision windows for national leaders under modern hypersonic threats. Hypersonic weapons compress the window between launch detection and strike from thirty minutes to under five, forcing leaders to delegate authority downward and relying on automated systems prone to misreads."
-CUT: <u>The report concludes that, despite decades of **arms control**, ==the risk of an accidental nuclear exchange between nuclear powers remains substantial and is growing each year== because of **shrinking decision windows** under modern **<u>==hypersonic threats that compress the window between launch detection and strike from thirty minutes to under five==</u>**, ==forcing leaders to delegate authority downward and rely on automated systems prone to misreads==.</u>
+CUT: <u>The report concludes that, despite decades of **arms control**, the ==risk of accidental nuclear exchange== remains substantial and is ==growing each year== because of ==shrinking decision windows== under modern **<u>==hypersonic threats==</u>**. Hypersonic weapons ==compress the window== between launch detection and strike ==from thirty minutes to under five==, forcing leaders to ==delegate authority downward== and rely on ==automated systems prone to misreads==.</u>
 
-Why good: 3 highlight runs that each carry subject+verb+impact (14 / 18 / 14 words). Stitched together they read as a complete warrant: "risk of accidental exchange … remains substantial … hypersonic threats compress the window … leaders delegate to misread-prone systems." ~45% unhighlighted.
+Why GOOD: 7 highlights, each 2–5 words. Read aloud they sound like: "risk of accidental nuclear exchange … growing each year … shrinking decision windows … hypersonic threats … compress the window … from thirty minutes to under five … delegate authority downward … automated systems prone to misreads." Tight, fast, every word changes the round. ~75% unhighlighted under the underline. One bold-underlined phrase ("hypersonic threats") = the loudest beat.
 
-EXAMPLE 2 (BAD bullet-style — rejected):
-BAD: <u>==nuclear exchange== remains substantial and ==growing== because of ==shrinking decision windows== under ==hypersonic threats==</u>
-Why bad: five 1–3 word noun-phrase chunks, no verb inside any run, reads as a list not a sentence. FAIL the verb-required check.
+EXAMPLE 2 (BAD — highlights too long, reads as essay summary):
+BAD: <u>==The report concludes that the risk of an accidental nuclear exchange between nuclear powers remains substantial and is growing each year==</u>
+Why bad: ONE 22-word highlight is a summary, not a debate read-aloud. Server will strip it. Break into ==risk of accidental nuclear exchange==, ==remains substantial==, ==growing each year==.
 
-EXAMPLE 3 (figure-handling, complete-thought highlights):
+EXAMPLE 3 (GOOD — figure-handling, sparse highlights):
 SOURCE: "Global emissions hit a record high last year, outpacing every IPCC mitigation pathway released in the prior decade.\n\n[FIGURE OMITTED]\n\nAnalysts warn this trajectory locks in catastrophic warming above 3 degrees by 2040, eliminating any remaining window to keep Paris-aligned temperature targets within reach."
-CUT: <u>==Global emissions hit a record high last year, outpacing every IPCC mitigation pathway released in the prior decade.==</u>\n\n[FIGURE OMITTED]\n\n<u>Analysts warn ==this trajectory locks in catastrophic warming above 3 degrees by **<u>2040</u>**==, ==eliminating any remaining window to keep Paris-aligned temperature targets within reach==.</u>
+CUT: <u>==Global emissions hit a record high== last year, outpacing every ==IPCC mitigation pathway== released in the prior decade.</u>\n\n[FIGURE OMITTED]\n\n<u>Analysts warn this trajectory ==locks in catastrophic warming== above ==3 degrees by 2040==, ==eliminating== any remaining ==window to keep Paris-aligned== targets within reach.</u>
 
-Why good: [FIGURE OMITTED] preserved; each paragraph gets one or two complete-thought highlights with explicit subject + verb + impact.`;
+Why GOOD: 6 highlights of 2–5 words each. [FIGURE OMITTED] preserved verbatim. Read-aloud sequence carries the warrant: "Global emissions hit a record high … IPCC mitigation pathway … locks in catastrophic warming … 3 degrees by 2040 … eliminating … window to keep Paris-aligned."`;
 }
 
 const SYSTEM_PROMPT = buildSystemPrompt();
