@@ -35,9 +35,11 @@ const { reachable } = require('../services/urlCheck');
 const fileCache = require('../services/fileCache');
 const { saveCutCardForUser } = require('../services/autoSaveCard');
 
-// Card cutting: explicit claude-haiku-4.5 (verified OpenRouter ID). Falls
-// back to Sonnet-4.6 on hedge / parse failure.
-const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-haiku-4.5';
+// Card cutting: Sonnet 4.6 by default — Haiku 4.5 was dropping paragraphs
+// and producing weak highlight selections. Quality > cost on the high-stakes
+// cut path. Override CARD_CUT_MODEL=anthropic/claude-haiku-4.5 to opt back
+// into the cheaper model.
+const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-sonnet-4.6';
 const CARD_CUT_FALLBACK_MODEL = process.env.CARD_CUT_FALLBACK_MODEL || 'anthropic/claude-sonnet-4.6';
 
 // Detect refusal / hedge text in raw model output so we can escalate even
