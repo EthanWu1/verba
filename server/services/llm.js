@@ -143,6 +143,18 @@ function applyPromptCache(messages) {
   });
 }
 
+// Force Anthropic-direct routing for Anthropic models. OpenRouter routes
+// Anthropic models through multiple providers (Anthropic API, AWS Bedrock,
+// Google Vertex). Prompt caching only works on Anthropic-direct, and some
+// providers don't support response_format: json_schema. Forcing the order
+// ensures we get the cheapest, fastest, cache-enabled route.
+function providerHintFor(modelId) {
+  if (typeof modelId === 'string' && modelId.startsWith('anthropic/')) {
+    return { order: ['Anthropic'], allow_fallbacks: true };
+  }
+  return null;
+}
+
 /**
  * Core completion — rotates through MODEL_CHAIN until one succeeds.
  *
@@ -153,6 +165,8 @@ function applyPromptCache(messages) {
  * @param {string}  [args.forceModel=null]    — bypass the chain, use this exact model.
  * @param {object}  [args.responseFormat]     — passed through (json_object | json_schema).
  * @param {boolean} [args.cacheSystem=false]  — wrap system msg in cache_control:ephemeral.
+ * @param {object}  [args.provider]           — OpenRouter provider preference. Auto-set
+ *                                               for Anthropic models (Anthropic-direct).
  */
 async function complete({
   messages,
@@ -161,6 +175,7 @@ async function complete({
   forceModel = null,
   responseFormat = null,
   cacheSystem = false,
+  provider = null,
 }) {
   checkDailyReset();
 
@@ -182,6 +197,9 @@ async function complete({
         max_tokens: maxTokens,
       };
       if (responseFormat) body.response_format = responseFormat;
+      // Provider preference: explicit > Anthropic auto-hint > none.
+      const providerHint = provider || providerHintFor(m);
+      if (providerHint) body.provider = providerHint;
 
       const resp = await axios.post(
         `${OPENROUTER_BASE}/chat/completions`,
@@ -383,8 +401,14 @@ async function completeJSON({
   forceModel = null,
   fallbackModel = null,
   cacheSystem = true,
+  provider = null,
+  preferJsonObject = false,
 }) {
-  const responseFormat = schema
+  // json_object is broadly supported across providers; json_schema strict is
+  // not (e.g., Haiku 4.5 via some OpenRouter backends returns 400 "Provider
+  // returned error" when given json_schema). Default to json_object — the
+  // reconstructor's defensive validation makes strict schema unnecessary.
+  const responseFormat = (schema && !preferJsonObject)
     ? { type: 'json_schema', json_schema: schema }
     : { type: 'json_object' };
 
@@ -396,6 +420,7 @@ async function completeJSON({
       forceModel: model,
       responseFormat,
       cacheSystem,
+      provider,
     });
     let parsed = null;
     try { parsed = parseJSON(result.content); } catch {}
