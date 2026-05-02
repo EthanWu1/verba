@@ -198,8 +198,15 @@ const ENTITY_RE = /\b(?:U\.?S\.?|UN|EU|NATO|China|Russia|India|Japan|Korea|Iran|
 const TIMEFRAME_RE = /\b(?:by\s+\d{4}|in\s+\d{4}|within\s+\d+\s*(?:year|month|decade)s?|next\s+(?:year|month|decade))\b/i;
 
 function classifyHighlight(phrase) {
-  const lower = String(phrase || '').toLowerCase();
-  const words = lower.split(/\s+/).filter(Boolean);
+  // Strip embedded markup BEFORE classification so '<u>nuclear war</u>'
+  // doesn't get tokenized as ['u', 'nuclear', 'war', 'u'].
+  const cleaned = String(phrase || '')
+    .replace(/<\/?[a-zA-Z][^>]*>/g, ' ')
+    .replace(/&[a-z#0-9]+;/gi, ' ')
+    .replace(/\*\*/g, ' ')
+    .replace(/==/g, ' ');
+  const lower = cleaned.toLowerCase();
+  const words = lower.split(/\s+/).filter(w => w && w.length > 1);
   const tokens = words.map(w => w.replace(/[.,;:!?'"()\[\]]/g, ''));
   const hasVerb = tokens.some(t => VERB_LIST.has(t));
   const hasNumber = NUMBER_RE.test(phrase);
@@ -391,10 +398,29 @@ function extractSkeletonAndGaps(paraText) {
 // Build a frequency map of n-gram phrases (for "what gets highlighted most often")
 function topNgrams(allHighlights, n = 2, top = 25) {
   const counts = new Map();
+  // Standalone-letter stopwords that pollute results when leaked from <u>/<b>
+  // markup. Filtered out before counting.
+  const noiseTokens = new Set(['u', 'b', 'i', 's', 'em', 'br', 'p', 'div', 'span', 'strong']);
   for (const h of allHighlights) {
-    const tokens = String(h).toLowerCase().replace(/[^\w\s'-]/g, '').split(/\s+/).filter(Boolean);
+    // Aggressively strip ALL markup tokens (<u>, </u>, ==, **, &nbsp;, etc.)
+    // BEFORE tokenizing. Otherwise 'nuclear war' inside ==<u>nuclear war</u>==
+    // tokenizes as ['u', 'nuclear', 'war', 'u'] and pollutes bigrams.
+    const stripped = String(h)
+      .replace(/<\/?[a-zA-Z][^>]*>/g, ' ')   // any HTML tag
+      .replace(/&[a-z#0-9]+;/gi, ' ')         // HTML entities
+      .replace(/\*\*/g, ' ')                  // bold marks
+      .replace(/==/g, ' ')                    // highlight marks
+      .replace(/¶/g, ' ');
+    const tokens = stripped
+      .toLowerCase()
+      .replace(/[^\w\s'-]/g, '')
+      .split(/\s+/)
+      .filter(Boolean)
+      .filter(t => !noiseTokens.has(t));
     for (let i = 0; i + n <= tokens.length; i++) {
       const gram = tokens.slice(i, i + n).join(' ');
+      // Skip grams that still look like markup leftovers (single chars, etc.)
+      if (gram.split(/\s+/).every(w => w.length < 2)) continue;
       counts.set(gram, (counts.get(gram) || 0) + 1);
     }
   }
@@ -520,9 +546,13 @@ function analyzeCard(body) {
   };
 }
 
+// Bump this whenever the analyzer's internal logic changes — calibration
+// service uses it to invalidate stale persisted files automatically.
+const ANALYZER_VERSION = 2;
+
 function summarize(allStats) {
   const cards = allStats.filter(Boolean);
-  if (!cards.length) return { count: 0, error: 'no cards parsed' };
+  if (!cards.length) return { count: 0, error: 'no cards parsed', _analyzerVersion: ANALYZER_VERSION };
 
   const sum = (arr) => arr.reduce((a, b) => a + b, 0);
   const avg = (arr) => arr.length ? sum(arr) / arr.length : 0;
@@ -693,8 +723,10 @@ function summarize(allStats) {
   // Most common 2-gram and 3-gram highlights
   const top2 = topNgrams(allHighlightTexts, 2, 20);
   const top3 = topNgrams(allHighlightTexts, 3, 15);
+  const top1 = topNgrams(allHighlightTexts, 1, 30);   // single-word picks
 
   return {
+    _analyzerVersion: ANALYZER_VERSION,
     cards: cards.length,
     paragraphs: {
       perCard: {
@@ -719,6 +751,7 @@ function summarize(allStats) {
       lengthHistogram: bucket(allHlLens, [1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 20, 30]),
       operativeKindPct: kindPct,
       linguistic,
+      topUnigrams: top1,
       topBigrams:  top2,
       topTrigrams: top3,
     },
@@ -984,6 +1017,7 @@ module.exports = {
   analyzeCard,
   summarize,
   prettyReport,
+  ANALYZER_VERSION,
 };
 
 // CLI entry — only runs when executed directly via `node analyzeLibraryCards.js`
