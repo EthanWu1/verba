@@ -132,6 +132,125 @@ function buildEditPrompt({ instruction = '', argument = '', card = {}, sourceTex
   ].filter(Boolean).join('\n\n');
 }
 
+// =====================================================================
+// V2 SELECTION-ONLY PROMPT (cost-optimized cutter — used by /cut-card via
+// services/cutCardV2.js). The legacy buildSystemPrompt above is still used
+// by /edit-card.
+//
+// In v2 the LLM no longer writes source text — it only emits paragraph
+// indices and word-offset spans. The server pulls source paragraphs
+// verbatim and inserts marks, so paragraph integrity and verbatim are
+// structural guarantees, not prompt instructions.
+// =====================================================================
+
+const MAX_RUN_WORDS_HINT = 5;
+const UNDERLINE_HINT = { minimal: 0.40, standard: 0.55, heavy: 0.72 };
+const HIGHLIGHT_HINT = { minimal: 0.20, standard: 0.25, heavy: 0.30 };
+
+function buildSelectionSystemPrompt({ density = 'heavy', length = 'long', calibration = '' } = {}) {
+  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
+  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
+  const calBlock = calibration ? `\n\n${calibration}\n` : '';
+  return `You are an LD debate evidence card cutter. You select WHICH source paragraphs to include and WHERE to place underline / highlight / bold marks. The server pulls the source paragraphs verbatim and inserts your marks at word offsets — you NEVER write source words yourself.${calBlock}
+
+OUTPUT — JSON ONLY, matching the schema. No prose. No code fence. No commentary.
+
+{
+  "tag":   "Offensive strategic claim that wins the round (1–2 sentences). Matches DEBATER INTENT.",
+  "cite":  "Last 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]",
+  "picks": [
+    { "p": 3, "u": [[0, 22]], "h": [[3, 6], [9, 12]], "b": [[9, 12]] },
+    { "p": 7, "u": [[0, 18]], "h": [[2, 4], [11, 14]], "b": [[2, 4]] }
+  ],
+  "loudest": { "p": 3, "from": 9, "to": 12 }
+}
+
+KEY DEFINITIONS
+- "p" is the paragraph index from the CANDIDATES list below (0-indexed). You MAY only use indices that exist in CANDIDATES.
+- "u", "h", "b" are arrays of [from, to) word ranges over that paragraph's whitespace-tokenised words (punctuation attached). Words are 0-indexed. "to" is exclusive.
+  Example: paragraph "The U.S. faces a credibility crisis." has 6 words [The, U.S., faces, a, credibility, crisis.]. To highlight "credibility crisis." use [4, 6].
+- "loudest" is the single bold-underlined "loudest phrase" of the entire card — the one read-aloud beat the debater wants the judge to hear.
+
+HARD RULES (server enforces, but follow them so your work survives)
+- Highlights and bolds MUST sit fully inside an underline. Floating ones get dropped.
+- Each highlight run is 1–${MAX_RUN_WORDS_HINT} words. Runs longer than ${MAX_RUN_WORDS_HINT} words get trimmed.
+- Per-paragraph density caps: underline ≤ ${Math.round((UNDERLINE_HINT[density] ?? 0.72) * 100)}%, highlight ≤ ${Math.round((HIGHLIGHT_HINT[density] ?? 0.30) * 100)}% of paragraph words. Excess marks get trimmed by lowest priority.
+- Pick ${l.paragraphRule}. Output max ${l.maxWords} body words across all picks.
+
+PARAGRAPH SELECTION
+- Choose paragraphs that carry the warrant for the DEBATER INTENT. Skip filler, transitions, repetition, methodology boilerplate.
+- Prefer body paragraphs over abstracts and bios.
+- Stay close to the natural length of the warrant. Don't pad.
+
+WHERE TO UNDERLINE (target ${d.underlineRange} of paragraph words)
+- Underline only the clauses that carry the warrant. Leave transitional / setup / filler sentences UN-underlined (they remain in the paragraph for integrity but aren't read).
+- Multiple <u> spans per paragraph are normal when warrant clauses are split by connective prose.
+
+WHERE TO HIGHLIGHT (the read-aloud beats — ${d.highlightRule})
+- Each highlight is 1–${MAX_RUN_WORDS_HINT} words, ALWAYS inside an underline.
+- Stitched together in document order across the whole card, the highlights must sound like a coherent argument.
+- ALWAYS HIGHLIGHT: operative verbs (causes, triggers, undermines, locks in, ends, eliminates), magnitude nouns (extinction, war, collapse, recession, escalation), numbers / years / percentages / currencies, named entities (U.S., China, NATO, Putin), tight noun-verb pairs ("credibility collapses", "deterrence fails").
+- NEVER HIGHLIGHT: articles, conjunctions, modal helpers (the, a, of, in, would, could), filler adverbs (however, ultimately, accordingly).
+
+WHERE TO BOLD
+- ≥2 bold ranges per paragraph, all inside an underline.
+- Bolds typically wrap a highlight (most calibration data shows them coinciding).
+- Use "loudest" once per card for the single most important phrase.
+
+WORD COUNTING — DOUBLE-CHECK
+- Each candidate paragraph below is shown with its words pre-prefixed by index, e.g. "[0]The [1]U.S. [2]faces ...". Use those numbers directly. Do NOT re-tokenise.
+
+CITE
+- Extract from SOURCE METADATA. Format: Last 'YY [Full Name; Credentials; "Title"; Source; Date; URL]. Omit missing fields. Never invent.
+
+If you cannot find a usable warrant, still return JSON with picks=[] and a tag describing the source. The server will degrade gracefully.`;
+}
+
+// Render a single paragraph with each word prefixed by its 0-based index.
+// e.g. "The U.S. faces a crisis." →
+//      "[0]The [1]U.S. [2]faces [3]a [4]crisis."
+function indexParagraphWords(text) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  return words.map((w, i) => `[${i}]${w}`).join(' ');
+}
+
+function buildSelectionUserPrompt({
+  argument = '',
+  candidates = [],
+  meta = {},
+  cite = '',
+  density = 'heavy',
+  length = 'long',
+} = {}) {
+  const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
+  const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
+
+  const intentLine = argument
+    ? `DEBATER INTENT: "${argument}"`
+    : 'DEBATER INTENT: general research';
+
+  const citeLine = cite ? `PREFERRED CITE FORMAT: "${cite}"` : '';
+  const metaLines = [
+    meta.author && `Author: ${meta.author}`,
+    meta.title && `Title: "${meta.title}"`,
+    meta.source && `Source: ${meta.source}`,
+    meta.date && `Date: ${meta.date}`,
+    meta.url && `URL: ${meta.url}`,
+  ].filter(Boolean).join('\n');
+
+  const candidateBlock = candidates.map(c =>
+    `[P${c.index}] ${indexParagraphWords(c.text)}`
+  ).join('\n\n');
+
+  return [
+    intentLine,
+    citeLine,
+    metaLines && `SOURCE METADATA:\n${metaLines}`,
+    `CANDIDATES — these are the only paragraphs you may pick from. Word indices are pre-labelled; use them directly.\n---\n${candidateBlock}\n---`,
+    `Return the JSON now. Pick ${l.paragraphRule}, ≤${l.maxWords} body words, underline ${d.underlineRange}, ${d.highlightRule}.`,
+  ].filter(Boolean).join('\n\n');
+}
+
 module.exports = {
   SYSTEM_PROMPT,
   buildSystemPrompt,
@@ -141,4 +260,8 @@ module.exports = {
   LENGTH_PRESETS,
   stripAbstractPrelude,
   stripBoilerplateSections,
+  // v2 selection prompt:
+  buildSelectionSystemPrompt,
+  buildSelectionUserPrompt,
+  indexParagraphWords,
 };

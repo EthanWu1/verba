@@ -122,10 +122,46 @@ function isSoftFailure(err) {
   return false;
 }
 
+// Decorate the messages array so the system message is sent as a content
+// block with cache_control: ephemeral. OpenRouter forwards this to Anthropic
+// providers and records a 90% input-token discount on cache hits.
+//
+// Anthropic requires the cached prefix to be ≥1024 tokens to be effective —
+// our cardCutter system prompt is several thousand tokens, so caching kicks
+// in immediately.
+//
+// Models that don't support cache_control simply ignore the field.
+function applyPromptCache(messages) {
+  return messages.map(m => {
+    if (m.role !== 'system' || typeof m.content !== 'string') return m;
+    return {
+      role: 'system',
+      content: [
+        { type: 'text', text: m.content, cache_control: { type: 'ephemeral' } },
+      ],
+    };
+  });
+}
+
 /**
  * Core completion — rotates through MODEL_CHAIN until one succeeds.
+ *
+ * @param {object}  args
+ * @param {array}   args.messages
+ * @param {number}  [args.temperature=0.3]
+ * @param {number}  [args.maxTokens=2048]
+ * @param {string}  [args.forceModel=null]    — bypass the chain, use this exact model.
+ * @param {object}  [args.responseFormat]     — passed through (json_object | json_schema).
+ * @param {boolean} [args.cacheSystem=false]  — wrap system msg in cache_control:ephemeral.
  */
-async function complete({ messages, temperature = 0.3, maxTokens = 2048, forceModel = null }) {
+async function complete({
+  messages,
+  temperature = 0.3,
+  maxTokens = 2048,
+  forceModel = null,
+  responseFormat = null,
+  cacheSystem = false,
+}) {
   checkDailyReset();
 
   if (tokenSession.dailyUsed >= DAILY_BUDGET) {
@@ -134,13 +170,22 @@ async function complete({ messages, temperature = 0.3, maxTokens = 2048, forceMo
 
   const chain = forceModel ? [forceModel] : MODEL_CHAIN;
   const errors = [];
+  const finalMessages = cacheSystem ? applyPromptCache(messages) : messages;
 
   for (const m of chain) {
     console.log(`[LLM] Trying model: ${m}`);
     try {
+      const body = {
+        model: m,
+        messages: finalMessages,
+        temperature,
+        max_tokens: maxTokens,
+      };
+      if (responseFormat) body.response_format = responseFormat;
+
       const resp = await axios.post(
         `${OPENROUTER_BASE}/chat/completions`,
-        { model: m, messages, temperature, max_tokens: maxTokens },
+        body,
         {
           headers: {
             'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
@@ -312,4 +357,65 @@ async function completeStream({ messages, temperature = 0.3, maxTokens = 2048, f
   throw new Error(`All models failed on stream.\n${errors.slice(-4).join('\n')}`);
 }
 
-module.exports = { complete, completeStream, parseJSON, smartTruncate, estimateTokens, getTokenStats, MODEL_CHAIN };
+/**
+ * completeJSON — strict JSON-schema completion with one structural fallback.
+ *
+ * Tries the requested model first with json_schema strict mode. If JSON
+ * parse fails (rare in strict mode), tries once more on the fallback model
+ * with the same prompt. Throws if both attempts fail to produce valid JSON.
+ *
+ * Returns the parsed object plus call stats.
+ *
+ * @param {object} args
+ * @param {array}  args.messages
+ * @param {object} args.schema             — { name, strict, schema } object (the json_schema payload).
+ * @param {number} [args.temperature=0.1]
+ * @param {number} [args.maxTokens=1500]
+ * @param {string} [args.forceModel]
+ * @param {string} [args.fallbackModel]
+ * @param {boolean}[args.cacheSystem=true]
+ */
+async function completeJSON({
+  messages,
+  schema,
+  temperature = 0.1,
+  maxTokens = 1500,
+  forceModel = null,
+  fallbackModel = null,
+  cacheSystem = true,
+}) {
+  const responseFormat = schema
+    ? { type: 'json_schema', json_schema: schema }
+    : { type: 'json_object' };
+
+  const tryOnce = async (model) => {
+    const result = await complete({
+      messages,
+      temperature,
+      maxTokens,
+      forceModel: model,
+      responseFormat,
+      cacheSystem,
+    });
+    let parsed = null;
+    try { parsed = parseJSON(result.content); } catch {}
+    return { parsed, result };
+  };
+
+  const primary = await tryOnce(forceModel);
+  if (primary.parsed) {
+    return { json: primary.parsed, model: primary.result.model, usage: primary.result.usage, stats: primary.result.stats, fallback: false };
+  }
+
+  if (fallbackModel) {
+    console.warn(`[LLM] completeJSON: primary returned non-parseable JSON, escalating to ${fallbackModel}`);
+    const secondary = await tryOnce(fallbackModel);
+    if (secondary.parsed) {
+      return { json: secondary.parsed, model: secondary.result.model, usage: secondary.result.usage, stats: secondary.result.stats, fallback: true };
+    }
+  }
+
+  throw new Error('completeJSON: model produced non-parseable JSON on primary' + (fallbackModel ? ' and fallback' : '') + '.');
+}
+
+module.exports = { complete, completeJSON, completeStream, parseJSON, smartTruncate, estimateTokens, getTokenStats, MODEL_CHAIN, applyPromptCache };
