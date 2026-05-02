@@ -1,22 +1,29 @@
 'use strict';
 
-// Density presets recalibrated against 33 hand-cut Vanguard cards
-// (1217 highlights, 892 bolds): median highlight = 1 word, 72% are 1 word,
-// 86% are ≤2 words, P90=3. 23% of highlight words are stopwords/articles —
-// they get included BECAUSE they're glue inside a phrase being read whole.
-// Bolds are heavy: ~6-8 per paragraph, almost always nested inside highlights.
+// Density presets recalibrated against 85 hand-cut Vanguard cards.
+// K, theory, philosophy, and trick cards each have their OWN distinct
+// patterns and vary widely within each category — so the presets below
+// describe a spectrum (minimal/standard/heavy) rather than a card type.
+// Examples per file (descriptive, not prescriptive):
+//   Policy DA/1AC:           heavy, dense bolds, 1-word highlights.
+//   K (Nuclear Property):    long cards, moderate density, ~3 bolds/¶.
+//   K (Buddhism):            short cards, light bolds, 1-word highlights.
+//   Phil (Util, Skep):       longer cards, 2-word highlights, light bolds.
+//   Theory/procedural:       tight cards, heavy bolds on standards/voters.
+//   Tricks/skep-killers:     dense single/short cards, 2-word highlights.
+// Across all: ~27% of highlight words are stopwords (glue in the chain).
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '40–55%', highlightRule: '4–8 highlights per paragraph, mostly 1–2 words each',  unhighlightedRule: '≥80%' },
-  standard: { underlineRange: '50–65%', highlightRule: '6–12 highlights per paragraph, mostly 1–2 words each (median 1, P75 2)', unhighlightedRule: '≥70%' },
-  heavy:    { underlineRange: '60–75%', highlightRule: '8–15 highlights per paragraph, mostly 1–2 words each — short fragments that stitch into a coherent read-aloud chain', unhighlightedRule: '≥65%' },
+  minimal:  { underlineRange: '40–55%', highlightRule: '3–7 highlights per paragraph, 1–3 words each (light density — phil treatises, ontology K)', unhighlightedRule: '≥80%' },
+  standard: { underlineRange: '50–65%', highlightRule: '5–10 highlights per paragraph, mostly 1–2 words each (median 1–2, P75 2–3)',                unhighlightedRule: '≥70%' },
+  heavy:    { underlineRange: '60–75%', highlightRule: '8–15 highlights per paragraph, mostly 1–2 words each — short fragments that stitch into a coherent read-aloud chain (policy / dense K)', unhighlightedRule: '≥65%' },
 };
 
-// Paragraph counts recalibrated against the same 33 cards: median = 3,
-// P25 = 3, P75 = 5. Real cards are MUCH shorter than the previous presets.
+// Paragraph counts vary wildly by card type. Long preset covers framework
+// treatises (5–10+ paragraphs); short covers tight DA cards (2–3).
 const LENGTH_PRESETS = {
   short:  { paragraphRule: '2–3 complete source paragraphs',                                                  maxWords: 600 },
   medium: { paragraphRule: '3–5 complete source paragraphs',                                                  maxWords: 1200 },
-  long:   { paragraphRule: '4–7 complete source paragraphs (only go longer if the warrant truly needs it)',    maxWords: 2500 },
+  long:   { paragraphRule: '4–10 complete source paragraphs (use the upper end for framework treatises and dense K; use the lower end for tight policy cards)', maxWords: 3000 },
 };
 
 function buildSystemPrompt({ density = 'heavy', length = 'long', calibration = '' } = {}) {
@@ -180,7 +187,16 @@ HARD RULES (server enforces — follow them so your work survives)
 PARAGRAPH SELECTION
 - Choose paragraphs that carry the warrant for the DEBATER INTENT. Skip filler, transitions, methodology, repetition.
 - Prefer body paragraphs; avoid abstracts and author bios.
-- Real Vanguard cards are SHORT: median 3 paragraphs, P75=5. Don't pad.
+- Card length varies a lot by argument type. The user picks length via the LENGTH preset (short/medium/long) you're already given — match that. Do NOT pad. When the warrant is delivered, stop.
+
+CARD-TYPE PATTERNS (descriptive — let the DEBATER INTENT and density/length presets guide the actual choice; styles overlap)
+- POLICY (DAs, advantage cards, naming actors + outcomes — "U.S. credibility collapse", "X causes Y war"): short cards (~3 paragraphs), highlights mostly 1 word, dense bolds (~6–8/¶), fast punchy read-aloud chain.
+- KRITIK (K) — varies WIDELY by author: dense critical-theory K's (Wilderson, vote-on-discourse) often run 8–12 paragraphs with moderate highlights; framing/ontology K's (Buddhism, Daoism) often run 3–4 paragraphs with very light bolds. Match the style of the source.
+- PHILOSOPHY / FRAMEWORK (Util, Skep, deontology shells, meta-ethics): often longer cards (5–10+ paragraphs for framework treatises), highlights tend to 2 words, bolds variable but often light (1–3/¶). Preserve philosophical texture — don't fragment dense argumentation.
+- THEORY / PROCEDURAL (Spec, T, framework shells): typically tight — short violation card with operative-verb highlights, heavier bolds on the standards / voters. Insufficient empirical sample to characterize density precisely; lean on the user's preset.
+- TRICKS / A-PRIORIS / SKEP-KILLERS: dense single-paragraph or short-multi-paragraph blips, 2-word highlights on the operative claim and warrant, moderate bolds. Treat as policy-density-dialed-up.
+
+The constant across ALL card types: the read-aloud chain (highlights stitched in document order) reads as a coherent spoken sentence that delivers the warrant.
 
 UNDERLINING (${d.underlineRange} per paragraph)
 - Underline what the debater intends to read or refer to. Leave only true filler unmarked.
@@ -196,7 +212,7 @@ HIGHLIGHTING — THE READ-ALOUD CHAIN (this is the most important rule)
 
 BOLDING
 - Bolds nearly always sit INSIDE highlights — they're emphasis on the most punchy words inside an already-highlighted phrase.
-- ~6–8 bolds per paragraph in real cards. Don't be shy.
+- Bold density varies by source style: as dense as 6–8/¶ for fast punchy policy cards, as light as 1/¶ for dense philosophical treatises. Don't manufacture bolds — only bold what should LAND HARDEST when read aloud.
 - Use "loudest" once per card for the SINGLE peak word/phrase the debater wants the judge to hear above all others.
 
 WORD COUNTING
