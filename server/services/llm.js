@@ -257,25 +257,55 @@ async function complete({
 }
 
 /**
- * Parse JSON from LLM output — handles markdown fences, trailing commas, truncation.
+ * Parse JSON from LLM output — handles markdown fences, trailing commas,
+ * truncation (auto-closes unclosed brackets), and prose preambles.
  */
 function parseJSON(text) {
-  const cleaned = text
+  const cleaned = String(text || '')
     .replace(/^```(?:json)?\s*/im, '')
     .replace(/```\s*$/im, '')
     .trim();
 
-  // Direct parse
+  // 1. Direct parse
   try { return JSON.parse(cleaned); } catch {}
 
-  // Extract first {...} block
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch {}
+  // 2. Extract from first '{' to last '}'. Greedier than first-match regex.
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace  = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = cleaned.slice(firstBrace, lastBrace + 1);
+    try { return JSON.parse(candidate); } catch {}
+    // 2a. Fix trailing commas
+    try { return JSON.parse(candidate.replace(/,\s*([}\]])/g, '$1')); } catch {}
+  }
 
-    // Try fixing trailing commas (common LLM quirk)
-    const fixed = match[0].replace(/,\s*([}\]])/g, '$1');
-    try { return JSON.parse(fixed); } catch {}
+  // 3. Truncation rescue: take from first '{' to end of string and close
+  //    open brackets/braces in REVERSE order of opening (stack-based).
+  //    Recovers arrays/objects the model started but never closed
+  //    (token-budget cutoff).
+  if (firstBrace !== -1) {
+    let body = cleaned.slice(firstBrace);
+    let inString = false, escape = false;
+    const stack = []; // chars '{' / '[' in opening order
+    for (let i = 0; i < body.length; i++) {
+      const c = body[i];
+      if (escape) { escape = false; continue; }
+      if (c === '\\') { escape = true; continue; }
+      if (c === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (c === '{' || c === '[') stack.push(c);
+      else if (c === '}' || c === ']') stack.pop();
+    }
+    if (inString) body += '"';
+    // Strip trailing comma after last value (if any) before closing.
+    body = body.replace(/,\s*$/, '');
+    // Close in reverse order, matching each opening to its closer.
+    while (stack.length) {
+      const open = stack.pop();
+      body += (open === '{' ? '}' : ']');
+    }
+    try { return JSON.parse(body); } catch {}
+    try { return JSON.parse(body.replace(/,\s*([}\]])/g, '$1')); } catch {}
   }
 
   throw new Error('Could not parse JSON from LLM. Raw output: ' + cleaned.slice(0, 300));
@@ -423,7 +453,21 @@ async function completeJSON({
       provider,
     });
     let parsed = null;
-    try { parsed = parseJSON(result.content); } catch {}
+    let parseErr = null;
+    try { parsed = parseJSON(result.content); }
+    catch (e) { parseErr = e.message; }
+    if (!parsed) {
+      // Diagnostic: show the head AND tail of the raw output so we can see
+      // both the start (look for prose preamble) and the end (look for
+      // truncation / unclosed JSON).
+      const raw = String(result.content || '');
+      const head = raw.slice(0, 400);
+      const tail = raw.length > 800 ? raw.slice(-400) : '';
+      console.warn(`[LLM] completeJSON parse fail on ${model}: ${parseErr}`);
+      console.warn(`  raw head: ${JSON.stringify(head)}`);
+      if (tail) console.warn(`  raw tail: ${JSON.stringify(tail)}`);
+      console.warn(`  raw length: ${raw.length} chars, completion_tokens: ${result.usage?.completion_tokens || '?'}`);
+    }
     return { parsed, result };
   };
 
