@@ -157,7 +157,11 @@ async function cutCardV2({
     ],
     schema: null,                  // use json_object mode — universal compat
     temperature: 0.1,
-    maxTokens: 1500,
+    // Bumped from 1500 → 4000. Char-offset cards on heavy density emit 10–25
+    // highlight ranges per paragraph × up to 10 paragraphs = many spans, plus
+    // tag and cite. Truncation here was causing incomplete cards and
+    // mid-sentence highlight cutoffs.
+    maxTokens: 4000,
     forceModel: primaryModel,
     fallbackModel,
     cacheSystem: true,
