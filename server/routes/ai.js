@@ -36,12 +36,13 @@ const { reachable } = require('../services/urlCheck');
 const fileCache = require('../services/fileCache');
 const { saveCutCardForUser } = require('../services/autoSaveCard');
 
-// Card cutting: Sonnet 4.6 by default — Haiku 4.5 was dropping paragraphs
-// and producing weak highlight selections. Quality > cost on the high-stakes
-// cut path. Override CARD_CUT_MODEL=anthropic/claude-haiku-4.5 to opt back
-// into the cheaper model.
-const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-sonnet-4.6';
-const CARD_CUT_FALLBACK_MODEL = process.env.CARD_CUT_FALLBACK_MODEL || 'anthropic/claude-sonnet-4.6';
+// Card cutting on Haiku 4.5 by default. The server-side enforcement layer
+// (enforceParagraphIntegrity + autoFormatFromSource) cleans up any
+// shortcomings rather than escalating to a more expensive model.
+// CARD_CUT_FALLBACK_MODEL exists for env override but is no longer wired
+// into the cut flow.
+const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-haiku-4.5';
+const CARD_CUT_FALLBACK_MODEL = process.env.CARD_CUT_FALLBACK_MODEL || 'anthropic/claude-haiku-4.5';
 
 // Detect refusal / hedge text in raw model output so we can escalate even
 // when JSON parsing technically succeeded but the body is empty or apologetic.
@@ -82,6 +83,81 @@ function normalizeForCompare(s) {
 // is structural: highlights must sit inside <u>…</u>. Long-but-valid clauses
 // pass through unchanged; bare ==highlight== outside an underline gets
 // unwrapped (text preserved, markup stripped).
+// Heuristic auto-format fallback. When the model emits zero markup (just
+// raw paragraphs) we generate a serviceable card by wrapping each picked
+// source paragraph in <u>…</u> and inserting ==…== highlights around the
+// highest-signal phrases (numbers, finite verbs, named entities, leading
+// subject). Output is still 100% verbatim source text — better than a
+// formatless raw dump.
+function autoFormatFromSource(sourceText, modelPickedTexts = null) {
+  const paras = String(sourceText || '').split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  if (!paras.length) return '';
+
+  // If model picked some paragraphs (just paraphrased), match them back to
+  // source by token overlap so we use exactly the source paragraphs the
+  // model intended. Otherwise fall back to the first 8 source paragraphs.
+  let target;
+  if (modelPickedTexts && modelPickedTexts.length) {
+    const used = new Set();
+    target = [];
+    for (const mp of modelPickedTexts) {
+      const mTokens = new Set(normalizeForCompare(mp).split(' ').filter(w => w.length > 3));
+      let bestIdx = -1, bestScore = 0;
+      for (let i = 0; i < paras.length; i++) {
+        if (used.has(i)) continue;
+        const sTokens = new Set(normalizeForCompare(paras[i]).split(' ').filter(w => w.length > 3));
+        const overlap = [...mTokens].filter(t => sTokens.has(t)).length;
+        const score = overlap / Math.max(1, mTokens.size);
+        if (score > bestScore) { bestScore = score; bestIdx = i; }
+      }
+      if (bestIdx >= 0 && bestScore >= 0.20) {
+        used.add(bestIdx);
+        target.push(paras[bestIdx]);
+      }
+    }
+    if (!target.length) target = paras.slice(0, Math.min(8, paras.length));
+  } else {
+    target = paras.slice(0, Math.min(8, paras.length));
+  }
+
+  const VERB = /\b(?:causes?|caused|leads?\s+to|led\s+to|triggers?|triggered|prevents?|undermines?|undermined|destroys?|destroyed|drives?|drove|increases?|increased|reduces?|reduced|threatens?|threatened|guarantees?|guaranteed|locks?\s+in|locked\s+in|ends?|ended|eliminates?|eliminated|results?\s+in|resulted\s+in|enables?|enabled|forces?|forced|requires?|required|creates?|created|breaks?\s+down|broke\s+down|fails?|failed|collapses?|collapsed)\b/i;
+  const NUM  = /\b(?:\d+(?:[.,]\d+)?(?:%|\s*(?:billion|million|trillion|thousand|years?|decades?))?|by\s+\d{4}|in\s+\d{4}|\d{4})\b/;
+  const ENT  = /\b(?:U\.?S\.?A?\.?|United\s+States|China|Russia|India|Iran|NATO|U\.?N\.?|E\.?U\.?|IPCC|Putin|Biden|Trump|Xi|Arctic|Pacific|Atlantic|Israel|Korea|Japan)\b/;
+
+  const formatted = target.map(p => {
+    let body = p;
+    const ranges = [];
+    const addMatch = (re, scope) => {
+      const local = scope ? scope : body;
+      const m = local.match(re);
+      if (m && typeof m.index === 'number') {
+        const start = m.index, end = start + m[0].length;
+        if (!ranges.some(r => !(end <= r.start || start >= r.end))) ranges.push({ start, end });
+      }
+    };
+    addMatch(NUM);
+    addMatch(VERB);
+    addMatch(ENT);
+    if (!ranges.length) {
+      const m = body.match(/^([A-Z][\w'-]*(?:\s+[A-Za-z][\w'-]*){0,2})/);
+      if (m) ranges.push({ start: 0, end: m[0].length });
+    }
+    ranges.sort((a, b) => b.start - a.start);
+    for (const r of ranges) {
+      body = body.slice(0, r.start) + '==' + body.slice(r.start, r.end) + '==' + body.slice(r.end);
+    }
+    return `<u>${body}</u>`;
+  });
+  return formatted.join('\n\n');
+}
+
+// Quick check for "did the model produce ANY markup at all?"
+function hasUsableMarkup(bodyMd) {
+  const s = String(bodyMd || '');
+  const uCount = (s.match(/<u>/g) || []).length;
+  return uCount >= 2;   // need at least 2 underlines to call it formatted
+}
+
 function enforceHighlightDiscipline(bodyMd) {
   if (!bodyMd) return bodyMd;
   let s = String(bodyMd);
@@ -141,7 +217,14 @@ function enforceParagraphIntegrity(modelBodyMd, sourceText) {
       const score = overlap / mpTokens.size;
       if (score > bestScore) { bestScore = score; bestIdx = i; }
     }
-    if (bestIdx === -1 || bestScore < 0.35) continue;
+    // Lowered from 0.35 → 0.20: when the model paraphrases heavily, the bag-
+    // of-tokens overlap drops below 0.35 even though the model is clearly
+    // pointing at one specific source paragraph. We don't lose verbatim
+    // safety here — reapplyMarks always uses the SOURCE paragraph verbatim;
+    // the model output only contributes the markup positions. A wrong match
+    // would just produce a paragraph with weaker highlights, not paraphrased
+    // text. Better that than silently dropping half the card.
+    if (bestIdx === -1 || bestScore < 0.20) continue;
     usedSourceIdx.add(bestIdx);
     const srcPara = sourceParas[bestIdx];
 
@@ -280,26 +363,8 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       } catch {}
     }
 
-    // Retry 2: escalate to Sonnet if Haiku still produced non-JSON, hedged,
-    // or returned an empty body. Same prompt — usually clean output here.
-    if (!parsedOk || isLikelyHedge(rawContent) || !card?.body_markdown) {
-      console.warn(`[cut-card] escalating to ${CARD_CUT_FALLBACK_MODEL} (hedge/parse failure on ${CARD_CUT_MODEL})`);
-      try {
-        const escalated = await complete({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMsg },
-          ],
-          temperature: 0.1,
-          maxTokens: budget.output,
-          forceModel: CARD_CUT_FALLBACK_MODEL,
-        });
-        rawContent = escalated.content;
-        try { card = parseJSON(rawContent); parsedOk = true; } catch {}
-      } catch (e) {
-        console.warn(`[cut-card] fallback model failed:`, e.message);
-      }
-    }
+    // No model escalation. Server-side enforceParagraphIntegrity +
+    // autoFormatFromSource handle Haiku's mistakes downstream.
 
     if (!parsedOk) {
       return res.status(502).json({
@@ -354,7 +419,7 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       attempts++;
       // Escalate to the premium model on the LAST attempt — gives Haiku a
       // chance first (cheap), then Sonnet to clean up if it can't.
-      const retryModel = attempts >= MAX_FID_RETRIES ? CARD_CUT_FALLBACK_MODEL : CARD_CUT_MODEL;
+      const retryModel = CARD_CUT_MODEL;   // no escalation
       console.warn(`[cut-card] fidelity ${(fidelity.matchRate || 0).toFixed(3)} — strict retry ${attempts}/${MAX_FID_RETRIES} on ${retryModel}`);
       const fidCritique =
         `FIDELITY FAIL — your previous output altered, skipped, or re-ordered source words. ` +
@@ -413,6 +478,23 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       card.body_markdown = enforceHighlightDiscipline(card.body_markdown || '');
     } catch (e) {
       console.warn('[cut-card] enforceHighlightDiscipline threw:', e.message);
+    }
+
+    // SAFETY NET: if after both enforcement passes the body still has no
+    // usable markup (model returned a raw text dump), fall back to the
+    // heuristic auto-formatter. Every paragraph wrapped in <u>, key phrases
+    // highlighted automatically. Better an imperfect formatted card than
+    // an unformatted one.
+    if (!hasUsableMarkup(card.body_markdown)) {
+      console.warn('[cut-card] model output had no markup — applying heuristic auto-format');
+      const modelParas = String(card.body_markdown || '')
+        .split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      const auto = autoFormatFromSource(truncated, modelParas);
+      if (auto) {
+        card.body_markdown = auto;
+        fidelity = verifyBodyFidelity(card.body_markdown, truncated);
+        console.log(`[cut-card] auto-format applied; fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
+      }
     }
 
     if (!fidelity.ok) {

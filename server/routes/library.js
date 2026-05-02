@@ -63,8 +63,20 @@ router.get('/cards/:id', (req, res) => {
     // Fall back to the user's personal cuts (user_saved_cards) — getCardDetail
     // only consults the global imported corpus, but freshly-cut cards live in
     // user_saved_cards. Without this fallback, "Recently cut" rows 404.
+    //
+    // We can't rely on req.user here because the /api/library router has no
+    // requireUser middleware mounted (the library is partly public). Soft-
+    // resolve the session inline so the fallback works for logged-in users.
     if (!card) {
-      const userId = req.user && req.user.id;
+      let userId = req.user && req.user.id;
+      if (!userId) {
+        try {
+          const { validateSession } = require('../services/auth');
+          const sid = req.cookies && req.cookies['verba.sid'];
+          const ctx = sid ? validateSession(sid) : null;
+          if (ctx && ctx.user) userId = ctx.user.id;
+        } catch { /* fall through */ }
+      }
       if (userId) {
         const { getDb } = require('../services/db');
         const row = getDb()
