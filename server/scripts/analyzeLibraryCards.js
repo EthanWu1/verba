@@ -847,19 +847,49 @@ function prettyReport(s) {
   return lines.join('\n');
 }
 
-(function main() {
+// Public API for server-side calibration: returns the same summary the CLI
+// produces, callable from anywhere in the app. Cached at the call site.
+function summarizeFromDb({ limit = 200, userId = null } = {}) {
   const db = getDb();
   const bodyCol = findBodyColumn(db);
-  if (!bodyCol) {
-    console.error('No user_saved_cards table or no body column found.');
-    process.exit(1);
-  }
-  const rows = pickCards(db, bodyCol);
+  if (!bodyCol) return { cards: 0 };
+  const where = userId ? 'WHERE userId = ?' : '';
+  const params = userId ? [userId] : [];
+  const sql = `
+    SELECT id, ${bodyCol} AS body
+    FROM user_saved_cards
+    ${where}
+    ORDER BY rowid DESC
+    LIMIT ?
+  `;
+  const rows = db.prepare(sql).all(...params, limit);
   const stats = rows.map(r => analyzeCard(r.body));
-  const summary = summarize(stats);
-  if (AS_JSON) {
-    console.log(JSON.stringify(summary, null, 2));
-  } else {
-    console.log(prettyReport(summary));
-  }
-})();
+  return summarize(stats);
+}
+
+module.exports = {
+  summarizeFromDb,
+  analyzeCard,
+  summarize,
+  prettyReport,
+};
+
+// CLI entry — only runs when executed directly via `node analyzeLibraryCards.js`
+if (require.main === module) {
+  (function main() {
+    const db = getDb();
+    const bodyCol = findBodyColumn(db);
+    if (!bodyCol) {
+      console.error('No user_saved_cards table or no body column found.');
+      process.exit(1);
+    }
+    const rows = pickCards(db, bodyCol);
+    const stats = rows.map(r => analyzeCard(r.body));
+    const summary = summarize(stats);
+    if (AS_JSON) {
+      console.log(JSON.stringify(summary, null, 2));
+    } else {
+      console.log(prettyReport(summary));
+    }
+  })();
+}
