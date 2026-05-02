@@ -14,6 +14,7 @@ const CUT_DAILY_LIMIT = Number(process.env.FREE_CUTCARD_DAILY || 5);
 const { complete, completeStream, parseJSON, smartTruncate, getTokenStats, MODEL_CHAIN } = require('../services/llm');
 const { SYSTEM_PROMPT, buildSystemPrompt, buildCutPrompt, buildEditPrompt, LENGTH_PRESETS, DENSITY_PRESETS } = require('../prompts/cardCutter');
 const { getCalibration, buildCalibrationSnippet } = require('../services/cutterCalibration');
+const { cutCardV2 } = require('../services/cutCardV2');
 
 const LENGTH_BUDGETS = {
   short:  { input: 6000,  output: 2600 },
@@ -314,223 +315,21 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
   const { argument = '', bodyText = '', meta = {}, cite = '' } = req.body;
   const density = normalizeDensity(req.body?.density);
   const length = normalizeLength(req.body?.length);
-  const budget = LENGTH_BUDGETS[length];
 
   if (!bodyText || bodyText.trim().length < 50) {
     return res.status(400).json({ error: 'bodyText must be at least 50 characters.' });
   }
 
-  const truncated = smartTruncate(bodyText, budget.input);
-  // Pull library calibration — globally aggregated patterns from the entire
-  // saved-cards table (typical paragraph counts, highlight density, top
-  // dropped words, common sentence skeletons). Cached for 1 hour. Skips
-  // calibration when the library has fewer than 8 saved cards.
-  const calibration = buildCalibrationSnippet(getCalibration());
-  const systemPrompt = buildSystemPrompt({ density, length, calibration });
-  const userMsg = buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length });
-
+  // V2 pipeline:
+  //  - BM25 pre-filter trims article to ~15 candidate paragraphs
+  //  - Single LLM call (Haiku 4.5, prompt-cached system, json_schema strict)
+  //    emits paragraph indices + word-offset spans, never source text
+  //  - Server pulls candidates verbatim and inserts marks at offsets
+  // Verbatim and paragraph integrity are guaranteed by construction —
+  // no fidelity retries, no validateCut critique, no paragraph rebuilds.
   try {
-    const result = await complete({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMsg },
-      ],
-      temperature: 0.15,
-      maxTokens: budget.output,
-      forceModel: CARD_CUT_MODEL,
-    });
-
-    let card;
-    let rawContent = result.content;
-    let parsedOk = false;
-    try { card = parseJSON(rawContent); parsedOk = true; } catch {}
-
-    // Retry 1: same model with explicit "JSON only" nudge if parse failed.
-    if (!parsedOk) {
-      try {
-        const retry = await complete({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMsg },
-            { role: 'user', content: 'IMPORTANT: your previous reply was NOT valid JSON. Reply NOW with the JSON object only — must start with `{`, end with `}`, no markdown fence, no commentary, no prose preamble. Re-cut the same source text from scratch.' },
-          ],
-          temperature: 0.05,
-          maxTokens: budget.output,
-          forceModel: CARD_CUT_MODEL,
-        });
-        rawContent = retry.content;
-        try { card = parseJSON(rawContent); parsedOk = true; } catch {}
-      } catch {}
-    }
-
-    // No model escalation. Server-side enforceParagraphIntegrity +
-    // autoFormatFromSource handle Haiku's mistakes downstream.
-
-    if (!parsedOk) {
-      return res.status(502).json({
-        error: 'AI returned malformed JSON twice in a row. Try again — sometimes the model needs a third attempt, or use the paste fallback.',
-        raw: rawContent.slice(0, 400),
-      });
-    }
-
-    if (!card.body_markdown && !card.tag) {
-      return res.status(502).json({
-        error: 'AI output is missing required fields (tag/body_markdown).',
-        raw: rawContent.slice(0, 300),
-      });
-    }
-
-    // Cite policy: server's buildCite output is the source of truth. The LLM
-    // routinely truncates or fabricates cite fields, so we override with the
-    // server-built cite whenever it exists and is longer/more-complete.
-    // Reasoning: buildCite is deterministic and uses real meta (title, author,
-    // date, source, URL) — every available field gets included.
-    if (cite && (cite.length >= (card.cite || '').length || cite.includes('['))) {
-      card.cite = cite;
-    }
-    // Always populate shortCite from the cite (the "Last 'YY" prefix before "[").
-    if (!card.shortCite) {
-      const m = (card.cite || '').match(/^([^\[]+?)\s*\[/);
-      card.shortCite = m ? m[1].trim() : (card.cite || '').slice(0, 40).trim();
-    }
-
-    const cutCheck = validateCut(card.body_markdown || '', truncated, { density });
-    if (!cutCheck.ok) {
-      const retryResult = await complete({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length, critique: cutCheck.critique }) },
-        ],
-        temperature: 0.1,
-        maxTokens: budget.output,
-        forceModel: CARD_CUT_MODEL,
-      });
-      try { card = parseJSON(retryResult.content); }
-      catch {}
-    }
-
-    // Strict fidelity gate: every 5-word window in the output must appear in
-    // SOURCE TEXT verbatim. Retry up to 2 times with escalating critique. If
-    // we never reach 100%, fail the request rather than save a faulty card.
-    let fidelity = verifyBodyFidelity(card.body_markdown, truncated);
-    let attempts = 0;
-    const MAX_FID_RETRIES = 2;
-    while (!fidelity.ok && attempts < MAX_FID_RETRIES) {
-      attempts++;
-      // Escalate to the premium model on the LAST attempt — gives Haiku a
-      // chance first (cheap), then Sonnet to clean up if it can't.
-      const retryModel = CARD_CUT_MODEL;   // no escalation
-      console.warn(`[cut-card] fidelity ${(fidelity.matchRate || 0).toFixed(3)} — strict retry ${attempts}/${MAX_FID_RETRIES} on ${retryModel}`);
-      const fidCritique =
-        `FIDELITY FAIL — your previous output altered, skipped, or re-ordered source words. ` +
-        `Examples missing from SOURCE: ${(fidelity.missing || []).slice(0,5).map(m => '"' + m + '"').join(', ') || '(none surfaced)'}. ` +
-        `STRICT RULES: every word inside the cut (including inside <u>…</u>, **…**, and ==…==) must appear in SOURCE in the EXACT same order and spelling. Drop any paragraph you cannot copy 100% verbatim. No paraphrasing, no skipping, no inserted connectives, no synonym substitution. If you can't find a 100%-verbatim qualifying paragraph, return a SHORTER card from fewer paragraphs.`;
-      try {
-        const retry = await complete({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length, critique: fidCritique }) },
-          ],
-          temperature: 0,
-          maxTokens: budget.output,
-          forceModel: retryModel,
-        });
-        try {
-          const retryCard = parseJSON(retry.content);
-          if (retryCard && retryCard.body_markdown) {
-            const retryFid = verifyBodyFidelity(retryCard.body_markdown, truncated);
-            if ((retryFid.matchRate || 0) >= (fidelity.matchRate || 0)) {
-              card = retryCard;
-              fidelity = retryFid;
-              // Same cite override as above — trust server's buildCite output.
-              if (cite && (cite.length >= (card.cite || '').length || cite.includes('['))) {
-                card.cite = cite;
-              }
-              if (!card.shortCite) {
-                const m = (card.cite || '').match(/^([^\[]+?)\s*\[/);
-                card.shortCite = m ? m[1].trim() : (card.cite || '').slice(0, 40).trim();
-              }
-            }
-          }
-        } catch { /* keep best so far */ }
-      } catch { /* keep best so far */ }
-    }
-
-    // Server-side paragraph-integrity enforcement (always runs). Replaces
-    // every model paragraph with its best-matching source paragraph verbatim
-    // and re-anchors the model's highlight/bold/underline marks via phrase
-    // matching. Result: 100% verbatim by construction.
-    try {
-      const enforced = enforceParagraphIntegrity(card.body_markdown || '', truncated);
-      if (enforced) {
-        card.body_markdown = enforced;
-        fidelity = verifyBodyFidelity(card.body_markdown, truncated);
-        console.log(`[cut-card] paragraph-integrity enforcement applied; fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
-      }
-    } catch (e) {
-      console.warn('[cut-card] enforceParagraphIntegrity threw:', e.message);
-    }
-
-    // Highlight-quality enforcement: trim long highlights (>5 words), strip
-    // highlights outside underlines. Runs AFTER paragraph integrity so all
-    // marks are anchored to verbatim source words.
-    try {
-      card.body_markdown = enforceHighlightDiscipline(card.body_markdown || '');
-    } catch (e) {
-      console.warn('[cut-card] enforceHighlightDiscipline threw:', e.message);
-    }
-
-    // SAFETY NET: if after both enforcement passes the body still has no
-    // usable markup (model returned a raw text dump), fall back to the
-    // heuristic auto-formatter. Every paragraph wrapped in <u>, key phrases
-    // highlighted automatically. Better an imperfect formatted card than
-    // an unformatted one.
-    if (!hasUsableMarkup(card.body_markdown)) {
-      console.warn('[cut-card] model output had no markup — applying heuristic auto-format');
-      const modelParas = String(card.body_markdown || '')
-        .split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-      const auto = autoFormatFromSource(truncated, modelParas);
-      if (auto) {
-        card.body_markdown = auto;
-        fidelity = verifyBodyFidelity(card.body_markdown, truncated);
-        console.log(`[cut-card] auto-format applied; fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
-      }
-    }
-
-    if (!fidelity.ok) {
-      // Strict per-paragraph repair: a paragraph survives ONLY if its stripped
-      // plain text is a contiguous substring of source (after normalizing
-      // smart quotes, em-dashes, NBSP, and whitespace). Anything else is
-      // dropped. Result: every surviving word is guaranteed verbatim.
-      const normalize = (s) => String(s || '')
-        .replace(/[‘’‚‛′]/g, "'")
-        .replace(/[“”„‟″]/g, '"')
-        .replace(/[–—―]/g, '-')
-        .replace(/[ ]/g, ' ')
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .trim();
-      const sourceNorm = normalize(truncated);
-      const cardParas = String(card.body_markdown || '').split(/\n{2,}/);
-      const goodParas = [];
-      for (const p of cardParas) {
-        const plain = normalize(stripFormatMarks(p));
-        if (!plain) continue;
-        // Substring check: the entire paragraph's plain text must appear
-        // verbatim somewhere in source. No sampling, no exceptions.
-        if (sourceNorm.includes(plain)) goodParas.push(p);
-      }
-      if (goodParas.length === 0) {
-        return res.status(502).json({
-          error: 'Could not produce a 100% verbatim card. The model altered every paragraph.',
-          fidelity,
-          hint: 'Try again or use the paste-fallback panel.',
-        });
-      }
-      card.body_markdown = goodParas.join('\n\n');
-      fidelity = verifyBodyFidelity(card.body_markdown, truncated);
-      console.warn(`[cut-card] strict paragraph-repair kept ${goodParas.length}/${cardParas.length} paragraphs, fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
-    }
+    const result = await cutCardV2({ argument, bodyText, meta, cite, density, length });
+    const { card, model } = result;
 
     let saved = null;
     try {
@@ -539,17 +338,29 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       if (r && !card.id) card.id = r.card.id;
     } catch {}
 
+    // Compose a "fidelity" object for legacy clients. Verbatim is structural
+    // here, so we report ok=true unless the reconstructor used the graceful
+    // fallback (model emitted no usable picks → first 2 candidates plain).
+    const fidelity = {
+      ok: !result.reconstruct.fallback,
+      matchRate: 1.0,
+      structural: true,
+      fallback: result.reconstruct.fallback || false,
+    };
+
     return res.json({
       card,
       fidelity,
       saved,
       stats: result.stats,
-      model: result.model,
+      model,
+      cached: result.cached,
+      reconstruct: result.reconstruct,
     });
   } catch (err) {
     return res.status(502).json({
       error: err.message,
-      hint: 'If the free model tier is full, the server will retry backup models automatically.',
+      hint: 'If the model is unavailable, the server retries fallback models automatically.',
       modelsTriied: MODEL_CHAIN,
     });
   }
@@ -860,33 +671,25 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
 
     send('phase', { type: 'cut_start' });
     const cutBody = result.window?.text || result.article.bodyText || result.excerpt || '';
-    const truncated = smartTruncate(cutBody, budget.input);
-    const userMsg = buildCutPrompt({
-      argument,
-      bodyText: truncated,
-      cite,
-      density,
-      length,
-      meta: {
-        url: result.article.url,
-        source: result.article.source,
-        title: result.article.title,
-        author: result.article.author,
-        date: result.article.date,
-      },
-    });
-    let cut;
+
+    // V2 pipeline — single LLM call, no streaming of source text (picks JSON
+    // is tiny). Verbatim and paragraph integrity are structural.
+    let v2;
     try {
-      cut = await Promise.race([
-        completeStream({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMsg },
-          ],
-          temperature: 0.15,
-          maxTokens: budget.output,
-          forceModel: CARD_CUT_MODEL,
-          onToken: (_delta, acc) => { send('card_delta', { acc }); },
+      v2 = await Promise.race([
+        cutCardV2({
+          argument,
+          bodyText: cutBody,
+          cite,
+          density,
+          length,
+          meta: {
+            url: result.article.url,
+            source: result.article.source,
+            title: result.article.title,
+            author: result.article.author,
+            date: result.article.date,
+          },
         }),
         new Promise((_, rej) => setTimeout(() => rej(new Error('LLM cut timeout 25s')), 25000)),
       ]);
@@ -894,64 +697,23 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
       if (cutErr.message === 'LLM cut timeout 25s') {
         send('phase', { type: 'cut_retry', reason: 'llm-timeout' });
         const partialCard = { tag: result.article.title || 'Untitled', cite, body_markdown: result.excerpt || '' };
-        send('card', { card: { ...partialCard, cite: partialCard.cite || cite }, fidelity: { ok: false }, model: CARD_CUT_MODEL });
+        send('card', { card: { ...partialCard, cite: partialCard.cite || cite }, fidelity: { ok: false }, model: 'unknown' });
         send('done', { ok: true });
         return;
       }
       throw cutErr;
     }
-    let card;
-    try { card = parseJSON(cut.content); }
-    catch {
-      card = { tag: result.article.title || 'Untitled', cite, body_markdown: cut.content || result.excerpt || '' };
-    }
-    const cutCheck = validateCut(card.body_markdown || '', truncated, { density });
-    if (!cutCheck.ok) {
-      send('phase', { type: 'cut_retry', reason: 'over-highlighted' });
-      const retryMsg = buildCutPrompt({
-        argument,
-        bodyText: truncated,
-        cite,
-        density,
-        length,
-        critique: cutCheck.critique,
-        meta: {
-          url: result.article.url,
-          source: result.article.source,
-          title: result.article.title,
-          author: result.article.author,
-          date: result.article.date,
-        },
-      });
-      try {
-        // NO onToken on retry — first-pass card already rendered as ghost.
-        // Streaming retry deltas overwrites the DOM and looks like "cuts, deletes, recuts".
-        // Retry runs silently; only the final `card` event replaces the ghost.
-        const cut2 = await Promise.race([
-          completeStream({
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: retryMsg },
-            ],
-            temperature: 0.1,
-            maxTokens: budget.output,
-            forceModel: CARD_CUT_MODEL,
-          }),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('LLM cut timeout 10s')), 10000)),
-        ]);
-        try { card = parseJSON(cut2.content); cut = cut2; }
-        catch { /* keep first attempt */ }
-      } catch (retryErr) {
-        if (retryErr.message === 'LLM cut timeout 10s') {
-          send('phase', { type: 'cut_retry', reason: 'llm-timeout' });
-        }
-        /* keep first attempt card */
-      }
-    }
+    const card = v2.card;
     if (result.article.url && !validateCiteMatchesMeta(card.cite, { url: result.article.url })) {
       card.cite = cite || card.cite;
     }
-    const fidelity = verifyBodyFidelity(card.body_markdown, truncated);
+    const fidelity = {
+      ok: !v2.reconstruct.fallback,
+      matchRate: 1.0,
+      structural: true,
+      fallback: v2.reconstruct.fallback || false,
+    };
+    const cut = { content: '', model: v2.model };
     const finalCard = { ...card, cite: card.cite || cite };
     let saved = null;
     try {
