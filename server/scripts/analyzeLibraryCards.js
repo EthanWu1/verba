@@ -216,6 +216,103 @@ function classifySentence(sent) {
   return 'plain';
 }
 
+// ── SENTENCE SKELETON + DROPPED / GAP PHRASE EXTRACTION ──────────────
+// For each paragraph, build:
+//   sentenceSkeletons — compressed run-length string like "U3 H2 U4 H1 U2"
+//                       (U=underlined-not-highlighted, H=highlighted, D=dropped)
+//   droppedPhrases    — text that's IN the paragraph but OUTSIDE every <u>
+//                       (the "unnecessary" sentences/words kept for integrity)
+//   gapPhrases        — text INSIDE an underline but BETWEEN highlights
+//                       (the "necessary context not read aloud")
+// Returns { skeletons, dropped, gaps }.
+function extractSkeletonAndGaps(paraText) {
+  // Strip just the format marks but REMEMBER which spans were what.
+  // Walk the raw paragraph, mapping each plain-text character to an "H/U/D".
+  const labels = []; // one entry per plain-text character: 'H' | 'U' | 'D'
+  const plainChars = [];
+  let inU = 0;          // depth of <u> nesting
+  let inHl = false;     // currently inside ==…==
+  let inBold = false;   // currently inside **…**
+  let i = 0;
+  const s = paraText;
+  while (i < s.length) {
+    if (s[i] === '<' && s.substr(i, 3) === '<u>') { inU++; i += 3; continue; }
+    if (s[i] === '<' && s.substr(i, 4) === '</u>') { inU = Math.max(0, inU - 1); i += 4; continue; }
+    if (s[i] === '*' && s[i + 1] === '*') { inBold = !inBold; i += 2; continue; }
+    if (s[i] === '=' && s[i + 1] === '=') { inHl = !inHl; i += 2; continue; }
+    plainChars.push(s[i]);
+    labels.push(inHl ? 'H' : (inU ? 'U' : 'D'));
+    i++;
+  }
+  const plain = plainChars.join('');
+
+  // Build skeleton + gap/dropped collectors per sentence.
+  const sentences = splitSentences(plain);
+  const skeletons = [];
+  const dropped = [];
+  const gaps = [];
+  let cursor = 0;
+  for (const sent of sentences) {
+    if (!sent.trim()) continue;
+    // Find this sentence's labels by aligning to plain-text cursor.
+    const sLabels = labels.slice(cursor, cursor + sent.length);
+    cursor += sent.length;
+    // Skip whitespace+punctuation between sentences in plain
+    while (cursor < plain.length && /\s/.test(plain[cursor])) cursor++;
+
+    if (!sLabels.length) continue;
+
+    // Compress sentence labels into runs of H/U/D, counted in WORDS not chars.
+    // Walk word-by-word: a word's label is its dominant character label.
+    const words = sent.split(/(\s+)/).filter(Boolean);
+    let charIdx = 0;
+    const wordLabels = [];
+    for (const w of words) {
+      if (/^\s+$/.test(w)) { charIdx += w.length; continue; }
+      const slice = sLabels.slice(charIdx, charIdx + w.length);
+      // Majority label
+      const counts = { H: 0, U: 0, D: 0 };
+      for (const c of slice) counts[c] = (counts[c] || 0) + 1;
+      const winner = counts.H >= counts.U && counts.H > 0 ? 'H'
+                  : counts.U > 0 ? 'U' : 'D';
+      wordLabels.push({ word: w, label: winner });
+      charIdx += w.length;
+    }
+
+    // Run-length compress
+    const skel = [];
+    let cur = null, run = 0;
+    for (const wl of wordLabels) {
+      if (wl.label === cur) run++;
+      else { if (cur) skel.push(`${cur}${run}`); cur = wl.label; run = 1; }
+    }
+    if (cur) skel.push(`${cur}${run}`);
+    skeletons.push(skel.join(' '));
+
+    // Collect dropped phrases (consecutive D-labeled words) and gap phrases
+    // (consecutive U-labeled words BETWEEN H runs in the same sentence).
+    let buf = [], curLbl = null;
+    let sentenceHadH = wordLabels.some(w => w.label === 'H');
+    for (const wl of wordLabels) {
+      if (wl.label !== curLbl) {
+        if (buf.length && curLbl === 'D') dropped.push(buf.join('').trim());
+        if (buf.length && curLbl === 'U' && sentenceHadH) gaps.push(buf.join('').trim());
+        buf = [];
+        curLbl = wl.label;
+      }
+      buf.push(wl.word);
+    }
+    if (buf.length && curLbl === 'D') dropped.push(buf.join('').trim());
+    if (buf.length && curLbl === 'U' && sentenceHadH) gaps.push(buf.join('').trim());
+  }
+
+  return {
+    skeletons,
+    dropped: dropped.filter(t => t.length > 1),
+    gaps:    gaps.filter(t => t.length > 1),
+  };
+}
+
 // Build a frequency map of n-gram phrases (for "what gets highlighted most often")
 function topNgrams(allHighlights, n = 2, top = 25) {
   const counts = new Map();
@@ -284,6 +381,9 @@ function analyzeCard(body) {
       }
     }
 
+    // Sentence skeleton + dropped/gap phrase extraction
+    const sk = extractSkeletonAndGaps(para);
+
     allHighlights.push(...classified);
 
     return {
@@ -300,6 +400,9 @@ function analyzeCard(body) {
       classified,
       sentenceClasses: sentClasses,
       wordKinds,
+      skeletons: sk.skeletons,
+      droppedPhrases: sk.dropped,
+      gapPhrases: sk.gaps,
     };
   });
 
@@ -434,6 +537,53 @@ function summarize(allStats) {
   // include for paragraph integrity but not to read aloud.
   const ignoredSentencePct = sentencePct.plainPct;
 
+  // ── SENTENCE SKELETONS + GAP / DROPPED PHRASE FREQUENCIES ────────
+  // Aggregate the per-paragraph skeleton strings and gap/dropped phrase
+  // lists so we can see (a) common sentence shapes and (b) the most-
+  // common "filler" the cutter deemed unnecessary.
+  const allSkeletons = allParas.flatMap(p => p.skeletons || []);
+  const skelCounts = new Map();
+  for (const sk of allSkeletons) {
+    if (!sk) continue;
+    skelCounts.set(sk, (skelCounts.get(sk) || 0) + 1);
+  }
+  const topSkeletons = [...skelCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+
+  // Frequency of words/phrases that fall in gaps (between highlights inside
+  // an underline) and dropped (in paragraph but outside any underline).
+  const gapTexts = allParas.flatMap(p => p.gapPhrases || []);
+  const dropTexts = allParas.flatMap(p => p.droppedPhrases || []);
+  // Tokenize and frequency-rank single words (cleaner signal than n-grams here).
+  const tokenFreq = (texts) => {
+    const m = new Map();
+    for (const t of texts) {
+      for (const raw of t.toLowerCase().split(/\s+/)) {
+        const w = raw.replace(/[.,;:!?'"()\[\]]/g, '');
+        if (!w || w.length < 2) continue;
+        m.set(w, (m.get(w) || 0) + 1);
+      }
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  };
+  const topGapWords = tokenFreq(gapTexts).slice(0, 25);
+  const topDroppedWords = tokenFreq(dropTexts).slice(0, 25);
+  // Also: most common dropped multi-word phrases (verbatim).
+  const dropPhraseCounts = new Map();
+  for (const t of dropTexts) {
+    const norm = t.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (norm.split(' ').length < 3) continue;
+    dropPhraseCounts.set(norm, (dropPhraseCounts.get(norm) || 0) + 1);
+  }
+  const topDroppedPhrases = [...dropPhraseCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  // Most common gap (between-highlight) phrases — the connective tissue.
+  const gapPhraseCounts = new Map();
+  for (const t of gapTexts) {
+    const norm = t.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (norm.split(' ').length < 2) continue;
+    gapPhraseCounts.set(norm, (gapPhraseCounts.get(norm) || 0) + 1);
+  }
+  const topGapPhrases = [...gapPhraseCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+
   // Operative-class taxonomy
   const kindCounts = {};
   for (const h of allClassified) {
@@ -503,6 +653,16 @@ function summarize(allStats) {
     redundancy: {
       withinCardRepeatPct,
       ignoredSentencePct,
+    },
+    sentenceSkeletons: {
+      total: allSkeletons.length,
+      topPatterns: topSkeletons,
+    },
+    droppedAndGap: {
+      topGapWords,
+      topDroppedWords,
+      topGapPhrases,
+      topDroppedPhrases,
     },
     bolds: {
       perParagraph: {
@@ -618,6 +778,41 @@ function prettyReport(s) {
   else lines.push(`  → moderate (typical)`);
   lines.push(`Plain (ignored) sentences in included paragraphs: ${rd.ignoredSentencePct}%`);
   lines.push(`  → these are connective-tissue sentences kept for paragraph integrity but NOT read aloud`);
+  lines.push(``);
+  lines.push(`── SENTENCE SKELETONS (run-length: H=highlighted, U=underlined-not-highlighted, D=dropped) ──`);
+  if (s.sentenceSkeletons && s.sentenceSkeletons.topPatterns && s.sentenceSkeletons.topPatterns.length) {
+    for (const [pattern, count] of s.sentenceSkeletons.topPatterns) {
+      lines.push(`  ${String(count).padStart(4)} × "${pattern}"`);
+    }
+    lines.push(``);
+    lines.push(`  "U3 H2 U4 H1" = 3 underlined-only words, then 2 highlighted, then 4 underlined, then 1 highlighted.`);
+    lines.push(`  Patterns starting with U → claim setup before operative read.`);
+    lines.push(`  Patterns ending with H  → impact-led close.`);
+  }
+  lines.push(``);
+  lines.push(`── WHAT'S DROPPED (in paragraph but OUTSIDE every <u> — kept only for paragraph integrity) ──`);
+  lines.push(`Top dropped single words:`);
+  for (const [w, c] of ((s.droppedAndGap && s.droppedAndGap.topDroppedWords) || []).slice(0, 15)) {
+    lines.push(`  ${String(c).padStart(4)} × ${w}`);
+  }
+  if (s.droppedAndGap && s.droppedAndGap.topDroppedPhrases && s.droppedAndGap.topDroppedPhrases.length) {
+    lines.push(`Top dropped phrases (>=3 words):`);
+    for (const [p, c] of s.droppedAndGap.topDroppedPhrases) {
+      lines.push(`  ${String(c).padStart(4)} x "${p}"`);
+    }
+  }
+  lines.push(``);
+  lines.push(`── WHAT'S BETWEEN HIGHLIGHTS (inside <u>, NOT in == — connective tissue read silently) ──`);
+  lines.push(`Top gap single words:`);
+  for (const [w, c] of ((s.droppedAndGap && s.droppedAndGap.topGapWords) || []).slice(0, 15)) {
+    lines.push(`  ${String(c).padStart(4)} × ${w}`);
+  }
+  if (s.droppedAndGap && s.droppedAndGap.topGapPhrases && s.droppedAndGap.topGapPhrases.length) {
+    lines.push(`Top gap phrases (>=2 words):`);
+    for (const [p, c] of s.droppedAndGap.topGapPhrases) {
+      lines.push(`  ${String(c).padStart(4)} x "${p}"`);
+    }
+  }
   lines.push(``);
   lines.push(`── CHAIN COHERENCE ──`);
   if (s.chainCoherence.avgAdjacentHighlightOverlap !== null) {
