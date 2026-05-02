@@ -13,6 +13,7 @@ const CUT_DAILY_LIMIT = Number(process.env.FREE_CUTCARD_DAILY || 5);
 
 const { complete, completeStream, parseJSON, smartTruncate, getTokenStats, MODEL_CHAIN } = require('../services/llm');
 const { SYSTEM_PROMPT, buildSystemPrompt, buildCutPrompt, buildEditPrompt, LENGTH_PRESETS, DENSITY_PRESETS } = require('../prompts/cardCutter');
+const { getCalibration, buildCalibrationSnippet } = require('../services/cutterCalibration');
 
 const LENGTH_BUDGETS = {
   short:  { input: 6000,  output: 2600 },
@@ -237,7 +238,12 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
   }
 
   const truncated = smartTruncate(bodyText, budget.input);
-  const systemPrompt = buildSystemPrompt({ density, length });
+  // Pull library calibration so the prompt carries the user's empirical
+  // voice: typical paragraph counts, highlight density, top dropped words,
+  // common sentence skeletons. Cached for 1 hour. Falls back to no-calibration
+  // when the library has fewer than 8 saved cards.
+  const calibration = buildCalibrationSnippet(getCalibration({ userId: req.user && req.user.id }));
+  const systemPrompt = buildSystemPrompt({ density, length, calibration });
   const userMsg = buildCutPrompt({ argument, bodyText: truncated, meta, cite, density, length });
 
   try {
@@ -657,7 +663,12 @@ router.get('/research-source-stream', requireUser, enforceLimit('cutCard', CUT_D
   const density = normalizeDensity(req.query.density);
   const length = normalizeLength(req.query.length);
   const budget = LENGTH_BUDGETS[length];
-  const systemPrompt = buildSystemPrompt({ density, length });
+  // Pull library calibration so the prompt carries the user's empirical
+  // voice: typical paragraph counts, highlight density, top dropped words,
+  // common sentence skeletons. Cached for 1 hour. Falls back to no-calibration
+  // when the library has fewer than 8 saved cards.
+  const calibration = buildCalibrationSnippet(getCalibration({ userId: req.user && req.user.id }));
+  const systemPrompt = buildSystemPrompt({ density, length, calibration });
 
   if (!query.trim() && !url.trim() && !fileToken.trim()) {
     return res.status(400).json({ error: 'A query, URL, or file is required.' });
