@@ -282,6 +282,23 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     let highlights = mergeSpans((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean));
     let bolds      = mergeSpans((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean));
 
+    // DEFENSIVE: if the model omitted underlines but emitted highlights or
+    // bolds, default to underlining the entire paragraph. Without this, the
+    // containment filter would drop every highlight/bold and the user sees
+    // a plain paragraph with no marks. This was the root cause of the
+    // "nothing formatted" failure right after the v3 char-offset switch.
+    if (!underlines.length && (highlights.length || bolds.length)) {
+      underlines = [[0, N]];
+    }
+    // Also defensive: if model emitted highlights but they all clamped out
+    // (e.g. all out-of-range) AND we still have an underline, leave it —
+    // an empty cut paragraph is better than a silent error.
+    if (!underlines.length && !highlights.length && !bolds.length) {
+      // Model emitted nothing useful for this pick. Default to underlining
+      // the whole paragraph anyway so the reader sees the source clearly.
+      underlines = [[0, N]];
+    }
+
     const beforeHi = highlights.length;
     const beforeBo = bolds.length;
     highlights = filterContainedIn(highlights, underlines);

@@ -288,6 +288,12 @@ Picks: { "p": 0, "u": [[0, 71]], "h": [[4,5], [11,12], [17,22], [26,32], [45,71]
 
 Stitched read: "U S and Russia maintain nuclear arsenals." (Speaker fluently says "U.S.")
 
+CRITICAL — DO NOT FORGET ANY OF THESE:
+1. EVERY pick MUST include a non-empty "u" array. Default if unsure: \`"u": [[0, paragraphLength]]\` to underline the whole paragraph. NEVER emit \`"u": []\` — the server drops every highlight that isn't inside an underline, so empty u = empty card.
+2. Numbers in u/h/b arrays are CHARACTERS, not words. The example "[27, 46]" means chars 27 through 45, NOT words 27 through 45. Refer to the rulers under each paragraph.
+3. Include MANY highlights — heavy density = ~10–25 per paragraph. The most common AI failure mode is emitting only 2–3 long highlights. Don't do that. Emit MANY short ones.
+4. Highlight stopwords ("and", "to", "the", "of", "with", "would") freely when they're glue between content highlights — that's how the read-aloud chain stays grammatical.
+
 If you cannot find a usable warrant, still return JSON with picks=[] and a tag describing the source. The server will degrade gracefully.`;
 }
 

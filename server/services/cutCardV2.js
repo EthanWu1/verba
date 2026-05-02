@@ -169,6 +169,24 @@ async function cutCardV2({
   });
   const elapsed = Date.now() - t0;
 
+  // Diagnostic: log what the model actually emitted. Compact summary to
+  // avoid log spam but enough info to debug "nothing got highlighted"
+  // failures from production logs alone.
+  try {
+    const j = llmResult.json || {};
+    const picks = Array.isArray(j.picks) ? j.picks : [];
+    const summary = picks.map(p => {
+      const u = (p.u || []).length;
+      const h = (p.h || []).length;
+      const b = (p.b || []).length;
+      // Show the max range value so we can tell if model used word vs char offsets
+      const maxOffset = [...(p.u || []), ...(p.h || []), ...(p.b || [])]
+        .flat().reduce((mx, n) => Math.max(mx, Number(n) || 0), 0);
+      return `p${p.p}:u${u}/h${h}/b${b}(max=${maxOffset})`;
+    }).join(' ');
+    console.log(`[cutCardV2] llm emitted: tag="${(j.tag || '').slice(0, 40)}..." picks=${picks.length} ${summary}`);
+  } catch {}
+
   // Stage 4 — deterministic reconstruction.
   const rebuilt = reconstructCard({
     picksJson: llmResult.json,
@@ -214,14 +232,24 @@ async function cutCardV2({
   const cacheHitRate = u.prompt_tokens
     ? Math.round((cacheRead / u.prompt_tokens) * 100)
     : 0;
+  // Compute mark visibility — if the user sees no marks, this will be 0.
+  const marksRendered = rebuilt.body_markdown
+    ? (rebuilt.body_markdown.match(/<u>|==/g) || []).length
+    : 0;
+  const highlightPct = rebuilt.stats.totalChars
+    ? Math.round((rebuilt.stats.highlightChars / rebuilt.stats.totalChars) * 100)
+    : 0;
+
   console.log(
     `[cutCardV2] ok in ${elapsed}ms model=${llmResult.model} ` +
     `paragraphs=${rebuilt.stats.paragraphs} ` +
+    `marks=${marksRendered} highlight=${highlightPct}% ` +
     `prompt=${u.prompt_tokens || '?'}tok completion=${u.completion_tokens || '?'}tok ` +
     `cache=${cacheHitRate}%(read=${cacheRead}/write=${cacheWrite}) ` +
     `cost=$${(u.cost || 0).toFixed(5)}` +
     (rebuilt.fallback ? ' FALLBACK' : '') +
-    (llmResult.fallback ? ' SCHEMA_FALLBACK' : '')
+    (llmResult.fallback ? ' SCHEMA_FALLBACK' : '') +
+    (marksRendered === 0 ? ' ⚠ NO_MARKS' : '')
   );
 
   if (useCache) cacheSet(key, payload);
