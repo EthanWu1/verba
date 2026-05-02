@@ -294,38 +294,45 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .lib-pv-handle{display:none}
 
 /* ── Animated Copy → Check button ─────────────────────────
-   Dark zinc rounded button with two icons stacked. On .copied,
-   the copy icon scales out and the check fades in. */
+   Themed to match the rest of the app (white surface + line border,
+   ink fill on .copied as confirmation). Two icons share one 18×18
+   wrapper so they swap in place without shifting layout. */
 .copy-btn{
   position:relative;display:inline-flex;align-items:center;justify-content:center;
-  gap:10px;padding:10px 14px;min-height:36px;
-  background:#3f3f46;color:#fff;border:none;border-radius:18px;
-  font:600 12.5px/1 var(--font-display);cursor:pointer;
-  transition:background .14s, transform .14s;
+  gap:8px;padding:7px 14px;min-height:36px;
+  background:#fff;color:var(--ink-2);border:1px solid var(--line);border-radius:8px;
+  font:500 12.5px/1 var(--font-display);cursor:pointer;
+  transition:background .14s, border-color .14s, color .14s;
 }
-.copy-btn:hover{background:#27272a}
-.copy-btn:active{transform:scale(.96)}
-.copy-btn .ci{
-  position:relative;display:inline-grid;place-items:center;
+.copy-btn:hover{background:var(--panel);border-color:var(--line-2)}
+.copy-btn.copied{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* Icon stack — both SVGs occupy the same 18×18 slot */
+.copy-btn .ci-stack{
+  position:relative;display:inline-block;
   width:18px;height:18px;flex:0 0 auto;
+}
+.copy-btn .ci-stack svg{
+  position:absolute;inset:0;width:100%;height:100%;
 }
 .copy-btn .ci-copy{
   opacity:1;transform:scale(1);
   transition:opacity 150ms, transform 150ms;
 }
 .copy-btn .ci-check{
-  position:absolute;inset:0;
   opacity:0;transform:scale(.6);
   transition:opacity 400ms 150ms, transform 400ms 150ms;
 }
 .copy-btn.copied .ci-copy{opacity:0;transform:scale(.6)}
 .copy-btn.copied .ci-check{opacity:1;transform:scale(1)}
 .copy-btn .cb-label{display:inline-block;line-height:1}
-/* Icon-only variant (no label) — cutter card */
-.copy-btn.copy-btn-sm{padding:0;width:34px;height:34px;border-radius:50%;gap:0}
-.copy-btn.copy-btn-sm .ci{width:14px;height:14px}
+
+/* Icon-only round variant — cutter card */
+.copy-btn.copy-btn-sm{padding:0;width:32px;height:32px;border-radius:8px;gap:0}
+.copy-btn.copy-btn-sm .ci-stack{width:14px;height:14px}
+
 /* Text+icon variant — chat split */
-.copy-btn.copy-btn-text{padding:8px 14px;font-size:12px}
+.copy-btn.copy-btn-text{padding:7px 12px;font-size:12px}
 .recent-card .tag{font:600 13.5px/1.4 var(--font-display);color:var(--ink);letter-spacing:-0.005em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:pretty}
 .recent-card .cite{font:500 11.5px/1 var(--font-display);color:var(--muted)}
 
@@ -813,8 +820,10 @@ body.hl-green .hl{background:#1BFC06}
                 </div>
                 <span class="tool-sep"></span>
                 <button class="copy-btn copy-btn-sm" id="cut-copy" type="button" title="Copy card" aria-label="Copy card">
-                  <span class="ci ci-copy" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
-                  <span class="ci ci-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="ci-stack" aria-hidden="true">
+                    <svg class="ci-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="ci-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
                 </button>
                 <button class="icon-btn" id="cut-source" title="Open source" style="display:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M10 14L21 3"/></svg></button>
               </div>
@@ -855,8 +864,11 @@ body.hl-green .hl{background:#1BFC06}
               <div class="meta" id="lib-pv-meta">Select a card</div>
               <div class="actions">
                 <button class="copy-btn" id="lib-pv-copy" type="button" aria-label="Copy">
-                  <span class="ci ci-copy" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
-                  <span class="ci ci-check" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="ci-stack" aria-hidden="true">
+                    <svg class="ci-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="ci-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                  <span class="cb-label">Copy</span>
                 </button>
                 <button class="btn btn-sm" id="lib-pv-source" style="display:none"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 3h6v6M10 14L21 3"/></svg>Source</button>
               </div>
@@ -1058,8 +1070,10 @@ body.hl-green .hl{background:#1BFC06}
               <div class="chat-split-header">
                 <span id="chat-split-title">Block</span>
                 <button id="chat-split-copy" class="copy-btn copy-btn-text" type="button" aria-label="Copy all">
-                  <span class="ci ci-copy" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
-                  <span class="ci ci-check" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="ci-stack" aria-hidden="true">
+                    <svg class="ci-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <svg class="ci-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
                   <span class="cb-label">Copy all</span>
                 </button>
                 <button id="chat-split-close">✕</button>
