@@ -14,7 +14,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { summarizeFromDb } = require('../scripts/analyzeLibraryCards');
+const { summarizeFromDb, ANALYZER_VERSION: CURRENT_VERSION } = require('../scripts/analyzeLibraryCards');
 
 const DATA_DIR = process.env.DATA_DIR
   ? path.resolve(process.env.DATA_DIR)
@@ -24,13 +24,20 @@ const CAL_FILE = path.join(DATA_DIR, 'cutter-calibration.json');
 let _cache = null;
 
 // Try to load persisted calibration on module load — happens once per server boot.
+// Auto-invalidates if the stored file was produced by an older analyzer.
 function loadFromDisk() {
   try {
-    if (fs.existsSync(CAL_FILE)) {
-      _cache = JSON.parse(fs.readFileSync(CAL_FILE, 'utf8'));
-      if (_cache && _cache.cards) {
-        console.log(`[cutterCalibration] loaded ${_cache.cards}-card calibration from ${CAL_FILE}`);
-      }
+    if (!fs.existsSync(CAL_FILE)) return;
+    const raw = JSON.parse(fs.readFileSync(CAL_FILE, 'utf8'));
+    const fileVersion = raw && raw._analyzerVersion;
+    if (!fileVersion || fileVersion < CURRENT_VERSION) {
+      console.log(`[cutterCalibration] persisted file is analyzer v${fileVersion || '?'} but current is v${CURRENT_VERSION} — discarding, will re-run`);
+      try { fs.unlinkSync(CAL_FILE); } catch {}
+      return;
+    }
+    _cache = raw;
+    if (_cache && _cache.cards) {
+      console.log(`[cutterCalibration] loaded ${_cache.cards}-card calibration (analyzer v${fileVersion}) from ${CAL_FILE}`);
     }
   } catch (e) {
     console.warn('[cutterCalibration] could not load persisted calibration:', e.message);
