@@ -49,6 +49,7 @@ THE LIBRARY YOU MUST MATCH:
 - Median highlight = 2 words. 43% of all highlights are 1 word. 84% are ≤3 words. Only 11% exceed 5 words.
 - Average underline covers 30% of paragraph words. 64% of sentences are PLAIN (kept whole for integrity but NOT read).
 - Each card has ~16 read-aloud beats (==highlight== or **<u>...</u>**) total — distributed unevenly across paragraphs.
+- REAL EXAMPLE HIGHLIGHTS the library actually uses (top 2/3-grams from 1000 cards): "the U.S.", "the United States", "the Arctic", "climate change", "China and Russia", "lead to", "would be", "can be", "is a", "as a", "of the", "in the". Notice — they OFTEN include articles. SHORT noun-phrases like "==the U.S.==" or "==the Arctic==" are correct; you don't strip "the" off the front.
 
 ALWAYS HIGHLIGHT (these earn the read-aloud — keep them 1-3 words):
 - Operative VERBS (1 word usually): causes, triggers, collapses, undermines, prevents, locks in, ends, eliminates, accelerates, threatens, guarantees, reduces, increases, drives, erodes, destroys.
