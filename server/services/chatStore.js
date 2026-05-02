@@ -31,7 +31,19 @@ function listThreads(userId, { includeArchived = false } = {}) {
     HAVING messageCount > 0
     ORDER BY t.updatedAt DESC
   `;
-  return getDb().prepare(sql).all(userId);
+  const rows = getDb().prepare(sql).all(userId);
+  // Dedupe by normalized title — earlier flows produced multiple "New thread"
+  // and same-first-message rows. Keep the most-recent one per title.
+  const seen = new Set();
+  const out = [];
+  for (const r of rows) {
+    const key = String(r.title || '').trim().toLowerCase();
+    if (!key) { out.push(r); continue; }
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(r);
+  }
+  return out;
 }
 
 function updateThread(id, userId, patch) {

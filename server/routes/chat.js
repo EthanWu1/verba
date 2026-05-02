@@ -129,6 +129,57 @@ const { complete, completeStream, parseJSON } = require('../services/llm');
 const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'google/gemini-2.0-flash-001';
 const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'deepseek/deepseek-chat';
 
+// Pull selected context docs (full text) so the LLM grounds its answer in the
+// user's attached files rather than only the FTS-recalled snippet.
+function loadAttachedContext(userId, contextIds) {
+  if (!Array.isArray(contextIds) || contextIds.length === 0) return [];
+  const { getDb } = require('../services/db');
+  const db = getDb();
+  const placeholders = contextIds.map(() => '?').join(',');
+  const rows = db.prepare(
+    `SELECT id, name, content FROM chat_context WHERE userId = ? AND id IN (${placeholders})`
+  ).all(userId, ...contextIds);
+  // Cap each doc at 8k chars so a huge upload doesn't blow the prompt.
+  return rows.map(r => ({
+    id: r.id,
+    name: r.name,
+    content_plain: String(r.content || '').slice(0, 8000),
+  }));
+}
+
+// Pull the prior turns of this thread so the assistant has conversational
+// memory. Cap at the most recent ~10 messages to keep prompt small.
+function loadPriorTurns(threadId, currentUserMsgId) {
+  const all = store.listMessages(threadId);
+  return all
+    .filter(m => m.id !== currentUserMsgId)
+    .slice(-10)
+    .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content || '') }));
+}
+
+async function maybeRenameThread(threadId, userId, firstUserMsg) {
+  // Only auto-rename if the title is still the default placeholder or the
+  // initial slice. We don't override a title the user explicitly set.
+  const t = store.getThread(threadId, userId);
+  if (!t) return;
+  const placeholder = (t.title || '').trim();
+  const fromMsg = firstUserMsg.slice(0, 60).trim();
+  if (placeholder && placeholder !== 'New thread' && placeholder !== fromMsg) return;
+  try {
+    const r = await complete({
+      messages: [
+        { role: 'system', content: 'Generate a SHORT thread title (2-6 words, no quotes, no punctuation at end) summarizing the user\'s message. Reply with the title only.' },
+        { role: 'user', content: firstUserMsg.slice(0, 600) },
+      ],
+      temperature: 0.2,
+      maxTokens: 24,
+      forceModel: MODEL_FAST,
+    });
+    const title = String(r.content || '').trim().replace(/^["'`]|["'`]$/g, '').slice(0, 60);
+    if (title) store.updateThread(threadId, userId, { title });
+  } catch { /* best-effort rename */ }
+}
+
 router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), async (req, res) => {
   const userId = req.user.id;
   const threadId = req.params.id;
@@ -137,25 +188,39 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
 
   const content = String((req.body && req.body.content) || '').trim();
   if (!content) return res.status(400).json({ error: 'content_required' });
+  const contextIds = Array.isArray(req.body && req.body.contextIds) ? req.body.contextIds : [];
 
   const parsed = parseCommand(content);
   const userMsg = store.addMessage(threadId, 'user', content, { command: parsed.command });
+  const isFirstMessage = store.listMessages(threadId).filter(m => m.role === 'user').length === 1;
+  const priorTurns = loadPriorTurns(threadId, userMsg.id);
+  const attachedDocs = loadAttachedContext(userId, contextIds);
 
   // /block → non-streaming JSON
   if (parsed.command === '/block') {
     try {
-      const [cards, analytics, userCtx] = await Promise.all([
+      const [cards, analytics] = await Promise.all([
         retrieval.retrieveCards(parsed.intent, 10),
         retrieval.retrieveAnalytics(parsed.intent, 5),
-        retrieval.retrieveUserContext(userId, parsed.intent, 3),
       ]);
-      const prompt = buildBlockPrompt({ intent: parsed.intent, cards, analytics, contextDocs: userCtx });
-      const raw = await complete({ prompt, forceModel: MODEL_BLOCK });
-      const block = parseJSON(raw) || {};
+      const prompt = buildBlockPrompt({ intent: parsed.intent, cards, analytics, contextDocs: attachedDocs });
+      const raw = await complete({
+        messages: [
+          { role: 'system', content: 'You are a competitive debate assistant. Reply with valid JSON only.' },
+          ...priorTurns,
+          { role: 'user', content: prompt },
+        ],
+        forceModel: MODEL_BLOCK,
+        temperature: 0.2,
+        maxTokens: 1200,
+      });
+      let block = {};
+      try { block = parseJSON(raw.content) || {}; } catch { block = {}; }
       const asstMsg = store.addMessage(threadId, 'assistant', 'Block generated.', {
         command: '/block',
         blockJson: { ...block, candidateCards: cards },
       });
+      if (isFirstMessage) maybeRenameThread(threadId, userId, content);
       return res.json({ userMessage: userMsg, assistantMessage: asstMsg });
     } catch (err) {
       const errMsg = store.addMessage(threadId, 'assistant', 'Block generation failed: ' + err.message);
@@ -171,13 +236,16 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
   res.flushHeaders?.();
 
   try {
-    const [analytics, userCtx] = await Promise.all([
-      retrieval.retrieveAnalytics(parsed.intent, isAnalytic ? 8 : 10),
-      retrieval.retrieveUserContext(userId, parsed.intent, 3),
-    ]);
-    const prompt = isAnalytic
-      ? buildAnalyticPrompt({ intent: parsed.intent, analytics, contextDocs: userCtx })
-      : buildExplainPrompt({ intent: parsed.intent, context: analytics, contextDocs: userCtx });
+    const analytics = await retrieval.retrieveAnalytics(parsed.intent, isAnalytic ? 8 : 10);
+    const userPrompt = isAnalytic
+      ? buildAnalyticPrompt({ intent: parsed.intent, analytics, contextDocs: attachedDocs })
+      : buildExplainPrompt({ intent: parsed.intent, context: analytics, contextDocs: attachedDocs });
+
+    const messages = [
+      { role: 'system', content: 'You are Verba, a competitive debate assistant. You have access to the user\'s uploaded context documents — when they\'re provided, ground your answer in them. Maintain conversational continuity across the thread\'s prior turns.' },
+      ...priorTurns,
+      { role: 'user', content: userPrompt },
+    ];
 
     res.write('event: start\ndata: ' + JSON.stringify({ userMessageId: userMsg.id }) + '\n\n');
 
@@ -187,8 +255,10 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
     for (const m of chatChain) {
       try {
         await completeStream({
-          prompt,
+          messages,
           forceModel: m,
+          temperature: 0.4,
+          maxTokens: 2048,
           onToken: (tok) => {
             full += tok;
             res.write('event: token\ndata: ' + JSON.stringify({ t: tok }) + '\n\n');
@@ -206,8 +276,9 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
     const asstMsg = store.addMessage(threadId, 'assistant', full, { command: parsed.command });
     res.write('event: done\ndata: ' + JSON.stringify({ assistantMessageId: asstMsg.id }) + '\n\n');
     res.end();
+    if (isFirstMessage) maybeRenameThread(threadId, userId, content);
   } catch (err) {
-    res.write('event: error\ndata: ' + JSON.stringify({ message: err.message }) + '\n\n');
+    res.write('event: error\ndata: ' + JSON.stringify({ message: err.message || 'chat failed' }) + '\n\n');
     res.end();
   }
 });

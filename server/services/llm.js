@@ -88,9 +88,27 @@ function smartTruncate(text, targetTokens = 4500) {
  * isSoftFailure — returns true for errors where we should try the next model.
  * Covers: rate limits, no endpoints found, capacity errors, model-specific 4xx.
  */
+function safeStringify(v) {
+  // err.response.data can be a Stream (responseType:'stream') with circular
+  // socket→parser→socket refs. Plain JSON.stringify throws "Converting
+  // circular structure to JSON … TLSSocket". Strip cycles + non-serializables.
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  if (typeof v === 'object' && (typeof v.pipe === 'function' || typeof v.read === 'function')) return '';
+  try {
+    const seen = new WeakSet();
+    return JSON.stringify(v, (_k, val) => {
+      if (typeof val === 'object' && val !== null) {
+        if (seen.has(val)) return '[circular]';
+        seen.add(val);
+      }
+      return val;
+    });
+  } catch { return ''; }
+}
 function isSoftFailure(err) {
   const status = err.response?.status;
-  const msg    = JSON.stringify(err.response?.data || '').toLowerCase();
+  const msg    = safeStringify(err.response?.data).toLowerCase();
 
   if (status === 429 || status === 503) return true;
   if (status === 400 && (
@@ -149,7 +167,7 @@ async function complete({ messages, temperature = 0.3, maxTokens = 2048, forceMo
       const errMsg  = errData?.error?.message || err.message;
 
       console.warn(`[LLM] ✗ ${m} (${status || 'TIMEOUT'}): ${errMsg}`);
-      if (errData) console.warn('[LLM] Response body:', JSON.stringify(errData).slice(0, 300));
+      if (errData) console.warn('[LLM] Response body:', safeStringify(errData).slice(0, 300));
 
       errors.push(`${m}: ${errMsg}`);
 

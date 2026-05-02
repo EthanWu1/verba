@@ -20,6 +20,39 @@ router.get('/', (req, res) => {
   res.json({ items });
 });
 
+// Live count of THIS user's saved cards (for the Today page).
+// /api/library/count counts the global imported corpus, which isn't useful for
+// "your library" stats — use this instead.
+router.get('/count', (req, res) => {
+  const row = getDb().prepare('SELECT COUNT(*) AS n FROM user_saved_cards WHERE userId = ?').get(req.user.id);
+  res.set('Cache-Control', 'no-store');
+  res.json({ count: row.n || 0 });
+});
+
+// Per-user analytics: top topicLabels across the user's own saved cards.
+// Mirrors getLibraryAnalytics shape (topTopics: [{label, count}]) so the
+// Today page can render it with no extra adapter.
+router.get('/analytics', (req, res) => {
+  const db = getDb();
+  const rows = db.prepare('SELECT payload FROM user_saved_cards WHERE userId = ?').all(req.user.id);
+  const tally = new Map();
+  let total = 0;
+  for (const r of rows) {
+    let p = {};
+    try { p = JSON.parse(r.payload); } catch { continue; }
+    total++;
+    const label = String(p.topicLabel || '').trim();
+    if (!label) continue;
+    tally.set(label, (tally.get(label) || 0) + 1);
+  }
+  const topTopics = [...tally.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .slice(0, 200);
+  res.set('Cache-Control', 'no-store');
+  res.json({ totals: { cards: total }, topTopics });
+});
+
 router.post('/', (req, res) => {
   const card = req.body?.card;
   if (!card || (!card.tag && !card.body_markdown && !card.body_plain)) return res.status(400).json({ error: 'card required' });

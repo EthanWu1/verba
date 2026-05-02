@@ -74,8 +74,21 @@
     if (titleEl) titleEl.textContent = '';
   }
 
+  async function refreshThreadTitle() {
+    if (!currentThreadId) return;
+    try {
+      const { threads } = await API.chat.listThreads();
+      const t = (threads || []).find(t => t.id === currentThreadId);
+      if (t && t.title) {
+        const titleEl = document.getElementById('chat-thread-title');
+        if (titleEl) titleEl.textContent = t.title;
+      }
+    } catch {}
+  }
+
   async function send() {
     const text = inputEl.value.trim(); if (!text) return;
+    const wasFirstMessage = !currentThreadId;
     // Lazy-create the thread on first message so we don't pile up empty "New thread" rows.
     if (!currentThreadId) {
       const title = text.slice(0, 60);
@@ -103,6 +116,12 @@
           asstEl.remove();
           renderMessage(payload.assistantMessage);
           scrollBottom();
+        }
+        // Server auto-renames the thread after the first user message via the
+        // LLM. Pull the new title so the topbar reflects it without a refresh.
+        if (wasFirstMessage) {
+          // Slight delay so the rename round-trip has time to land.
+          setTimeout(refreshThreadTitle, 800);
         }
         // Refresh free-plan usage indicator after each successful send.
         if (typeof global.refreshUsage === 'function') global.refreshUsage();
