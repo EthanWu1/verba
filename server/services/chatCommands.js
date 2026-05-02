@@ -47,36 +47,52 @@ function parseCommand(text) {
   return { command: null, intent: s.trim() };
 }
 
+// Voice rules common to every chat reply. Trained on real debate analytics —
+// terse, prose, no LLM-isms.
+const DEBATE_VOICE_RULES = `STYLE — STRICT (debate analytics, not chatbot):
+- NO introduction. NO "Here's...", "Sure thing", "Great question", "Let me explain", or any meta sentence.
+- NO conclusion. NO "In summary", "Overall", "I hope this helps", "TL;DR". The last sentence of the answer IS the answer.
+- NO bullet points. NO "- " or "• " lists.
+- NO headings unless the question is itself a structured outline (e.g. "OV—AT: Permutation Solvency"). For ordinary questions, write prose.
+- For enumerated points, use 1] 2] 3] (square-bracket notation, like real debate flow notes), NOT 1. 2. 3. or 1) 2) 3).
+- Length: 1–5 paragraphs depending on the question. Short questions get short answers (1-2 paragraphs). Complex multi-part questions get up to 5. Never pad.
+- Voice: terse, declarative, debate-flow style. Imitate the analytic passages provided in the prompt — they are your style reference.
+- Direct answer first, warrant + impact second, link or explanation third. Like a debater's flow.
+- Bold (**word**) is allowed for emphasis on key terms. Italic (*word*) sparingly.
+- Markdown allowed for code blocks if the user is asking about code; otherwise plain prose.`;
+
 function buildExplainPrompt({ intent, context = [], contextDocs = [] }) {
   const refs = context.map((a, i) => `[A${i + 1}] ${a.content_plain}`).join('\n---\n') || '(no refs)';
   const userDocs = contextDocs.map((d, i) => `[U${i + 1}] ${d.content_plain}`).join('\n---\n') || '(no user docs)';
-  return `You are a competitive debate assistant. Answer clearly and concisely.
+  return `You are a competitive debate assistant.
 
-User question: ${intent}
+Question: ${intent}
 
-Relevant analytic passages from library:
+Reference analytic passages from the library (THESE ARE YOUR STYLE REFERENCE — match their terseness, structure, and debate vocabulary):
 ${refs}
 
-User's own uploaded context:
+User's uploaded context:
 ${userDocs}
 
-Write a clear debate-oriented answer. Ground in refs when applicable; use your own debate knowledge to fill gaps. No JSON — plain prose.`;
+${DEBATE_VOICE_RULES}
+
+Answer the question directly. Ground in refs when applicable; use your own debate knowledge to fill gaps. Plain prose only — no JSON, no preamble, no closing. Start the answer with the substantive content. End when the answer is complete.`;
 }
 
 function buildAnalyticPrompt({ intent, headings = {}, analytics = [], contextDocs = [] }) {
   const refs = analytics.map((a, i) => `[A${i + 1}] ${a.content_plain}`).join('\n---\n') || '(no refs)';
   const userDocs = contextDocs.map((d, i) => `[U${i + 1}] ${d.content_plain}`).join('\n---\n') || '(no user docs)';
-  return `Write a SHORT debate analytic paragraph (1-3 sentences max) for the following intent.
+  return `Write a single debate analytic block for: ${intent}
 
-Intent: ${intent}
-
-Reference analytic passages:
+Reference analytic passages (match their terseness and voice exactly):
 ${refs}
 
-User's own context:
+User's context:
 ${userDocs}
 
-Return plain prose only (no JSON). 1-3 sentences.`;
+${DEBATE_VOICE_RULES}
+
+Return ONE paragraph (1–3 sentences). Direct claim → warrant → impact. No preamble, no closing, no headings.`;
 }
 
 function buildBlockPrompt({ intent, headings = {}, cards = [], analytics = [], contextDocs = [] }) {

@@ -20,6 +20,10 @@ function getDb() {
   _db.pragma('cache_size = -40000');     // 40MB page cache (negative = KB)
   _db.pragma('mmap_size = 67108864');    // 64MB memory-mapped I/O
   _db.pragma('temp_store = MEMORY');     // temp tables/indexes in RAM
+  // Wait up to 5s for writer locks instead of throwing 'database is locked'.
+  // Tabroom batch indexer competes with chat/library traffic; without this,
+  // a chat send during a Tabroom flush can take 7s+ AND log spurious errors.
+  _db.pragma('busy_timeout = 5000');
   _initSchema(_db);
   _runMigrations(_db);
   return _db;
