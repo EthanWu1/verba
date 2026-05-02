@@ -1026,8 +1026,12 @@ function bindLibraryControls(){
   const closeBtn = $('lib-pv-close');
   if (closeBtn) closeBtn.addEventListener('click', () => {
     const pane = document.querySelector('.lib-preview');
-    if (pane) pane.classList.remove('is-active');
+    if (pane) pane.classList.remove('is-active', 'snap-full');
   });
+
+  // Drag handle: bottom-sheet snap behavior on mobile.
+  //   start: half (translateY 50%) | drag up → full (0%) | drag down → close (100%)
+  bindLibSheetDrag();
 
   $('lib-q').addEventListener('input', debounce(()=>{
     const q = $('lib-q').value.trim();
@@ -1375,6 +1379,100 @@ function applyTweaks(){
   $$('.rank-tabs[data-tweak]').forEach(g => {
     const k = g.dataset.tweak;
     g.querySelectorAll('.rank-tab').forEach(b => b.classList.toggle('on', b.dataset.val===TWEAKS[k]));
+  });
+}
+
+/* ── LIBRARY BOTTOM-SHEET DRAG ──────────────────────────── */
+function bindLibSheetDrag(){
+  const pane = document.querySelector('.lib-preview');
+  const handle = document.getElementById('lib-pv-handle');
+  if (!pane || !handle) return;
+
+  // Snap states (translateY percentage of pane height): closed=100, half=50, full=0
+  const SNAP = { closed: 100, half: 50, full: 0 };
+  let dragging = false;
+  let startY = 0;
+  let startPct = 50;
+  const HEIGHT = () => window.innerHeight;
+
+  const currentPct = () => {
+    const t = getComputedStyle(pane).transform;
+    if (!t || t === 'none') return pane.classList.contains('snap-full') ? 0 : pane.classList.contains('is-active') ? 50 : 100;
+    // matrix(a, b, c, d, tx, ty)
+    const m = t.match(/matrix.*\(([^)]+)\)/);
+    if (!m) return 50;
+    const parts = m[1].split(',').map(parseFloat);
+    const ty = parts[parts.length - 1];   // ty is last in matrix(...)
+    return Math.max(0, Math.min(100, (ty / pane.offsetHeight) * 100));
+  };
+
+  const setPct = (pct) => {
+    pane.style.transform = `translateY(${pct}%)`;
+  };
+
+  const snap = (pct, velocity = 0) => {
+    pane.classList.remove('dragging');
+    pane.style.transform = '';
+    // Use velocity as a tiebreaker — quick downward swipe → close, quick upward → fullscreen
+    if (velocity > 0.6) {
+      pane.classList.remove('is-active', 'snap-full');
+      return;
+    }
+    if (velocity < -0.6) {
+      pane.classList.add('is-active', 'snap-full');
+      return;
+    }
+    if (pct >= 80) {
+      pane.classList.remove('is-active', 'snap-full');
+    } else if (pct >= 25) {
+      pane.classList.add('is-active');
+      pane.classList.remove('snap-full');
+    } else {
+      pane.classList.add('is-active', 'snap-full');
+    }
+  };
+
+  let lastY = 0, lastT = 0, vy = 0;
+  const onDown = (e) => {
+    if (!pane.classList.contains('is-active')) return;
+    dragging = true;
+    pane.classList.add('dragging');
+    startY = (e.touches ? e.touches[0].clientY : e.clientY);
+    lastY = startY; lastT = performance.now(); vy = 0;
+    startPct = currentPct();
+    if (e.cancelable) e.preventDefault();
+  };
+  const onMove = (e) => {
+    if (!dragging) return;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY);
+    const dy = y - startY;
+    const dPct = (dy / HEIGHT()) * 100;
+    const next = Math.max(0, Math.min(100, startPct + dPct));
+    setPct(next);
+    const now = performance.now();
+    const dt = Math.max(1, now - lastT);
+    vy = (y - lastY) / dt;   // px per ms (positive = downward)
+    lastY = y; lastT = now;
+    if (e.cancelable) e.preventDefault();
+  };
+  const onUp = () => {
+    if (!dragging) return;
+    dragging = false;
+    snap(currentPct(), vy);
+  };
+
+  handle.addEventListener('pointerdown', (e) => { handle.setPointerCapture(e.pointerId); onDown(e); });
+  handle.addEventListener('pointermove', onMove);
+  handle.addEventListener('pointerup',   (e) => { try { handle.releasePointerCapture(e.pointerId); } catch {} onUp(); });
+  handle.addEventListener('pointercancel', onUp);
+  // Double-tap handle = quick toggle to full
+  let lastTap = 0;
+  handle.addEventListener('click', () => {
+    const now = Date.now();
+    if (now - lastTap < 350) {
+      pane.classList.toggle('snap-full');
+    }
+    lastTap = now;
   });
 }
 
