@@ -30,16 +30,24 @@ const LIMIT = Number(flag('limit', '1000'));
 const USER  = flag('user', null);
 const AS_JSON = has('json');
 
-// Detect storage layout. Two known schemas:
-//   A) payload-JSON: user_saved_cards.payload = { tag, cite, body_markdown, ... } as JSON
-//   B) direct columns: body_markdown / body etc.
+// Detect which table to use. Prefers `cards` (imported library, big — 100k+
+// rows on a real install) and falls back to `user_saved_cards` (the
+// AI-cut path, smaller). Within each, autodetects payload-JSON vs direct
+// body_markdown column.
 function detectSchema(db) {
-  const cols = db.prepare(`PRAGMA table_info(user_saved_cards)`).all();
-  if (!cols.length) return null;
-  const names = new Set(cols.map(c => c.name));
-  if (names.has('payload')) return { kind: 'payload' };
-  for (const cand of ['body_markdown', 'bodyMarkdown', 'body', 'body_md']) {
-    if (names.has(cand)) return { kind: 'column', bodyCol: cand };
+  const tables = db.prepare(
+    `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('cards','user_saved_cards')`
+  ).all().map(r => r.name);
+
+  for (const table of ['cards', 'user_saved_cards']) {
+    if (!tables.includes(table)) continue;
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+    if (!cols.length) continue;
+    const names = new Set(cols.map(c => c.name));
+    if (names.has('body_markdown')) return { kind: 'column', table, bodyCol: 'body_markdown' };
+    if (names.has('bodyMarkdown'))  return { kind: 'column', table, bodyCol: 'bodyMarkdown' };
+    if (names.has('payload'))       return { kind: 'payload', table };
+    if (names.has('body'))          return { kind: 'column', table, bodyCol: 'body' };
   }
   return null;
 }
@@ -58,34 +66,33 @@ function findBodyColumn(db) {
 //   5) tag and cite present (skips drafts / failures)
 // Sample is pulled from the WHOLE table, randomized so we don't bias to one
 // epoch or one user's style. Returns up to LIMIT cards.
-// Pull a quality sample. Returns [{ id, body }] where body is body_markdown
-// extracted from the appropriate place (payload JSON or a direct column).
+// Pull a quality sample. Returns [{ id, body }] where body is the markdown
+// extracted from whatever schema is in use. Loosened filter: requires `<u>`
+// (real cuts have underlines) but `==` is optional (DOCX imports skip it).
 function pickCards(db, _ignoredBodyCol) {
   const schema = detectSchema(db);
   if (!schema) return [];
-  const userClause = USER ? 'userId = ? AND' : '';
-  const params = USER ? [USER] : [];
+  const t = schema.table;
+  const hasUserCol = USER && t === 'user_saved_cards';
+  const userClause = hasUserCol ? 'userId = ? AND' : '';
+  const params = hasUserCol ? [USER] : [];
 
   if (schema.kind === 'payload') {
-    // Quality filter applies AFTER JSON-parse, so over-pull then filter in JS.
     const pool = db.prepare(`
-      SELECT id, payload
-      FROM user_saved_cards
+      SELECT id, payload FROM ${t}
       WHERE ${userClause} payload IS NOT NULL
-      ORDER BY RANDOM()
-      LIMIT ?
+      ORDER BY RANDOM() LIMIT ?
     `).all(...params, Math.max(LIMIT * 3, 600));
     const out = [];
     for (const r of pool) {
       let p; try { p = JSON.parse(r.payload); } catch { continue; }
       const body = p && (p.body_markdown || p.bodyMarkdown || p.body);
       if (!body || typeof body !== 'string') continue;
-      if (body.length < 800 || body.length > 8000) continue;
-      if (!body.includes('==') || !body.includes('<u>')) continue;
-      const tag = String(p.tag || '').trim();
-      if (!tag || /untitled/i.test(tag)) continue;
+      if (body.length < 400 || body.length > 12000) continue;
+      if (!body.includes('<u>')) continue;
+      const tag  = String(p.tag  || '').trim();
       const cite = String(p.cite || '').trim();
-      if (!cite) continue;
+      if (!tag || /untitled/i.test(tag) || !cite) continue;
       out.push({ id: r.id, body });
       if (out.length >= LIMIT) break;
     }
@@ -93,17 +100,33 @@ function pickCards(db, _ignoredBodyCol) {
   }
 
   const bc = schema.bodyCol;
+  // The `cards` table has tag/cite as direct columns; user_saved_cards usually
+  // does too. Be permissive on tag/cite (just non-null + non-empty).
   const sql = `
     SELECT id, ${bc} AS body
-    FROM user_saved_cards
+    FROM ${t}
     WHERE ${userClause} ${bc} IS NOT NULL
-      AND length(${bc}) BETWEEN 800 AND 8000
-      AND ${bc} LIKE '%==%'
+      AND length(${bc}) BETWEEN 400 AND 12000
       AND ${bc} LIKE '%<u>%'
+      AND tag  IS NOT NULL AND length(trim(tag))  > 0
+      AND cite IS NOT NULL AND length(trim(cite)) > 0
     ORDER BY RANDOM()
     LIMIT ?
   `;
-  return db.prepare(sql).all(...params, LIMIT);
+  try {
+    return db.prepare(sql).all(...params, LIMIT);
+  } catch {
+    // Some schemas may lack tag/cite cols — softer fallback.
+    const fallback = `
+      SELECT id, ${bc} AS body
+      FROM ${t}
+      WHERE ${userClause} ${bc} IS NOT NULL
+        AND length(${bc}) BETWEEN 400 AND 12000
+        AND ${bc} LIKE '%<u>%'
+      ORDER BY RANDOM() LIMIT ?
+    `;
+    return db.prepare(fallback).all(...params, LIMIT);
+  }
 }
 
 function stripFormatMarks(s) {
@@ -899,19 +922,22 @@ function prettyReport(s) {
   return lines.join('\n');
 }
 
-// Public API for server-side calibration. Random quality-card sample with
-// schema autodetect (payload-JSON or direct body column).
+// Public API for server-side calibration. Picks the right table, loosens
+// the markup filter to tolerate DOCX-imported cards (which use <u>/** but
+// not ==).
 function summarizeFromDb({ limit = 300, userId = null } = {}) {
   const db = getDb();
   const schema = detectSchema(db);
   if (!schema) return { cards: 0 };
-  const userClause = userId ? 'userId = ? AND' : '';
-  const params = userId ? [userId] : [];
+  const t = schema.table;
+  const hasUserCol = userId && t === 'user_saved_cards';
+  const userClause = hasUserCol ? 'userId = ? AND' : '';
+  const params = hasUserCol ? [userId] : [];
 
   let rows = [];
   if (schema.kind === 'payload') {
     const pool = db.prepare(`
-      SELECT id, payload FROM user_saved_cards
+      SELECT id, payload FROM ${t}
       WHERE ${userClause} payload IS NOT NULL
       ORDER BY RANDOM() LIMIT ?
     `).all(...params, Math.max(limit * 3, 600));
@@ -919,24 +945,35 @@ function summarizeFromDb({ limit = 300, userId = null } = {}) {
       let p; try { p = JSON.parse(r.payload); } catch { continue; }
       const body = p && (p.body_markdown || p.bodyMarkdown || p.body);
       if (!body || typeof body !== 'string') continue;
-      if (body.length < 800 || body.length > 8000) continue;
-      if (!body.includes('==') || !body.includes('<u>')) continue;
-      const tag = String(p.tag || '').trim();
-      if (!tag || /untitled/i.test(tag)) continue;
+      if (body.length < 400 || body.length > 12000) continue;
+      if (!body.includes('<u>')) continue;
+      const tag  = String(p.tag  || '').trim();
       const cite = String(p.cite || '').trim();
-      if (!cite) continue;
+      if (!tag || /untitled/i.test(tag) || !cite) continue;
       rows.push({ id: r.id, body });
       if (rows.length >= limit) break;
     }
   } else {
     const bc = schema.bodyCol;
-    rows = db.prepare(`
-      SELECT id, ${bc} AS body FROM user_saved_cards
+    const sql = `
+      SELECT id, ${bc} AS body FROM ${t}
       WHERE ${userClause} ${bc} IS NOT NULL
-        AND length(${bc}) BETWEEN 800 AND 8000
-        AND ${bc} LIKE '%==%' AND ${bc} LIKE '%<u>%'
+        AND length(${bc}) BETWEEN 400 AND 12000
+        AND ${bc} LIKE '%<u>%'
+        AND tag  IS NOT NULL AND length(trim(tag))  > 0
+        AND cite IS NOT NULL AND length(trim(cite)) > 0
       ORDER BY RANDOM() LIMIT ?
-    `).all(...params, limit);
+    `;
+    try { rows = db.prepare(sql).all(...params, limit); }
+    catch {
+      rows = db.prepare(`
+        SELECT id, ${bc} AS body FROM ${t}
+        WHERE ${userClause} ${bc} IS NOT NULL
+          AND length(${bc}) BETWEEN 400 AND 12000
+          AND ${bc} LIKE '%<u>%'
+        ORDER BY RANDOM() LIMIT ?
+      `).all(...params, limit);
+    }
   }
   const stats = rows.map(r => analyzeCard(r.body));
   return summarize(stats);
