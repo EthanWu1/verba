@@ -293,6 +293,32 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .lib-pv-close{display:none}
 .lib-pv-handle{display:none}
 
+/* ── Free-plan usage indicator ──────────────────────────── */
+.usage-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:5px 11px;border-radius:999px;
+  background:var(--panel);border:1px solid var(--line);
+  font:500 11.5px/1 var(--font-display);color:var(--muted);
+  letter-spacing:.005em;
+}
+.usage-pill .dot{
+  width:6px;height:6px;border-radius:50%;background:var(--ok);
+  flex:0 0 auto;
+}
+.usage-pill .num{font:600 11.5px/1 var(--font-mono);color:var(--ink-2)}
+.usage-pill .upg{
+  margin-left:6px;color:var(--ink);text-decoration:underline;
+  text-decoration-color:var(--line-2);text-underline-offset:3px;
+  cursor:pointer;
+}
+.usage-pill[data-state="warn"]{background:#FFF7ED;border-color:#FED7AA}
+.usage-pill[data-state="warn"] .dot{background:#C2410C}
+.usage-pill[data-state="warn"] .num{color:#9A3412}
+.usage-pill[data-state="full"]{background:#FEE2E2;border-color:#FCA5A5}
+.usage-pill[data-state="full"] .dot{background:#B91C1C}
+.usage-pill[data-state="full"] .num{color:#991B1B}
+.usage-pill[data-tier="paid"]{display:none}    /* hide for paid users */
+
 /* Prevent horizontal scroll inside the library card preview. Long URLs,
    unbroken citations, code blocks, and wide tables/images all get clamped
    to the panel width and wrap (or scroll within their own block). */
@@ -783,6 +809,11 @@ body.hl-green .hl{background:#1BFC06}
       <!-- CUTTER -->
       <section class="page" id="page-cutter">
         <div class="cutter-page">
+          <div class="usage-pill" id="usage-cutter" style="margin-bottom:14px">
+            <span class="dot" aria-hidden="true"></span>
+            <span><span class="num" id="usage-cutter-num">— / —</span> cards this month</span>
+            <a class="upg" href="#" data-go="settings">Upgrade</a>
+          </div>
           <div class="cut-input">
             <div class="lead">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
@@ -1049,6 +1080,10 @@ body.hl-green .hl{background:#1BFC06}
               <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
             <div class="chat-topbar-spacer"></div>
+            <div class="usage-pill" id="usage-chat">
+              <span class="dot" aria-hidden="true"></span>
+              <span><span class="num" id="usage-chat-num">— / —</span> messages</span>
+            </div>
             <button id="chat-btn-new" class="chat-icon-btn" type="button" title="New thread" aria-label="New thread">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
             </button>
