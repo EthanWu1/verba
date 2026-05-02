@@ -20,7 +20,7 @@ const TTL_MS = 60 * 60 * 1000;   // 1 hour
 // shared — patterns from any well-cut card teach the model how to format,
 // and a new user with an empty library still gets the benefit. Override
 // with userId if you ever want a per-user voice instead.
-function getCalibration({ force = false, limit = 200, userId = null } = {}) {
+function getCalibration({ force = false, limit = 300, userId = null } = {}) {
   const now = Date.now();
   if (!force && _cache && now - _cacheAt < TTL_MS) return _cache;
   try {

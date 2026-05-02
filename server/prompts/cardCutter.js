@@ -42,6 +42,33 @@ FORMATTING SYNTAX FOR body_markdown
 - **<u>text</u>** = bold-underlined. Reserved for the ONE loudest phrase of the whole card.
 - ==text== = highlighted read-aloud text. MUST sit entirely inside an underline. Never highlight outside <u>…</u>.
 
+FOOLPROOF WORD-LEVEL RULES (apply to EVERY paragraph)
+
+ALWAYS HIGHLIGHT (these earn the read-aloud):
+- Finite verbs that do work: causes, leads to, triggers, sparks, results in, drives, undermines, erodes, destroys, prevents, blocks, forces, accelerates, escalates, ends, eliminates, increases, reduces, threatens, locks in, removes, guarantees, ensures.
+- Numbers, percentages, years, dollar/currency figures: 70%, 2040, $3 trillion, by 2030, within five years, three degrees.
+- Named entities tied to the warrant: U.S., China, Russia, Iran, NATO, Putin, IPCC, WTO, FDA — when they're the actor or target.
+- Magnitudes that change the round: extinction, collapse, recession, war, breakdown, irreversible, permanent, catastrophic.
+- Mechanism nouns when paired with their verb: "credibility collapse", "deterrence failure", "supply chain breakdown".
+
+NEVER HIGHLIGHT (read these silently inside the underline, or drop from underline):
+- Articles, possessives, conjunctions: the, a, an, of, in, for, to, with, and, or, but, that, this, these, those, its, their.
+- Adverbs of meta-stance: however, moreover, additionally, furthermore, thus, essentially, indeed, ultimately, accordingly.
+- Author/source self-reference: "the report says", "the authors note", "according to", "as previously discussed", "in this article".
+- Hedges: maybe, perhaps, possibly, generally, sometimes, often, typically, arguably (these WEAKEN the card — don't highlight a hedge).
+- Pure citations or qualifiers: "(2024)", "(Smith et al.)", "[Figure 3]", chapter references.
+
+DROP ENTIRELY FROM UNDERLINE (don't even include in <u> — keep them in the paragraph for integrity but never read):
+- Boilerplate transitions: "as discussed below", "as previously noted", "in what follows", "for the remainder of this paper".
+- Source self-promotion: "in this analysis", "the present paper argues", "this article shows".
+- Hedging clauses that water down the warrant: "though caveats apply", "while not all agree".
+
+SENTENCE SHAPE (choose one — do NOT mix in a single sentence):
+A) Claim-led: <u>Subject ==causes== Object ... by ==year== ... ==by mechanism==.</u>  → highlight starts at the verb, magnitude, timeframe.
+B) Impact-led: <u>The ==collapse== of X ==triggers== Y, ==ending== Z.</u>  → 2-3 short highlights stitched in one sentence.
+C) Claim+Mechanism+Impact across two sentences inside a single underline.
+NEVER produce a sentence with one giant 15-word highlight — that's a summary, not a debate read.
+
 HIGHLIGHT — SPARSE AND DECISIVE (PRIMARY QUALITY GATE)
 - ${d.highlightRule}.
 - The 2–5 word target is a RULE OF THUMB, not a hard cap. The actual rule: cut every word that doesn't change the round when read aloud. Most operative phrases are 2–5 words — but a 6 or 7-word clause is fine when those words ARE the argument (e.g., ==locks in catastrophic warming above 3 degrees==). Don't pad just to extend; don't fragment a coherent claim just to shorten.
