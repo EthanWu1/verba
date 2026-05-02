@@ -47,11 +47,12 @@ test('cutCardV2: full pipeline produces a 100% verbatim card', async () => {
     tag: 'Hypersonic threats collapse stability — extinction.',
     cite: 'Acton 24 [James Acton; ...]',
     picks: [
-      { p: 0, u: [[0, 100]], h: [[0, 3], [5, 7]], b: [[5, 7]] },
-      { p: 1, u: [[0, 100]], h: [[0, 3]], b: [[0, 3]] },
-      { p: 2, u: [[0, 100]], h: [[0, 3], [5, 7]], b: [[5, 7]] },
+      // Char offsets — generous spans; reconstructor clamps to paragraph bounds
+      { p: 0, u: [[0, 9999]], h: [[0, 30], [50, 80]], b: [[50, 80]] },
+      { p: 1, u: [[0, 9999]], h: [[0, 30]], b: [[0, 30]] },
+      { p: 2, u: [[0, 9999]], h: [[0, 30], [50, 80]], b: [[50, 80]] },
     ],
-    loudest: { p: 0, from: 5, to: 7 },
+    loudest: { p: 0, from: 50, to: 80 },
   };
 
   const { result } = await withMock(mockPicks, () =>

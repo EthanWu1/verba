@@ -6,75 +6,59 @@
  * paragraph-integral, because the body text is pulled from the candidate
  * paragraphs the server already had — the LLM never writes source words.
  *
- * Wire format the LLM emits (after json_schema validation):
+ * v3: CHARACTER OFFSETS (was word offsets in v2). The Vanguard markup
+ * style requires partial-word highlighting (e.g. ==**<u>n</u>**== of
+ * "Northern", or "U.S." rendered as ==U==.==S==. by highlighting just
+ * those characters). Word-level offsets cannot express this.
+ *
+ * Wire format the LLM emits (after json_object validation):
  *
  *   {
  *     "tag":   "...",
  *     "cite":  "...",
  *     "picks": [{
- *       "p":  3,                      // 0-indexed into candidate set
- *       "u":  [[0, 28]],              // underline word ranges, [start, end)
- *       "h":  [[3,7], [12,14]],       // highlight word ranges
- *       "b":  [[12,14]]               // bold word ranges
+ *       "p":  3,                       // 0-indexed into candidate set
+ *       "u":  [[0, 145]],              // [from, to) CHARACTER ranges
+ *       "h":  [[0, 4], [12, 35]],      // half-open, into the paragraph string
+ *       "b":  [[12, 35]]
  *     }],
- *     "loudest": { "p": 3, "from": 12, "to": 14 }    // optional
+ *     "loudest": { "p": 3, "from": 12, "to": 35 }   // optional
  *   }
  *
- * All ranges are half-open [from, to) over whitespace-tokenised words,
- * with punctuation attached to the preceding word ("crisis." is one token).
+ * All ranges are half-open [from, to) over the paragraph's character
+ * string (1-byte JS chars). Ranges can start/end mid-word — that's the
+ * point. Spaces and punctuation count as characters.
  *
  * Server guarantees:
  *  - Every output paragraph is a verbatim source paragraph (100% integrity).
- *  - Marks are clamped to paragraph word bounds.
+ *  - Marks are clamped to paragraph bounds.
  *  - Marks beyond density caps are dropped (not retried).
- *  - Bold/highlight outside any underline are dropped (not unwrapped, dropped —
- *    keeping them creates floating marks; the prompt forbids them).
+ *  - Bold/highlight outside any underline are dropped.
  *  - Exactly one **<u>...</u>** "loudest" mark survives per card.
  */
 
-// Caps recalibrated against 33 hand-cut Vanguard cards. Real cards push
-// highlight density to ~30–45% on heavy-style cuts (many short fragments
-// stitched together) and underline coverage to ~60–75%. The previous caps
-// (highlight=0.30 heavy / underline=0.72 heavy) were trimming aggressively
-// and dropping legitimate stitched-chain highlights.
-const HIGHLIGHT_CAPS = { minimal: 0.25, standard: 0.35, heavy: 0.50 };
-const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.85 };
-const MAX_HIGHLIGHT_RUN_WORDS = 5;
+// Density caps measured as fraction of paragraph CHARACTERS (not words)
+// inside the mark. Calibrated against 85 hand-cut Vanguard cards.
+const HIGHLIGHT_CAPS = { minimal: 0.30, standard: 0.45, heavy: 0.65 };
+const UNDERLINE_CAPS = { minimal: 0.60, standard: 0.80, heavy: 0.95 };
 
-// Words that signal an operative claim — gives priority when trimming highlights
-// to fit the cap. Ordered for cheap lookup.
-const PRIORITY_VERBS = new Set([
-  'causes','triggers','collapses','undermines','prevents','locks','ends',
-  'eliminates','accelerates','threatens','guarantees','reduces','increases',
-  'drives','erodes','destroys','spurs','provokes','induces','sparks',
-  'forces','blocks','breaks','crashes','wins','loses','rises','falls',
-]);
-
-const PRIORITY_NOUNS = new Set([
-  'extinction','war','collapse','recession','breakdown','escalation','crisis',
-  'genocide','famine','depression','meltdown','catastrophe','annihilation',
-]);
-
-function tokenizeWords(text) {
-  // Whitespace-split with punctuation kept attached. Empty filter removes
-  // double-space artefacts.
-  return String(text || '').split(/\s+/).filter(Boolean);
-}
+// Maximum length of a single highlight RUN. 60 chars ≈ 10 words. Real
+// Vanguard cards rarely exceed this; the model mostly emits short fragments.
+const MAX_HIGHLIGHT_RUN_CHARS = 60;
 
 // --- span normalisation -----------------------------------------------------
 
-function clampSpan(span, wordCount) {
+function clampSpan(span, textLength) {
   if (!Array.isArray(span) || span.length !== 2) return null;
   let [a, b] = span;
   a = Number.isInteger(a) ? a : Math.floor(Number(a) || 0);
   b = Number.isInteger(b) ? b : Math.floor(Number(b) || 0);
   if (a < 0) a = 0;
-  if (b > wordCount) b = wordCount;
+  if (b > textLength) b = textLength;
   if (b <= a) return null;
   return [a, b];
 }
 
-// Merge overlapping/adjacent same-kind spans.
 function mergeSpans(spans) {
   if (!spans.length) return [];
   const sorted = [...spans].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
@@ -91,197 +75,154 @@ function mergeSpans(spans) {
   return out;
 }
 
-// Drop highlight or bold spans that aren't entirely contained in some underline.
 function filterContainedIn(spans, containerSpans) {
   return spans.filter(s =>
     containerSpans.some(c => s[0] >= c[0] && s[1] <= c[1])
   );
 }
 
-// Cap maximum length of any highlight run; spans longer than the cap are
-// trimmed to the cap, keeping the leading words (the noun phrase usually).
-function trimMaxRun(spans, maxWords = MAX_HIGHLIGHT_RUN_WORDS) {
+function trimMaxRun(spans, maxChars = MAX_HIGHLIGHT_RUN_CHARS) {
   return spans
-    .map(s => (s[1] - s[0] > maxWords ? [s[0], s[0] + maxWords] : s))
+    .map(s => (s[1] - s[0] > maxChars ? [s[0], s[0] + maxChars] : s))
     .filter(s => s[1] > s[0]);
 }
 
-// --- priority-based trimming ------------------------------------------------
+// --- priority scoring (used when over cap) ----------------------------------
 
-function spanWords(span, words) {
-  return words.slice(span[0], span[1]);
+const PRIORITY_VERBS = new Set([
+  'causes','triggers','collapses','undermines','prevents','locks','ends',
+  'eliminates','accelerates','threatens','guarantees','reduces','increases',
+  'drives','erodes','destroys','spurs','provokes','induces','sparks',
+  'forces','blocks','breaks','crashes','wins','loses','rises','falls',
+  'risk','collapse','war','threat','death','kill','destroy',
+]);
+const PRIORITY_NOUNS = new Set([
+  'extinction','war','collapse','recession','breakdown','escalation','crisis',
+  'genocide','famine','depression','meltdown','catastrophe','annihilation',
+  'death','nuclear','weapons','attack','bomb',
+]);
+const PRIORITY_ENTITIES = new Set([
+  'us','u.s.','china','russia','iran','israel','korea','nato','eu','un',
+  'putin','trump','biden','xi','kim',
+]);
+
+function spanTextLower(span, paraText) {
+  return paraText.slice(span[0], span[1]).toLowerCase();
 }
 
-function spanPriority(span, words) {
-  const ws = spanWords(span, words);
+function spanPriority(span, paraText) {
+  const t = spanTextLower(span, paraText);
   let score = 0;
-  for (const wRaw of ws) {
-    const w = wRaw.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (!w) continue;
-    if (/^\d/.test(w) || /\d{2,}/.test(w)) score += 4;        // numbers / years / %s
-    if (PRIORITY_VERBS.has(w))             score += 3;        // operative verbs
-    if (PRIORITY_NOUNS.has(w))              score += 3;       // magnitude nouns
-    if (/^(u\.?s\.?|china|russia|nato|eu|un|nuclear|extinction)$/.test(w)) score += 2;
+  if (/\d/.test(t)) score += 4;                         // numbers / years
+  for (const w of t.split(/[^a-z0-9.]+/).filter(Boolean)) {
+    if (PRIORITY_VERBS.has(w))    score += 3;
+    if (PRIORITY_NOUNS.has(w))    score += 3;
+    if (PRIORITY_ENTITIES.has(w)) score += 2;
   }
-  // Prefer 1–3 word spans.
+  // Prefer 1–4 word spans (~5–25 chars in english).
   const len = span[1] - span[0];
-  if (len >= 1 && len <= 3) score += 1;
-  if (len > MAX_HIGHLIGHT_RUN_WORDS) score -= 2;
+  if (len >= 1 && len <= 25) score += 1;
+  if (len > MAX_HIGHLIGHT_RUN_CHARS) score -= 2;
   return score;
 }
 
-// Remove the lowest-priority highlight spans until total highlighted words
-// fit under the cap. Bolds follow highlights (a bold without its highlight is
-// usually still useful — we leave bolds alone unless they exceed the underline).
-function trimToHighlightCap(highlights, cap, totalWords, words) {
-  if (totalWords === 0 || !highlights.length) return highlights;
+function trimToHighlightCap(highlights, cap, totalChars, paraText) {
+  if (totalChars === 0 || !highlights.length) return highlights;
   let kept = [...highlights];
   let used = kept.reduce((a, s) => a + (s[1] - s[0]), 0);
-  if (used / totalWords <= cap) return kept;
+  if (used / totalChars <= cap) return kept;
 
-  // Sort kept by priority asc; trim from the lowest.
   kept = kept
-    .map(s => ({ s, score: spanPriority(s, words) }))
+    .map(s => ({ s, score: spanPriority(s, paraText) }))
     .sort((a, b) => a.score - b.score)
     .map(x => x.s);
 
-  while (kept.length && used / totalWords > cap) {
+  while (kept.length && used / totalChars > cap) {
     const dropped = kept.shift();
     used -= (dropped[1] - dropped[0]);
   }
-  // Re-sort by position for output.
   return kept.sort((a, b) => a[0] - b[0]);
 }
 
-// Drop the lowest-priority underline spans if total underline coverage
-// exceeds the cap. Underlines that contain a highlight are protected first.
-function trimToUnderlineCap(underlines, highlights, cap, totalWords) {
-  if (totalWords === 0 || !underlines.length) return underlines;
+function trimToUnderlineCap(underlines, highlights, cap, totalChars) {
+  if (totalChars === 0 || !underlines.length) return underlines;
   let kept = [...underlines];
   let used = kept.reduce((a, s) => a + (s[1] - s[0]), 0);
-  if (used / totalWords <= cap) return kept;
+  if (used / totalChars <= cap) return kept;
 
-  // Score: protected (contains a highlight) > size of contained highlights > smaller is better.
   const scored = kept.map(s => {
     const containedHi = highlights.filter(h => h[0] >= s[0] && h[1] <= s[1]);
-    const containedHiWords = containedHi.reduce((a, h) => a + (h[1] - h[0]), 0);
-    return { s, protected: containedHi.length > 0, containedHiWords, len: s[1] - s[0] };
+    const containedHiChars = containedHi.reduce((a, h) => a + (h[1] - h[0]), 0);
+    return { s, protected: containedHi.length > 0, containedHiChars, len: s[1] - s[0] };
   });
 
   scored.sort((a, b) => {
     if (a.protected !== b.protected) return a.protected ? 1 : -1;
-    if (a.containedHiWords !== b.containedHiWords) return a.containedHiWords - b.containedHiWords;
-    return b.len - a.len; // prefer dropping the bigger unprotected span
+    if (a.containedHiChars !== b.containedHiChars) return a.containedHiChars - b.containedHiChars;
+    return b.len - a.len;
   });
 
   const dropSet = new Set();
   for (const x of scored) {
-    if (used / totalWords <= cap) break;
+    if (used / totalChars <= cap) break;
     dropSet.add(x.s);
     used -= x.len;
   }
   return kept.filter(s => !dropSet.has(s)).sort((a, b) => a[0] - b[0]);
 }
 
-// --- mark insertion ---------------------------------------------------------
+// --- mark insertion at character boundaries --------------------------------
 
 /**
- * Walk a paragraph word-by-word and emit text with marks inserted at the
- * correct word boundaries.
+ * Walk a paragraph CHARACTER by CHARACTER and emit text with marks
+ * inserted at the right positions. Spans can start/end mid-word.
  *
- * Strategy: build a list of events (open/close per kind) keyed by word index,
- * then emit each word interleaved with the events that fire at its boundary.
- *
- * Nesting order (outer→inner): underline > bold > highlight. This keeps
- * `**==text==**` legal-looking and matches the existing renderer expectations.
- * (Highlights and bolds both must sit inside the underline; bolds typically
- * wrap a highlight in the calibration data.)
+ * Nesting order (outer→inner): underline > bold (loudest) > bold > highlight.
+ * Closes happen BEFORE opens at the same boundary so spans close before
+ * new ones open (avoiding malformed `<u></u><u>` interleaving).
  */
-function applyMarks({ words, underlines, highlights, bolds, loudestSpan }) {
-  const N = words.length;
+function applyMarks({ paragraphText, underlines, highlights, bolds, loudestSpan }) {
+  const N = paragraphText.length;
 
-  // Open / close maps keyed by word index. Each entry is an ordered list to
-  // preserve nesting (outer first on open, inner first on close).
-  const opens = Array.from({ length: N + 1 }, () => []);
+  // Build lists of opens/closes at each character boundary 0..N.
+  const opens  = Array.from({ length: N + 1 }, () => []);
   const closes = Array.from({ length: N + 1 }, () => []);
 
-  // Loudest = combined bold-underline. We render it as **<u>...</u>**, which
-  // means an extra layer of bold around an existing underline. To avoid double
-  // marks we ensure (a) that range is also added to the underline list, and
-  // (b) we mark its boundaries with a special 'loud' kind so the renderer
-  // wraps **…** outside <u>.
-  const loud = loudestSpan;
-  const hasLoud = loud && loud[1] > loud[0];
-
-  // Open order at index i: u → loud → b → h. Close order: h → b → loud → u.
-  // (Outer wraps inner.)
   for (const u of underlines) {
-    opens[u[0]].push({ kind: 'u', open: '<u>', close: '</u>' });
-    closes[u[1]].push({ kind: 'u', close: '</u>' });
+    opens[u[0]].push({ kind: 'u',    open: '<u>', close: '</u>' });
+    closes[u[1]].push({ kind: 'u',   close: '</u>' });
   }
-  if (hasLoud) {
-    opens[loud[0]].push({ kind: 'loud', open: '**', close: '**' });
-    closes[loud[1]].push({ kind: 'loud', close: '**' });
+  if (loudestSpan) {
+    opens[loudestSpan[0]].push({ kind: 'loud',  open: '**', close: '**' });
+    closes[loudestSpan[1]].push({ kind: 'loud', close: '**' });
   }
   for (const b of bolds) {
-    opens[b[0]].push({ kind: 'b', open: '**', close: '**' });
-    closes[b[1]].push({ kind: 'b', close: '**' });
+    opens[b[0]].push({ kind: 'b',    open: '**', close: '**' });
+    closes[b[1]].push({ kind: 'b',   close: '**' });
   }
   for (const h of highlights) {
-    opens[h[0]].push({ kind: 'h', open: '==', close: '==' });
-    closes[h[1]].push({ kind: 'h', close: '==' });
+    opens[h[0]].push({ kind: 'h',    open: '==', close: '==' });
+    closes[h[1]].push({ kind: 'h',   close: '==' });
   }
 
-  // Emit. At each word boundary i:
-  //   1. Fire all CLOSE events (so spans end before any space).
-  //   2. Emit the word-separator space (except before word 0 and after the last word).
-  //   3. Fire all OPEN events (so the new span starts AT the word, not the space).
-  //   4. Emit the word.
-  // This keeps spaces OUTSIDE marks: "a ==credibility==" not "a==[space]credibility=="
-  // and "<u>foo</u> bar" not "<u>foo </u>bar".
   let out = '';
   const closeOrder = ['h', 'b', 'loud', 'u'];
   const openOrder  = ['u', 'loud', 'b', 'h'];
+
   for (let i = 0; i <= N; i++) {
     for (const k of closeOrder) {
       for (const ev of closes[i]) if (ev.kind === k) out += ev.close;
     }
-    if (i > 0 && i < N) out += ' ';
     for (const k of openOrder) {
       for (const ev of opens[i]) if (ev.kind === k) out += ev.open;
     }
-    if (i < N) {
-      // First word may need no leading space; subsequent words are preceded
-      // above. Word emission has no implicit space.
-      out += (i === 0 ? '' : '') + words[i];
-    }
+    if (i < N) out += paragraphText[i];
   }
   return out;
 }
 
 // --- main entry -------------------------------------------------------------
 
-/**
- * Reconstruct the card body from picks + candidates.
- *
- * @param {object} args
- * @param {object} args.picksJson    — parsed JSON from the LLM (matches schema).
- * @param {Array}  args.candidates   — [{ index, originalIndex, text }] from selectCandidates.
- * @param {string} [args.density='heavy']
- *
- * @returns {object} {
- *   tag: string,
- *   cite: string,
- *   body_markdown: string,    // fully-formatted, 100% verbatim by construction
- *   stats: {
- *     paragraphs: number,
- *     totalWords: number,
- *     underlineWords: number,
- *     highlightWords: number,
- *     dropped: { picks, underlines, highlights, bolds }
- *   }
- * }
- */
 function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
   const tag = String(picksJson?.tag || '').trim();
   const cite = String(picksJson?.cite || '').trim();
@@ -297,16 +238,14 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
   const highlightCap = HIGHLIGHT_CAPS[density] ?? HIGHLIGHT_CAPS.heavy;
 
   const stats = {
-    paragraphs: 0, totalWords: 0, underlineWords: 0, highlightWords: 0,
+    paragraphs: 0, totalChars: 0, underlineChars: 0, highlightChars: 0,
     dropped: { picks: 0, underlines: 0, highlights: 0, bolds: 0 },
   };
 
-  // Decide which pick gets the loudest mark. If the LLM's loudest references
-  // a missing/invalid pick, we'll skip the loudest entirely (no retry).
   let loudestPickIdx = null;
   if (loudest && candidateByIndex.has(loudest.p)) loudestPickIdx = loudest.p;
 
-  const seenPicks = new Set(); // dedupe duplicate paragraph indices
+  const seenPicks = new Set();
   const orderedPicks = [];
   for (const pick of picks) {
     const p = pick && Number.isInteger(pick.p) ? pick.p : null;
@@ -317,8 +256,6 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     orderedPicks.push(pick);
   }
 
-  // Sort picks by their candidate's originalIndex so they appear in
-  // document order regardless of how the model listed them.
   orderedPicks.sort((a, b) => {
     const ca = candidateByIndex.get(a.p).originalIndex;
     const cb = candidateByIndex.get(b.p).originalIndex;
@@ -326,12 +263,10 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
   });
 
   if (!orderedPicks.length) {
-    // Graceful fallback: take the first 2 candidates as plain paragraphs.
-    // Better than a 502.
     const fallback = candidates.slice(0, 2);
     const body = fallback.map(c => c.text).join('\n\n');
     stats.paragraphs = fallback.length;
-    stats.totalWords = fallback.reduce((a, c) => a + tokenizeWords(c.text).length, 0);
+    stats.totalChars = fallback.reduce((a, c) => a + c.text.length, 0);
     return { tag, cite, body_markdown: body, stats, fallback: true };
   }
 
@@ -339,48 +274,34 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
 
   for (const pick of orderedPicks) {
     const cand = candidateByIndex.get(pick.p);
-    const words = tokenizeWords(cand.text);
-    const N = words.length;
+    const paragraphText = cand.text;
+    const N = paragraphText.length;
     if (!N) continue;
 
-    // Step 1: clamp & merge.
-    let underlines = mergeSpans(
-      (pick.u || []).map(s => clampSpan(s, N)).filter(Boolean)
-    );
-    let highlights = mergeSpans(
-      (pick.h || []).map(s => clampSpan(s, N)).filter(Boolean)
-    );
-    let bolds = mergeSpans(
-      (pick.b || []).map(s => clampSpan(s, N)).filter(Boolean)
-    );
+    let underlines = mergeSpans((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean));
+    let highlights = mergeSpans((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean));
+    let bolds      = mergeSpans((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean));
 
-    // Step 2: enforce containment (highlights & bolds must sit inside <u>).
     const beforeHi = highlights.length;
     const beforeBo = bolds.length;
     highlights = filterContainedIn(highlights, underlines);
-    bolds = filterContainedIn(bolds, underlines);
+    bolds      = filterContainedIn(bolds, underlines);
     stats.dropped.highlights += beforeHi - highlights.length;
-    stats.dropped.bolds += beforeBo - bolds.length;
+    stats.dropped.bolds      += beforeBo - bolds.length;
 
-    // Step 3: cap max highlight run length.
-    highlights = trimMaxRun(highlights, MAX_HIGHLIGHT_RUN_WORDS);
+    highlights = trimMaxRun(highlights, MAX_HIGHLIGHT_RUN_CHARS);
 
-    // Step 4: density caps. Highlight first (its cap is tighter), then
-    // underline (using the trimmed highlight set so we protect the right ones).
     const beforeHiCap = highlights.length;
-    highlights = trimToHighlightCap(highlights, highlightCap, N, words);
+    highlights = trimToHighlightCap(highlights, highlightCap, N, paragraphText);
     stats.dropped.highlights += beforeHiCap - highlights.length;
 
     const beforeUCap = underlines.length;
     underlines = trimToUnderlineCap(underlines, highlights, underlineCap, N);
     stats.dropped.underlines += beforeUCap - underlines.length;
 
-    // Step 5: re-filter containment now that underlines may have shrunk.
     highlights = filterContainedIn(highlights, underlines);
-    bolds = filterContainedIn(bolds, underlines);
+    bolds      = filterContainedIn(bolds, underlines);
 
-    // Step 6: loudest. Only the pick that owns it gets it. Loudest must sit
-    // inside an underline; if the LLM's loudest doesn't, drop it.
     let loudestSpan = null;
     if (loudestPickIdx === pick.p && loudest) {
       const ls = clampSpan([loudest.from, loudest.to], N);
@@ -389,15 +310,13 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
       }
     }
 
-    // Step 7: emit.
-    const rendered = applyMarks({ words, underlines, highlights, bolds, loudestSpan });
+    const rendered = applyMarks({ paragraphText, underlines, highlights, bolds, loudestSpan });
     renderedParagraphs.push(rendered);
 
-    // Stats.
     stats.paragraphs++;
-    stats.totalWords += N;
-    stats.underlineWords += underlines.reduce((a, s) => a + (s[1] - s[0]), 0);
-    stats.highlightWords += highlights.reduce((a, s) => a + (s[1] - s[0]), 0);
+    stats.totalChars     += N;
+    stats.underlineChars += underlines.reduce((a, s) => a + (s[1] - s[0]), 0);
+    stats.highlightChars += highlights.reduce((a, s) => a + (s[1] - s[0]), 0);
   }
 
   const body_markdown = renderedParagraphs.join('\n\n');
@@ -461,9 +380,8 @@ module.exports = {
   CARD_PICKS_JSON_SCHEMA,
   HIGHLIGHT_CAPS,
   UNDERLINE_CAPS,
-  MAX_HIGHLIGHT_RUN_WORDS,
-  // exported for tests:
-  tokenizeWords,
+  MAX_HIGHLIGHT_RUN_CHARS,
+  // exposed for tests:
   clampSpan,
   mergeSpans,
   filterContainedIn,
