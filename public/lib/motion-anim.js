@@ -14,19 +14,36 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (!reduce) {
 
   /* ── Helpers ────────────────────────────────────────── */
-  const fadeUp = (el, opts = {}) =>
-    animate(
+  // Clear any inline transform Motion leaves behind. Critical because a
+  // residual `transform: translateY(0)` on an ancestor turns it into the
+  // containing block for any position:fixed child (like .lib-preview),
+  // breaking viewport-fixed positioning and making the bottom-sheet
+  // scroll with the list instead of staying glued off-screen.
+  const clearTransform = (target) => {
+    if (!target) return;
+    if (target.style) { target.style.transform = ''; return; }
+    if (target.forEach) target.forEach(el => { if (el && el.style) el.style.transform = ''; });
+  };
+
+  const fadeUp = (el, opts = {}) => {
+    const ctrl = animate(
       el,
       { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0)'] },
       { duration: 0.28, easing: [0.22, 0.8, 0.3, 1], ...opts },
     );
+    if (ctrl && ctrl.finished) ctrl.finished.then(() => clearTransform(el)).catch(() => {});
+    return ctrl;
+  };
 
-  const staggerFadeUp = (els, opts = {}) =>
-    animate(
+  const staggerFadeUp = (els, opts = {}) => {
+    const ctrl = animate(
       els,
       { opacity: [0, 1], transform: ['translateY(10px)', 'translateY(0)'] },
       { duration: 0.32, easing: [0.22, 0.8, 0.3, 1], delay: stagger(0.05), ...opts },
     );
+    if (ctrl && ctrl.finished) ctrl.finished.then(() => clearTransform(els)).catch(() => {});
+    return ctrl;
+  };
 
   /* ── 1. Page transitions ────────────────────────────── */
   const animatePageEnter = (pageEl) => {
@@ -37,15 +54,24 @@ if (!reduce) {
     // Animate the page itself first
     fadeUp(pageEl, { duration: 0.24 });
 
-    // Then stagger any direct content rows / cards / sections
+    // Then stagger any direct content rows / cards / sections.
+    // Note: deliberately exclude root containers like .lib-shell and .set-shell
+    // because they often contain position:fixed children (e.g. .lib-preview
+    // mobile bottom sheet). Adding transform to them turns them into the
+    // containing block for fixed descendants, which breaks viewport-fixed
+    // positioning permanently if Motion leaves an inline transform behind.
     const candidates = pageEl.querySelectorAll(
-      ':scope > .qa-row > .qa, :scope > .today-grid > div > .section, :scope > .today-grid > div > .aside-card, :scope > .shellpad > .section-band, :scope > .shellpad > .tourn-grid, :scope > .shellpad > .tt-table, :scope > .shellpad > .t-toolbar, :scope > .lib-shell, :scope > .set-shell > .set-body > .set-section',
+      ':scope > .qa-row > .qa, :scope > .today-grid > div > .section, :scope > .today-grid > div > .aside-card, :scope > .shellpad > .section-band, :scope > .shellpad > .tourn-grid, :scope > .shellpad > .tt-table, :scope > .shellpad > .t-toolbar, :scope > .set-shell > .set-body > .set-section',
     );
     if (candidates.length) staggerFadeUp(candidates, { duration: 0.36 });
   };
 
   // Run on the initially-active page
   document.addEventListener('DOMContentLoaded', () => {
+    // Defensive: blank any stale inline transforms left on shell containers
+    // by an older script version. These would otherwise pin position:fixed
+    // children to that ancestor instead of the viewport.
+    document.querySelectorAll('.lib-shell, .set-shell, .page').forEach(clearTransform);
     const initial = document.querySelector('.page.on');
     if (initial) animatePageEnter(initial);
   });
