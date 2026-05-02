@@ -1328,15 +1328,17 @@ async function showLibPreview(card){
   const url = full.url || full.sourceUrl;
   if(url){ $('lib-pv-source').style.display=''; $('lib-pv-source').onclick = ()=> window.open(url, '_blank'); }
   else $('lib-pv-source').style.display='none';
-  $('lib-pv-copy').onclick = async ()=>{
+  // Use the animated copy-btn helper — preserves the icon swap structure.
+  // We re-wire each time showLibPreview runs so the copyFn closes over the
+  // current `full` card. Mark as not-yet-wired to allow re-binding.
+  const lpCopy = $('lib-pv-copy');
+  lpCopy.__wired = false;
+  // Replace any stale inline onclick from a previous render
+  lpCopy.onclick = null;
+  wireCopyBtn(lpCopy, async () => {
     const ok = await writeCardToClipboard(full);
-    if(!ok){ showToast('Copy failed'); return; }
-    const btn = $('lib-pv-copy');
-    const original = btn.innerHTML;
-    btn.classList.add('copied');
-    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
-    setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = original; }, 1400);
-  };
+    if (!ok) { showToast('Copy failed'); throw new Error('Copy failed'); }
+  });
 }
 
 /* ── SETTINGS ───────────────────────────────────────────── */
@@ -1388,43 +1390,28 @@ function bindLibSheetDrag(){
   const handle = document.getElementById('lib-pv-handle');
   if (!pane || !handle) return;
 
-  // Snap states (translateY percentage of pane height): closed=100, half=50, full=0
-  const SNAP = { closed: 100, half: 50, full: 0 };
+  // Snap targets — translateY percentage of pane height. closed=100, half=50, full=0.
   let dragging = false;
   let startY = 0;
   let startPct = 50;
-  const HEIGHT = () => window.innerHeight;
+  let lastY = 0, lastT = 0, vy = 0;
 
   const currentPct = () => {
-    const t = getComputedStyle(pane).transform;
-    if (!t || t === 'none') return pane.classList.contains('snap-full') ? 0 : pane.classList.contains('is-active') ? 50 : 100;
-    // matrix(a, b, c, d, tx, ty)
-    const m = t.match(/matrix.*\(([^)]+)\)/);
-    if (!m) return 50;
-    const parts = m[1].split(',').map(parseFloat);
-    const ty = parts[parts.length - 1];   // ty is last in matrix(...)
-    return Math.max(0, Math.min(100, (ty / pane.offsetHeight) * 100));
+    const t = pane.style.transform;
+    const m = t.match(/translateY\(([^%]+)%\)/);
+    if (m) return parseFloat(m[1]);
+    if (pane.classList.contains('snap-full')) return 0;
+    if (pane.classList.contains('is-active')) return 50;
+    return 100;
   };
 
-  const setPct = (pct) => {
-    pane.style.transform = `translateY(${pct}%)`;
-  };
-
-  const snap = (pct, velocity = 0) => {
-    pane.classList.remove('dragging');
+  const setState = (state) => {
+    // Always clear inline transform first so the class transition fires.
     pane.style.transform = '';
-    // Use velocity as a tiebreaker — quick downward swipe → close, quick upward → fullscreen
-    if (velocity > 0.6) {
+    pane.classList.remove('dragging');
+    if (state === 'closed') {
       pane.classList.remove('is-active', 'snap-full');
-      return;
-    }
-    if (velocity < -0.6) {
-      pane.classList.add('is-active', 'snap-full');
-      return;
-    }
-    if (pct >= 80) {
-      pane.classList.remove('is-active', 'snap-full');
-    } else if (pct >= 25) {
+    } else if (state === 'half') {
       pane.classList.add('is-active');
       pane.classList.remove('snap-full');
     } else {
@@ -1432,8 +1419,18 @@ function bindLibSheetDrag(){
     }
   };
 
-  let lastY = 0, lastT = 0, vy = 0;
+  const snap = (pct, velocity = 0) => {
+    let target;
+    if (velocity > 0.5) target = 'closed';        // fling down
+    else if (velocity < -0.5) target = 'full';     // fling up
+    else if (pct >= 75) target = 'closed';
+    else if (pct >= 25) target = 'half';
+    else target = 'full';
+    setState(target);
+  };
+
   const onDown = (e) => {
+    // Drag only starts when the sheet is at least open at half — otherwise nothing to drag.
     if (!pane.classList.contains('is-active')) return;
     dragging = true;
     pane.classList.add('dragging');
@@ -1446,12 +1443,12 @@ function bindLibSheetDrag(){
     if (!dragging) return;
     const y = (e.touches ? e.touches[0].clientY : e.clientY);
     const dy = y - startY;
-    const dPct = (dy / HEIGHT()) * 100;
+    const dPct = (dy / window.innerHeight) * 100;
     const next = Math.max(0, Math.min(100, startPct + dPct));
-    setPct(next);
+    pane.style.transform = `translateY(${next}%)`;
     const now = performance.now();
     const dt = Math.max(1, now - lastT);
-    vy = (y - lastY) / dt;   // px per ms (positive = downward)
+    vy = (y - lastY) / dt;
     lastY = y; lastT = now;
     if (e.cancelable) e.preventDefault();
   };
@@ -1461,18 +1458,52 @@ function bindLibSheetDrag(){
     snap(currentPct(), vy);
   };
 
-  handle.addEventListener('pointerdown', (e) => { handle.setPointerCapture(e.pointerId); onDown(e); });
+  // Bind pointer events on the handle area (whole 24px-tall element including
+  // the visual pill — generous tap target).
+  handle.addEventListener('pointerdown', (e) => {
+    try { handle.setPointerCapture(e.pointerId); } catch {}
+    onDown(e);
+  });
   handle.addEventListener('pointermove', onMove);
-  handle.addEventListener('pointerup',   (e) => { try { handle.releasePointerCapture(e.pointerId); } catch {} onUp(); });
-  handle.addEventListener('pointercancel', onUp);
-  // Double-tap handle = quick toggle to full
-  let lastTap = 0;
-  handle.addEventListener('click', () => {
-    const now = Date.now();
-    if (now - lastTap < 350) {
-      pane.classList.toggle('snap-full');
+  const releaseUp = (e) => {
+    try { handle.releasePointerCapture(e.pointerId); } catch {}
+    onUp();
+  };
+  handle.addEventListener('pointerup', releaseUp);
+  handle.addEventListener('pointercancel', releaseUp);
+
+  // Tap-to-toggle on the handle (no drag): if user taps the handle while half-open,
+  // expand to full; if full, collapse to half.
+  let pressedAt = 0, pressedY = 0;
+  handle.addEventListener('pointerdown', (e) => { pressedAt = Date.now(); pressedY = e.clientY; });
+  handle.addEventListener('click', (e) => {
+    const elapsed = Date.now() - pressedAt;
+    const moved = Math.abs(e.clientY - pressedY);
+    if (elapsed < 250 && moved < 6) {
+      setState(pane.classList.contains('snap-full') ? 'half' : 'full');
     }
-    lastTap = now;
+  });
+
+  // Expose a single global helper so other places (close button, esc key) can
+  // dismiss cleanly.
+  window.LibSheet = { open: () => setState('half'), close: () => setState('closed'), full: () => setState('full') };
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && pane.classList.contains('is-active')) setState('closed');
+  });
+}
+
+/* ── Animated Copy → Check button helper ────────────────── */
+// Wires any .copy-btn so its onclick handler can return/await a copy action;
+// the check icon swaps in for 1.6s then reverts.
+function wireCopyBtn(btn, copyFn){
+  if (!btn || btn.__wired) return;
+  btn.__wired = true;
+  btn.addEventListener('click', async () => {
+    if (btn.classList.contains('copied')) return;
+    try { await copyFn(); } catch (e) { /* leave button neutral */ return; }
+    btn.classList.add('copied');
+    clearTimeout(btn.__copiedT);
+    btn.__copiedT = setTimeout(() => btn.classList.remove('copied'), 1600);
   });
 }
 
@@ -2026,20 +2057,18 @@ function showCutResult(data){
   $('cut-source').style.display = url ? '' : 'none';
 
   // Copy: write rich HTML so Verbatim/Word preserves highlight + underline + bold.
-  // Always read from state.cutCard so toolbar edits are included.
-  $('cut-copy').onclick = async ()=>{
+  // Animated icon swap via wireCopyBtn — preserves the SVG copy/check structure.
+  const ctcBtn = $('cut-copy');
+  ctcBtn.__wired = false;       // allow re-binding on each cut
+  ctcBtn.onclick = null;
+  wireCopyBtn(ctcBtn, async () => {
     const live = state.cutCard;
     const payload = live
       ? { tag: live.tag || tag, cite: live.cite || cite, body_markdown: live.body_markdown, body_plain: live.body_plain }
       : { tag, cite, body_plain: plainBody };
     const ok = await writeCardToClipboard(payload);
-    if(!ok){ showToast('Copy failed'); return; }
-    const btn = $('cut-copy');
-    const orig = btn.innerHTML;
-    btn.classList.add('copied');
-    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>Copied';
-    setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = orig; }, 1400);
-  };
+    if (!ok) { showToast('Copy failed'); throw new Error('Copy failed'); }
+  });
 
   // Log to history (server already saved the card via saveCutCardForUser).
   fetchJSON('/api/history', {
@@ -2050,6 +2079,9 @@ function showCutResult(data){
 
   card.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
+
+/* Expose helpers needed by other files (chatSplitView.js etc.) */
+window.wireCopyBtn = wireCopyBtn;
 
 /* boot */
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);

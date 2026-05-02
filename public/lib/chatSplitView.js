@@ -27,7 +27,9 @@
     document.getElementById('chat-split-title').textContent = (block.tag || 'Block').slice(0, 60);
     pane.hidden = false;
     const copyBtn = document.getElementById('chat-split-copy');
-    copyBtn.onclick = () => {
+    copyBtn.__wired = false;
+    copyBtn.onclick = null;
+    const doCopy = async () => {
       const body = document.getElementById('chat-split-body');
       const html = (global.Clipboard && global.Clipboard.serializeSelectionHtmlFromString)
         ? global.Clipboard.serializeSelectionHtmlFromString(body.innerHTML, { entire: true })
@@ -38,9 +40,19 @@
           'text/html': new Blob([html], { type: 'text/html' }),
           'text/plain': new Blob([body.innerText], { type: 'text/plain' }),
         });
-        navigator.clipboard.write([item]);
+        await navigator.clipboard.write([item]);
       } catch {}
     };
+    if (typeof global.wireCopyBtn === 'function') {
+      global.wireCopyBtn(copyBtn, doCopy);
+    } else {
+      // Fallback: direct binding without animation if helper isn't loaded yet.
+      copyBtn.addEventListener('click', () => {
+        doCopy();
+        copyBtn.classList.add('copied');
+        setTimeout(() => copyBtn.classList.remove('copied'), 1600);
+      });
+    }
     document.getElementById('chat-split-close').onclick = close;
   }
   function close() {
