@@ -37,10 +37,14 @@
  *  - Exactly one **<u>...</u>** "loudest" mark survives per card.
  */
 
-// Density caps measured as fraction of paragraph CHARACTERS (not words)
-// inside the mark. Calibrated against 85 hand-cut Vanguard cards.
-const HIGHLIGHT_CAPS = { minimal: 0.30, standard: 0.45, heavy: 0.65 };
-const UNDERLINE_CAPS = { minimal: 0.60, standard: 0.80, heavy: 0.95 };
+// Density caps measured as fraction of paragraph CHARACTERS inside the mark.
+// IMPORTANT: heavy underline cap is 1.0 (no cap) because the model
+// commonly emits u = [[0, paragraphLength]] (100% coverage). At 0.95 the
+// trim dropped the underline, which then orphaned every highlight via
+// containment filter → "marks=0 ⚠ NO_MARKS" failure observed in prod.
+// The lower presets keep a cap because they signal "skip filler aggressively".
+const HIGHLIGHT_CAPS = { minimal: 0.30, standard: 0.45, heavy: 0.70 };
+const UNDERLINE_CAPS = { minimal: 0.75, standard: 0.95, heavy: 1.0 };
 
 // Maximum length of a single highlight RUN. 60 chars ≈ 10 words. Real
 // Vanguard cards rarely exceed this; the model mostly emits short fragments.
@@ -162,9 +166,19 @@ function trimToUnderlineCap(underlines, highlights, cap, totalChars) {
     return b.len - a.len;
   });
 
+  // ORPHAN-PROTECTION: never let trimming drop EVERY underline that contains
+  // a highlight. Without this, exceeding the cap = "marks=0" failure mode.
+  // We keep at least one underline if highlights exist anywhere.
+  const protectedRemaining = () => kept.filter(s => !dropSet.has(s) &&
+    highlights.some(h => h[0] >= s[0] && h[1] <= s[1])
+  ).length;
+
   const dropSet = new Set();
   for (const x of scored) {
     if (used / totalChars <= cap) break;
+    // Skip if dropping this underline would leave zero protected underlines
+    // (i.e., would orphan all highlights).
+    if (highlights.length && x.protected && protectedRemaining() <= 1) continue;
     dropSet.add(x.s);
     used -= x.len;
   }
@@ -342,12 +356,15 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
 
 // --- the JSON schema for the picks output ----------------------------------
 
+// Anthropic structured outputs reject `maxItems` and `minItems` on array
+// types. Even when we use `response_format: json_object` mode, OpenRouter
+// can auto-translate to Anthropic's structured output format and pass our
+// schema through. So this schema must be Anthropic-compatible: NO
+// minItems/maxItems anywhere.
 const SPAN_SCHEMA = {
   type: 'array',
   items: {
     type: 'array',
-    minItems: 2,
-    maxItems: 2,
     items: { type: 'integer', minimum: 0 },
   },
 };
@@ -360,12 +377,10 @@ const CARD_PICKS_JSON_SCHEMA = {
     additionalProperties: false,
     required: ['tag', 'cite', 'picks'],
     properties: {
-      tag:  { type: 'string', minLength: 1 },
-      cite: { type: 'string', minLength: 1 },
+      tag:  { type: 'string' },
+      cite: { type: 'string' },
       picks: {
         type: 'array',
-        minItems: 1,
-        maxItems: 14,
         items: {
           type: 'object',
           additionalProperties: false,
