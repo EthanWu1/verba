@@ -76,6 +76,104 @@ function normalizeForCompare(s) {
     .trim();
 }
 
+// Paragraph-integrity enforcement — server is the source of truth for the
+// body text. For each paragraph the model emitted, find its best-matching
+// SOURCE paragraph by token overlap, replace the paragraph with that source
+// text VERBATIM, and re-anchor the model's highlight / bold / underline
+// marks by phrase-matching them against the verbatim text. Anything the
+// model paraphrased gets thrown out; the source wins. Returns null if no
+// good matches found, otherwise the rebuilt body_markdown.
+function enforceParagraphIntegrity(modelBodyMd, sourceText) {
+  if (!modelBodyMd || !sourceText) return null;
+  const sourceParas = String(sourceText).split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  if (!sourceParas.length) return null;
+  const modelParas = String(modelBodyMd).split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  if (!modelParas.length) return null;
+
+  const tokenize = (s) => normalizeForCompare(s).split(' ').filter(w => w.length > 3);
+  const sourceTokenSets = sourceParas.map(p => new Set(tokenize(p)));
+
+  // Track which source paragraphs already used so each appears at most once
+  // (preserves "complete source paragraph" rule and prevents duplication).
+  const usedSourceIdx = new Set();
+  const out = [];
+
+  for (const mp of modelParas) {
+    const mpPlain = stripFormatMarks(mp);
+    const mpTokens = new Set(tokenize(mpPlain));
+    if (mpTokens.size < 4) continue;     // skip tiny noise paragraphs
+
+    // Find source paragraph with highest token overlap.
+    let bestIdx = -1, bestScore = 0;
+    for (let i = 0; i < sourceParas.length; i++) {
+      if (usedSourceIdx.has(i)) continue;
+      const overlap = [...mpTokens].filter(t => sourceTokenSets[i].has(t)).length;
+      const score = overlap / mpTokens.size;
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
+    }
+    if (bestIdx === -1 || bestScore < 0.35) continue;
+    usedSourceIdx.add(bestIdx);
+    const srcPara = sourceParas[bestIdx];
+
+    // Re-anchor the model's marks onto the verbatim source paragraph.
+    out.push(reapplyMarks(mp, srcPara));
+  }
+
+  return out.length ? out.join('\n\n') : null;
+}
+
+// Given a model-emitted paragraph (which may contain ==highlight==, **bold**,
+// <u>underline</u> markup but possibly paraphrased text) and the canonical
+// SOURCE paragraph (verbatim), produce a marked-up version of the SOURCE
+// paragraph by phrase-matching each marked span back into the source.
+function reapplyMarks(modelPara, srcPara) {
+  // Extract the marked phrases from model output (in the order they appeared).
+  // Each entry: { kind: 'h'|'b'|'u', text: <plain>, startInPlain }
+  const marks = [];
+  const re = /<u>([\s\S]+?)<\/u>|\*\*([^*\n]+?)\*\*|==([^=\n]+?)==/g;
+  let m;
+  while ((m = re.exec(modelPara)) !== null) {
+    if (m[1]) marks.push({ kind: 'u', text: stripFormatMarks(m[1]) });
+    else if (m[2]) marks.push({ kind: 'b', text: stripFormatMarks(m[2]) });
+    else if (m[3]) marks.push({ kind: 'h', text: stripFormatMarks(m[3]) });
+  }
+  if (!marks.length) return srcPara;
+
+  // For each mark, find its phrase in the source paragraph (case-insensitive,
+  // whitespace-tolerant). Build a list of [start, end, kind] insertions.
+  const srcLower = srcPara.toLowerCase();
+  const insertions = [];
+  for (const mk of marks) {
+    const phrase = String(mk.text || '').trim();
+    if (!phrase || phrase.length < 4) continue;
+    const idx = srcLower.indexOf(phrase.toLowerCase());
+    if (idx === -1) continue;
+    insertions.push({ start: idx, end: idx + phrase.length, kind: mk.kind });
+  }
+  if (!insertions.length) return srcPara;
+
+  // Sort by start, then by widest span first (so an outer underline wraps an
+  // inner highlight rather than splitting it).
+  insertions.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+
+  // Layer the marks. Underlines wrap the outer span; bolds + highlights live
+  // inside underlines. Simple non-overlapping pass: greedily apply marks left
+  // to right; skip any that would overlap an already-applied mark.
+  const taken = []; // ranges already wrapped
+  const overlapsTaken = (s, e) => taken.some(t => !(e <= t.start || s >= t.end));
+  let result = srcPara;
+  // Apply from RIGHT to LEFT so character indices remain stable as we splice.
+  const sorted = insertions.slice().sort((a, b) => b.start - a.start);
+  for (const ins of sorted) {
+    if (overlapsTaken(ins.start, ins.end)) continue;
+    taken.push({ start: ins.start, end: ins.end });
+    const open  = ins.kind === 'h' ? '==' : ins.kind === 'b' ? '**' : '<u>';
+    const close = ins.kind === 'h' ? '==' : ins.kind === 'b' ? '**' : '</u>';
+    result = result.slice(0, ins.start) + open + result.slice(ins.start, ins.end) + close + result.slice(ins.end);
+  }
+  return result;
+}
+
 function verifyBodyFidelity(cardBody, sourceText) {
   const plain = normalizeForCompare(stripFormatMarks(cardBody));
   const source = normalizeForCompare(sourceText);
@@ -257,6 +355,22 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
         } catch { /* keep best so far */ }
       } catch { /* keep best so far */ }
     }
+
+    // Server-side paragraph-integrity enforcement (always runs). Replaces
+    // every model paragraph with its best-matching source paragraph verbatim
+    // and re-anchors the model's highlight/bold/underline marks via phrase
+    // matching. Result: 100% verbatim by construction.
+    try {
+      const enforced = enforceParagraphIntegrity(card.body_markdown || '', truncated);
+      if (enforced) {
+        card.body_markdown = enforced;
+        fidelity = verifyBodyFidelity(card.body_markdown, truncated);
+        console.log(`[cut-card] paragraph-integrity enforcement applied; fidelity now ${(fidelity.matchRate || 0).toFixed(3)}`);
+      }
+    } catch (e) {
+      console.warn('[cut-card] enforceParagraphIntegrity threw:', e.message);
+    }
+
     if (!fidelity.ok) {
       // Strict per-paragraph repair: a paragraph survives ONLY if its stripped
       // plain text is a contiguous substring of source (after normalizing
