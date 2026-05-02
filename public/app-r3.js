@@ -114,6 +114,8 @@ function go(p){
   if(p==='rankings') loadRankings();
   if(p==='settings') loadSettings();
   if(p==='chat' && window.ChatApp && window.ChatApp.show) window.ChatApp.show();
+  // Close any open chat thread dropdown when navigating to a different tab.
+  if(p!=='chat' && window.ChatHistory && window.ChatHistory.close) window.ChatHistory.close();
   // Reset tournaments view when navigating in
   if(p==='tournaments'){ $('t-list-view').style.display='block'; $('t-detail-view').style.display='none'; window.scrollTo(0,0); }
 }

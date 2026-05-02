@@ -262,5 +262,5 @@
 
   function scrollBottom() { msgsEl.scrollTop = msgsEl.scrollHeight; }
 
-  global.ChatThread = { init, openThread, clear };
+  global.ChatThread = { init, openThread, clear, currentId: () => currentThreadId };
 })(window);

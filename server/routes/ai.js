@@ -60,9 +60,24 @@ function stripFormatMarks(md) {
     .trim();
 }
 
+// Normalize for fidelity comparison: smart quotes → straight, em/en/figure
+// dash → hyphen, NBSP → space, lowercase, collapse whitespace. Without this,
+// Sonnet routinely produces output where every word is verbatim but Unicode
+// substitution makes the naive comparator fail (e.g. " vs " in the source).
+function normalizeForCompare(s) {
+  return String(s || '')
+    .replace(/[‘’‚‛′]/g, "'")
+    .replace(/[“”„‟″]/g, '"')
+    .replace(/[–—―]/g, '-')
+    .replace(/[  ]/g, ' ')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function verifyBodyFidelity(cardBody, sourceText) {
-  const plain = stripFormatMarks(cardBody).toLowerCase();
-  const source = String(sourceText || '').toLowerCase().replace(/\s+/g, ' ');
+  const plain = normalizeForCompare(stripFormatMarks(cardBody));
+  const source = normalizeForCompare(sourceText);
   if (!plain || !source) return { ok: false, missing: [] };
 
   const words = plain.split(/\s+/).filter(Boolean);
@@ -73,7 +88,10 @@ function verifyBodyFidelity(cardBody, sourceText) {
   const missing = windows.filter(w => !source.includes(w));
   const matchRate = windows.length ? 1 - missing.length / windows.length : 0;
   return {
-    ok: matchRate >= 0.98,
+    // 0.95 instead of 0.98: tolerates a handful of Unicode/punctuation diffs
+    // the model can't avoid (e.g. ligatures, ellipsis, soft hyphen) without
+    // letting through actually-paraphrased output.
+    ok: matchRate >= 0.95,
     matchRate,
     missing: missing.slice(0, 5),
     totalWindows: windows.length,
