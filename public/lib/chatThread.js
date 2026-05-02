@@ -104,8 +104,17 @@
           renderMessage(payload.assistantMessage);
           scrollBottom();
         }
+        // Refresh free-plan usage indicator after each successful send.
+        if (typeof global.refreshUsage === 'function') global.refreshUsage();
       },
-      onError: (e) => { asstEl.textContent = '⚠ ' + (e.message || 'error'); },
+      onError: (e) => {
+        if (e && e.status === 429) {
+          asstEl.textContent = '⚠ Free plan: 20 messages / month reached. Upgrade to keep chatting.';
+          if (typeof global.refreshUsage === 'function') global.refreshUsage();
+        } else {
+          asstEl.textContent = '⚠ ' + (e.message || 'error');
+        }
+      },
     });
   }
 

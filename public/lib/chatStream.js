@@ -9,6 +9,16 @@
       credentials: 'include',
       body: JSON.stringify(body),
     });
+    // Non-OK (e.g. 429 quota exceeded) — surface to onError so the UI can show a paywall.
+    if (!res.ok) {
+      let j = {}; try { j = await res.json(); } catch {}
+      const err = new Error(j.error || res.statusText || 'request failed');
+      err.status = res.status;
+      err.body = j;
+      if (onError) onError(err);
+      else throw err;
+      return;
+    }
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.startsWith('text/event-stream')) {
       const j = await res.json();

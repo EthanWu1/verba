@@ -394,6 +394,14 @@ img,svg,video,canvas{max-width:100%;height:auto}
   /* Modals */
   .lnk,.cmd,.modal{width:96vw !important;max-width:none !important}
 
+  /* Usage pill: shrink + drop the "Upgrade" link on phones (still tappable
+     via the Settings tab). */
+  .usage-pill{padding:4px 9px !important;font-size:11px !important}
+  .usage-pill .num{font-size:11px !important}
+  .usage-pill .upg{display:none !important}
+  /* In the chat topbar specifically, drop the "messages" word — pill becomes "X / Y" only */
+  #usage-chat span:not(.dot):not(.num){display:none}
+
   /* General overflow guard — long unbreakable strings (URLs, citations,
      tournament names) must not blow out the layout. */
   .lib-list-pane h2, .lib-list-pane h3, .lib-list-pane .meta,

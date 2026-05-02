@@ -131,6 +131,7 @@ async function boot(){
 
   await loadUser();
   await loadLinks();
+  loadUsage();
   go(TWEAKS.page || 'today');
 }
 
@@ -1829,6 +1830,9 @@ function loadCutter(){
     state.history = (data && data.items) || [];
     renderCutterRecent();
   });
+  // Refresh the free-plan usage pill so it reflects the latest count
+  // (e.g. if the user just cut from another tab/session).
+  loadUsage();
 }
 
 function renderCutterRecent(){
@@ -1957,6 +1961,12 @@ async function runCutLLM({ bodyText, cite, meta, argument = '' }){
     const t = await resp.text().catch(()=>'');
     let msg = `${resp.status}`;
     try { const j = JSON.parse(t); msg = j.error || j.hint || msg; } catch { msg = t.slice(0,140) || msg; }
+    if (resp.status === 429) {
+      termLine('!', 'free plan limit reached · upgrade to keep cutting', 'err');
+      showToast('Free plan: 10 cards / month reached');
+      loadUsage();
+      return null;
+    }
     termLine('!', 'cut failed · ' + msg, 'err');
     showToast('LLM cut failed');
     return null;
@@ -2017,6 +2027,9 @@ async function runCutterFile(file){
 }
 
 function showCutResult(data){
+  // A successful cut just consumed one free-plan credit on the server side.
+  loadUsage();
+
   const card = $('cut-card');
   const body = $('cut-body');
   // LLM cut returns `card: { tag, cite, body_markdown, ... }`. Pre-cut scrape
@@ -2080,8 +2093,35 @@ function showCutResult(data){
   card.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
+/* ── FREE-PLAN USAGE INDICATORS ─────────────────────────── */
+async function loadUsage() {
+  const u = await fetchJSON('/api/auth/usage');
+  if (!u) return;
+  applyUsagePill('usage-cutter', u.cutCard, u.tier);
+  applyUsagePill('usage-chat',   u.chat,    u.tier);
+}
+function applyUsagePill(id, kind, tier) {
+  const pill = document.getElementById(id);
+  if (!pill) return;
+  if (tier && tier !== 'free') {
+    pill.dataset.tier = 'paid';   // hidden via CSS
+    return;
+  }
+  delete pill.dataset.tier;
+  const used = Number(kind?.used || 0);
+  const limit = Number(kind?.limit || 0);
+  const remaining = Math.max(0, limit - used);
+  const numEl = pill.querySelector('.num');
+  if (numEl) numEl.textContent = `${used} / ${limit}`;
+  pill.dataset.state =
+    remaining === 0 ? 'full' :
+    remaining <= Math.max(2, Math.floor(limit * 0.2)) ? 'warn' :
+    'ok';
+}
+
 /* Expose helpers needed by other files (chatSplitView.js etc.) */
 window.wireCopyBtn = wireCopyBtn;
+window.refreshUsage = loadUsage;
 
 /* boot */
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);

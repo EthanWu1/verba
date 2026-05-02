@@ -2,10 +2,13 @@
 const express = require('express');
 const multer = require('multer');
 const requireUser = require('../middleware/requireUser');
+const enforceLimit = require('../middleware/enforceLimit');
 const store = require('../services/chatStore');
 
 const router = express.Router();
 router.use(requireUser);
+
+const CHAT_MONTHLY_LIMIT = Number(process.env.FREE_CHAT_DAILY || 20);
 
 const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 } });
 
@@ -126,7 +129,7 @@ const { complete, completeStream, parseJSON } = require('../services/llm');
 const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'google/gemini-2.0-flash-001';
 const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'deepseek/deepseek-chat';
 
-router.post('/threads/:id/messages', async (req, res) => {
+router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), async (req, res) => {
   const userId = req.user.id;
   const threadId = req.params.id;
   const thread = store.getThread(threadId, userId);
