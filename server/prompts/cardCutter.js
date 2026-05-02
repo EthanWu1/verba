@@ -302,10 +302,15 @@ Picks: { "p": 0, "u": [[0, 71]], "h": [[4,5], [11,12], [17,22], [26,32], [54,70]
 CRITICAL — DO NOT FORGET ANY OF THESE:
 1. EVERY pick MUST include a non-empty "u" array. NEVER emit \`"u": []\` — empty u = empty card.
 2. Numbers in u/h/b arrays are CHARACTERS, not words. "[27, 46]" means chars 27–45.
-3. Each highlight RANGE is SHORT: 3–15 chars (1–2 words). Many short ranges, NOT few long ones. Range > 25 chars = wrong, will be auto-trimmed.
-4. SELECTIVITY: only ~10–15% of total chars are highlighted on heavy. Real Vanguard cards leave most words plain.
-5. Underline ~50–70% of paragraph on heavy — skip filler/transitions/setup. Don't underline 95%.
-6. Highlight stopwords ("and", "to", "the", "of") only when they're 1-word glue between content highlights — never as part of a long span.
+3. ALIGN TO WORD BOUNDARIES. The 'from' position should land at the start of a word (right after a space or punctuation). The 'to' position should land right after the last char of a word (at a space or punctuation). DO NOT cut through the middle of a word like "exte"/"nded" of "extended" — the server will snap mid-word edges INWARD, which can shrink your highlight to nothing. Examples:
+   - GOOD: span [4, 12] when text[3]=' ' and text[12]=' ' (covers a clean word)
+   - GOOD: span [4, 5] when text[3]=' ' and text[5]='.' (single letter "U" of "U.S.")
+   - BAD: span [4, 8] when text[8]='r' and text[9]='e' (cuts mid-word)
+4. Each highlight RANGE is SHORT: 3–15 chars (1–2 words). Range > 20 chars = will be auto-trimmed.
+5. SELECTIVITY: only ~10–15% of total chars are highlighted on heavy. Real Vanguard cards leave most words plain.
+6. Underline ~50–70% of paragraph on heavy — skip filler/transitions/setup. Don't underline 95%.
+7. Bolds: 1–3 per paragraph max. Don't bold every other word.
+8. Highlight stopwords ("and", "to", "the", "of") only when they're 1-word glue between content highlights — never as part of a long span.
 
 If you cannot find a usable warrant, return JSON with picks=[] and a descriptive tag. The server will degrade gracefully.`;
 }

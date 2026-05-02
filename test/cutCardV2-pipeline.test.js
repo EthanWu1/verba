@@ -198,19 +198,51 @@ test('cardReconstructor: graceful fallback when zero valid picks', () => {
 });
 
 test('cardReconstructor: highlight runs over MAX_HIGHLIGHT_RUN_CHARS get trimmed', () => {
-  // 300-char paragraph. Underline = first 250 chars (83% — under 95% heavy cap).
-  // Highlight requested = 150 chars → trimmed to 60 chars. 60/300 = 20% (under 65%).
-  const text = 'a'.repeat(300);
+  // Realistic text with word boundaries (so snap doesn't collapse).
+  // Each "word " is 5 chars, ~100 words = 500 chars.
+  const text = ('alpha bravo charlie delta echo foxtrot golf hotel india juliet ').repeat(8);
   const candidates = [{ index: 0, originalIndex: 0, text }];
+  // Underline 400 chars; highlight 150 chars (will be max-run-trimmed to 20).
   const picksJson = {
     tag: 't', cite: 'c',
-    picks: [{ p: 0, u: [[0, 250]], h: [[0, 150]] }],
+    picks: [{ p: 0, u: [[0, 400]], h: [[0, 150]] }],
   };
   const r = reconstructCard({ picksJson, candidates, density: 'heavy' });
   const hMatch = r.body_markdown.match(/==([^=]+)==/);
   assert.ok(hMatch, 'should still have a highlight after trim');
   assert.ok(hMatch[1].length <= MAX_HIGHLIGHT_RUN_CHARS,
     `highlight should be trimmed to ≤${MAX_HIGHLIGHT_RUN_CHARS} chars, got ${hMatch[1].length}`);
+});
+
+test('cardReconstructor: snap to word boundary fixes mid-word edges', () => {
+  // "with U.S. extended deterrence" → if model emits [0, 13] (cuts "extended"
+  // at "exte"), snap should pull `to` back to end of "U.S." (8) since pos 13
+  // is mid-word "extended" (text[12]='e', text[13]='n').
+  const text = 'with U.S. extended deterrence';
+  // chars: w(0) i(1) t(2) h(3) ' '(4) U(5) .(6) S(7) .(8) ' '(9) e(10)x(11)t(12)e(13)n(14)d(15)e(16)d(17) ' '(18) ...
+  // Wait let me recount
+  // 0:'w' 1:'i' 2:'t' 3:'h' 4:' ' 5:'U' 6:'.' 7:'S' 8:'.' 9:' ' 10:'e' 11:'x' 12:'t' 13:'e' 14:'n' 15:'d' 16:'e' 17:'d'
+  // Span [0, 14] covers "with U.S. exte" — cuts "extended" mid-word.
+  // text[13]='e' (wordchar), text[14]='n' (wordchar) → mid-word, snap backward.
+  // Snap pulls to back through 'e','t','x','e' until it hits text[10]='e' / text[9]=' '. So to=10.
+  const out = applyMarks({
+    paragraphText: text,
+    underlines: [[0, text.length]],
+    highlights: [],
+    bolds: [],
+    loudestSpan: null,
+  });
+  // Just ensure rendering works on this corpus; the snap-specific assertion
+  // is below.
+  assert.match(out, /<u>with U\.S\. extended deterrence<\/u>/);
+
+  const { snapToWordBoundaries } = require('../server/services/cardReconstructor');
+  const snapped = snapToWordBoundaries([0, 14], text);
+  assert.deepEqual(snapped, [0, 10], `Expected [0, 10] (with U.S. ), got ${JSON.stringify(snapped)}`);
+
+  // Span [13, 22] cuts "extended" at "nded ..." — snap forward to position 18 (start of "deterrence")
+  const snapped2 = snapToWordBoundaries([13, 22], text);
+  assert.ok(snapped2 && snapped2[0] >= 18, `Expected from snapped past 'extended', got ${JSON.stringify(snapped2)}`);
 });
 
 test('cardReconstructor: highlight cap enforced (heavy)', () => {
