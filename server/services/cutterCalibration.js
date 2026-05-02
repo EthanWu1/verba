@@ -134,14 +134,18 @@ function buildCalibrationSnippet(cal) {
     const gWords = (cal.droppedAndGap.topGapWords || []).slice(0, 10).map(([w]) => w);
     if (gWords.length) lines.push(`- Function words found INSIDE underlines but NOT highlighted (read silently): ${gWords.join(', ')}.`);
   }
-  // Top phrases — voice reference
-  if (cal.highlights && cal.highlights.topBigrams && cal.highlights.topBigrams.length) {
-    const top2 = cal.highlights.topBigrams.slice(0, 8).map(([g]) => `"${g}"`).join(', ');
-    lines.push(`- Most-frequent highlight 2-grams in this library: ${top2}.`);
+  // Top phrases — voice reference. Filter the obvious stopword-only n-grams
+  // ('in the', 'of the', 'is a') so the model sees CONTENT phrases the
+  // library actually highlights.
+  const STOPWORD_ONLY = /^((the|to|of|in|a|an|and|on|at|by|for|or|but|that|this|with|from|into|as|is|are|be|been|will|would|could|may|might|can|has|have|had|its|their|there|it|some|any|all|not)\s+){1,3}(the|to|of|in|a|an|and|on|at|by|for|or|but|that|this|with|from|into|as|is|are|be|been|will|would|could|may|might|can|has|have|had|its|their|there|it|some|any|all|not)$/i;
+  const contentful = (entries) => (entries || []).filter(([g]) => !STOPWORD_ONLY.test(String(g).trim()));
+  const top2 = contentful(cal.highlights && cal.highlights.topBigrams).slice(0, 12);
+  const top3 = contentful(cal.highlights && cal.highlights.topTrigrams).slice(0, 8);
+  if (top2.length) {
+    lines.push(`- Real 2-word highlight examples from the library: ${top2.map(([g]) => `"${g}"`).join(', ')}.`);
   }
-  if (cal.highlights && cal.highlights.topTrigrams && cal.highlights.topTrigrams.length) {
-    const top3 = cal.highlights.topTrigrams.slice(0, 5).map(([g]) => `"${g}"`).join(', ');
-    lines.push(`- Most-frequent highlight 3-grams: ${top3}.`);
+  if (top3.length) {
+    lines.push(`- Real 3-word highlight examples: ${top3.map(([g]) => `"${g}"`).join(', ')}.`);
   }
   // Bold-pattern guidance
   if (cal.bolds && cal.bolds.boldsInsideHighlightsPct != null) {
