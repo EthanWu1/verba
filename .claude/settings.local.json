@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "mcp__plugin_context-mode_context-mode__ctx_batch_execute"
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "Bash(xargs grep *)",
+      "Bash(node -e ' *)",
+      "Bash(node server/scripts/ingestBlockfiles.js --limit=1 --verbose)",
+      "Bash(node server/scripts/ingestBlockfiles.js)"
     ]
   }
 }
