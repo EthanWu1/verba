@@ -97,19 +97,41 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
     });
 
     let card;
+    let rawContent = result.content;
     try {
-      card = parseJSON(result.content);
+      card = parseJSON(rawContent);
     } catch {
-      return res.status(502).json({
-        error: 'AI returned malformed JSON. Try again - models sometimes need a second attempt.',
-        raw: result.content.slice(0, 400),
-      });
+      // The first parse failed (truncated braces, escaped quotes, prose
+      // preamble, etc.). Re-prompt once with an explicit "JSON only" nudge.
+      // We do NOT echo the bad output back as an assistant turn — pasting
+      // 800 chars of mid-token garbage as conversation history measurably
+      // biases the retry toward the same malformed pattern. Just describe
+      // the failure in words.
+      try {
+        const retry = await complete({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMsg },
+            { role: 'user', content: 'IMPORTANT: your previous reply was NOT valid JSON. Reply NOW with the JSON object only — must start with `{`, end with `}`, no markdown fence, no commentary, no prose preamble. Re-cut the same source text from scratch.' },
+          ],
+          temperature: 0.05,
+          maxTokens: budget.output,
+          forceModel: CARD_CUT_MODEL,
+        });
+        rawContent = retry.content;
+        card = parseJSON(rawContent);
+      } catch {
+        return res.status(502).json({
+          error: 'AI returned malformed JSON twice in a row. Try again — sometimes the model needs a third attempt, or use the paste fallback.',
+          raw: rawContent.slice(0, 400),
+        });
+      }
     }
 
     if (!card.body_markdown && !card.tag) {
       return res.status(502).json({
         error: 'AI output is missing required fields (tag/body_markdown).',
-        raw: result.content.slice(0, 300),
+        raw: rawContent.slice(0, 300),
       });
     }
 

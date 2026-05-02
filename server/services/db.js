@@ -343,7 +343,8 @@ function _initSchema(db) {
       title      TEXT NOT NULL,
       archived   INTEGER NOT NULL DEFAULT 0,
       createdAt  INTEGER NOT NULL,
-      updatedAt  INTEGER NOT NULL
+      updatedAt  INTEGER NOT NULL,
+      nameSet    INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_chat_threads_user
       ON chat_threads(userId, archived, updatedAt DESC);
@@ -485,6 +486,14 @@ function _runMigrations(db) {
   if (needBackfill) _backfillDerivedLabels(db);
   if (needHighlightBackfill) _backfillHasHighlight(db);
   if (needWordCountBackfill) _backfillHighlightWordCount(db);
+  // v7: chat_threads.nameSet — hides freshly-created threads from the picker
+  // until the LLM auto-rename has assigned a meaningful title. Existing rows
+  // (pre-migration) get backfilled to 1 so they stay visible.
+  const chatCols = db.prepare("PRAGMA table_info(chat_threads)").all().map(r => r.name);
+  if (!chatCols.includes('nameSet')) {
+    db.exec("ALTER TABLE chat_threads ADD COLUMN nameSet INTEGER NOT NULL DEFAULT 0");
+    db.exec("UPDATE chat_threads SET nameSet = 1");
+  }
   _setupCardsFts(db);
   _ensureAnalyzed(db);
 }

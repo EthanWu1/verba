@@ -74,14 +74,37 @@
     if (titleEl) titleEl.textContent = '';
   }
 
+  async function refreshThreadTitle() {
+    if (!currentThreadId) return;
+    try {
+      const { threads } = await API.chat.listThreads();
+      const t = (threads || []).find(t => t.id === currentThreadId);
+      if (t && t.title) {
+        const titleEl = document.getElementById('chat-thread-title');
+        if (titleEl) titleEl.textContent = t.title;
+      }
+    } catch {}
+  }
+
+  let creatingThread = null; // in-flight createThread Promise — blocks duplicate sends.
   async function send() {
     const text = inputEl.value.trim(); if (!text) return;
+    const wasFirstMessage = !currentThreadId;
     // Lazy-create the thread on first message so we don't pile up empty "New thread" rows.
+    // Guard with `creatingThread` so a double-click during the createThread
+    // round-trip doesn't fire two POSTs (which used to create two threads
+    // with the same title and look like duplicates in the picker).
     if (!currentThreadId) {
-      const title = text.slice(0, 60);
-      const { thread } = await API.chat.createThread(title);
-      currentThreadId = thread.id;
-      document.getElementById('chat-thread-title').textContent = title;
+      if (!creatingThread) {
+        const title = text.slice(0, 60);
+        creatingThread = API.chat.createThread(title)
+          .then(({ thread }) => {
+            currentThreadId = thread.id;
+            document.getElementById('chat-thread-title').textContent = title;
+          })
+          .finally(() => { creatingThread = null; });
+      }
+      await creatingThread;
     }
     inputEl.value = ''; autogrow();
     renderMessage({ role:'user', content:text, command:null });
@@ -103,6 +126,12 @@
           asstEl.remove();
           renderMessage(payload.assistantMessage);
           scrollBottom();
+        }
+        // Server auto-renames the thread after the first user message via the
+        // LLM. Pull the new title so the topbar reflects it without a refresh.
+        if (wasFirstMessage) {
+          // Slight delay so the rename round-trip has time to land.
+          setTimeout(refreshThreadTitle, 800);
         }
         // Refresh free-plan usage indicator after each successful send.
         if (typeof global.refreshUsage === 'function') global.refreshUsage();
