@@ -158,13 +158,14 @@ function loadPriorTurns(threadId, currentUserMsgId) {
 }
 
 async function maybeRenameThread(threadId, userId, firstUserMsg) {
-  // Only auto-rename if the title is still the default placeholder or the
-  // initial slice. We don't override a title the user explicitly set.
+  // Only auto-rename a fresh (nameSet=0) thread. Once it's named — either by
+  // the AI or by the user manually — we never overwrite. After the rename
+  // succeeds we mark nameSet=1 which makes the thread visible in the picker.
+  // If the AI call fails, we still flip nameSet=1 with a sane fallback title
+  // so the thread doesn't get permanently hidden from the user.
   const t = store.getThread(threadId, userId);
-  if (!t) return;
-  const placeholder = (t.title || '').trim();
-  const fromMsg = firstUserMsg.slice(0, 60).trim();
-  if (placeholder && placeholder !== 'New thread' && placeholder !== fromMsg) return;
+  if (!t || t.nameSet === 1) return;
+  let title = '';
   try {
     const r = await complete({
       messages: [
@@ -175,9 +176,10 @@ async function maybeRenameThread(threadId, userId, firstUserMsg) {
       maxTokens: 24,
       forceModel: MODEL_FAST,
     });
-    const title = String(r.content || '').trim().replace(/^["'`]|["'`]$/g, '').slice(0, 60);
-    if (title) store.updateThread(threadId, userId, { title });
-  } catch { /* best-effort rename */ }
+    title = String(r.content || '').trim().replace(/^["'`]|["'`]$/g, '').slice(0, 60);
+  } catch { /* fall through to fallback */ }
+  if (!title) title = firstUserMsg.slice(0, 60).trim() || 'New thread';
+  store.markThreadNamed(threadId, userId, title);
 }
 
 router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), async (req, res) => {
@@ -220,7 +222,10 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
         command: '/block',
         blockJson: { ...block, candidateCards: cards },
       });
-      if (isFirstMessage) maybeRenameThread(threadId, userId, content);
+      // Wait for rename so the response includes the named thread — without
+      // this, the client polls listThreads and sees nothing (nameSet still 0)
+      // until the next render cycle.
+      if (isFirstMessage) await maybeRenameThread(threadId, userId, content);
       return res.json({ userMessage: userMsg, assistantMessage: asstMsg });
     } catch (err) {
       const errMsg = store.addMessage(threadId, 'assistant', 'Block generation failed: ' + err.message);
@@ -274,9 +279,14 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
     }
     if (lastErr) throw lastErr;
     const asstMsg = store.addMessage(threadId, 'assistant', full, { command: parsed.command });
+    // Run rename BEFORE the done event so the client's refreshThreadTitle()
+    // (which fires on done) hits a server state that already exposes the
+    // newly-named thread via listThreads. ~500-1500ms added latency between
+    // the last token and "stream complete" — acceptable since the user can
+    // already read the streamed reply.
+    if (isFirstMessage) await maybeRenameThread(threadId, userId, content);
     res.write('event: done\ndata: ' + JSON.stringify({ assistantMessageId: asstMsg.id }) + '\n\n');
     res.end();
-    if (isFirstMessage) maybeRenameThread(threadId, userId, content);
   } catch (err) {
     res.write('event: error\ndata: ' + JSON.stringify({ message: err.message || 'chat failed' }) + '\n\n');
     res.end();

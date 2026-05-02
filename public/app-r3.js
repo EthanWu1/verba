@@ -21,6 +21,8 @@ const state = {
   pastResults:  [],
   pastShown:    10,
   links:        [],
+  linksLoaded:  false,  // true once /api/me/tabroom-link has resolved at least once
+
   rankings:     { event: (TWEAKS.format||'cx').toUpperCase(), season: '', rows: [] },
   libCards:     [],
   libSelected:  null,
@@ -153,6 +155,7 @@ async function loadUser(){
 async function loadLinks(){
   const data = await fetchJSON('/api/me/tabroom-link');
   state.links = (data && data.links) || [];
+  state.linksLoaded = true;
   renderTeamChip();
 }
 function renderTeamChip(){
@@ -365,6 +368,15 @@ async function loadMyTournaments(){
   const root = $('my-tourn-list');
   const lbl  = $('my-tourn-lbl');
   if(!root) return;
+  // If loadLinks hasn't resolved yet, show a loading state and re-run once it
+  // does. Otherwise a fast tab-switch into Tournaments races loadLinks() and
+  // shows "No debater linked" even when one is configured.
+  if(!state.linksLoaded){
+    lbl.textContent = 'Your tournaments';
+    root.innerHTML = `<div class="empty"><b>Loading…</b></div>`;
+    setTimeout(loadMyTournaments, 200);
+    return;
+  }
   if(!state.links || !state.links.length){
     lbl.textContent = 'Your tournaments';
     root.innerHTML = `<div class="empty"><b>No debater linked</b>Link a Tabroom team in the top bar to see your tournaments.</div>`;

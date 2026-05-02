@@ -31,26 +31,58 @@ router.get('/count', (req, res) => {
 
 // Per-user analytics: top topicLabels across the user's own saved cards.
 // Mirrors getLibraryAnalytics shape (topTopics: [{label, count}]) so the
-// Today page can render it with no extra adapter.
+// Today page can render it with no extra adapter. Cached in-process for 60s
+// per user since this lights up on every Today visit.
+const _userAnalyticsCache = new Map(); // userId -> { at, data }
+const USER_ANALYTICS_TTL_MS = 60 * 1000;
 router.get('/analytics', (req, res) => {
-  const db = getDb();
-  const rows = db.prepare('SELECT payload FROM user_saved_cards WHERE userId = ?').all(req.user.id);
-  const tally = new Map();
-  let total = 0;
-  for (const r of rows) {
-    let p = {};
-    try { p = JSON.parse(r.payload); } catch { continue; }
-    total++;
-    const label = String(p.topicLabel || '').trim();
-    if (!label) continue;
-    tally.set(label, (tally.get(label) || 0) + 1);
+  const userId = req.user.id;
+  const now = Date.now();
+  const cached = _userAnalyticsCache.get(userId);
+  if (cached && (now - cached.at) < USER_ANALYTICS_TTL_MS) {
+    res.set('Cache-Control', 'no-store');
+    return res.json(cached.data);
   }
-  const topTopics = [...tally.entries()]
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-    .slice(0, 200);
+  const db = getDb();
+  // Pull only the topicLabel field from each payload via SQLite's json_extract
+  // — no JSON.parse on the request thread, no full-row materialization. For a
+  // 10k-card user this stays in single-digit ms; the previous implementation
+  // could spike heap by megabytes per request.
+  const total = db.prepare('SELECT COUNT(*) AS n FROM user_saved_cards WHERE userId = ?').get(userId).n || 0;
+  let topRows = [];
+  try {
+    topRows = db.prepare(`
+      SELECT json_extract(payload, '$.topicLabel') AS label, COUNT(*) AS cnt
+      FROM user_saved_cards
+      WHERE userId = ?
+      GROUP BY label
+      HAVING label IS NOT NULL AND label != ''
+      ORDER BY cnt DESC, label ASC
+      LIMIT 200
+    `).all(userId);
+  } catch {
+    // json_extract is part of SQLite >=3.38 (better-sqlite3 ships modern). On
+    // the unlikely chance it's unavailable, fall back to a payload scan
+    // capped at 5k rows so we don't OOM.
+    const rows = db.prepare('SELECT payload FROM user_saved_cards WHERE userId = ? LIMIT 5000').all(userId);
+    const tally = new Map();
+    for (const r of rows) {
+      let p = {}; try { p = JSON.parse(r.payload); } catch { continue; }
+      const label = String(p.topicLabel || '').trim();
+      if (!label) continue;
+      tally.set(label, (tally.get(label) || 0) + 1);
+    }
+    topRows = [...tally.entries()].map(([label, cnt]) => ({ label, cnt }));
+    topRows.sort((a, b) => b.cnt - a.cnt || a.label.localeCompare(b.label));
+    topRows = topRows.slice(0, 200);
+  }
+  const data = {
+    totals: { cards: total },
+    topTopics: topRows.map(r => ({ label: r.label, count: r.cnt })),
+  };
+  _userAnalyticsCache.set(userId, { at: now, data });
   res.set('Cache-Control', 'no-store');
-  res.json({ totals: { cards: total }, topTopics });
+  res.json(data);
 });
 
 router.post('/', (req, res) => {

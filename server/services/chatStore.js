@@ -7,10 +7,22 @@ function now() { return Date.now(); }
 function createThread(userId, title = 'New thread') {
   const id = crypto.randomUUID();
   const t = now();
+  // nameSet=0 means: not yet labeled by the AI auto-rename. listThreads hides
+  // these from the picker so the user only sees threads with meaningful titles.
+  // Once the assistant finishes its first reply and maybeRenameThread runs,
+  // we flip this to 1 and the thread appears in the dropdown.
   getDb().prepare(`
-    INSERT INTO chat_threads (id, userId, title, archived, createdAt, updatedAt)
-    VALUES (?, ?, ?, 0, ?, ?)
+    INSERT INTO chat_threads (id, userId, title, archived, createdAt, updatedAt, nameSet)
+    VALUES (?, ?, ?, 0, ?, ?, 0)
   `).run(id, userId, title, t, t);
+  return getThread(id, userId);
+}
+
+function markThreadNamed(id, userId, title) {
+  const t = now();
+  getDb().prepare(
+    'UPDATE chat_threads SET title = ?, nameSet = 1, updatedAt = ? WHERE id = ? AND userId = ?'
+  ).run(title, t, id, userId);
   return getThread(id, userId);
 }
 
@@ -19,31 +31,22 @@ function getThread(id, userId) {
 }
 
 function listThreads(userId, { includeArchived = false } = {}) {
-  // Hide threads with no messages — they're either lazy-creates that never sent
-  // or stale rows from an earlier auto-create flow.
+  // Show only threads that (a) have at least one message AND (b) have been
+  // named by the AI auto-rename. nameSet=0 threads are mid-creation and would
+  // show up as "Untitled" or the user's raw first message, which the user
+  // explicitly didn't want in the picker. Pre-migration rows were backfilled
+  // to nameSet=1, so this is purely additive.
   const archivedClause = includeArchived ? '' : 'AND t.archived = 0';
   const sql = `
     SELECT t.*, COUNT(m.id) AS messageCount
     FROM chat_threads t
     LEFT JOIN chat_messages m ON m.threadId = t.id
-    WHERE t.userId = ? ${archivedClause}
+    WHERE t.userId = ? AND t.nameSet = 1 ${archivedClause}
     GROUP BY t.id
     HAVING messageCount > 0
     ORDER BY t.updatedAt DESC
   `;
-  const rows = getDb().prepare(sql).all(userId);
-  // Dedupe by normalized title — earlier flows produced multiple "New thread"
-  // and same-first-message rows. Keep the most-recent one per title.
-  const seen = new Set();
-  const out = [];
-  for (const r of rows) {
-    const key = String(r.title || '').trim().toLowerCase();
-    if (!key) { out.push(r); continue; }
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(r);
-  }
-  return out;
+  return getDb().prepare(sql).all(userId);
 }
 
 function updateThread(id, userId, patch) {
@@ -102,7 +105,7 @@ function deleteContext(id, userId) {
 }
 
 module.exports = {
-  createThread, getThread, listThreads, updateThread, deleteThread,
+  createThread, getThread, listThreads, updateThread, deleteThread, markThreadNamed,
   addMessage, listMessages,
   addContext, getContext, listContext, deleteContext,
 };

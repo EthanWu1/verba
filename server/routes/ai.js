@@ -98,15 +98,17 @@ router.post('/cut-card', requireUser, enforceLimit('cutCard', CUT_DAILY_LIMIT), 
       card = parseJSON(rawContent);
     } catch {
       // The first parse failed (truncated braces, escaped quotes, prose
-      // preamble, etc.). Re-prompt once with an explicit reminder before
-      // surfacing an error to the user.
+      // preamble, etc.). Re-prompt once with an explicit "JSON only" nudge.
+      // We do NOT echo the bad output back as an assistant turn — pasting
+      // 800 chars of mid-token garbage as conversation history measurably
+      // biases the retry toward the same malformed pattern. Just describe
+      // the failure in words.
       try {
         const retry = await complete({
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMsg },
-            { role: 'assistant', content: rawContent.slice(0, 800) },
-            { role: 'user', content: 'Your previous reply was not valid JSON. Reply NOW with the JSON object only — start with `{`, end with `}`, no markdown fence, no commentary.' },
+            { role: 'user', content: 'IMPORTANT: your previous reply was NOT valid JSON. Reply NOW with the JSON object only — must start with `{`, end with `}`, no markdown fence, no commentary, no prose preamble. Re-cut the same source text from scratch.' },
           ],
           temperature: 0.05,
           maxTokens: budget.output,

@@ -59,7 +59,25 @@ router.get('/cards', async (req, res) => {
 
 router.get('/cards/:id', (req, res) => {
   try {
-    const card = getCardDetail(req.params.id);
+    let card = getCardDetail(req.params.id);
+    // Fall back to the user's personal cuts (user_saved_cards) — getCardDetail
+    // only consults the global imported corpus, but freshly-cut cards live in
+    // user_saved_cards. Without this fallback, "Recently cut" rows 404.
+    if (!card) {
+      const userId = req.user && req.user.id;
+      if (userId) {
+        const { getDb } = require('../services/db');
+        const row = getDb()
+          .prepare('SELECT id, payload, savedAt FROM user_saved_cards WHERE id = ? AND userId = ?')
+          .get(req.params.id, userId);
+        if (row) {
+          try {
+            const payload = JSON.parse(row.payload);
+            card = { id: row.id, ...payload, savedAt: row.savedAt };
+          } catch { /* malformed payload — fall through to 404 */ }
+        }
+      }
+    }
     if (!card) return res.status(404).json({ error: 'not_found' });
     res.set('Cache-Control', 'private, max-age=300');
     return res.json({ card });
