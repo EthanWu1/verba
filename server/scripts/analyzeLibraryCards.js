@@ -26,7 +26,7 @@ const flag = (k, fallback) => {
 };
 const has = k => args.includes(`--${k}`);
 
-const LIMIT = Number(flag('limit', '100'));
+const LIMIT = Number(flag('limit', '1000'));
 const USER  = flag('user', null);
 const AS_JSON = has('json');
 
