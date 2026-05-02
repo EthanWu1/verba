@@ -53,7 +53,7 @@ function saveToDisk(summary) {
 // shared — patterns from any well-cut card teach the model how to format,
 // and a new user with an empty library still gets the benefit. Override
 // with userId if you ever want a per-user voice instead.
-function getCalibration({ force = false, limit = 300, userId = null } = {}) {
+function getCalibration({ force = false, limit = 1000, userId = null } = {}) {
   // Already calibrated? Use the cached/persisted result. No expiration.
   if (!force && _cache) return _cache;
   const started = Date.now();
@@ -74,6 +74,20 @@ function getCalibration({ force = false, limit = 300, userId = null } = {}) {
     return _cache;   // whatever we had
   }
 }
+
+// EAGER kickoff — if no persisted calibration exists, run the analysis in
+// the background a few seconds after server boot. The first /cut-card
+// after that picks it up automatically. User does nothing.
+function kickoffOnBoot() {
+  if (_cache) return; // disk-load already populated it
+  setTimeout(() => {
+    if (_cache) return; // someone else already triggered it
+    console.log('[cutterCalibration] no persisted file found — running one-time analysis on 1000 quality cards in background…');
+    try { getCalibration({ limit: 1000 }); }
+    catch (e) { console.warn('[cutterCalibration] boot kickoff failed:', e.message); }
+  }, 3000);
+}
+kickoffOnBoot();
 
 // Build a compact, prompt-ready snippet from the calibration summary. Returns
 // '' if no usable calibration (library too small / not present yet).
