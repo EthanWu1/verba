@@ -128,6 +128,11 @@ async function main() {
     UPDATE cards SET canonicalGroupKey = ?, isCanonical = 0
     WHERE canonicalGroupKey = ? AND id != ?
   `);
+  // Batch ALL per-card updates into a single transaction at the end so we
+  // pay one fsync instead of 53k. The earlier per-bucket-tx version pushed
+  // WAL past 1GB and stalled at <10k buckets in 90 minutes; this lets the
+  // commit phase complete in seconds.
+  const allUpdates = [];
   const tx = db.transaction(updates => { for (const u of updates) update.run(u.isCanon, u.gk, u.id); });
 
   let bucketsProcessed = 0;
@@ -194,13 +199,16 @@ async function main() {
 
     if (updates.length > 0 && cards.length > 1) {
       touchedBuckets++;
-      if (COMMIT) tx(updates);
+      // Defer DB writes to a single transaction at the end; per-bucket
+      // commits ran 5-10x slower because of fsync overhead.
+      if (COMMIT) for (const u of updates) allUpdates.push(u);
     }
 
-    if (bucketsProcessed % 10000 === 0) {
-      console.log(`  ${bucketsProcessed}/${bucketIndex.size} buckets, ${merged} merged so far`);
+    if (bucketsProcessed % 5000 === 0) {
+      process.stdout.write(`  ${bucketsProcessed}/${bucketIndex.size} buckets, ${merged} pending merges\r`);
     }
   }
+  console.log('');
 
   console.log(`\nBuckets touched: ${touchedBuckets}/${bucketIndex.size}`);
   console.log(`Canonical cards merged into existing canonicals: ${merged}`);
@@ -208,6 +216,12 @@ async function main() {
     console.log('\nDry-run. Re-run with --commit to mutate.');
     return;
   }
+
+  console.log(`Applying ${allUpdates.length} primary updates in a single transaction...`);
+  const tStart = Date.now();
+  tx(allUpdates);
+  console.log(`  done in ${Date.now() - tStart}ms`);
+
   console.log('Migrating non-canonical followers of merged groups...');
   const followTx = db.transaction(arr => {
     for (const f of arr) {
