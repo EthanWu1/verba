@@ -1064,15 +1064,4 @@ module.exports = {
   enrichCard,
   inferArgumentTags,
   normalizeTag,
-  // Parsing primitives — exposed for offline corpus tools (e.g. ingestBlockfiles)
-  extractParagraphs,
-  parseRuns,
-  runsToMarkdown,
-  parseCardsFromParagraphs,
-  isAnalyticHeader,
-  isHeading,
-  looksLikeCite,
-  looksLikeTag,
-  inferTopicBucket,
-  inferArgumentTypes,
 };
