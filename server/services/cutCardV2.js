@@ -181,16 +181,25 @@ async function cutCardV2({
   const initialScore = chainArgumentScore(initialArgument, initialChain);
   let chainRetried = false;
 
+  // Dangler ratio = fraction of phrases ending on dangling words.
+  // > 25% means the chain is full of "impossible to..." / "the upper..."
+  // truncations — definitely worth a retry.
+  const initialDanglerRatio = initialScore.phraseCount
+    ? initialScore.danglers / initialScore.phraseCount
+    : 0;
+  const CHAIN_DANGLER_MAX = 0.25;
+
   const chainBad = initialArgument && (
     initialScore.coverage < CHAIN_COVERAGE_MIN ||
     initialScore.bloat    > CHAIN_BLOAT_MAX ||
-    initialScore.filler   > 0
+    initialScore.filler   > 0 ||
+    initialDanglerRatio   > CHAIN_DANGLER_MAX
   );
 
   if (chainBad && fallbackModel && fallbackModel !== primaryModel) {
     chainRetried = true;
     console.warn(
-      `[cutCardV2] chain reject — coverage=${initialScore.coverage.toFixed(2)} bloat=${initialScore.bloat.toFixed(2)} filler=${initialScore.filler}, ` +
+      `[cutCardV2] chain reject — coverage=${initialScore.coverage.toFixed(2)} bloat=${initialScore.bloat.toFixed(2)} filler=${initialScore.filler} danglers=${initialScore.danglers}/${initialScore.phraseCount}, ` +
       `retrying on ${fallbackModel}\n` +
       `  argument: "${initialArgument.slice(0, 200)}"\n` +
       `  chain:    "${initialChain.slice(0, 200)}"`
@@ -204,15 +213,17 @@ ACTUAL HIGHLIGHT CHAIN (read in document order): "${initialChain}"
 DIAGNOSED ISSUES:${initialScore.coverage < CHAIN_COVERAGE_MIN ? `
   - LOW COVERAGE (${(initialScore.coverage*100).toFixed(0)}%): the chain doesn't deliver the argument's main content words.` : ''}${initialScore.bloat > CHAIN_BLOAT_MAX ? `
   - BLOAT (${(initialScore.bloat*100).toFixed(0)}%): the chain has too many words that AREN'T in your argument. Drop the random highlights that don't carry the argument.` : ''}${initialScore.filler > 0 ? `
-  - FILLER WORDS PRESENT: don't highlight transitions like "further", "unfortunately", "however", "moreover", "in addition", "thus". Skip these words entirely — neither highlight NOR underline them.` : ''}
+  - FILLER WORDS PRESENT (${initialScore.filler}): don't highlight transitions like "further", "unfortunately", "however", "moreover", "in addition", "thus". Skip these words entirely — neither highlight NOR underline them.` : ''}${initialDanglerRatio > CHAIN_DANGLER_MAX ? `
+  - DANGLING ENDINGS (${initialScore.danglers}/${initialScore.phraseCount} phrases end on a preposition/article/conjunction): your highlights end on words like "to", "the", "and", "would", "in", "for". This makes the chain read as truncated thoughts. EXTEND each highlight forward to include the completing word: "impossible to" → "impossible to win"; "the upper" → "the upper hand"; "easier for North Korea to" → "easier for North Korea to expand"; "use" → "use them or lose them".` : ''}
 
 REVISE PICKS so:
   1. Every highlighted word EARNS its place — if removing it doesn't change the argument, drop it.
   2. The chain (highlights read in order) closely matches your argument.
-  3. Bolds are SHORT — usually 1 word, max 2-3. Bold only words needing spoken emphasis.
-  4. SKIP transitional/filler words entirely.
+  3. Each highlight is a COMPLETE BEAT — never end on "to", "the", "and", "would", "for", "of". Always include the completing noun/verb.
+  4. Bolds are SHORT — usually 1 word, max 2-3.
+  5. SKIP transitional/filler words entirely.
 
-Compose the argument FIRST. Then mark only the verbatim source words that deliver it.`;
+Compose the argument FIRST. Then mark only the verbatim source words that deliver it, with each beat completed.`;
 
     try {
       const retry = await llm.completeJSON({
@@ -231,10 +242,11 @@ Compose the argument FIRST. Then mark only the verbatim source words that delive
       const retryChain = extractReadAloudChain(retry.json, candidates);
       const retryArg = String(retry.json?.argument || '').trim();
       const retryScore = chainArgumentScore(retryArg, retryChain);
-      const retryBetter = (retryScore.coverage > initialScore.coverage)
-        || (retryScore.bloat < initialScore.bloat)
-        || (retryScore.filler < initialScore.filler);
-      console.log(`[cutCardV2] chain-retry: coverage=${retryScore.coverage.toFixed(2)} bloat=${retryScore.bloat.toFixed(2)} filler=${retryScore.filler} (was ${initialScore.coverage.toFixed(2)}/${initialScore.bloat.toFixed(2)}/${initialScore.filler})`);
+      const retryDangRatio = retryScore.phraseCount ? retryScore.danglers / retryScore.phraseCount : 0;
+      // Composite score: lower bloat/filler/danglers + higher coverage = better.
+      const score = (s, dr) => s.coverage - 0.5 * s.bloat - 0.3 * s.filler - 0.5 * dr;
+      const retryBetter = score(retryScore, retryDangRatio) > score(initialScore, initialDanglerRatio);
+      console.log(`[cutCardV2] chain-retry: coverage=${retryScore.coverage.toFixed(2)} bloat=${retryScore.bloat.toFixed(2)} filler=${retryScore.filler} danglers=${retryScore.danglers}/${retryScore.phraseCount} (was ${initialScore.coverage.toFixed(2)}/${initialScore.bloat.toFixed(2)}/${initialScore.filler}/${initialScore.danglers})`);
       if (retryBetter) {
         llmResult = retry;
       }
@@ -327,7 +339,7 @@ Compose the argument FIRST. Then mark only the verbatim source words that delive
     `[cutCardV2] ok in ${elapsed}ms model=${llmResult.model} ` +
     `paragraphs=${rebuilt.stats.paragraphs} ` +
     `marks=${marksRendered} highlight=${highlightPct}% ` +
-    `chain coverage=${(finalScore.coverage * 100).toFixed(0)}% bloat=${(finalScore.bloat * 100).toFixed(0)}% filler=${finalScore.filler} ` +
+    `chain coverage=${(finalScore.coverage * 100).toFixed(0)}% bloat=${(finalScore.bloat * 100).toFixed(0)}% filler=${finalScore.filler} danglers=${finalScore.danglers}/${finalScore.phraseCount} ` +
     `prompt=${u.prompt_tokens || '?'}tok completion=${u.completion_tokens || '?'}tok ` +
     `cache=${cacheHitRate}%(read=${cacheRead}/write=${cacheWrite}) ` +
     `cost=$${(u.cost || 0).toFixed(5)}` +
