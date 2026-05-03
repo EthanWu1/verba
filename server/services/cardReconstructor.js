@@ -37,19 +37,25 @@
  *  - Exactly one **<u>...</u>** "loudest" mark survives per card.
  */
 
-// Density caps measured as fraction of paragraph CHARACTERS inside the mark.
-// Calibrated against actual hand-cut Vanguard cards: ~30-50% underlined,
-// ~10% highlighted, ~5% bolded.
-const HIGHLIGHT_CAPS = { minimal: 0.12, standard: 0.20, heavy: 0.32 };
-const UNDERLINE_CAPS = { minimal: 0.40, standard: 0.60, heavy: 0.80 };
-// Bold cap. Real cards: ~1 bold per ¶ on K/phil, 2-4 on policy.
-// Slightly loosened from 0.12 → 0.18 because user reported under-bolding.
-const BOLD_CAPS      = { minimal: 0.06, standard: 0.10, heavy: 0.18 };
+// Density caps are SAFETY NETS, not enforced targets. They only fire if
+// the model emits something absurd. The PROMPT drives correct density via
+// argument-driven reasoning; the server's only hard rule is verbatim
+// integrity. Word-boundary snap + punctuation trim = cosmetic safety.
+const HIGHLIGHT_CAPS = { minimal: 0.30, standard: 0.45, heavy: 0.60 };
+const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.80 };
+const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.35 };
 
-// Maximum length of a single highlight RUN. Real Vanguard highlights
-// are 1-2 words (median 1). 20 chars ≈ 3-4 words — anything longer
-// is the model trying to highlight whole clauses.
-const MAX_HIGHLIGHT_RUN_CHARS = 20;
+// Maximum length of a single highlight RUN. 50 chars allows ~8-word
+// phrase-level claims like "locks in catastrophic warming above 3
+// degrees" without trimming.
+const MAX_HIGHLIGHT_RUN_CHARS = 50;
+
+// When the model lazily underlines 100% of a paragraph, we ABANDON its
+// underline and auto-regenerate underlines wrapping the highlights with
+// some context margin on each side. This prevents the "everything
+// underlined" failure mode regardless of how lazy the model is.
+const LAZY_UNDERLINE_THRESHOLD = 0.90;
+const AUTO_UNDERLINE_MARGIN_CHARS = 40;
 
 // --- span normalisation -----------------------------------------------------
 
@@ -122,10 +128,18 @@ function snapToWordBoundaries(span, text) {
   let [from, to] = span;
   const isWord = (i) => i >= 0 && i < text.length && /[a-zA-Z0-9]/.test(text[i]);
 
-  // Snap 'from' forward if mid-word.
+  // Snap 'from' forward past mid-word position.
   while (from < to && isWord(from - 1) && isWord(from)) from++;
-  // Snap 'to' backward if mid-word.
+  // Snap 'from' forward past leading whitespace and punctuation — highlights
+  // shouldn't START with a space/comma/period/quote.
+  while (from < to && /[\s,.;:!?")\]}]/.test(text[from] || '')) from++;
+
+  // Snap 'to' backward past mid-word position.
   while (to > from && isWord(to - 1) && isWord(to)) to--;
+  // Snap 'to' backward past trailing whitespace — highlights shouldn't END
+  // with a space (visually "highlights spaces"). Trailing punctuation is
+  // OK because it's part of the read (e.g. "U.S.").
+  while (to > from && /\s/.test(text[to - 1] || '')) to--;
 
   if (to <= from) return null;
   return [from, to];
@@ -382,6 +396,24 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     let bolds = mergeSpans(
       snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
     );
+
+    // LAZY-UNDERLINE OVERRIDE: when the model emits 90%+ underline coverage
+    // (it lazily underlined the entire paragraph), abandon its underlines
+    // and auto-regenerate them as small wrappers around each highlight.
+    // This is the structural fix for "everything underlined" — even if
+    // the model is lazy, the user sees only the warrant clauses underlined.
+    const totalU = underlines.reduce((a, s) => a + (s[1] - s[0]), 0);
+    if (highlights.length && totalU / N >= LAZY_UNDERLINE_THRESHOLD) {
+      const M = AUTO_UNDERLINE_MARGIN_CHARS;
+      const wraps = highlights.map(h => {
+        let from = Math.max(0, h[0] - M);
+        let to   = Math.min(N, h[1] + M);
+        // Snap to word boundary so we don't start/end mid-word.
+        const snapped = snapToWordBoundaries([from, to], paragraphText);
+        return snapped || [h[0], h[1]];
+      });
+      underlines = mergeSpans(wraps);
+    }
 
     // DEFENSIVE: empty u with highlights/bolds → default to whole-paragraph
     // underline so the marks aren't orphaned by containment filter.

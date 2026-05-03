@@ -238,11 +238,26 @@ test('cardReconstructor: snap to word boundary fixes mid-word edges', () => {
 
   const { snapToWordBoundaries } = require('../server/services/cardReconstructor');
   const snapped = snapToWordBoundaries([0, 14], text);
-  assert.deepEqual(snapped, [0, 10], `Expected [0, 10] (with U.S. ), got ${JSON.stringify(snapped)}`);
+  // Snap should pull `to` back from mid-"extended" to end of "U.S." (pos 9),
+  // and trim trailing whitespace (so no trailing space included).
+  assert.deepEqual(snapped, [0, 9], `Expected [0, 9] (with U.S.), got ${JSON.stringify(snapped)}`);
 
-  // Span [13, 22] cuts "extended" at "nded ..." — snap forward to position 18 (start of "deterrence")
-  const snapped2 = snapToWordBoundaries([13, 22], text);
-  assert.ok(snapped2 && snapped2[0] >= 18, `Expected from snapped past 'extended', got ${JSON.stringify(snapped2)}`);
+  // Span [13, text.length] cuts "extended" mid-word at start, ends cleanly.
+  // Snap should pull from past "extended" + space to start of "deterrence".
+  const snapped2 = snapToWordBoundaries([13, text.length], text);
+  assert.ok(snapped2 && snapped2[0] >= 18, `Expected from past 'extended', got ${JSON.stringify(snapped2)}`);
+});
+
+test('cardReconstructor: snap trims trailing whitespace and leading punctuation', () => {
+  const text = 'Korea, China and Russia.';
+  // 0:K 1:o 2:r 3:e 4:a 5:, 6:' ' 7:C 8:h 9:i 10:n 11:a 12:' ' 13:a 14:n 15:d 16:' ' 17:R 18:u 19:s 20:s 21:i 22:a 23:.
+  const { snapToWordBoundaries } = require('../server/services/cardReconstructor');
+  // Span [0, 7] = "Korea, " (with trailing comma+space). Should trim to "Korea," (no trailing space).
+  const r = snapToWordBoundaries([0, 7], text);
+  assert.deepEqual(r, [0, 6], `Expected [0, 6] (Korea,), got ${JSON.stringify(r)}`);
+  // Span [5, 12] = ", China " — should snap from past leading comma+space to start of "China", trim trailing space.
+  const r2 = snapToWordBoundaries([5, 12], text);
+  assert.deepEqual(r2, [7, 12], `Expected [7, 12] (China), got ${JSON.stringify(r2)}`);
 });
 
 test('cardReconstructor: highlight cap enforced (heavy)', () => {
@@ -310,10 +325,10 @@ test('selection prompt: annotateParagraphWithRuler shows char positions', () => 
 
 test('selection prompt: HARDCODED_CALIBRATION includes empirical patterns', () => {
   assert.match(HARDCODED_CALIBRATION, /Vanguard cards/i);
-  assert.match(HARDCODED_CALIBRATION, /Median highlight = 1 WORD/);
-  assert.match(HARDCODED_CALIBRATION, /partial-word/i);
-  assert.match(HARDCODED_CALIBRATION, /U\.S\./);
-  assert.match(HARDCODED_CALIBRATION, /SELECTIVITY/i);
+  assert.match(HARDCODED_CALIBRATION, /Median 1 word/i);
+  assert.match(HARDCODED_CALIBRATION, /sanity check|guideline|reference/i);
+  // Argument-driven prompt now lives in buildSelectionSystemPrompt itself
+  // rather than being inlined into the calibration block.
 });
 
 test('selection prompt: system prompt embeds calibration and char-offset language', () => {
@@ -322,6 +337,8 @@ test('selection prompt: system prompt embeds calibration and char-offset languag
   assert.match(p, /partial-word/i);
   assert.match(p, /Vanguard cards/i);
   assert.match(p, /JSON/);
+  // Argument-driven workflow lives in the prompt now.
+  assert.match(p, /WORKFLOW|UNDERSTAND THE ARGUMENT|composed speech/i);
 });
 
 test('selection prompt: user prompt includes per-paragraph rulers', () => {
