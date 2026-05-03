@@ -262,35 +262,55 @@ async function main() {
   // re-running on a clean DB is a no-op.
   console.log('Auto-repair: enforcing one-canonical-per-group...');
   const repairTx = db.transaction(() => {
-    const violatingGroups = db.prepare(`
-      SELECT canonicalGroupKey
-      FROM cards
+    // Two failure modes to fix:
+    //   - >1 canonical: demote everything except the longest.
+    //   - 0 canonical: promote the longest. Caused by orphaned followups
+    //     from older migrations where the canonical was stripped but no
+    //     replacement was elected (often malformed cites that parse as
+    //     URLs and end up in singleton-but-empty groups).
+    const overGroups = db.prepare(`
+      SELECT canonicalGroupKey FROM cards
       WHERE canonicalGroupKey IS NOT NULL AND canonicalGroupKey != ''
-      GROUP BY canonicalGroupKey
-      HAVING SUM(isCanonical) > 1
+      GROUP BY canonicalGroupKey HAVING SUM(isCanonical) > 1
+    `).all().map(r => r.canonicalGroupKey);
+    const underGroups = db.prepare(`
+      SELECT canonicalGroupKey FROM cards
+      WHERE canonicalGroupKey IS NOT NULL AND canonicalGroupKey != ''
+      GROUP BY canonicalGroupKey HAVING SUM(isCanonical) = 0
     `).all().map(r => r.canonicalGroupKey);
 
-    if (violatingGroups.length === 0) return 0;
-
     let demoted = 0;
-    const pickPrimary = db.prepare(`
-      SELECT id FROM cards
-      WHERE canonicalGroupKey = ? AND isCanonical = 1
-      ORDER BY length(body_plain) DESC, id ASC
-      LIMIT 1
-    `);
-    const demoteRest = db.prepare(`
-      UPDATE cards SET isCanonical = 0
-      WHERE canonicalGroupKey = ? AND isCanonical = 1 AND id != ?
-    `);
-    for (const gk of violatingGroups) {
-      const primary = pickPrimary.get(gk);
-      if (!primary) continue;
-      const r = demoteRest.run(gk, primary.id);
-      demoted += r.changes;
+    let promoted = 0;
+    if (overGroups.length > 0) {
+      const pickCanon = db.prepare(`
+        SELECT id FROM cards
+        WHERE canonicalGroupKey = ? AND isCanonical = 1
+        ORDER BY length(body_plain) DESC, id ASC LIMIT 1
+      `);
+      const demoteRest = db.prepare(`
+        UPDATE cards SET isCanonical = 0
+        WHERE canonicalGroupKey = ? AND isCanonical = 1 AND id != ?
+      `);
+      for (const gk of overGroups) {
+        const primary = pickCanon.get(gk);
+        if (!primary) continue;
+        demoted += demoteRest.run(gk, primary.id).changes;
+      }
     }
-    console.log(`  demoted ${demoted} extra canonicals across ${violatingGroups.length} groups`);
-    return demoted;
+    if (underGroups.length > 0) {
+      const pickLongest = db.prepare(`
+        SELECT id FROM cards
+        WHERE canonicalGroupKey = ?
+        ORDER BY length(body_plain) DESC, id ASC LIMIT 1
+      `);
+      const promoteOne = db.prepare(`UPDATE cards SET isCanonical = 1 WHERE id = ?`);
+      for (const gk of underGroups) {
+        const longest = pickLongest.get(gk);
+        if (!longest) continue;
+        promoted += promoteOne.run(longest.id).changes;
+      }
+    }
+    console.log(`  demoted ${demoted} extras across ${overGroups.length} groups; promoted ${promoted} across ${underGroups.length} empty groups`);
   });
   repairTx();
 
