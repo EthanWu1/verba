@@ -152,6 +152,85 @@ function snapSpansToWordBoundaries(spans, text) {
   return spans.map(s => snapToWordBoundaries(s, text)).filter(Boolean);
 }
 
+// Words that, when a highlight ENDS on them, leave the thought dangling.
+// User feedback: "highlights end on 'to' without 'win', 'the' without 'hand',
+// 'and in' without 'evidence'." Extend forward through these to complete
+// the beat, or trim them off if extension would balloon the span.
+const DANGLING_TAIL_WORDS = new Set([
+  // prepositions
+  'to','of','in','on','at','by','for','with','from','into','onto','about',
+  'over','under','between','through','across','toward','towards','among',
+  // articles + determiners
+  'the','a','an','this','that','these','those',
+  // conjunctions
+  'and','or','but','so','yet','nor','as',
+  // copulas / auxiliaries
+  'is','are','was','were','be','been','being','am',
+  'have','has','had','do','does','did','having',
+  // modals
+  'would','could','should','may','might','will','shall','must','can',
+  // possessives
+  'its','their','his','her','our','your','my',
+  // qualifiers
+  'more','most','very','much','also',
+]);
+
+function fixDanglingEnd(span, text, maxExtensionChars = 30) {
+  if (!span) return span;
+  let [from, to] = span;
+  // Identify the last word in the span.
+  const tail = text.slice(from, to);
+  const m = tail.match(/(\w+)\s*[^\w]*\s*$/);
+  if (!m) return span;
+  const lastWord = m[1].toLowerCase();
+  if (!DANGLING_TAIL_WORDS.has(lastWord)) return span;
+
+  // Try to extend forward to include up to 3 more words, stopping at the
+  // first non-dangling content word OR a sentence-ending punctuation.
+  let extEnd = to;
+  let wordsAdded = 0;
+  let safety = 0;
+  while (extEnd < text.length && wordsAdded < 4 && safety < 80) {
+    safety++;
+    // Skip whitespace
+    if (/\s/.test(text[extEnd])) { extEnd++; continue; }
+    // Stop at sentence-ending punctuation (include the period/question mark).
+    if (/[.!?]/.test(text[extEnd])) { extEnd++; break; }
+    // Skip mid-sentence punctuation (commas, semicolons) — they can be part
+    // of the highlight tail.
+    if (/[,;:]/.test(text[extEnd])) { extEnd++; continue; }
+    // Read the next word.
+    const wStart = extEnd;
+    while (extEnd < text.length && /[a-zA-Z0-9'-]/.test(text[extEnd])) extEnd++;
+    if (extEnd === wStart) { extEnd++; continue; }
+    const w = text.slice(wStart, extEnd).toLowerCase();
+    wordsAdded++;
+    // If this is a content word, we're done — the beat is complete.
+    if (!DANGLING_TAIL_WORDS.has(w)) break;
+  }
+  // Trim trailing whitespace.
+  while (extEnd > to && /\s/.test(text[extEnd - 1])) extEnd--;
+
+  // If extension stayed within limits, use it.
+  if (extEnd - to <= maxExtensionChars && extEnd > to) {
+    return [from, extEnd];
+  }
+
+  // Otherwise, TRIM the dangling word off the end.
+  // Find where the last word starts and pull `to` back to before it.
+  const endRel = (text.slice(from, to).match(/(\w+)\s*[^\w]*\s*$/) || [null])[0];
+  if (endRel) {
+    const trimAmount = endRel.length;
+    const trimmed = to - trimAmount;
+    if (trimmed > from) return [from, trimmed];
+  }
+  return span;
+}
+
+function fixDanglingEnds(spans, text) {
+  return spans.map(s => fixDanglingEnd(s, text)).filter(Boolean);
+}
+
 // --- priority scoring (used when over cap) ----------------------------------
 
 const PRIORITY_VERBS = new Set([
@@ -393,11 +472,21 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     let underlines = mergeSpans(
       snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
     );
+    // Highlights AND bolds get dangling-end fix: if a span ends on a
+    // preposition/article/conjunction (e.g. "the upper", "impossible to"),
+    // extend forward to include the completing word(s) or trim the dangler.
+    // This is the structural fix for "highlights cut off mid-thought".
     let highlights = mergeSpans(
-      snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
+      fixDanglingEnds(
+        snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+        paragraphText
+      )
     );
     let bolds = mergeSpans(
-      snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
+      fixDanglingEnds(
+        snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+        paragraphText
+      )
     );
 
     // LAZY-UNDERLINE OVERRIDE: when the model emits 90%+ underline coverage
@@ -601,7 +690,19 @@ function chainArgumentScore(argument, chainText) {
 
   const fillerHits = chainTokens.filter(w => FILLER_WORDS.has(w)).length;
 
-  return { coverage, bloat, filler: fillerHits, argSize: argSet.size, chainSize: chainTokens.length };
+  // Count phrases that end on a dangling word — these are incomplete beats
+  // ("impossible to" without "win", "the upper" without "hand").
+  const phrases = String(chainText || '').split(/\s*\.\.\.\s*/).filter(Boolean);
+  let danglerCount = 0;
+  for (const phrase of phrases) {
+    const m = phrase.toLowerCase().trim().match(/(\w+)\s*[^\w]*\s*$/);
+    if (m && DANGLING_TAIL_WORDS.has(m[1])) danglerCount++;
+  }
+
+  return {
+    coverage, bloat, filler: fillerHits, danglers: danglerCount,
+    argSize: argSet.size, chainSize: chainTokens.length, phraseCount: phrases.length,
+  };
 }
 
 // Backward-compat: simple overlap (used by existing tests).
@@ -628,4 +729,7 @@ module.exports = {
   trimToUnderlineCap,
   snapToWordBoundaries,
   snapSpansToWordBoundaries,
+  fixDanglingEnd,
+  fixDanglingEnds,
+  DANGLING_TAIL_WORDS,
 };

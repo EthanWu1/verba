@@ -250,6 +250,24 @@ DEFINITIONS:
 ${HARDCODED_CALIBRATION}${dynamicCalBlock}
 
 ═══════════════════════════════════════════════
+NEVER END A HIGHLIGHT ON A DANGLING WORD
+═══════════════════════════════════════════════
+
+A highlight that ends with "to", "the", "and", "of", "by", "for", "in", "on", "with", "would", "could", "should", "have", "is", "are" leaves the thought CUT OFF MID-SENTENCE. The chain reads as broken truncations.
+
+EVERY highlight must end on a CONTENT word that completes the beat:
+
+  ❌ "impossible to"           ✅ "impossible to win"
+  ❌ "the upper"               ✅ "the upper hand"
+  ❌ "easier for NK to"        ✅ "easier for NK to expand"
+  ❌ "and in"                  ✅ "and in evidence"
+  ❌ "use"                     ✅ "use them or lose them"
+  ❌ "would"                   ✅ "would collapse"
+  ❌ "have"                    ✅ "have improved" or "have nuclear weapons"
+
+If you find your span ending on one of those words, EXTEND it forward to include the completing word(s). The server will also auto-extend, but get it right yourself first.
+
+═══════════════════════════════════════════════
 SKIP THESE WORDS ENTIRELY (don't underline OR highlight):
 ═══════════════════════════════════════════════
 
