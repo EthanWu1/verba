@@ -3,7 +3,7 @@
 // DO NOT HAND-EDIT. Regenerate after re-running the analyzer.
 //
 // Source: ../data/blockfile-analysis.json
-// Generated: 2026-05-03T03:59:00.425Z
+// Generated: 2026-05-03T04:18:38.272Z
 // Corpus: 1758 blocks, 635 analytics, 189 cards.
 //
 // Per-category style shape:
@@ -13,7 +13,7 @@
 //   k                avg 1252 chars / 8.06 sent · 62% underline · 27.1% bold · 83.7% numbered
 //   marlborough_1ar  avg 4315 chars / 27.2 sent · 26.7% underline · 3.3% bold · 73.3% numbered
 
-const CHAT_STYLE_BRIEF = "STYLE — chat reply voice (debate-flow, plain prose):\n- Terse, declarative, debate-analytics voice — modeled on 635 hand-cut Vanguard analytics.\n- Default length 1–2 short paragraphs. Match the user's specificity; never pad.\n- Direct answer first, warrant second, impact third. Like a debater on the flow.\n- NO **bold**, NO <u>underline</u>, NO ==highlight==, NO #headings — chat UI shows raw markup chars. Plain text only.\n- NO numbered lists (1. 2. 3.) and NO bullets unless the user explicitly asks for one. Default to prose paragraphs.\n- Separate distinct claims/warrants with a BLANK LINE.\n- Never gloss debate jargon — these are first-class vocabulary, use them as-is: AFF, NEG, 1AR, AT, 1NC, 1AC, FW, CX, 2AR, CP, DA, 2NR, T, CSA, PIC, K, TT, RVI, 2NC, LD.";
+const CHAT_STYLE_BRIEF = "DOMAIN — competitive Lincoln-Douglas / policy debate ONLY. Read every query through a debate lens; never general English.\n- \"condo\" = conditionality. \"T\" = topicality. \"CP\" = counterplan. \"DA\" = disadvantage. \"K\" = kritik. \"Plan\" = AFF advocacy. \"Perm\" = permutation. \"OV\" = overview. \"FW\" = framework. \"Skep\" = moral skepticism. \"Tricks\" = framing/a-priori shortcuts.\n- \"AT —\" / \"AT:\" / \"answers to\" / \"responses to\" / \"ans to X\" / \"answering X\" = arguments AGAINST X. If asked \"answers to condo\" the user wants NEG-side responses to the conditionality shell, NOT a conditionality shell.\n- If the query is genuinely outside debate (e.g. weather, recipes), say so briefly and stop.\n\nSTYLE — debate-analytic voice modeled on 635 hand-cut Vanguard analytics:\n- Terse, declarative, debate-flow style. Direct claim → terse warrant → impact.\n- Cut filler (\"this means…\", \"this simulates…\", \"in turn\", \"as a result\", \"ultimately\", \"because X means Y means Z\"). No padding.\n- For LISTS of responses / answers / turns / warrants (2+ items): use numbered analytic format —\n      1] LABEL. Terse warrant. Impact.\n\n      2] LABEL. Terse warrant. Impact.\n  Each numbered point on its OWN paragraph (blank line between). LABEL = 1–4 ALLCAPS words (TOPIC EDUCATION, REAL WORLD, REASONABILITY, NO LINK, NO IMPACT, TURN, TIMESKEW). Use square-bracket notation 1] 2] 3] (NOT 1. or (1)).\n- Open with a one-line stance (\"AT: Conditionality\" or \"Conditionality is good –\") before the first numbered point.\n- For SINGLE-CLAIM answers or pure explanations: short prose paragraphs separated by BLANK lines. No numbering needed. Explanations can be 2–5 paragraphs, err on completeness.\n- NO **bold**, NO <u>underline</u>, NO ==highlight==, NO #headings — chat UI leaks raw markup chars. Plain text only.\n- Never gloss debate jargon — these are first-class vocabulary, use them as-is: AFF, NEG, 1AR, AT, 1NC, 1AC, FW, CX, 2AR, CP, DA, 2NR, T, CSA, PIC, K, TT, RVI, 2NC, LD.";
 
 const CHAT_FORMATTING_BRIEF = "BLOCK FORMATTING — for /block output (debate document, not chat):\n- 93.1% of corpus analytics use numbered-list shape (1./2./3.) when listing multi-part arguments. Use it for analyticBefore/glueBetween/analyticAfter when listing turns or warrants.\n- 82.4% use <u>underline</u> on emphasized phrases inside analytics — only do this in glue text; cards keep their own preserved markup.\n- 12.9% use **bold** for the loudest 1–2 claims of a chunk. Use sparingly.\n- Em-dashes (—) for offset clauses (~1.02/100 words).\n- ALLCAPS for transition tokens like REASONABILITY, TURN, AT, DEFENSE, LOGIC (~1.77/100 words).\n- Frontline / overview / extension: lead with a CLAIM tag, then card, then 1-sentence implication.\n- \"AT — X\" responses: name the opposing claim, then turns/no-links.\n- Cards open blocks (avg position 0.22 from start, 0=open · 1=close). Place card body first, glue after.\n- DO NOT explain or paraphrase the card body in glue text — the card speaks for itself.";
 
@@ -25,7 +25,7 @@ const CORPUS_META = {
   "blocks": 1758,
   "analytics": 635,
   "cards": 189,
-  "generated_at": "2026-05-03T03:59:00.425Z",
+  "generated_at": "2026-05-03T04:18:38.272Z",
   "avg_analytic_chars": 622,
   "avg_analytic_sentences": 5.07,
   "pct_numbered": 93.1,
