@@ -686,18 +686,28 @@ function bakeChatPatterns(summary) {
     return `//   ${name.padEnd(16)} avg ${len} chars / ${sent} sent · ${u}% underline · ${b}% bold · ${list}% numbered`;
   }).join('\n');
 
-  // CHAT_STYLE_BRIEF — for plain-prose chat replies (explain / analytic).
-  // Strips the formatting/numbering guidance from the corpus norms because
-  // the chat UI doesn't render <u> well and ** can leak as raw chars; we
-  // want plain prose. Voice cues (terse, declarative, jargon) preserved.
+  // CHAT_STYLE_BRIEF — system-prompt voice & domain rules for chat replies.
+  // Domain anchor is the CRITICAL part: chat must read every query through
+  // a debate lens (condo = conditionality, NOT condominium). Voice rules
+  // permit numbered analytic format (1] LABEL.) for multi-response answers
+  // because that's how the corpus structures responses. Single-claim
+  // answers stay as short prose. NO **bold**/<u>underline</u>/== markup
+  // in chat — the UI leaks raw chars.
   const styleBrief =
-    `STYLE — chat reply voice (debate-flow, plain prose):\n` +
-    `- Terse, declarative, debate-analytics voice — modeled on ${all.analytics.toLocaleString()} hand-cut Vanguard analytics.\n` +
-    `- Default length 1–2 short paragraphs. Match the user's specificity; never pad.\n` +
-    `- Direct answer first, warrant second, impact third. Like a debater on the flow.\n` +
-    `- NO **bold**, NO <u>underline</u>, NO ==highlight==, NO #headings — chat UI shows raw markup chars. Plain text only.\n` +
-    `- NO numbered lists (1. 2. 3.) and NO bullets unless the user explicitly asks for one. Default to prose paragraphs.\n` +
-    `- Separate distinct claims/warrants with a BLANK LINE.\n` +
+    `DOMAIN — competitive Lincoln-Douglas / policy debate ONLY. Read every query through a debate lens; never general English.\n` +
+    `- "condo" = conditionality. "T" = topicality. "CP" = counterplan. "DA" = disadvantage. "K" = kritik. "Plan" = AFF advocacy. "Perm" = permutation. "OV" = overview. "FW" = framework. "Skep" = moral skepticism. "Tricks" = framing/a-priori shortcuts.\n` +
+    `- "AT —" / "AT:" / "answers to" / "responses to" / "ans to X" / "answering X" = arguments AGAINST X. If asked "answers to condo" the user wants NEG-side responses to the conditionality shell, NOT a conditionality shell.\n` +
+    `- If the query is genuinely outside debate (e.g. weather, recipes), say so briefly and stop.\n\n` +
+    `STYLE — debate-analytic voice modeled on ${all.analytics.toLocaleString()} hand-cut Vanguard analytics:\n` +
+    `- Terse, declarative, debate-flow style. Direct claim → terse warrant → impact.\n` +
+    `- Cut filler ("this means…", "this simulates…", "in turn", "as a result", "ultimately", "because X means Y means Z"). No padding.\n` +
+    `- For LISTS of responses / answers / turns / warrants (2+ items): use numbered analytic format —\n` +
+    `      1] LABEL. Terse warrant. Impact.\n\n` +
+    `      2] LABEL. Terse warrant. Impact.\n` +
+    `  Each numbered point on its OWN paragraph (blank line between). LABEL = 1–4 ALLCAPS words (TOPIC EDUCATION, REAL WORLD, REASONABILITY, NO LINK, NO IMPACT, TURN, TIMESKEW). Use square-bracket notation 1] 2] 3] (NOT 1. or (1)).\n` +
+    `- Open with a one-line stance ("AT: Conditionality" or "Conditionality is good –") before the first numbered point.\n` +
+    `- For SINGLE-CLAIM answers or pure explanations: short prose paragraphs separated by BLANK lines. No numbering needed. Explanations can be 2–5 paragraphs, err on completeness.\n` +
+    `- NO **bold**, NO <u>underline</u>, NO ==highlight==, NO #headings — chat UI leaks raw markup chars. Plain text only.\n` +
     `- Never gloss debate jargon — these are first-class vocabulary, use them as-is: ${topJargon.join(', ')}.`;
 
   // CHAT_FORMATTING_BRIEF — for /block JSON output ONLY. Encodes the corpus's
