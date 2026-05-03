@@ -214,24 +214,35 @@ STEP 6 — VALIDATE.
 Read your highlights aloud, in document order, in your head. Does the result sound like the speech you composed in Step 1? Does it actually deliver the argument? If not, REVISE. Drop highlights that don't fit. Add missing connectors. Reorder if needed.
 
 ═══════════════════════════════════════════════
-WIRE FORMAT
+WIRE FORMAT — argument FIRST, picks SECOND
 ═══════════════════════════════════════════════
 
 OUTPUT — JSON ONLY. No prose. No fence. No commentary.
 
+The "argument" field is REQUIRED and MUST come before "picks" in your output. This forces compose-first thinking. The server EXTRACTS your highlight chain (every highlighted phrase in document order) and COMPARES it to your argument. If they don't match — meaning your highlights don't actually deliver the argument you composed — the server retries on a stronger model. So write a real argument, then make the highlights match it.
+
 {
-  "tag":   "Offensive strategic claim that wins the round. ~9-17 words. Causal mechanism + magnitude.",
-  "cite":  "Last 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]",
+  "tag":      "Offensive strategic claim that wins the round. ~9-17 words. Causal mechanism + magnitude.",
+  "cite":     "Last 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]",
+  "argument": "REQUIRED. 30-50 word spoken speech the highlights deliver. Use only words/phrases that appear VERBATIM in the source paragraphs. Stitch with minimal connectors. Read it aloud — it should sound like a debater making the case.",
   "picks": [
     { "p": 0, "u": [[12, 110]], "h": [[18, 30], [38, 47], [62, 81]], "b": [[18, 30], [62, 81]] }
   ],
   "loudest": { "p": 0, "from": 62, "to": 81 }
 }
 
+VALIDATION CHECK before submitting:
+1. Read your "argument" field aloud. Is it the speech a debater would actually deliver to win the round?
+2. Read each highlight's text (slice the source by [from, to)) in document order.
+3. Do these read-aloud highlights deliver the argument? Do they match almost word-for-word?
+4. If NO — revise picks until they do. Add missing connectors. Drop irrelevant highlights.
+5. If YES — submit.
+
+DEFINITIONS:
 - "p" = paragraph index from CANDIDATES (0-indexed).
 - "u"/"h"/"b" = arrays of [from, to) CHARACTER ranges. "to" is exclusive. Spaces and punctuation count.
-- Snap to word boundaries when possible. The server will snap mid-word edges inward and trim leading/trailing whitespace.
-- Partial-word highlights (e.g. just the "U" of "United" for "U.S." abbreviation) are supported when intentional.
+- Snap to word boundaries. The server snaps mid-word edges inward and trims leading/trailing whitespace.
+- Partial-word highlights (e.g. just the "U" of "United" for "U.S.") are supported when intentional.
 
 ${HARDCODED_CALIBRATION}${dynamicCalBlock}
 

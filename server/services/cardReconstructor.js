@@ -491,10 +491,16 @@ const CARD_PICKS_JSON_SCHEMA = {
   schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['tag', 'cite', 'picks'],
+    required: ['tag', 'cite', 'argument', 'picks'],
     properties: {
       tag:  { type: 'string' },
       cite: { type: 'string' },
+      // The 30-50 word spoken speech the highlights MUST deliver in order.
+      // The model is required to compose this BEFORE picks, forcing
+      // argument-first thinking. Server extracts the actual read-aloud
+      // chain from picks and compares to this argument; if they don't
+      // match, retry on Sonnet.
+      argument: { type: 'string' },
       picks: {
         type: 'array',
         items: {
@@ -523,6 +529,56 @@ const CARD_PICKS_JSON_SCHEMA = {
   },
 };
 
+// Extract the read-aloud chain — every highlight's text in document order,
+// joined by " ... ". This is what the user "hears" when the debater reads
+// only the highlighted portions. Compare this to the model's stated
+// `argument` to detect chain incoherence.
+function extractReadAloudChain(picksJson, candidates) {
+  const candidateByIndex = new Map();
+  for (const c of candidates) candidateByIndex.set(c.index, c);
+  const chain = [];
+  const picks = Array.isArray(picksJson?.picks) ? picksJson.picks : [];
+
+  // Sort picks by paragraph original index so chain reads in document order.
+  const ordered = picks
+    .filter(p => Number.isInteger(p.p) && candidateByIndex.has(p.p))
+    .sort((a, b) => candidateByIndex.get(a.p).originalIndex - candidateByIndex.get(b.p).originalIndex);
+
+  for (const pick of ordered) {
+    const cand = candidateByIndex.get(pick.p);
+    const text = cand.text;
+    const hRanges = (pick.h || [])
+      .map(s => clampSpan(s, text.length))
+      .filter(Boolean)
+      .map(s => snapToWordBoundaries(s, text))
+      .filter(Boolean)
+      .sort((a, b) => a[0] - b[0]);
+    for (const [a, b] of hRanges) {
+      const slice = text.slice(a, b).trim();
+      if (slice) chain.push(slice);
+    }
+  }
+  return chain.join(' ... ');
+}
+
+// Word-overlap score between the model's composed argument and the
+// actual highlight chain. Used to detect chain incoherence.
+//   1.0 = chain contains every meaningful word of the argument
+//   0.0 = no overlap
+function chainArgumentOverlap(argument, chainText) {
+  if (!argument || !chainText) return 0;
+  const tokenize = s => String(s || '').toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length >= 3);   // ignore stopwords/short connectors
+  const argWords = new Set(tokenize(argument));
+  const chainWords = new Set(tokenize(chainText));
+  if (!argWords.size) return 0;
+  let hit = 0;
+  for (const w of argWords) if (chainWords.has(w)) hit++;
+  return hit / argWords.size;
+}
+
 module.exports = {
   reconstructCard,
   CARD_PICKS_JSON_SCHEMA,
@@ -530,6 +586,8 @@ module.exports = {
   UNDERLINE_CAPS,
   BOLD_CAPS,
   MAX_HIGHLIGHT_RUN_CHARS,
+  extractReadAloudChain,
+  chainArgumentOverlap,
   // exposed for tests:
   clampSpan,
   mergeSpans,
