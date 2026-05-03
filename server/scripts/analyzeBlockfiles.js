@@ -686,24 +686,34 @@ function bakeChatPatterns(summary) {
     return `//   ${name.padEnd(16)} avg ${len} chars / ${sent} sent · ${u}% underline · ${b}% bold · ${list}% numbered`;
   }).join('\n');
 
-  // Compose human-style brief — terse, prescriptive, mirrors corpus norms.
+  // CHAT_STYLE_BRIEF — for plain-prose chat replies (explain / analytic).
+  // Strips the formatting/numbering guidance from the corpus norms because
+  // the chat UI doesn't render <u> well and ** can leak as raw chars; we
+  // want plain prose. Voice cues (terse, declarative, jargon) preserved.
   const styleBrief =
-    `STYLE — match the conventions of ${all.analytics.toLocaleString()} hand-cut analytic chunks across ${all.blocks.toLocaleString()} blockfiles:\n` +
-    `- Default analytic length: ~${all.analytic_avg_chars} chars / ${all.analytic_avg_sentences} sentences. Single-claim answers can be 1–2 sentences.\n` +
-    `- ${all.analytic_pct_numbered_list}% of analytics use a numbered-list shape (1./2./3.) — use it whenever you make multi-part arguments.\n` +
-    `- ${all.analytic_pct_with_underline}% use <u>underline</u> on emphasized phrases. Underline the load-bearing claims; do not underline whole sentences.\n` +
-    `- ${all.analytic_pct_with_bold}% use **bold** for the loudest 1–2 claims of a chunk. Use sparingly.\n` +
-    `- Em-dashes (—) are conventional for offset clauses (~${all.analytic_em_dash_per_100w}/100 words).\n` +
-    `- ALLCAPS is conventional for transition tokens like REASONABILITY, INNOVATION, NO LINK, NO IMPACT (~${all.analytic_allcaps_per_100w}/100 words).\n` +
-    `- Lead chunks with a canonical marker when applicable: ${topMarkers.join(', ')}.\n` +
-    `- Never gloss debate jargon — these are first-class vocabulary: ${topJargon.join(', ')}.`;
+    `STYLE — chat reply voice (debate-flow, plain prose):\n` +
+    `- Terse, declarative, debate-analytics voice — modeled on ${all.analytics.toLocaleString()} hand-cut Vanguard analytics.\n` +
+    `- Default length 1–2 short paragraphs. Match the user's specificity; never pad.\n` +
+    `- Direct answer first, warrant second, impact third. Like a debater on the flow.\n` +
+    `- NO **bold**, NO <u>underline</u>, NO ==highlight==, NO #headings — chat UI shows raw markup chars. Plain text only.\n` +
+    `- NO numbered lists (1. 2. 3.) and NO bullets unless the user explicitly asks for one. Default to prose paragraphs.\n` +
+    `- Separate distinct claims/warrants with a BLANK LINE.\n` +
+    `- Never gloss debate jargon — these are first-class vocabulary, use them as-is: ${topJargon.join(', ')}.`;
 
+  // CHAT_FORMATTING_BRIEF — for /block JSON output ONLY. Encodes the corpus's
+  // formatting conventions because /block produces a debate document
+  // (rendered verbatim) where the markup IS the expected style.
   const formatBrief =
-    `FORMATTING — corpus-confirmed patterns:\n` +
-    `- Frontline / overview / extension: lead with a CLAIM, then numbered warrants, then the IMPACT.\n` +
-    `- "AT — X" responses: open by quoting/naming the opposing claim, then numbered turns/no-links.\n` +
-    `- Cards open blocks (avg position ${all.avg_card_position == null ? '~0.15' : all.avg_card_position.toFixed(2)} from start, 0=open · 1=close) — when citing evidence, place the card first then layer analysis after.\n` +
-    `- Theory analytics are short and punchy (~170 chars); K analytics are long and prosaic (~1,250 chars). Match the user's evident genre.`;
+    `BLOCK FORMATTING — for /block output (debate document, not chat):\n` +
+    `- ${all.analytic_pct_numbered_list}% of corpus analytics use numbered-list shape (1./2./3.) when listing multi-part arguments. Use it for analyticBefore/glueBetween/analyticAfter when listing turns or warrants.\n` +
+    `- ${all.analytic_pct_with_underline}% use <u>underline</u> on emphasized phrases inside analytics — only do this in glue text; cards keep their own preserved markup.\n` +
+    `- ${all.analytic_pct_with_bold}% use **bold** for the loudest 1–2 claims of a chunk. Use sparingly.\n` +
+    `- Em-dashes (—) for offset clauses (~${all.analytic_em_dash_per_100w}/100 words).\n` +
+    `- ALLCAPS for transition tokens like ${topMarkers.slice(0, 5).join(', ')} (~${all.analytic_allcaps_per_100w}/100 words).\n` +
+    `- Frontline / overview / extension: lead with a CLAIM tag, then card, then 1-sentence implication.\n` +
+    `- "AT — X" responses: name the opposing claim, then turns/no-links.\n` +
+    `- Cards open blocks (avg position ${all.avg_card_position == null ? '~0.15' : all.avg_card_position.toFixed(2)} from start, 0=open · 1=close). Place card body first, glue after.\n` +
+    `- DO NOT explain or paraphrase the card body in glue text — the card speaks for itself.`;
 
   const ts = new Date().toISOString();
 

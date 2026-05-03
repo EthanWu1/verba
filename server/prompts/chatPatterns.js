@@ -3,7 +3,7 @@
 // DO NOT HAND-EDIT. Regenerate after re-running the analyzer.
 //
 // Source: ../data/blockfile-analysis.json
-// Generated: 2026-05-03T02:33:14.351Z
+// Generated: 2026-05-03T03:59:00.425Z
 // Corpus: 1758 blocks, 635 analytics, 189 cards.
 //
 // Per-category style shape:
@@ -13,9 +13,9 @@
 //   k                avg 1252 chars / 8.06 sent · 62% underline · 27.1% bold · 83.7% numbered
 //   marlborough_1ar  avg 4315 chars / 27.2 sent · 26.7% underline · 3.3% bold · 73.3% numbered
 
-const CHAT_STYLE_BRIEF = "STYLE — match the conventions of 635 hand-cut analytic chunks across 1,758 blockfiles:\n- Default analytic length: ~622 chars / 5.07 sentences. Single-claim answers can be 1–2 sentences.\n- 93.1% of analytics use a numbered-list shape (1./2./3.) — use it whenever you make multi-part arguments.\n- 82.4% use <u>underline</u> on emphasized phrases. Underline the load-bearing claims; do not underline whole sentences.\n- 12.9% use **bold** for the loudest 1–2 claims of a chunk. Use sparingly.\n- Em-dashes (—) are conventional for offset clauses (~1.02/100 words).\n- ALLCAPS is conventional for transition tokens like REASONABILITY, INNOVATION, NO LINK, NO IMPACT (~1.77/100 words).\n- Lead chunks with a canonical marker when applicable: REASONABILITY, TURN, AT, DEFENSE, LOGIC, FW, CLASH, INNOVATION, NO LINK, NEG FLEX, TIME SKEW, NORMS.\n- Never gloss debate jargon — these are first-class vocabulary: AFF, NEG, 1AR, AT, 1NC, 1AC, FW, CX, 2AR, CP, DA, 2NR, T, CSA, PIC, K, TT, RVI, 2NC, LD.";
+const CHAT_STYLE_BRIEF = "STYLE — chat reply voice (debate-flow, plain prose):\n- Terse, declarative, debate-analytics voice — modeled on 635 hand-cut Vanguard analytics.\n- Default length 1–2 short paragraphs. Match the user's specificity; never pad.\n- Direct answer first, warrant second, impact third. Like a debater on the flow.\n- NO **bold**, NO <u>underline</u>, NO ==highlight==, NO #headings — chat UI shows raw markup chars. Plain text only.\n- NO numbered lists (1. 2. 3.) and NO bullets unless the user explicitly asks for one. Default to prose paragraphs.\n- Separate distinct claims/warrants with a BLANK LINE.\n- Never gloss debate jargon — these are first-class vocabulary, use them as-is: AFF, NEG, 1AR, AT, 1NC, 1AC, FW, CX, 2AR, CP, DA, 2NR, T, CSA, PIC, K, TT, RVI, 2NC, LD.";
 
-const CHAT_FORMATTING_BRIEF = "FORMATTING — corpus-confirmed patterns:\n- Frontline / overview / extension: lead with a CLAIM, then numbered warrants, then the IMPACT.\n- \"AT — X\" responses: open by quoting/naming the opposing claim, then numbered turns/no-links.\n- Cards open blocks (avg position 0.22 from start, 0=open · 1=close) — when citing evidence, place the card first then layer analysis after.\n- Theory analytics are short and punchy (~170 chars); K analytics are long and prosaic (~1,250 chars). Match the user's evident genre.";
+const CHAT_FORMATTING_BRIEF = "BLOCK FORMATTING — for /block output (debate document, not chat):\n- 93.1% of corpus analytics use numbered-list shape (1./2./3.) when listing multi-part arguments. Use it for analyticBefore/glueBetween/analyticAfter when listing turns or warrants.\n- 82.4% use <u>underline</u> on emphasized phrases inside analytics — only do this in glue text; cards keep their own preserved markup.\n- 12.9% use **bold** for the loudest 1–2 claims of a chunk. Use sparingly.\n- Em-dashes (—) for offset clauses (~1.02/100 words).\n- ALLCAPS for transition tokens like REASONABILITY, TURN, AT, DEFENSE, LOGIC (~1.77/100 words).\n- Frontline / overview / extension: lead with a CLAIM tag, then card, then 1-sentence implication.\n- \"AT — X\" responses: name the opposing claim, then turns/no-links.\n- Cards open blocks (avg position 0.22 from start, 0=open · 1=close). Place card body first, glue after.\n- DO NOT explain or paraphrase the card body in glue text — the card speaks for itself.";
 
 const TOP_MARKERS = ["REASONABILITY","TURN","AT","DEFENSE","LOGIC","FW","CLASH","INNOVATION","NO LINK","NEG FLEX","TIME SKEW","NORMS"];
 
@@ -25,7 +25,7 @@ const CORPUS_META = {
   "blocks": 1758,
   "analytics": 635,
   "cards": 189,
-  "generated_at": "2026-05-03T02:33:14.351Z",
+  "generated_at": "2026-05-03T03:59:00.425Z",
   "avg_analytic_chars": 622,
   "avg_analytic_sentences": 5.07,
   "pct_numbered": 93.1,

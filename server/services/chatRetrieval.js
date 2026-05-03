@@ -1,6 +1,7 @@
 // server/services/chatRetrieval.js
 'use strict';
 const { getDb } = require('./db');
+const { semanticSearch, isConfigured: vecConfigured } = require('./vectorSearch');
 
 const CACHE_MAX = 1000;
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -23,27 +24,72 @@ function sanitize(s) {
 }
 function safeJson(s) { try { return JSON.parse(s); } catch { return []; } }
 
+// Return columns include body_markdown (full <u>/=*=*= formatting intact)
+// so /block can paste cards verbatim. body_plain stays for non-block paths
+// that need a short text excerpt.
+const CARD_COLUMNS = `
+  c.id, c.tag, c.shortCite,
+  c.body_plain,
+  c.body_markdown,
+  c.argumentTypes, c.argumentTags
+`;
+
+// Hybrid card retrieval. Semantic search (Pinecone via vectorSearch) is
+// preferred when configured — finds cards whose tags/bodies are semantically
+// near the query even without keyword overlap. Falls back to FTS5 BM25 when
+// vector search fails or is unconfigured. Mirrors libraryQuery.buildChatContext.
 async function retrieveCards(query, k = 10) {
   const q = sanitize(query); if (!q) return [];
   const key = 'cards|' + q + '|' + k;
   const cached = cacheGet(key); if (cached) return cached;
-  let rows;
-  try {
-    rows = getDb().prepare(`
-      SELECT c.id, c.tag, c.shortCite, substr(c.body_plain, 1, 400) AS body_plain,
-             c.argumentTypes, c.argumentTags,
-             bm25(cards_fts) AS rank
-      FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid
-      WHERE cards_fts MATCH ? AND c.isCanonical = 1
-      ORDER BY rank ASC LIMIT ?
-    `).all(q, k);
-  } catch {
-    rows = getDb().prepare(`
-      SELECT id, tag, shortCite, substr(body_plain, 1, 400) AS body_plain, argumentTypes, argumentTags
-      FROM cards WHERE isCanonical = 1 AND (tag LIKE ? OR shortCite LIKE ?) LIMIT ?
-    `).all('%' + q + '%', '%' + q + '%', k);
+
+  const db = getDb();
+  let rows = [];
+
+  // 1. Semantic-first
+  if (vecConfigured()) {
+    try {
+      const ranked = await semanticSearch(q, Math.max(k * 4, 40));
+      const ids = ranked.map(r => String(r.id)).filter(Boolean);
+      if (ids.length) {
+        const placeholders = ids.map(() => '?').join(',');
+        const fetched = db.prepare(`
+          SELECT ${CARD_COLUMNS}
+          FROM cards c
+          WHERE c.id IN (${placeholders}) AND c.isCanonical = 1
+        `).all(...ids);
+        const order = new Map(ids.map((id, i) => [id, i]));
+        fetched.sort((a, b) => (order.get(String(a.id)) ?? 9999) - (order.get(String(b.id)) ?? 9999));
+        rows = fetched.slice(0, k);
+      }
+    } catch (err) {
+      console.warn('[chatRetrieval] semantic failed, falling back to FTS:', err.message);
+    }
   }
-  const out = rows.map(r => ({ ...r, argumentTypes: safeJson(r.argumentTypes), argumentTags: safeJson(r.argumentTags) }));
+
+  // 2. FTS fallback
+  if (rows.length === 0) {
+    try {
+      rows = db.prepare(`
+        SELECT ${CARD_COLUMNS}, bm25(cards_fts) AS rank
+        FROM cards_fts JOIN cards c ON c.rowid = cards_fts.rowid
+        WHERE cards_fts MATCH ? AND c.isCanonical = 1
+        ORDER BY rank ASC LIMIT ?
+      `).all(q, k);
+    } catch {
+      rows = db.prepare(`
+        SELECT ${CARD_COLUMNS}
+        FROM cards c
+        WHERE c.isCanonical = 1 AND (c.tag LIKE ? OR c.shortCite LIKE ?) LIMIT ?
+      `).all('%' + q + '%', '%' + q + '%', k);
+    }
+  }
+
+  const out = rows.map(r => ({
+    ...r,
+    argumentTypes: safeJson(r.argumentTypes),
+    argumentTags:  safeJson(r.argumentTags),
+  }));
   cacheSet(key, out);
   return out;
 }

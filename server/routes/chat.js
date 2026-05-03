@@ -258,7 +258,10 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
       : buildExplainPrompt({ intent: parsed.intent, context: analytics, contextDocs: attachedDocs });
 
     const baseSystem = 'You are Verba, a competitive debate assistant. You have access to the user\'s uploaded context documents — when they\'re provided, ground your answer in them. Maintain conversational continuity across the thread\'s prior turns.';
-    const fullSystem = [baseSystem, SHORT_BRIEF, CHAT_STYLE_BRIEF, CHAT_FORMATTING_BRIEF].join('\n\n');
+    // Plain-prose chat: only voice/brevity rules. CHAT_FORMATTING_BRIEF is
+    // /block-only — it carries debate-document markup conventions that don't
+    // belong in a chat reply (chat UI shows raw ** / <u> chars).
+    const fullSystem = [baseSystem, SHORT_BRIEF, CHAT_STYLE_BRIEF].join('\n\n');
     const messages = [
       { role: 'system', content: fullSystem },
       ...priorTurns,
