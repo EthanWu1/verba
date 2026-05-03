@@ -29,6 +29,37 @@ require('dotenv').config();
 
 const DAILY_BUDGET = parseInt(process.env.TOKEN_BUDGET_DAILY || '500000', 10);
 
+/**
+ * Normalize legacy model IDs to native Anthropic format.
+ *   anthropic/claude-haiku-4.5  →  claude-haiku-4-5
+ *   claude-haiku-4.5            →  claude-haiku-4-5
+ *   claude-haiku-4-5            →  claude-haiku-4-5  (passthrough)
+ * Non-Anthropic models (e.g. left-over llama / mistral / deepseek defaults
+ * still in prod env) are coerced to claude-haiku-4-5 with a one-time warning.
+ *
+ * Declared BEFORE PRIMARY_MODEL/FALLBACK_MODEL because those consts call
+ * normalizeModel() at module load. If env has a non-Claude default, we'd
+ * hit a TDZ ReferenceError on _warnedNonAnthropic before this declaration.
+ */
+const _warnedNonAnthropic = new Set();
+function normalizeModel(id) {
+  if (!id) return 'claude-haiku-4-5';
+  let m = String(id).trim();
+  if (m.startsWith('anthropic/')) m = m.slice('anthropic/'.length);
+  // Reject anything that's clearly not Anthropic.
+  if (!m.startsWith('claude-')) {
+    if (!_warnedNonAnthropic.has(m)) {
+      _warnedNonAnthropic.add(m);
+      console.warn(`[LLM] Ignoring non-Anthropic model "${id}" — using claude-haiku-4-5 instead. Update your .env.`);
+    }
+    return 'claude-haiku-4-5';
+  }
+  // Anthropic console accepts dotted versions, but the SDK is happiest with
+  // dashed canonical IDs. Convert "claude-haiku-4.5" → "claude-haiku-4-5".
+  m = m.replace(/(\d)\.(\d)/g, '$1-$2');
+  return m;
+}
+
 // Two-model setup: fast/cheap default, smarter fallback for hard cases.
 const PRIMARY_MODEL  = normalizeModel(process.env.MODEL          || 'claude-haiku-4-5');
 const FALLBACK_MODEL = normalizeModel(process.env.MODEL_FALLBACK || 'claude-sonnet-4-6');
@@ -45,33 +76,6 @@ function getClient() {
   }
   _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   return _client;
-}
-
-/**
- * Normalize legacy model IDs to native Anthropic format.
- *   anthropic/claude-haiku-4.5  →  claude-haiku-4-5
- *   claude-haiku-4.5            →  claude-haiku-4-5
- *   claude-haiku-4-5            →  claude-haiku-4-5  (passthrough)
- * Non-Anthropic models (e.g. left-over llama / mistral defaults) are
- * coerced to PRIMARY_MODEL with a one-time warning.
- */
-const _warnedNonAnthropic = new Set();
-function normalizeModel(id) {
-  if (!id) return 'claude-haiku-4-5';
-  let m = String(id).trim();
-  if (m.startsWith('anthropic/')) m = m.slice('anthropic/'.length);
-  // Reject anything that's clearly not Anthropic.
-  if (!m.startsWith('claude-')) {
-    if (!_warnedNonAnthropic.has(m)) {
-      _warnedNonAnthropic.add(m);
-      console.warn(`[LLM] Ignoring non-Anthropic model "${id}" — using ${PRIMARY_MODEL || 'claude-haiku-4-5'} instead. Update your .env.`);
-    }
-    return 'claude-haiku-4-5';
-  }
-  // Anthropic console accepts dotted versions, but the SDK is happiest with
-  // dashed canonical IDs. Convert "claude-haiku-4.5" → "claude-haiku-4-5".
-  m = m.replace(/(\d)\.(\d)/g, '$1-$2');
-  return m;
 }
 
 /* ── Token session ── */
