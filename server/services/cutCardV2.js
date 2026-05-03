@@ -20,7 +20,7 @@ const crypto = require('crypto');
 const { selectCandidates } = require('./argumentRelevance');
 const {
   reconstructCard, CARD_PICKS_JSON_SCHEMA,
-  extractReadAloudChain, chainArgumentOverlap,
+  extractReadAloudChain, chainArgumentOverlap, chainArgumentScore,
 } = require('./cardReconstructor');
 // Live module reference — accessing llm.completeJSON inside the function (not
 // destructuring at load time) lets tests stub the LLM call by mutating the
@@ -167,37 +167,52 @@ async function cutCardV2({
     cacheSystem: true,
   });
 
-  // Stage 3b — chain validation. Compute the actual read-aloud chain
-  // and check overlap with the model's stated argument. If the model
-  // wrote a real argument but the highlights don't deliver it, this
-  // catches it. Min overlap 0.45 = at least 45% of the argument's
-  // content words must appear in the highlight chain.
-  const CHAIN_OVERLAP_MIN = 0.45;
+  // Stage 3b — chain validation. Three failure modes detected:
+  //   1. LOW COVERAGE: chain misses too many argument words.
+  //   2. HIGH BLOAT: chain has random words not in argument.
+  //   3. FILLER PRESENT: chain contains transitional words ("further",
+  //      "unfortunately") that should be skipped entirely.
+  // Quality bar: coverage ≥ 0.55, bloat ≤ 0.40, filler == 0. If any
+  // fails AND fallback model is different, retry with explicit critique.
+  const CHAIN_COVERAGE_MIN = 0.55;
+  const CHAIN_BLOAT_MAX    = 0.40;
   const initialChain = extractReadAloudChain(llmResult.json, candidates);
   const initialArgument = String(llmResult.json?.argument || '').trim();
-  const initialOverlap = chainArgumentOverlap(initialArgument, initialChain);
+  const initialScore = chainArgumentScore(initialArgument, initialChain);
   let chainRetried = false;
 
-  if (initialArgument && initialOverlap < CHAIN_OVERLAP_MIN && fallbackModel && fallbackModel !== primaryModel) {
+  const chainBad = initialArgument && (
+    initialScore.coverage < CHAIN_COVERAGE_MIN ||
+    initialScore.bloat    > CHAIN_BLOAT_MAX ||
+    initialScore.filler   > 0
+  );
+
+  if (chainBad && fallbackModel && fallbackModel !== primaryModel) {
     chainRetried = true;
     console.warn(
-      `[cutCardV2] chain-argument overlap ${initialOverlap.toFixed(2)} < ${CHAIN_OVERLAP_MIN}, ` +
+      `[cutCardV2] chain reject — coverage=${initialScore.coverage.toFixed(2)} bloat=${initialScore.bloat.toFixed(2)} filler=${initialScore.filler}, ` +
       `retrying on ${fallbackModel}\n` +
       `  argument: "${initialArgument.slice(0, 200)}"\n` +
       `  chain:    "${initialChain.slice(0, 200)}"`
     );
 
-    const critique = `Your previous attempt produced an argument that the highlights don't deliver.
+    const critique = `Your previous attempt has a chain quality problem. Fix it.
 
 YOUR ARGUMENT: "${initialArgument}"
 ACTUAL HIGHLIGHT CHAIN (read in document order): "${initialChain}"
 
-The highlight chain MUST read as the argument. Re-emit picks so that:
-  - Reading every highlighted phrase in order produces a sentence very close to your argument.
-  - Each major content word in the argument has a corresponding highlight.
-  - Connectors ("and", "to", "would") are 1-word highlights between content highlights.
+DIAGNOSED ISSUES:${initialScore.coverage < CHAIN_COVERAGE_MIN ? `
+  - LOW COVERAGE (${(initialScore.coverage*100).toFixed(0)}%): the chain doesn't deliver the argument's main content words.` : ''}${initialScore.bloat > CHAIN_BLOAT_MAX ? `
+  - BLOAT (${(initialScore.bloat*100).toFixed(0)}%): the chain has too many words that AREN'T in your argument. Drop the random highlights that don't carry the argument.` : ''}${initialScore.filler > 0 ? `
+  - FILLER WORDS PRESENT: don't highlight transitions like "further", "unfortunately", "however", "moreover", "in addition", "thus". Skip these words entirely — neither highlight NOR underline them.` : ''}
 
-Compose the argument FIRST. Then mark highlights that match it.`;
+REVISE PICKS so:
+  1. Every highlighted word EARNS its place — if removing it doesn't change the argument, drop it.
+  2. The chain (highlights read in order) closely matches your argument.
+  3. Bolds are SHORT — usually 1 word, max 2-3. Bold only words needing spoken emphasis.
+  4. SKIP transitional/filler words entirely.
+
+Compose the argument FIRST. Then mark only the verbatim source words that deliver it.`;
 
     try {
       const retry = await llm.completeJSON({
@@ -215,9 +230,12 @@ Compose the argument FIRST. Then mark highlights that match it.`;
       });
       const retryChain = extractReadAloudChain(retry.json, candidates);
       const retryArg = String(retry.json?.argument || '').trim();
-      const retryOverlap = chainArgumentOverlap(retryArg, retryChain);
-      console.log(`[cutCardV2] chain-retry overlap: ${retryOverlap.toFixed(2)} (was ${initialOverlap.toFixed(2)})`);
-      if (retryOverlap > initialOverlap) {
+      const retryScore = chainArgumentScore(retryArg, retryChain);
+      const retryBetter = (retryScore.coverage > initialScore.coverage)
+        || (retryScore.bloat < initialScore.bloat)
+        || (retryScore.filler < initialScore.filler);
+      console.log(`[cutCardV2] chain-retry: coverage=${retryScore.coverage.toFixed(2)} bloat=${retryScore.bloat.toFixed(2)} filler=${retryScore.filler} (was ${initialScore.coverage.toFixed(2)}/${initialScore.bloat.toFixed(2)}/${initialScore.filler})`);
+      if (retryBetter) {
         llmResult = retry;
       }
     } catch (e) {
@@ -265,7 +283,8 @@ Compose the argument FIRST. Then mark highlights that match it.`;
   // Final chain extraction for the response (post-reconstruction).
   const finalChain = extractReadAloudChain(llmResult.json, candidates);
   const finalArgument = String(llmResult.json?.argument || '').trim();
-  const finalOverlap = chainArgumentOverlap(finalArgument, finalChain);
+  const finalScore = chainArgumentScore(finalArgument, finalChain);
+  const finalOverlap = finalScore.coverage;
 
   const card = {
     tag: rebuilt.tag,
@@ -308,7 +327,7 @@ Compose the argument FIRST. Then mark highlights that match it.`;
     `[cutCardV2] ok in ${elapsed}ms model=${llmResult.model} ` +
     `paragraphs=${rebuilt.stats.paragraphs} ` +
     `marks=${marksRendered} highlight=${highlightPct}% ` +
-    `chain-overlap=${(finalOverlap * 100).toFixed(0)}% ` +
+    `chain coverage=${(finalScore.coverage * 100).toFixed(0)}% bloat=${(finalScore.bloat * 100).toFixed(0)}% filler=${finalScore.filler} ` +
     `prompt=${u.prompt_tokens || '?'}tok completion=${u.completion_tokens || '?'}tok ` +
     `cache=${cacheHitRate}%(read=${cacheRead}/write=${cacheWrite}) ` +
     `cost=$${(u.cost || 0).toFixed(5)}` +

@@ -207,8 +207,11 @@ For each beat in your speech, locate the verbatim words in the candidate paragra
 STEP 4 — UNDERLINE THE READ.
 For each highlighted region, underline the surrounding clause that makes it grammatically readable (so the debater can underline-read it for context if they have time). Underlines wrap highlights — they don't ENGULF the entire paragraph. If a sentence is pure setup or filler, leave it un-underlined. The server will collapse 100% underlines anyway, so be selective from the start.
 
-STEP 5 — BOLD THE LOUDEST.
-Inside highlights, bold the words that should LAND HARDEST when spoken aloud — magnitudes (extinction, war), named actors (Russia, U.S.), operative verbs (collapses, undermines), numbers (3 degrees, 2040). Bolding is emphasis, not structure. 1-4 bolds per paragraph is normal.
+STEP 5 — BOLD THE LOUDEST (single words, not phrases).
+Bolds are for SPOKEN EMPHASIS — the moments the debater leans in. They are USUALLY 1 WORD, occasionally 2-3 if a tight phrase ("upper hand", "use them or lose them"). NEVER bold 4+ word spans — that's not emphasis, that's marking a clause.
+  - Bold magnitudes (extinction, war, collapse), named actors (Russia, U.S., Iran), operative verbs (collapses, undermines), numbers (3 degrees, 2040).
+  - The server caps bold-run length at 18 chars and trims overflow.
+  - 1-3 bolds per paragraph is normal.
 
 STEP 6 — VALIDATE.
 Read your highlights aloud, in document order, in your head. Does the result sound like the speech you composed in Step 1? Does it actually deliver the argument? If not, REVISE. Drop highlights that don't fit. Add missing connectors. Reorder if needed.
@@ -247,20 +250,56 @@ DEFINITIONS:
 ${HARDCODED_CALIBRATION}${dynamicCalBlock}
 
 ═══════════════════════════════════════════════
+SKIP THESE WORDS ENTIRELY (don't underline OR highlight):
+═══════════════════════════════════════════════
+
+These are TRANSITIONAL FILLER. They add nothing to the argument. Skip them — the underline picks up AFTER them, and the highlight chain doesn't include them:
+
+  Further · Furthermore · However · Moreover · Additionally · Also · Unfortunately · Accordingly · Thus · Therefore · Hence · Indeed · Essentially · Ultimately · Importantly · Notably · Specifically · Meanwhile · Nonetheless · Nevertheless · Arguably · Presumably · Fundamentally · Crucially · Clearly · Obviously · In addition · In essence · To be sure · In other words · For instance · For example
+
+If a sentence STARTS with one of these (e.g. "Further, there is evidence..."), your underline should start AFTER the filler word.
+
+═══════════════════════════════════════════════
+RUTHLESS EDITORIAL DISCIPLINE
+═══════════════════════════════════════════════
+
+Every highlighted word must EARN its place. Test: if you removed this highlight, would the argument still land? If yes, drop it.
+
+CONCRETE EXAMPLE OF GOOD vs BAD chain:
+
+Source paragraph: "As North Korea's deployment of the new missile launchers attests, South Korea has found itself in an asymmetric arms race that is impossible to win. No matter what conventional capability South Korea introduces, North Korean nuclear weapons will always have the upper hand."
+
+❌ BAD chain (random words, includes filler/redundancy):
+"As ... asymmetric arms ... is impossible ... capability ... North Korean nuclear ... will always ... the upper"
+
+The word "capability" interrupts the flow — it's not part of the argument. "the upper" without "hand" reads truncated.
+
+✅ GOOD chain (every word earns its place):
+"asymmetric arms ... is impossible ... no ... ko ... nuc ... s ... always have ... upper hand"
+
+Reads aloud as: "asymmetric arms is impossible. No Ko nuclear (s)... always have upper hand." The debater abbreviates "North Korean nuclear weapons" to "no ko nuc s" using partial-word highlights ("no" of North, "ko" of Korean, "nuc" of nuclear, "s" of weapons).
+
+═══════════════════════════════════════════════
 FAILURE MODES TO AVOID — observed in past cuts:
 ═══════════════════════════════════════════════
 
-❌ "EVERYTHING UNDERLINED": don't underline 90%+ of a paragraph. Underline the warrant clause; leave setup/transitions plain.
+❌ "EVERYTHING UNDERLINED": don't underline 90%+ of a paragraph. Underline the warrant clause; skip filler/transitions plain.
 
-❌ "GIBBERISH READ-ALOUD": don't pick highlights that look important in isolation but don't form a grammatical chain. Always validate: read them aloud in order. If it's not English-grammatical, revise.
+❌ "GIBBERISH READ-ALOUD": don't pick highlights that look important in isolation but don't form a grammatical chain. Validate: read them aloud in order. If it's not English-grammatical, revise.
 
-❌ "MID-WORD CUTS": don't end a span at "exte" of "extended". The server snaps inward but you can shrink your span to nothing.
+❌ "MID-WORD CUTS": don't end a span at "exte" of "extended". The server snaps inward.
 
-❌ "TRAILING SPACES/PUNCTUATION": don't include trailing whitespace in a highlight. Bad: ==Korea, == (highlights the comma+space). Good: ==Korea==, (comma stays plain).
+❌ "TRAILING SPACES/PUNCTUATION": don't include trailing whitespace in a highlight.
 
-❌ "NO BOLDS": at least 1-2 bolds per paragraph on policy cards. The loudest words deserve emphasis.
+❌ "NO BOLDS": at least 1-2 bolds per paragraph. Bold the SINGLE punchiest word per highlight.
 
-❌ "STOPWORD-ONLY HIGHLIGHTS": don't highlight ==are== alone with nothing nearby. Stopwords are GLUE — they only work next to content highlights to form a chain.
+❌ "MULTI-WORD BOLDS": don't bold 4+ word spans. Bolds are 1 word usually, max 2-3.
+
+❌ "BLOAT": don't highlight every "important-looking" word. Highlight only what's in your composed argument.
+
+❌ "FILLER WORDS HIGHLIGHTED": never highlight "however", "further", "unfortunately", "moreover", "in addition", "thus", etc. These break flow.
+
+❌ "STOPWORD-ONLY HIGHLIGHTS": don't highlight ==are== alone. Stopwords are GLUE — only between content highlights.
 
 ═══════════════════════════════════════════════
 EXAMPLE — argument-driven cut
