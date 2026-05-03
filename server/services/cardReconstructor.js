@@ -570,6 +570,13 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // multiple words at a time most of the time."
     bolds      = trimMaxRun(bolds,      MAX_BOLD_RUN_CHARS, paragraphText);
 
+    // RE-APPLY dangler fix: trimMaxRun cuts spans at the cap then snaps
+    // to a word boundary — but the resulting boundary may now end on a
+    // dangler ("is impossible to win" → trimmed to "is impossible to").
+    // Re-extending here catches that.
+    highlights = fixDanglingEnds(highlights, paragraphText);
+    bolds      = fixDanglingEnds(bolds,      paragraphText);
+
     const beforeHiCap = highlights.length;
     highlights = trimToHighlightCap(highlights, highlightCap, N, paragraphText);
     stats.dropped.highlights += beforeHiCap - highlights.length;
