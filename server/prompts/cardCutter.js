@@ -182,9 +182,11 @@ PARTIAL-WORD HIGHLIGHTS (Vanguard staple — char offsets enable this):
   - "North Korean ally" → highlight just the "n" → speaker reads "n... ally"
   - Use it when abbreviation is obvious in context.
 
-BOLDS:
-  - Always sit INSIDE highlights. Bolds = emphasis on the LOUDEST highlighted words.
-  - Density varies: 2–6/¶ for policy, 1–3/¶ for K/phil. Don't manufacture.
+BOLDS — DO emit bolds, the model under-bolds by default:
+  - Always sit INSIDE highlights. Bolds = the loudest words inside an existing highlight.
+  - REAL DENSITY: 2–4 bolds per paragraph for policy cards, 1–2 for K/phil. Don't be empty.
+  - Bolds go on the words that LAND HARDEST when read aloud — magnitudes, named actors, operative verbs (extinction, war, Russia, collapses).
+  - Pattern: most highlights you emit should ALSO have a bold on their punchiest word.
 
 STITCHED CHAIN:
   - All your highlights, read aloud in document order, should form a coherent spoken summary of the warrant.

@@ -42,9 +42,9 @@
 // ~10% highlighted, ~5% bolded.
 const HIGHLIGHT_CAPS = { minimal: 0.12, standard: 0.20, heavy: 0.32 };
 const UNDERLINE_CAPS = { minimal: 0.40, standard: 0.60, heavy: 0.80 };
-// Bold cap added to prevent the "every paragraph has 6+ bolds" failure mode.
-// Real cards: ~1 bold per ¶ on K/phil, 2-3 on policy.
-const BOLD_CAPS      = { minimal: 0.05, standard: 0.08, heavy: 0.12 };
+// Bold cap. Real cards: ~1 bold per ¶ on K/phil, 2-4 on policy.
+// Slightly loosened from 0.12 → 0.18 because user reported under-bolding.
+const BOLD_CAPS      = { minimal: 0.06, standard: 0.10, heavy: 0.18 };
 
 // Maximum length of a single highlight RUN. Real Vanguard highlights
 // are 1-2 words (median 1). 20 chars ≈ 3-4 words — anything longer
@@ -86,10 +86,21 @@ function filterContainedIn(spans, containerSpans) {
   );
 }
 
-function trimMaxRun(spans, maxChars = MAX_HIGHLIGHT_RUN_CHARS) {
+// Trim spans to maxChars. After trimming the END, re-snap to nearest
+// word boundary so we don't cut "extended" into "exte". Pass `text` to
+// enable the snap; without text, falls back to plain truncation.
+function trimMaxRun(spans, maxChars = MAX_HIGHLIGHT_RUN_CHARS, text = '') {
   return spans
-    .map(s => (s[1] - s[0] > maxChars ? [s[0], s[0] + maxChars] : s))
-    .filter(s => s[1] > s[0]);
+    .map(s => {
+      if (s[1] - s[0] <= maxChars) return s;
+      const truncated = [s[0], s[0] + maxChars];
+      if (!text) return truncated;
+      // Snap the truncated end backward to a word boundary so we don't
+      // leave a partial word at the cut.
+      const snapped = snapToWordBoundaries(truncated, text);
+      return snapped || null;
+    })
+    .filter(s => s && s[1] > s[0]);
 }
 
 // Snap a span to nearest word boundaries. The model emits char offsets that
@@ -181,7 +192,7 @@ function trimToHighlightCap(highlights, cap, totalChars, paraText) {
   return kept.sort((a, b) => a[0] - b[0]);
 }
 
-function trimToUnderlineCap(underlines, highlights, cap, totalChars) {
+function trimToUnderlineCap(underlines, highlights, cap, totalChars, paragraphText = '') {
   if (totalChars === 0 || !underlines.length) return underlines;
   let kept = [...underlines];
   let used = kept.reduce((a, s) => a + (s[1] - s[0]), 0);
@@ -199,23 +210,49 @@ function trimToUnderlineCap(underlines, highlights, cap, totalChars) {
     return b.len - a.len;
   });
 
-  // ORPHAN-PROTECTION: never let trimming drop EVERY underline that contains
-  // a highlight. Without this, exceeding the cap = "marks=0" failure mode.
-  // We keep at least one underline if highlights exist anywhere.
+  // Phase 1: drop unprotected spans that exceed the cap.
   const protectedRemaining = () => kept.filter(s => !dropSet.has(s) &&
     highlights.some(h => h[0] >= s[0] && h[1] <= s[1])
   ).length;
-
   const dropSet = new Set();
   for (const x of scored) {
     if (used / totalChars <= cap) break;
-    // Skip if dropping this underline would leave zero protected underlines
-    // (i.e., would orphan all highlights).
     if (highlights.length && x.protected && protectedRemaining() <= 1) continue;
     dropSet.add(x.s);
     used -= x.len;
   }
-  return kept.filter(s => !dropSet.has(s)).sort((a, b) => a[0] - b[0]);
+  let final = kept.filter(s => !dropSet.has(s)).map(s => s.slice());
+
+  // Phase 2: if still over cap (because orphan-protection skipped drops),
+  // CLIP the longest remaining underline. Without this, a 100% underline
+  // span containing highlights would survive at full coverage — exactly
+  // the "everything underlined" failure the user reported.
+  let usedAfter = final.reduce((a, s) => a + (s[1] - s[0]), 0);
+  if (usedAfter / totalChars > cap) {
+    const target = Math.floor(cap * totalChars);
+    let overshoot = usedAfter - target;
+    // Shrink longest first.
+    final.sort((a, b) => (b[1] - b[0]) - (a[1] - a[0]));
+    for (let i = 0; i < final.length && overshoot > 0; i++) {
+      const span = final[i];
+      const containedHi = highlights.filter(h => h[0] >= span[0] && h[1] <= span[1]);
+      const lastHiEnd = containedHi.length ? Math.max(...containedHi.map(h => h[1])) : span[0];
+      // Don't shrink past the last highlight + a small buffer.
+      const minEnd = Math.max(lastHiEnd, span[0] + 1);
+      let newEnd = Math.max(minEnd, span[1] - overshoot);
+      // Snap clipped end backward to a word boundary if we have text.
+      if (paragraphText) {
+        const snapped = snapToWordBoundaries([span[0], newEnd], paragraphText);
+        if (snapped) newEnd = snapped[1];
+      }
+      const shrunk = span[1] - newEnd;
+      if (shrunk > 0) {
+        span[1] = newEnd;
+        overshoot -= shrunk;
+      }
+    }
+  }
+  return final.sort((a, b) => a[0] - b[0]);
 }
 
 // --- mark insertion at character boundaries --------------------------------
@@ -362,21 +399,19 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     stats.dropped.highlights += beforeHi - highlights.length;
     stats.dropped.bolds      += beforeBo - bolds.length;
 
-    highlights = trimMaxRun(highlights, MAX_HIGHLIGHT_RUN_CHARS);
-    bolds      = trimMaxRun(bolds, MAX_HIGHLIGHT_RUN_CHARS);
+    highlights = trimMaxRun(highlights, MAX_HIGHLIGHT_RUN_CHARS, paragraphText);
+    bolds      = trimMaxRun(bolds,      MAX_HIGHLIGHT_RUN_CHARS, paragraphText);
 
     const beforeHiCap = highlights.length;
     highlights = trimToHighlightCap(highlights, highlightCap, N, paragraphText);
     stats.dropped.highlights += beforeHiCap - highlights.length;
 
-    // NEW: bold-cap trim — prevents over-bolding ("Howe", "rea", "sev"
-    // failure mode where every paragraph had 6+ random bolds).
     const beforeBoCap = bolds.length;
     bolds = trimToHighlightCap(bolds, boldCap, N, paragraphText);
     stats.dropped.bolds += beforeBoCap - bolds.length;
 
     const beforeUCap = underlines.length;
-    underlines = trimToUnderlineCap(underlines, highlights, underlineCap, N);
+    underlines = trimToUnderlineCap(underlines, highlights, underlineCap, N, paragraphText);
     stats.dropped.underlines += beforeUCap - underlines.length;
 
     highlights = filterContainedIn(highlights, underlines);
