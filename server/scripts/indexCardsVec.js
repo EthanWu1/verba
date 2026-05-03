@@ -53,6 +53,10 @@ async function main() {
   // The model auto-downloads to node_modules on first invocation.
 
   const db = getDb();
+  // Bump busy_timeout for live-prod runs where pm2 is still serving
+  // traffic. Default 5s isn't enough for the small per-batch upserts
+  // when chat/library queries are hot.
+  db.pragma('busy_timeout = 60000');
   if (!ensureSchema()) {
     console.error('sqlite-vec extension failed to load:', extensionStatus());
     process.exit(1);

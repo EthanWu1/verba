@@ -97,6 +97,11 @@ function shouldMerge(candidate, canonicals) {
 
 async function main() {
   const db = dbModule.getDb();
+  // db.js sets busy_timeout=5s for normal app traffic. For the big single-
+  // tx commit (~466k UPDATEs while pm2 is also serving traffic) 5s can
+  // expire mid-commit and throw SQLITE_BUSY. Bump to 5 minutes so the
+  // migration patiently waits out concurrent readers/writers.
+  db.pragma('busy_timeout = 300000');
 
   // Pull every card that has a non-empty shortCite. We bucket in JS by
   // loosenedShortCite so cite-format variants land in the same bucket.
