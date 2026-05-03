@@ -231,6 +231,37 @@ function fixDanglingEnds(spans, text) {
   return spans.map(s => fixDanglingEnd(s, text)).filter(Boolean);
 }
 
+// Drop highlights whose entire content is filler/transition words.
+// e.g. ==However==, ==Further==, ==In addition== — these add nothing
+// to the read-aloud chain. Better to silently skip than emit them and
+// trigger a Sonnet retry.
+const FILLER_HIGHLIGHT_WORDS = new Set([
+  'further','furthermore','however','moreover','additionally','also',
+  'unfortunately','accordingly','thus','therefore','hence','indeed',
+  'essentially','ultimately','importantly','notably','specifically',
+  'meanwhile','nonetheless','nevertheless','arguably','presumably',
+  'fundamentally','crucially','clearly','obviously',
+  'in addition','in essence','to be sure','in other words',
+  'for instance','for example',
+]);
+
+function isFillerOnlySpan(span, text) {
+  if (!span) return false;
+  const slice = text.slice(span[0], span[1]).toLowerCase().replace(/[^a-z\s]/g, '').trim();
+  if (!slice) return true;
+  // Single filler word.
+  if (FILLER_HIGHLIGHT_WORDS.has(slice)) return true;
+  // Multi-word filler phrase.
+  for (const phrase of FILLER_HIGHLIGHT_WORDS) {
+    if (phrase.includes(' ') && slice === phrase) return true;
+  }
+  return false;
+}
+
+function dropFillerOnlySpans(spans, text) {
+  return spans.filter(s => !isFillerOnlySpan(s, text));
+}
+
 // --- priority scoring (used when over cap) ----------------------------------
 
 const PRIORITY_VERBS = new Set([
@@ -476,15 +507,25 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // preposition/article/conjunction (e.g. "the upper", "impossible to"),
     // extend forward to include the completing word(s) or trim the dangler.
     // This is the structural fix for "highlights cut off mid-thought".
+    // Pipeline: clamp → snap → fix-danglers → drop-filler-only → merge.
+    // Filler-only highlights ("==However==", "==Further==") get dropped
+    // silently so the chain quality check doesn't retry-on-Sonnet for
+    // something we can fix structurally.
     let highlights = mergeSpans(
-      fixDanglingEnds(
-        snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+      dropFillerOnlySpans(
+        fixDanglingEnds(
+          snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+          paragraphText
+        ),
         paragraphText
       )
     );
     let bolds = mergeSpans(
-      fixDanglingEnds(
-        snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+      dropFillerOnlySpans(
+        fixDanglingEnds(
+          snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+          paragraphText
+        ),
         paragraphText
       )
     );
@@ -642,12 +683,16 @@ function extractReadAloudChain(picksJson, candidates) {
   for (const pick of ordered) {
     const cand = candidateByIndex.get(pick.p);
     const text = cand.text;
-    const hRanges = (pick.h || [])
+    let hRanges = (pick.h || [])
       .map(s => clampSpan(s, text.length))
       .filter(Boolean)
       .map(s => snapToWordBoundaries(s, text))
-      .filter(Boolean)
-      .sort((a, b) => a[0] - b[0]);
+      .filter(Boolean);
+    // Apply same auto-fixes the reconstructor uses, so chain reflects
+    // what the user will actually see.
+    hRanges = fixDanglingEnds(hRanges, text);
+    hRanges = dropFillerOnlySpans(hRanges, text);
+    hRanges.sort((a, b) => a[0] - b[0]);
     for (const [a, b] of hRanges) {
       const slice = text.slice(a, b).trim();
       if (slice) chain.push(slice);
@@ -732,4 +777,7 @@ module.exports = {
   fixDanglingEnd,
   fixDanglingEnds,
   DANGLING_TAIL_WORDS,
+  isFillerOnlySpan,
+  dropFillerOnlySpans,
+  FILLER_HIGHLIGHT_WORDS,
 };
