@@ -49,6 +49,9 @@ const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.35 };
 // phrase-level claims like "locks in catastrophic warming above 3
 // degrees" without trimming.
 const MAX_HIGHLIGHT_RUN_CHARS = 50;
+// Bolds should be SHORT. Real cards bold single words usually, 2-3 max,
+// for spoken emphasis. Cap at 18 chars so multi-clause bolds get trimmed.
+const MAX_BOLD_RUN_CHARS = 18;
 
 // When the model lazily underlines 100% of a paragraph, we ABANDON its
 // underline and auto-regenerate underlines wrapping the highlights with
@@ -432,7 +435,10 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     stats.dropped.bolds      += beforeBo - bolds.length;
 
     highlights = trimMaxRun(highlights, MAX_HIGHLIGHT_RUN_CHARS, paragraphText);
-    bolds      = trimMaxRun(bolds,      MAX_HIGHLIGHT_RUN_CHARS, paragraphText);
+    // Bolds get a tighter cap — they're for spoken emphasis on 1-3 words,
+    // not for marking whole clauses. User feedback: "shouldn't bold
+    // multiple words at a time most of the time."
+    bolds      = trimMaxRun(bolds,      MAX_BOLD_RUN_CHARS, paragraphText);
 
     const beforeHiCap = highlights.length;
     highlights = trimToHighlightCap(highlights, highlightCap, N, paragraphText);
@@ -561,22 +567,46 @@ function extractReadAloudChain(picksJson, candidates) {
   return chain.join(' ... ');
 }
 
-// Word-overlap score between the model's composed argument and the
-// actual highlight chain. Used to detect chain incoherence.
-//   1.0 = chain contains every meaningful word of the argument
-//   0.0 = no overlap
-function chainArgumentOverlap(argument, chainText) {
-  if (!argument || !chainText) return 0;
+// Two-way scoring between the model's composed argument and the
+// actual highlight chain. Returns:
+//   coverage: fraction of argument's content words that appear in chain (0-1)
+//   bloat:    fraction of chain words that are NOT in argument (0-1)
+//   filler:   chain words that look like transitional/filler ("further",
+//             "unfortunately", "however", "moreover", etc.) — should be 0
+// Good chain: high coverage, low bloat, zero filler.
+const FILLER_WORDS = new Set([
+  'further','furthermore','however','moreover','additionally','also',
+  'unfortunately','accordingly','thus','therefore','hence','indeed',
+  'essentially','ultimately','importantly','notably','specifically',
+  'meanwhile','nonetheless','nevertheless','arguably','presumably',
+  'fundamentally','crucially','clearly','obviously',
+]);
+function chainArgumentScore(argument, chainText) {
   const tokenize = s => String(s || '').toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
-    .filter(t => t.length >= 3);   // ignore stopwords/short connectors
-  const argWords = new Set(tokenize(argument));
-  const chainWords = new Set(tokenize(chainText));
-  if (!argWords.size) return 0;
-  let hit = 0;
-  for (const w of argWords) if (chainWords.has(w)) hit++;
-  return hit / argWords.size;
+    .filter(t => t.length >= 3);
+  const argTokens = tokenize(argument);
+  const chainTokens = tokenize(chainText);
+  const argSet = new Set(argTokens);
+  const chainSet = new Set(chainTokens);
+
+  let coverageHits = 0;
+  for (const w of argSet) if (chainSet.has(w)) coverageHits++;
+  const coverage = argSet.size ? coverageHits / argSet.size : 0;
+
+  let bloatHits = 0;
+  for (const w of chainTokens) if (!argSet.has(w)) bloatHits++;
+  const bloat = chainTokens.length ? bloatHits / chainTokens.length : 0;
+
+  const fillerHits = chainTokens.filter(w => FILLER_WORDS.has(w)).length;
+
+  return { coverage, bloat, filler: fillerHits, argSize: argSet.size, chainSize: chainTokens.length };
+}
+
+// Backward-compat: simple overlap (used by existing tests).
+function chainArgumentOverlap(argument, chainText) {
+  return chainArgumentScore(argument, chainText).coverage;
 }
 
 module.exports = {
@@ -588,6 +618,7 @@ module.exports = {
   MAX_HIGHLIGHT_RUN_CHARS,
   extractReadAloudChain,
   chainArgumentOverlap,
+  chainArgumentScore,
   // exposed for tests:
   clampSpan,
   mergeSpans,
