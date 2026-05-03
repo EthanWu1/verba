@@ -93,15 +93,24 @@ async function main() {
   }
 
   const total = db.prepare(`SELECT COUNT(*) AS n FROM cards ${filter}`).get().n;
-  const cap = LIMIT > 0 ? Math.min(LIMIT, total) : total;
-  console.log(`Indexing ${cap}/${total} cards (page=${PAGE}, batch=${BATCH})${ALL_ROWS ? ' [ALL]' : ' [canonical+highlighted]'}`);
+  // After resume runs, count what's still UNDONE so we don't waste 4h
+  // scanning through rows that are already embedded. Without this filter,
+  // a resume on a 75% embedded library takes hours just to walk the done
+  // prefix doing alreadyEmbedded() checks before reaching new work.
+  const unfilter = filter
+    ? `${filter} AND rowid NOT IN (SELECT card_id FROM cards_embed_meta)`
+    : `WHERE rowid NOT IN (SELECT card_id FROM cards_embed_meta)`;
+  const undone = db.prepare(`SELECT COUNT(*) AS n FROM cards ${unfilter}`).get().n;
+  const cap = LIMIT > 0 ? Math.min(LIMIT, undone) : undone;
+  console.log(`Indexing ${cap} undone of ${total} eligible cards (page=${PAGE}, batch=${BATCH})${ALL_ROWS ? ' [ALL]' : ' [canonical+highlighted]'}`);
 
-  // Stream rowids in stable order; we re-read each page so a long run
-  // tolerates concurrent imports without losing its place.
+  // Stream UNDONE rowids only — DB-level anti-join skips already-embedded
+  // rows so the script doesn't repeat the alreadyEmbedded() check per row.
+  // ORDER BY rowid keeps the run resumable across cap-driven cancellations.
   const selectPage = db.prepare(`
     SELECT rowid AS rowid, tag, cite, body_plain
     FROM cards
-    ${filter}
+    ${unfilter}
     ORDER BY rowid ASC
     LIMIT ? OFFSET ?
   `);
