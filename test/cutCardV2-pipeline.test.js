@@ -356,9 +356,9 @@ test('selection prompt: user prompt includes per-paragraph rulers', () => {
 
 // ── JSON schema sanity ────────────────────────────────────────────
 
-test('CARD_PICKS_JSON_SCHEMA: requires tag, cite, picks', () => {
+test('CARD_PICKS_JSON_SCHEMA: requires tag, cite, argument, picks', () => {
   const s = CARD_PICKS_JSON_SCHEMA.schema;
-  assert.deepEqual(s.required.sort(), ['cite', 'picks', 'tag']);
+  assert.deepEqual(s.required.sort(), ['argument', 'cite', 'picks', 'tag']);
   assert.equal(s.additionalProperties, false);
 });
 

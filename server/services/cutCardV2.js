@@ -18,7 +18,10 @@
 
 const crypto = require('crypto');
 const { selectCandidates } = require('./argumentRelevance');
-const { reconstructCard, CARD_PICKS_JSON_SCHEMA } = require('./cardReconstructor');
+const {
+  reconstructCard, CARD_PICKS_JSON_SCHEMA,
+  extractReadAloudChain, chainArgumentOverlap,
+} = require('./cardReconstructor');
 // Live module reference — accessing llm.completeJSON inside the function (not
 // destructuring at load time) lets tests stub the LLM call by mutating the
 // llm module's exports.
@@ -142,31 +145,85 @@ async function cutCardV2({
   const systemPrompt = buildSelectionSystemPrompt({ density, length, calibration });
   const userPrompt = buildSelectionUserPrompt({ argument, candidates, meta, cite, density, length });
 
-  // Stage 3 — single LLM call.
-  //  - response_format: json_object (broadly supported; json_schema strict
-  //    causes 400s on Haiku 4.5 via some OpenRouter backends).
-  //  - cache_control: ephemeral on the system message (forces Anthropic-direct
-  //    routing inside complete() so prompt caching actually activates).
-  //  - The reconstructor's defensive validation drops any malformed spans,
-  //    so strict schema enforcement is unnecessary.
+  // Stage 3 — single LLM call. Two-pass with chain validation:
+  //  - Primary call (Haiku) emits picks JSON including the model's stated
+  //    `argument`.
+  //  - Server extracts the highlight chain from picks and compares to
+  //    the `argument`. If overlap is too low (chain doesn't deliver the
+  //    composed argument), retry on Sonnet with explicit critique.
+  //  - cache_control: ephemeral so prompt caching activates on the long
+  //    system prompt.
   const t0 = Date.now();
-  const llmResult = await llm.completeJSON({
+  let llmResult = await llm.completeJSON({
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user',   content: userPrompt },
     ],
-    schema: null,                  // use json_object mode — universal compat
+    schema: null,
     temperature: 0.1,
-    // Bumped from 1500 → 4000. Char-offset cards on heavy density emit 10–25
-    // highlight ranges per paragraph × up to 10 paragraphs = many spans, plus
-    // tag and cite. Truncation here was causing incomplete cards and
-    // mid-sentence highlight cutoffs.
     maxTokens: 4000,
     forceModel: primaryModel,
     fallbackModel,
     cacheSystem: true,
-    // provider hint is auto-set inside complete() for Anthropic models
   });
+
+  // Stage 3b — chain validation. Compute the actual read-aloud chain
+  // and check overlap with the model's stated argument. If the model
+  // wrote a real argument but the highlights don't deliver it, this
+  // catches it. Min overlap 0.45 = at least 45% of the argument's
+  // content words must appear in the highlight chain.
+  const CHAIN_OVERLAP_MIN = 0.45;
+  const initialChain = extractReadAloudChain(llmResult.json, candidates);
+  const initialArgument = String(llmResult.json?.argument || '').trim();
+  const initialOverlap = chainArgumentOverlap(initialArgument, initialChain);
+  let chainRetried = false;
+
+  if (initialArgument && initialOverlap < CHAIN_OVERLAP_MIN && fallbackModel && fallbackModel !== primaryModel) {
+    chainRetried = true;
+    console.warn(
+      `[cutCardV2] chain-argument overlap ${initialOverlap.toFixed(2)} < ${CHAIN_OVERLAP_MIN}, ` +
+      `retrying on ${fallbackModel}\n` +
+      `  argument: "${initialArgument.slice(0, 200)}"\n` +
+      `  chain:    "${initialChain.slice(0, 200)}"`
+    );
+
+    const critique = `Your previous attempt produced an argument that the highlights don't deliver.
+
+YOUR ARGUMENT: "${initialArgument}"
+ACTUAL HIGHLIGHT CHAIN (read in document order): "${initialChain}"
+
+The highlight chain MUST read as the argument. Re-emit picks so that:
+  - Reading every highlighted phrase in order produces a sentence very close to your argument.
+  - Each major content word in the argument has a corresponding highlight.
+  - Connectors ("and", "to", "would") are 1-word highlights between content highlights.
+
+Compose the argument FIRST. Then mark highlights that match it.`;
+
+    try {
+      const retry = await llm.completeJSON({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userPrompt },
+          { role: 'user',   content: critique },
+        ],
+        schema: null,
+        temperature: 0.1,
+        maxTokens: 4000,
+        forceModel: fallbackModel,
+        fallbackModel: null,
+        cacheSystem: true,
+      });
+      const retryChain = extractReadAloudChain(retry.json, candidates);
+      const retryArg = String(retry.json?.argument || '').trim();
+      const retryOverlap = chainArgumentOverlap(retryArg, retryChain);
+      console.log(`[cutCardV2] chain-retry overlap: ${retryOverlap.toFixed(2)} (was ${initialOverlap.toFixed(2)})`);
+      if (retryOverlap > initialOverlap) {
+        llmResult = retry;
+      }
+    } catch (e) {
+      console.warn(`[cutCardV2] chain-retry failed:`, e.message);
+    }
+  }
   const elapsed = Date.now() - t0;
 
   // Diagnostic: log what the model actually emitted. Compact summary to
@@ -205,11 +262,18 @@ async function cutCardV2({
   const m = (finalCite || '').match(/^([^\[]+?)\s*\[/);
   shortCite = m ? m[1].trim() : (finalCite || '').slice(0, 40).trim();
 
+  // Final chain extraction for the response (post-reconstruction).
+  const finalChain = extractReadAloudChain(llmResult.json, candidates);
+  const finalArgument = String(llmResult.json?.argument || '').trim();
+  const finalOverlap = chainArgumentOverlap(finalArgument, finalChain);
+
   const card = {
     tag: rebuilt.tag,
     cite: finalCite,
     shortCite,
     body_markdown: rebuilt.body_markdown,
+    argument: finalArgument,           // model's composed speech (for transparency)
+    readAloudChain: finalChain,        // what the highlights actually say in order
   };
 
   const payload = {
@@ -244,9 +308,11 @@ async function cutCardV2({
     `[cutCardV2] ok in ${elapsed}ms model=${llmResult.model} ` +
     `paragraphs=${rebuilt.stats.paragraphs} ` +
     `marks=${marksRendered} highlight=${highlightPct}% ` +
+    `chain-overlap=${(finalOverlap * 100).toFixed(0)}% ` +
     `prompt=${u.prompt_tokens || '?'}tok completion=${u.completion_tokens || '?'}tok ` +
     `cache=${cacheHitRate}%(read=${cacheRead}/write=${cacheWrite}) ` +
     `cost=$${(u.cost || 0).toFixed(5)}` +
+    (chainRetried ? ' CHAIN_RETRIED' : '') +
     (rebuilt.fallback ? ' FALLBACK' : '') +
     (llmResult.fallback ? ' SCHEMA_FALLBACK' : '') +
     (marksRendered === 0 ? ' ⚠ NO_MARKS' : '')
