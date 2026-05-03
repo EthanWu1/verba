@@ -175,9 +175,13 @@ async function main() {
     for (const card of cards) {
       const target = shouldMerge(card, canonicals);
       if (target) {
-        // Merge into target's group.
+        // Merge into target's group. ALWAYS emit isCanon=0 — even when the
+        // groupKey doesn't change. Without this, a row that was previously
+        // isCanonical=1 with the same groupKey as the elected canonical
+        // stays canonical, leaving the group with two isCanonical=1 rows
+        // (codex flagged this — duplicates resurface in default browse).
+        updates.push({ id: card.id, isCanon: 0, gk: target.groupKey });
         if (card.currentGroupKey !== target.groupKey) {
-          updates.push({ id: card.id, isCanon: 0, gk: target.groupKey });
           followups.push({ oldKey: card.currentGroupKey, newKey: target.groupKey, oldCanonId: card.id });
           merged++;
         }
@@ -243,6 +247,28 @@ async function main() {
     `);
     const updateTx = db.transaction(keys => { for (const k of keys) updateOne.run(k); });
     updateTx([...newGroupSizes.keys()]);
+  }
+
+  // Invariant check: every non-empty canonicalGroupKey must have exactly
+  // one isCanonical=1 row. The earlier version of this script could leave
+  // groups with two canonicals when a previously-canonical row merged into
+  // an elected canonical with the same groupKey. If we still see
+  // violations, surface them and exit non-zero so the workflow fails
+  // visibly instead of leaving duplicates in the default browse.
+  console.log('Validating one-canonical-per-group invariant...');
+  const violations = db.prepare(`
+    SELECT canonicalGroupKey, SUM(isCanonical) AS canonCount, COUNT(*) AS total
+    FROM cards
+    WHERE canonicalGroupKey IS NOT NULL AND canonicalGroupKey != ''
+    GROUP BY canonicalGroupKey
+    HAVING SUM(isCanonical) != 1
+  `).all();
+  if (violations.length > 0) {
+    console.error(`[INVARIANT] ${violations.length} groups violate one-canonical rule.`);
+    for (const v of violations.slice(0, 5)) {
+      console.error(`  group=${v.canonicalGroupKey.slice(0,40)} canonical=${v.canonCount} total=${v.total}`);
+    }
+    process.exit(4);
   }
   console.log('Done.');
 }

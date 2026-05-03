@@ -104,16 +104,21 @@ async function main() {
 
   // Stream UNDONE rowids only — DB-level anti-join skips already-embedded
   // rows so the script doesn't repeat the alreadyEmbedded() check per row.
-  // ORDER BY rowid keeps the run resumable across cap-driven cancellations.
+  //
+  // Keyset pagination on rowid (rowid > lastSeen), NOT OFFSET. Each
+  // successful upsert removes the row from the unfilter result set; an
+  // OFFSET against a shrinking result skips ahead — half the corpus
+  // would silently never be embedded. With keyset, every row is visited
+  // exactly once regardless of how the result set evolves.
   const selectPage = db.prepare(`
     SELECT rowid AS rowid, tag, cite, body_plain
     FROM cards
-    ${unfilter}
+    ${unfilter} AND rowid > ?
     ORDER BY rowid ASC
-    LIMIT ? OFFSET ?
+    LIMIT ?
   `);
 
-  let offset = 0;
+  let lastSeen = 0;
   let attempted = 0;
   let embedded = 0;
   let skipped = 0;
@@ -124,8 +129,9 @@ async function main() {
   while (attempted < cap) {
     const remaining = cap - attempted;
     const pageSize = Math.min(PAGE, remaining);
-    const rows = selectPage.all(pageSize, offset);
+    const rows = selectPage.all(lastSeen, pageSize);
     if (!rows.length) break;
+    lastSeen = rows[rows.length - 1].rowid;
 
     // Within a page, dispatch in BATCH-sized embedding requests.
     const pending = [];
@@ -159,13 +165,22 @@ async function main() {
     }
 
     attempted += rows.length;
-    offset += rows.length;
     const elapsed = (Date.now() - startedAt) / 1000;
     const rate = embedded / Math.max(1, elapsed);
     console.log(`  progress: ${attempted}/${cap} (embedded=${embedded}, skipped=${skipped}, ${rate.toFixed(1)}/s)`);
   }
 
-  console.log(`Done. embedded=${embedded} skipped=${skipped} failed=${failed} attempted=${attempted}`);
+  // Detect coverage gaps. A clean run reaches attempted == cap. If the loop
+  // exited early (empty SELECT despite cap > 0) something is wrong — most
+  // commonly: an embed-failure storm left rows in the undone set forever
+  // and we returned the same rows endlessly until breaking. Exit non-zero
+  // so cron / workflow_dispatch can't report success on a partial index.
+  const stillUndone = db.prepare(`SELECT COUNT(*) AS n FROM cards ${unfilter}`).get().n;
+  console.log(`Done. embedded=${embedded} skipped=${skipped} failed=${failed} attempted=${attempted} stillUndone=${stillUndone}`);
+  if (stillUndone > 0 && LIMIT === 0) {
+    console.error(`[INCOMPLETE] ${stillUndone} eligible rows still have no embedding after run.`);
+    process.exit(3);
+  }
   if (failed > 0) {
     // Persist the rowids so the next run can re-queue them via --retry-only,
     // and exit non-zero so cron / nohup don't claim success.
