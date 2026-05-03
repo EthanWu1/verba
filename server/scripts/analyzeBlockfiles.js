@@ -39,10 +39,8 @@ const flag = (k, fallback) => {
 const IN        = flag('in',  path.resolve(__dirname, '../data/blockfile-corpus.jsonl'));
 const OUT_MD    = flag('out', path.resolve(__dirname, '../data/blockfile-analysis.md'));
 const OUT_JSON  = flag('json', path.resolve(__dirname, '../data/blockfile-analysis.json'));
-const OUT_BAKE  = flag('bake', path.resolve(__dirname, '../prompts/chatPatterns.js'));
 const TOP_N     = Number(flag('top', '30'));
 const MIN_MARK  = Number(flag('minMarker', '5'));
-const SHOULD_BAKE = args.includes('--bake') || args.some(a => a.startsWith('--bake='));
 
 // ── Tokenization ────────────────────────────────────────────────────────
 const STOPWORDS = new Set([
@@ -632,14 +630,6 @@ function main() {
   fs.writeFileSync(OUT_MD, lines2.join('\n'));
   console.log(`[analyze] wrote ${OUT_MD} (${fs.statSync(OUT_MD).size} bytes)`);
 
-  // ── Bake patterns into prompts/chatPatterns.js ────────────────────────
-  if (SHOULD_BAKE) {
-    const baked = bakeChatPatterns(summary);
-    fs.mkdirSync(path.dirname(OUT_BAKE), { recursive: true });
-    fs.writeFileSync(OUT_BAKE, baked);
-    console.log(`[analyze] baked ${OUT_BAKE} (${fs.statSync(OUT_BAKE).size} bytes)`);
-  }
-
   // brief stdout summary
   console.log('');
   console.log('[analyze] === SUMMARY ===');
@@ -652,100 +642,6 @@ function main() {
   console.log('');
   console.log(`  report: ${OUT_MD}`);
   console.log(`  json:   ${OUT_JSON}`);
-  if (SHOULD_BAKE) console.log(`  bake:   ${OUT_BAKE}`);
-}
-
-// ── Bake — emit a JS module the chat route imports ────────────────────────
-//
-// Generates server/prompts/chatPatterns.js — a pure module exporting
-// system-prompt fragments derived from the corpus stats. Mirrors how
-// cardCutter.js carries HARDCODED_CALIBRATION baked from analyzeLibraryCards.
-// The module is regenerable with `node analyzeBlockfiles.js --bake`.
-
-function bakeChatPatterns(summary) {
-  const all = summary.all;
-  const cats = summary.categories;
-
-  // Whitelist of canonical short markers (≤4 chars). Anything else under
-  // 5 chars is almost always a leftover enumerator fragment ("NON" from
-  // "1. NON-...", etc.) — drop those rather than ship them as guidance.
-  const SHORT_OK = new Set(['AT','FW','OV','EXT','UV','UQ','UNQ','IL','MPX','IMP','SQ','NL','NR','RE','CP','DA','RVI','PIC','XO','AFC','CSA','TT','RT','LD','K','TURN']);
-  const topMarkers = all.top_markers
-    .filter(([m, n]) => n >= MIN_MARK && m.length <= 30 && (m.length >= 5 || SHORT_OK.has(m)))
-    .slice(0, 12)
-    .map(([m]) => m);
-  const topJargon = all.top_abbreviations.slice(0, 20).map(([t]) => t);
-
-  // Per-category one-line shape descriptors
-  const catLines = Object.entries(cats).map(([name, s]) => {
-    const len = s.analytic_avg_chars;
-    const sent = s.analytic_avg_sentences;
-    const u = s.analytic_pct_with_underline;
-    const b = s.analytic_pct_with_bold;
-    const list = s.analytic_pct_numbered_list;
-    return `//   ${name.padEnd(16)} avg ${len} chars / ${sent} sent · ${u}% underline · ${b}% bold · ${list}% numbered`;
-  }).join('\n');
-
-  // Compose human-style brief — terse, prescriptive, mirrors corpus norms.
-  const styleBrief =
-    `STYLE — match the conventions of ${all.analytics.toLocaleString()} hand-cut analytic chunks across ${all.blocks.toLocaleString()} blockfiles:\n` +
-    `- Default analytic length: ~${all.analytic_avg_chars} chars / ${all.analytic_avg_sentences} sentences. Single-claim answers can be 1–2 sentences.\n` +
-    `- ${all.analytic_pct_numbered_list}% of analytics use a numbered-list shape (1./2./3.) — use it whenever you make multi-part arguments.\n` +
-    `- ${all.analytic_pct_with_underline}% use <u>underline</u> on emphasized phrases. Underline the load-bearing claims; do not underline whole sentences.\n` +
-    `- ${all.analytic_pct_with_bold}% use **bold** for the loudest 1–2 claims of a chunk. Use sparingly.\n` +
-    `- Em-dashes (—) are conventional for offset clauses (~${all.analytic_em_dash_per_100w}/100 words).\n` +
-    `- ALLCAPS is conventional for transition tokens like REASONABILITY, INNOVATION, NO LINK, NO IMPACT (~${all.analytic_allcaps_per_100w}/100 words).\n` +
-    `- Lead chunks with a canonical marker when applicable: ${topMarkers.join(', ')}.\n` +
-    `- Never gloss debate jargon — these are first-class vocabulary: ${topJargon.join(', ')}.`;
-
-  const formatBrief =
-    `FORMATTING — corpus-confirmed patterns:\n` +
-    `- Frontline / overview / extension: lead with a CLAIM, then numbered warrants, then the IMPACT.\n` +
-    `- "AT — X" responses: open by quoting/naming the opposing claim, then numbered turns/no-links.\n` +
-    `- Cards open blocks (avg position ${all.avg_card_position == null ? '~0.15' : all.avg_card_position.toFixed(2)} from start, 0=open · 1=close) — when citing evidence, place the card first then layer analysis after.\n` +
-    `- Theory analytics are short and punchy (~170 chars); K analytics are long and prosaic (~1,250 chars). Match the user's evident genre.`;
-
-  const ts = new Date().toISOString();
-
-  return `'use strict';
-// AUTO-GENERATED by \`node server/scripts/analyzeBlockfiles.js --bake\`.
-// DO NOT HAND-EDIT. Regenerate after re-running the analyzer.
-//
-// Source: ${path.relative(path.dirname(OUT_BAKE), OUT_JSON).replace(/\\/g, '/')}
-// Generated: ${ts}
-// Corpus: ${all.blocks} blocks, ${all.analytics} analytics, ${all.cards} cards.
-//
-// Per-category style shape:
-${catLines}
-
-const CHAT_STYLE_BRIEF = ${JSON.stringify(styleBrief)};
-
-const CHAT_FORMATTING_BRIEF = ${JSON.stringify(formatBrief)};
-
-const TOP_MARKERS = ${JSON.stringify(topMarkers)};
-
-const DEBATE_JARGON = ${JSON.stringify(topJargon)};
-
-const CORPUS_META = ${JSON.stringify({
-    blocks: all.blocks,
-    analytics: all.analytics,
-    cards: all.cards,
-    generated_at: ts,
-    avg_analytic_chars: all.analytic_avg_chars,
-    avg_analytic_sentences: all.analytic_avg_sentences,
-    pct_numbered: all.analytic_pct_numbered_list,
-    pct_underline: all.analytic_pct_with_underline,
-    pct_bold: all.analytic_pct_with_bold,
-  }, null, 2)};
-
-module.exports = {
-  CHAT_STYLE_BRIEF,
-  CHAT_FORMATTING_BRIEF,
-  TOP_MARKERS,
-  DEBATE_JARGON,
-  CORPUS_META,
-};
-`;
 }
 
 main();
