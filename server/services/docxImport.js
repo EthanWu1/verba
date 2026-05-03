@@ -498,11 +498,7 @@ function extractParagraphs(documentXml) {
     const paragraphXml = match[0];
     const style = (paragraphXml.match(/<w:pStyle[^>]*w:val="([^"]+)"/) || [])[1] || '';
     const runs = parseRuns(paragraphXml);
-    // Concatenate runs with no extra separator — Verbatim splits runs at
-    // character level when underline/highlight is applied to a single
-    // letter, which previously produced "nuc lear" for "nuclear". Word
-    // boundaries are preserved by the runs' own leading/trailing spaces.
-    const text = normalizeWhitespace(runs.map(run => run.text).join(''));
+    const text = normalizeWhitespace(runs.map(run => run.text).join(' '));
     if (!text) continue;
     paragraphs.push({ style, text, runs, markdown: runsToMarkdown(runs) });
   }
@@ -1068,15 +1064,4 @@ module.exports = {
   enrichCard,
   inferArgumentTags,
   normalizeTag,
-  // Parsing primitives — exposed for offline corpus tools (e.g. ingestBlockfiles)
-  extractParagraphs,
-  parseRuns,
-  runsToMarkdown,
-  parseCardsFromParagraphs,
-  isAnalyticHeader,
-  isHeading,
-  looksLikeCite,
-  looksLikeTag,
-  inferTopicBucket,
-  inferArgumentTypes,
 };

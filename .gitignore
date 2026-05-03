@@ -25,10 +25,6 @@ server/data/library.db.bak-*
 server/data/library-cards.json
 server/data/library-meta.json
 server/data/*.log
-server/data/blockfile-corpus.jsonl
-server/data/blockfile-analysis.md
-server/data/blockfile-analysis.json
-server/data/chat-patterns.json
 
 # Editor / IDE
 .vscode/
