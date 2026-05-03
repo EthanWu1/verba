@@ -49,10 +49,8 @@ function textHash(text) {
 }
 
 async function main() {
-  if (!process.env.OPENROUTER_API_KEY) {
-    console.error('OPENROUTER_API_KEY not set in .env');
-    process.exit(1);
-  }
+  // No API key required — embeddings run locally via @xenova/transformers.
+  // The model auto-downloads to node_modules on first invocation.
 
   const db = getDb();
   if (!ensureSchema()) {
@@ -148,7 +146,7 @@ async function main() {
         console.error(`[ERR] embed batch failed at rowid=${slice[0].rowid}:`, err.message);
         failed += slice.length;
         for (const p of slice) failedRowIds.push(p.rowid);
-        // Continue so a transient OpenRouter hiccup doesn't undo hours of
+        // Continue so a transient embedding error doesn't undo hours of
         // progress, but the final exit code reflects that some rows missed.
         continue;
       }

@@ -126,14 +126,12 @@ const { complete, completeStream, parseJSON } = require('../services/llm');
 const { CHAT_STYLE_BRIEF, CHAT_FORMATTING_BRIEF } = require('../prompts/chatPatterns');
 const { SHORT_BRIEF, pickChatMaxTokens } = require('../prompts/chatBrevity');
 
-// Defaults — chosen by VERIFIED OpenRouter availability + cost/quality:
-//   FAST: gemini-2.5-flash — strong reasoning at ~$0.30/$2.50 per 1M; fast TTFT.
-//   BLOCK: claude-sonnet-4.6 — confirmed-working Anthropic ID. Haiku-4.6 was
-//          rejected by OpenRouter ("not a valid model ID") so we use Sonnet
-//          for /block until a verified cheaper Anthropic ID is identified.
+// Defaults — Anthropic-direct after the OpenRouter migration:
+//   FAST:  claude-haiku-4-5  — cheap/fast for normal chat ($1/$5 per 1M, prompt cache cuts inputs to $0.10/1M).
+//   BLOCK: claude-sonnet-4-6 — better structured-output quality for /block.
 // Override either via CHAT_MODEL_FAST / CHAT_MODEL_BLOCK env vars.
-const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'google/gemini-2.5-flash';
-const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'anthropic/claude-sonnet-4.6';
+const MODEL_FAST  = process.env.CHAT_MODEL_FAST  || 'claude-haiku-4-5';
+const MODEL_BLOCK = process.env.CHAT_MODEL_BLOCK || 'claude-sonnet-4-6';
 
 // Pull selected context docs (full text) so the LLM grounds its answer in the
 // user's attached files rather than only the FTS-recalled snippet.

@@ -79,8 +79,8 @@ function clearCache() { CACHE.clear(); }
 
 // ── Pipeline ────────────────────────────────────────────────────────
 
-const DEFAULT_PRIMARY  = process.env.CARD_CUT_MODEL          || 'anthropic/claude-haiku-4.5';
-const DEFAULT_FALLBACK = process.env.CARD_CUT_FALLBACK_MODEL || 'anthropic/claude-sonnet-4.6';
+const DEFAULT_PRIMARY  = process.env.CARD_CUT_MODEL          || 'claude-haiku-4-5';
+const DEFAULT_FALLBACK = process.env.CARD_CUT_FALLBACK_MODEL || 'claude-sonnet-4-6';
 
 /**
  * Cut a card from a single source text using the v2 pipeline.

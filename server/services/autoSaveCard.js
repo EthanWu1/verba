@@ -5,8 +5,8 @@ const { getDb } = require('./db');
 const { complete, parseJSON } = require('./llm');
 const { deriveAllLabels } = require('./labelDerivation');
 
-const CLASSIFY_PRIMARY  = 'google/gemini-2.0-flash-lite-001';
-const CLASSIFY_FALLBACK = 'openai/gpt-4o-mini';
+const CLASSIFY_PRIMARY  = process.env.CLASSIFY_MODEL          || 'claude-haiku-4-5';
+const CLASSIFY_FALLBACK = process.env.CLASSIFY_FALLBACK_MODEL || 'claude-sonnet-4-6';
 
 const CLASSIFY_SYSTEM = `You are a competitive debate expert (LD, Policy, NDTCEDA).
 Classify one card by its broad TYPE and specific TOPICS.

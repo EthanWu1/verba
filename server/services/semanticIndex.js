@@ -20,9 +20,50 @@ function _loadVecExt(db) {
   }
 }
 
+/**
+ * Inspect the existing cards_vec virtual table and return its embedding
+ * dimension, or null if the table doesn't exist / dim can't be parsed.
+ *
+ * sqlite-vec stores the dim in the table's CREATE statement, e.g.
+ *   CREATE VIRTUAL TABLE cards_vec USING vec0(
+ *     card_id INTEGER PRIMARY KEY, embedding float[1536])
+ */
+function _existingVecDim(db) {
+  try {
+    const row = db.prepare(
+      `SELECT sql FROM sqlite_master WHERE type='table' AND name='cards_vec'`
+    ).get();
+    if (!row || !row.sql) return null;
+    const m = row.sql.match(/float\[(\d+)\]/i);
+    return m ? Number(m[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
 function ensureSchema() {
   const db = getDb();
   if (!_loadVecExt(db)) return false;
+
+  // Auto-migrate when the embedding model changes dimensionality (e.g.
+  // OpenAI 1536-dim → local MiniLM 384-dim). sqlite-vec virtual tables
+  // are bound to their dim at creation; mismatched inserts throw, and a
+  // mismatched MATCH query silently returns nothing. Drop + recreate
+  // and clear the embed_meta so the indexer re-queues everything.
+  const existing = _existingVecDim(db);
+  const dimChanged = existing !== null && existing !== DIM;
+  if (dimChanged) {
+    console.warn(
+      `[semanticIndex] Embedding dim changed: ${existing} → ${DIM}. ` +
+      `Dropping cards_vec and embed metadata. Re-run ` +
+      `\`node server/scripts/indexCardsVec.js --all\` to re-embed.`
+    );
+    // Drop the vec table now; the meta DELETE happens after the
+    // CREATE TABLE IF NOT EXISTS block below (since the table may not
+    // have existed on a fresh install).
+    db.exec(`DROP TABLE IF EXISTS cards_vec;`);
+  }
+
   db.exec(`
     CREATE VIRTUAL TABLE IF NOT EXISTS cards_vec USING vec0(
       card_id INTEGER PRIMARY KEY,
@@ -49,6 +90,13 @@ function ensureSchema() {
         DELETE FROM cards_embed_meta WHERE card_id = OLD.rowid;
       END;
   `);
+
+  // After the schema is in place, finish the dim-change migration by
+  // wiping stale embed-metadata so the indexer re-queues every card.
+  if (dimChanged) {
+    db.exec(`DELETE FROM cards_embed_meta;`);
+  }
+
   // No one-time sweep here — the NOT IN anti-join against 832k rows on a
   // cold cache made first-hit /semantic-search take 12+ seconds. The
   // trigger keeps things consistent going forward; past staleness shows

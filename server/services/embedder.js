@@ -1,40 +1,69 @@
+/**
+ * services/embedder.js — v3.0 (local, no API)
+ *
+ * Embeds via @xenova/transformers (ONNX runtime, pure JS, no native build).
+ * Default model: Xenova/all-MiniLM-L6-v2 → 384-dim sentence embeddings.
+ *
+ * First run downloads the model (~25 MB) into @xenova's cache dir under
+ * node_modules. Subsequent runs are instant cold-start.
+ *
+ * Public surface unchanged:
+ *   - embedTexts(texts: string[]) → Promise<number[][]>
+ *   - embedOne(text: string)      → Promise<number[]>
+ *   - DIM (constant)
+ *
+ * Override via env:
+ *   - EMBED_MODEL (default Xenova/all-MiniLM-L6-v2)
+ *   - EMBED_DIM   (default 384; must match the model)
+ *   - EMBED_BATCH (default 32; in-process batch size)
+ */
+
 'use strict';
 
-const axios = require('axios');
-const https = require('https');
+const MODEL = process.env.EMBED_MODEL || 'Xenova/all-MiniLM-L6-v2';
+const DIM   = Number(process.env.EMBED_DIM || 384);
+const BATCH = Number(process.env.EMBED_BATCH || 32);
 
-const API_URL = process.env.EMBED_API_URL || 'https://openrouter.ai/api/v1/embeddings';
-const API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL   = process.env.EMBED_MODEL || 'openai/text-embedding-3-small';
-const DIM     = Number(process.env.EMBED_DIM || 1536);
-const BATCH   = Number(process.env.EMBED_BATCH || 64);
+let _pipelinePromise = null;
 
-const keepAliveAgent = new https.Agent({
-  keepAlive: true,
-  keepAliveMsecs: 30000,
-  maxSockets: 16,
-  maxFreeSockets: 8,
-});
+async function getPipeline() {
+  if (!_pipelinePromise) {
+    _pipelinePromise = (async () => {
+      // Dynamic import — @xenova/transformers is ESM-only.
+      const { pipeline, env } = await import('@xenova/transformers');
+      // Disable telemetry; cap parallel downloads. No network calls after first run.
+      env.allowLocalModels = true;
+      env.useBrowserCache  = false;
+      console.log(`[embedder] Loading ${MODEL} (first run downloads ~25MB)...`);
+      const t0 = Date.now();
+      const extractor = await pipeline('feature-extraction', MODEL, {
+        quantized: true,  // Use the int8 quantized weights — 4x smaller, ~same quality.
+      });
+      console.log(`[embedder] Loaded ${MODEL} in ${Date.now() - t0}ms`);
+      return extractor;
+    })().catch(err => {
+      // Allow retry on next call if first load fails (e.g. transient download error).
+      _pipelinePromise = null;
+      throw err;
+    });
+  }
+  return _pipelinePromise;
+}
 
 async function embedTexts(texts) {
-  if (!API_KEY) throw new Error('OPENROUTER_API_KEY not set');
   if (!Array.isArray(texts) || !texts.length) return [];
+  const extractor = await getPipeline();
   const out = [];
   for (let i = 0; i < texts.length; i += BATCH) {
-    const chunk = texts.slice(i, i + BATCH);
-    const res = await axios.post(API_URL, {
-      model: MODEL,
-      input: chunk,
-    }, {
-      headers: {
-        'Authorization': `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 60000,
-      httpsAgent: keepAliveAgent,
-    });
-    const rows = res.data?.data || [];
-    for (const r of rows) out.push(r.embedding);
+    const chunk = texts.slice(i, i + BATCH).map(t => String(t || '').slice(0, 4000));
+    // Mean-pooled, L2-normalized vectors — what KNN cosine similarity expects.
+    const result = await extractor(chunk, { pooling: 'mean', normalize: true });
+    // result is a Tensor: shape [batch, dim], data is Float32Array of length batch*dim.
+    const data = result.data;
+    const dim  = result.dims?.[1] || DIM;
+    for (let r = 0; r < chunk.length; r++) {
+      out.push(Array.from(data.subarray(r * dim, (r + 1) * dim)));
+    }
   }
   return out;
 }
