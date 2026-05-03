@@ -234,7 +234,10 @@ Compose the argument FIRST. Then mark only the verbatim source words that delive
         ],
         schema: null,
         temperature: 0.1,
-        maxTokens: 4000,
+        // Lowered 4000 → 2000. Card output is typically 400-700 tokens;
+        // 2000 is more than enough and stays under the user's
+        // OpenRouter credit budget for Sonnet (was 402-erroring at 4000).
+        maxTokens: 2000,
         forceModel: fallbackModel,
         fallbackModel: null,
         cacheSystem: true,
@@ -251,7 +254,38 @@ Compose the argument FIRST. Then mark only the verbatim source words that delive
         llmResult = retry;
       }
     } catch (e) {
-      console.warn(`[cutCardV2] chain-retry failed:`, e.message);
+      console.warn(`[cutCardV2] chain-retry on Sonnet failed:`, e.message);
+      // If Sonnet 402'd (out of credits) or otherwise failed, retry on
+      // Haiku with the critique. Better than silently giving up — Haiku
+      // sometimes self-corrects when given explicit feedback.
+      try {
+        const haikuRetry = await llm.completeJSON({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: userPrompt },
+            { role: 'user',   content: critique },
+          ],
+          schema: null,
+          temperature: 0.1,
+          maxTokens: 2000,
+          forceModel: primaryModel,
+          fallbackModel: null,
+          cacheSystem: true,
+        });
+        const hChain = extractReadAloudChain(haikuRetry.json, candidates);
+        const hArg = String(haikuRetry.json?.argument || '').trim();
+        const hScore = chainArgumentScore(hArg, hChain);
+        const hDR = hScore.phraseCount ? hScore.danglers / hScore.phraseCount : 0;
+        const score = (s, dr) => s.coverage - 0.5 * s.bloat - 0.3 * s.filler - 0.5 * dr;
+        if (score(hScore, hDR) > score(initialScore, initialDanglerRatio)) {
+          console.log(`[cutCardV2] haiku-self-retry won: coverage=${hScore.coverage.toFixed(2)} bloat=${hScore.bloat.toFixed(2)}`);
+          llmResult = haikuRetry;
+        } else {
+          console.log(`[cutCardV2] haiku-self-retry didn't improve; keeping initial`);
+        }
+      } catch (e2) {
+        console.warn(`[cutCardV2] haiku-self-retry also failed:`, e2.message);
+      }
     }
   }
   const elapsed = Date.now() - t0;
