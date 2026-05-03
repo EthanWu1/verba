@@ -1,32 +1,89 @@
 /**
- * services/llm.js — v2.1
- * Fixes "No endpoints found" by:
- *  1. Trying a 4-model rotation chain
- *  2. Treating 400 "no endpoints found" as a soft failure → next model
- *  3. Adding detailed console diagnostics
- *  4. Stripping unsupported parameters per model
+ * services/llm.js — v3.0 (Anthropic-direct)
+ *
+ * Calls Anthropic's API directly via @anthropic-ai/sdk. No more OpenRouter
+ * routing tax, free-tier rate limits, or "no endpoints found" rotations.
+ *
+ * Public surface kept identical to v2.x so call sites in routes/, services/,
+ * and scripts/ require zero changes:
+ *   - complete({ messages, temperature, maxTokens, forceModel, responseFormat,
+ *                cacheSystem, fallbackModel })
+ *   - completeJSON({ messages, schema, temperature, maxTokens, forceModel,
+ *                    fallbackModel, cacheSystem, ... })
+ *   - completeStream({ messages, temperature, maxTokens, forceModel, onToken })
+ *   - parseJSON, smartTruncate, estimateTokens, getTokenStats, applyPromptCache
+ *   - MODEL_CHAIN (kept as [primary, fallback] for backward compat)
+ *
+ * Model ID normalization: accepts both legacy OpenRouter style
+ * ("anthropic/claude-haiku-4.5") and native Anthropic style
+ * ("claude-haiku-4-5"). The wrapper strips the prefix and converts dots → dashes.
+ *
+ * The `provider` arg from old call sites is silently dropped (irrelevant
+ * when calling Anthropic direct).
  */
 
 'use strict';
 
-const axios = require('axios');
+const Anthropic = require('@anthropic-ai/sdk');
 require('dotenv').config();
 
-const OPENROUTER_BASE = 'https://openrouter.ai/api/v1';
-const DAILY_BUDGET   = parseInt(process.env.TOKEN_BUDGET_DAILY || '50000', 10);
+const DAILY_BUDGET = parseInt(process.env.TOKEN_BUDGET_DAILY || '500000', 10);
 
-// 4-model rotation chain — loaded from .env, with hardcoded fallbacks
-const MODEL_CHAIN = [
-  process.env.MODEL     || 'meta-llama/llama-3.3-70b-instruct:free',
-  process.env.MODEL_2   || 'mistralai/mistral-7b-instruct:free',
-  process.env.MODEL_3   || 'google/gemma-2-9b-it:free',
-  process.env.MODEL_4   || 'openrouter/auto',
-].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+// Two-model setup: fast/cheap default, smarter fallback for hard cases.
+const PRIMARY_MODEL  = normalizeModel(process.env.MODEL          || 'claude-haiku-4-5');
+const FALLBACK_MODEL = normalizeModel(process.env.MODEL_FALLBACK || 'claude-sonnet-4-6');
+
+// Kept for backward compatibility with routes that import MODEL_CHAIN
+// (e.g. /api/tokens diagnostic, error responses).
+const MODEL_CHAIN = [PRIMARY_MODEL, FALLBACK_MODEL].filter((v, i, a) => a.indexOf(v) === i);
+
+let _client = null;
+function getClient() {
+  if (_client) return _client;
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error('ANTHROPIC_API_KEY not set in .env');
+  }
+  _client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return _client;
+}
+
+/**
+ * Normalize legacy model IDs to native Anthropic format.
+ *   anthropic/claude-haiku-4.5  →  claude-haiku-4-5
+ *   claude-haiku-4.5            →  claude-haiku-4-5
+ *   claude-haiku-4-5            →  claude-haiku-4-5  (passthrough)
+ * Non-Anthropic models (e.g. left-over llama / mistral defaults) are
+ * coerced to PRIMARY_MODEL with a one-time warning.
+ */
+const _warnedNonAnthropic = new Set();
+function normalizeModel(id) {
+  if (!id) return 'claude-haiku-4-5';
+  let m = String(id).trim();
+  if (m.startsWith('anthropic/')) m = m.slice('anthropic/'.length);
+  // Reject anything that's clearly not Anthropic.
+  if (!m.startsWith('claude-')) {
+    if (!_warnedNonAnthropic.has(m)) {
+      _warnedNonAnthropic.add(m);
+      console.warn(`[LLM] Ignoring non-Anthropic model "${id}" — using ${PRIMARY_MODEL || 'claude-haiku-4-5'} instead. Update your .env.`);
+    }
+    return 'claude-haiku-4-5';
+  }
+  // Anthropic console accepts dotted versions, but the SDK is happiest with
+  // dashed canonical IDs. Convert "claude-haiku-4.5" → "claude-haiku-4-5".
+  m = m.replace(/(\d)\.(\d)/g, '$1-$2');
+  return m;
+}
 
 /* ── Token session ── */
 const tokenSession = {
-  promptTokens: 0, completionTokens: 0, totalTokens: 0,
-  requestCount: 0, dailyUsed: 0, resetDate: new Date().toDateString(),
+  promptTokens: 0,
+  completionTokens: 0,
+  totalTokens: 0,
+  cacheReadTokens: 0,
+  cacheWriteTokens: 0,
+  requestCount: 0,
+  dailyUsed: 0,
+  resetDate: new Date().toDateString(),
 };
 
 function checkDailyReset() {
@@ -40,10 +97,18 @@ function checkDailyReset() {
 
 function recordUsage(usage) {
   if (!usage) return;
-  tokenSession.promptTokens     += usage.prompt_tokens     || 0;
-  tokenSession.completionTokens += usage.completion_tokens || 0;
-  tokenSession.totalTokens      += usage.total_tokens      || 0;
-  tokenSession.dailyUsed        += usage.total_tokens      || 0;
+  // Anthropic SDK shape: { input_tokens, output_tokens,
+  //   cache_creation_input_tokens, cache_read_input_tokens }
+  const inTok    = usage.input_tokens     || 0;
+  const outTok   = usage.output_tokens    || 0;
+  const cacheR   = usage.cache_read_input_tokens     || 0;
+  const cacheW   = usage.cache_creation_input_tokens || 0;
+  tokenSession.promptTokens     += inTok + cacheR + cacheW;
+  tokenSession.completionTokens += outTok;
+  tokenSession.totalTokens      += inTok + outTok + cacheR + cacheW;
+  tokenSession.dailyUsed        += inTok + outTok + cacheR + cacheW;
+  tokenSession.cacheReadTokens  += cacheR;
+  tokenSession.cacheWriteTokens += cacheW;
   tokenSession.requestCount     += 1;
 }
 
@@ -51,9 +116,9 @@ function getTokenStats() {
   checkDailyReset();
   return {
     ...tokenSession,
-    modelChain:     MODEL_CHAIN,
-    dailyBudget:    DAILY_BUDGET,
-    dailyRemaining: Math.max(0, DAILY_BUDGET - tokenSession.dailyUsed),
+    modelChain:      MODEL_CHAIN,
+    dailyBudget:     DAILY_BUDGET,
+    dailyRemaining:  Math.max(0, DAILY_BUDGET - tokenSession.dailyUsed),
     budgetExhausted: tokenSession.dailyUsed >= DAILY_BUDGET,
   };
 }
@@ -65,7 +130,6 @@ function smartTruncate(text, targetTokens = 4500) {
   if (est <= targetTokens) return text;
   const keepChars = targetTokens * 4;
   const paragraphs = String(text).split(/\n\s*\n+/).map(p => p.trim()).filter(Boolean);
-  // Greedy pack from the start at paragraph boundaries. Never split mid-paragraph.
   const kept = [];
   let used = 0;
   for (const p of paragraphs) {
@@ -74,7 +138,6 @@ function smartTruncate(text, targetTokens = 4500) {
     used += p.length + 2;
   }
   if (kept.length < 2 && paragraphs.length) {
-    // Single giant paragraph: keep it whole up to a hard ceiling (never cut mid-sentence).
     const first = paragraphs[0];
     if (first.length <= keepChars * 1.2) return first;
     const hardCut = first.slice(0, keepChars);
@@ -85,174 +148,200 @@ function smartTruncate(text, targetTokens = 4500) {
 }
 
 /**
- * isSoftFailure — returns true for errors where we should try the next model.
- * Covers: rate limits, no endpoints found, capacity errors, model-specific 4xx.
+ * Anthropic's Messages API takes `system` as a top-level field, not as a
+ * role-based message. Convert OpenAI-style messages to Anthropic shape.
+ *
+ * If cacheSystem=true, wrap the system prompt in a content block with
+ * cache_control: ephemeral. Anthropic requires the cached prefix to be
+ * ≥1024 tokens to be effective — our cardCutter system prompt is several
+ * thousand tokens, so caching kicks in immediately.
  */
-function safeStringify(v) {
-  // err.response.data can be a Stream (responseType:'stream') with circular
-  // socket→parser→socket refs. Plain JSON.stringify throws "Converting
-  // circular structure to JSON … TLSSocket". Strip cycles + non-serializables.
-  if (v == null) return '';
-  if (typeof v === 'string') return v;
-  if (typeof v === 'object' && (typeof v.pipe === 'function' || typeof v.read === 'function')) return '';
-  try {
-    const seen = new WeakSet();
-    return JSON.stringify(v, (_k, val) => {
-      if (typeof val === 'object' && val !== null) {
-        if (seen.has(val)) return '[circular]';
-        seen.add(val);
+function toAnthropicMessages(messages, cacheSystem) {
+  const sysParts = [];
+  const out = [];
+  for (const m of messages) {
+    if (m.role === 'system') {
+      // System content might already be an array (from applyPromptCache).
+      if (Array.isArray(m.content)) {
+        for (const c of m.content) sysParts.push(c);
+      } else {
+        sysParts.push({ type: 'text', text: String(m.content) });
       }
-      return val;
-    });
-  } catch { return ''; }
-}
-function isSoftFailure(err) {
-  const status = err.response?.status;
-  const msg    = safeStringify(err.response?.data).toLowerCase();
-
-  if (status === 429 || status === 503) return true;
-  if (status === 400 && (
-    msg.includes('no endpoints') ||
-    msg.includes('no available') ||
-    msg.includes('model not found') ||
-    msg.includes('provider') ||
-    msg.includes('overloaded')
-  )) return true;
-  if (status === 404) return true; // model doesn't exist on this key
-  return false;
-}
-
-// Decorate the messages array so the system message is sent as a content
-// block with cache_control: ephemeral. OpenRouter forwards this to Anthropic
-// providers and records a 90% input-token discount on cache hits.
-//
-// Anthropic requires the cached prefix to be ≥1024 tokens to be effective —
-// our cardCutter system prompt is several thousand tokens, so caching kicks
-// in immediately.
-//
-// Models that don't support cache_control simply ignore the field.
-function applyPromptCache(messages) {
-  return messages.map(m => {
-    if (m.role !== 'system' || typeof m.content !== 'string') return m;
-    return {
-      role: 'system',
-      content: [
-        { type: 'text', text: m.content, cache_control: { type: 'ephemeral' } },
-      ],
-    };
-  });
-}
-
-// Force Anthropic-direct routing for Anthropic models. OpenRouter routes
-// Anthropic models through multiple providers (Anthropic API, AWS Bedrock,
-// Google Vertex). Prompt caching only works on Anthropic-direct, and some
-// providers don't support response_format: json_schema. Forcing the order
-// ensures we get the cheapest, fastest, cache-enabled route.
-function providerHintFor(modelId) {
-  if (typeof modelId === 'string' && modelId.startsWith('anthropic/')) {
-    return { order: ['Anthropic'], allow_fallbacks: true };
+    } else if (m.role === 'user' || m.role === 'assistant') {
+      out.push({ role: m.role, content: m.content });
+    }
   }
-  return null;
+  let system;
+  if (sysParts.length === 0) {
+    system = undefined;
+  } else if (cacheSystem) {
+    // Mark the LAST system block as cache breakpoint. Anthropic uses the
+    // last cache_control marker in the prefix as the cache boundary.
+    system = sysParts.map((p, i) => {
+      const block = { type: 'text', text: p.text || '' };
+      if (i === sysParts.length - 1) block.cache_control = { type: 'ephemeral' };
+      return block;
+    });
+  } else if (sysParts.length === 1 && !sysParts[0].cache_control) {
+    // Simple string form is fine when no caching.
+    system = sysParts[0].text;
+  } else {
+    system = sysParts;
+  }
+  return { system, messages: out };
 }
 
 /**
- * Core completion — rotates through MODEL_CHAIN until one succeeds.
+ * Legacy helper kept for backward compat. Old callers used this to wrap
+ * system messages in cache_control blocks before passing to complete().
+ * In v3, complete() does this automatically when cacheSystem=true, so
+ * applyPromptCache is now a passthrough — but we keep the export so any
+ * external consumers don't break.
+ */
+function applyPromptCache(messages) { return messages; }
+
+/**
+ * isRetryable — true for transient errors where we should try the fallback model.
+ */
+function isRetryable(err) {
+  const status = err?.status || err?.response?.status;
+  if (status === 429 || status === 503 || status === 529) return true; // overloaded
+  if (status === 500 || status === 502 || status === 504) return true;
+  if (err?.code === 'ECONNRESET' || err?.code === 'ETIMEDOUT') return true;
+  return false;
+}
+
+/**
+ * Apply json_object response_format → instruct the model to return JSON.
+ * Anthropic doesn't have an OpenAI-style response_format flag; the
+ * canonical pattern is a system instruction + (optionally) an assistant
+ * pre-fill of "{". We append the instruction to the system prompt.
+ */
+function injectJsonInstruction(system, format) {
+  if (!format) return system;
+  const isJson = format.type === 'json_object' || format.type === 'json_schema';
+  if (!isJson) return system;
+  let extra = '\n\nRespond ONLY with valid JSON. No prose, no markdown fences, no comments.';
+  if (format.type === 'json_schema' && format.json_schema?.schema) {
+    extra += '\n\nThe JSON must conform to this schema:\n' + JSON.stringify(format.json_schema.schema);
+  }
+  if (typeof system === 'string') return system + extra;
+  if (Array.isArray(system)) {
+    const last = system[system.length - 1];
+    if (last && typeof last.text === 'string') {
+      return [
+        ...system.slice(0, -1),
+        { ...last, text: last.text + extra },
+      ];
+    }
+    return [...system, { type: 'text', text: extra.trim() }];
+  }
+  return extra.trim();
+}
+
+/**
+ * Core completion — tries primary, then fallback on transient failures.
  *
  * @param {object}  args
  * @param {array}   args.messages
  * @param {number}  [args.temperature=0.3]
  * @param {number}  [args.maxTokens=2048]
- * @param {string}  [args.forceModel=null]    — bypass the chain, use this exact model.
- * @param {object}  [args.responseFormat]     — passed through (json_object | json_schema).
- * @param {boolean} [args.cacheSystem=false]  — wrap system msg in cache_control:ephemeral.
- * @param {object}  [args.provider]           — OpenRouter provider preference. Auto-set
- *                                               for Anthropic models (Anthropic-direct).
+ * @param {string}  [args.forceModel]        — bypass primary, use this exact model.
+ * @param {string}  [args.fallbackModel]     — override default fallback.
+ * @param {object}  [args.responseFormat]    — { type: 'json_object' | 'json_schema', ... }
+ * @param {boolean} [args.cacheSystem=false] — wrap system in cache_control: ephemeral.
+ * @param {object}  [args.provider]          — IGNORED (legacy OpenRouter param).
  */
 async function complete({
   messages,
   temperature = 0.3,
   maxTokens = 2048,
   forceModel = null,
+  fallbackModel = null,
   responseFormat = null,
   cacheSystem = false,
-  provider = null,
+  provider: _provider = null,  // eslint-disable-line no-unused-vars
 }) {
   checkDailyReset();
-
   if (tokenSession.dailyUsed >= DAILY_BUDGET) {
     throw new Error(`Daily token budget (${DAILY_BUDGET}) exhausted. Try again tomorrow.`);
   }
 
-  const chain = forceModel ? [forceModel] : MODEL_CHAIN;
+  const primary  = normalizeModel(forceModel || PRIMARY_MODEL);
+  const fallback = normalizeModel(fallbackModel || FALLBACK_MODEL);
+  const chain = primary === fallback ? [primary] : [primary, fallback];
+
+  const { system: sysRaw, messages: anthMessages } = toAnthropicMessages(messages, cacheSystem);
+  const system = injectJsonInstruction(sysRaw, responseFormat);
+
   const errors = [];
-  const finalMessages = cacheSystem ? applyPromptCache(messages) : messages;
+  const client = getClient();
 
   for (const m of chain) {
     console.log(`[LLM] Trying model: ${m}`);
     try {
-      const body = {
+      const resp = await client.messages.create({
         model: m,
-        messages: finalMessages,
-        temperature,
         max_tokens: maxTokens,
-      };
-      if (responseFormat) body.response_format = responseFormat;
-      // Provider preference: explicit > Anthropic auto-hint > none.
-      const providerHint = provider || providerHintFor(m);
-      if (providerHint) body.provider = providerHint;
+        temperature,
+        ...(system !== undefined && { system }),
+        messages: anthMessages,
+      });
 
-      const resp = await axios.post(
-        `${OPENROUTER_BASE}/chat/completions`,
-        body,
-        {
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'Content-Type':  'application/json',
-            'HTTP-Referer':  'http://localhost:3000',
-            'X-Title':       'Verbatim AI Card Cutter',
-          },
-          timeout: 120000,
-        }
-      );
+      recordUsage(resp.usage);
 
-      const data = resp.data;
-      recordUsage(data.usage);
+      const content = (resp.content || [])
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join('');
 
-      const content = data.choices?.[0]?.message?.content;
       if (!content) throw new Error('Empty response from model');
 
-      console.log(`[LLM] ✓ ${m} | Tokens: ${JSON.stringify(data.usage)}`);
-      return { content, usage: data.usage, model: m, stats: getTokenStats() };
+      const usageOut = {
+        prompt_tokens:     (resp.usage?.input_tokens || 0)
+                          + (resp.usage?.cache_read_input_tokens || 0)
+                          + (resp.usage?.cache_creation_input_tokens || 0),
+        completion_tokens: resp.usage?.output_tokens || 0,
+        total_tokens:      (resp.usage?.input_tokens || 0)
+                          + (resp.usage?.output_tokens || 0)
+                          + (resp.usage?.cache_read_input_tokens || 0)
+                          + (resp.usage?.cache_creation_input_tokens || 0),
+        cache_read_tokens:  resp.usage?.cache_read_input_tokens || 0,
+        cache_write_tokens: resp.usage?.cache_creation_input_tokens || 0,
+      };
+
+      console.log(`[LLM] ✓ ${m} | Tokens: ${JSON.stringify(usageOut)}`);
+      return { content, usage: usageOut, model: m, stats: getTokenStats() };
 
     } catch (err) {
-      const status  = err.response?.status;
-      const errData = err.response?.data;
-      const errMsg  = errData?.error?.message || err.message;
-
-      console.warn(`[LLM] ✗ ${m} (${status || 'TIMEOUT'}): ${errMsg}`);
-      if (errData) console.warn('[LLM] Response body:', safeStringify(errData).slice(0, 300));
-
+      const status = err?.status || err?.response?.status;
+      const errMsg = err?.error?.message || err?.message || String(err);
+      console.warn(`[LLM] ✗ ${m} (${status || 'ERR'}): ${errMsg}`);
       errors.push(`${m}: ${errMsg}`);
 
-      if (isSoftFailure(err)) {
-        console.warn(`[LLM] Soft failure — rotating to next model...`);
+      if (status === 401 || status === 403) {
+        throw new Error(`Auth error (${status}): ${errMsg}. Check ANTHROPIC_API_KEY.`);
+      }
+      if (status === 402) {
+        throw new Error(`Billing error: ${errMsg}. Top up at console.anthropic.com.`);
+      }
+      if (isRetryable(err)) {
+        console.warn('[LLM] Transient error — trying fallback model...');
         continue;
       }
-
-      // Hard failure (auth, billing, etc.) — no point rotating
-      if (status === 401 || status === 402) {
-        throw new Error(`Auth/billing error (${status}): ${errMsg}. Check your OpenRouter key/credits.`);
+      // Hard failure (4xx other than rate limit): try fallback once anyway,
+      // since model-specific 4xx shouldn't kill the request.
+      if (status && status >= 400 && status < 500) {
+        console.warn('[LLM] Model-specific 4xx — trying fallback...');
+        continue;
       }
-
-      // Unknown — still try next model rather than crash
-      errors.push(`Unknown error, trying next...`);
-      continue;
+      throw err;
     }
   }
 
   throw new Error(
-    `All models in rotation failed.\n${errors.slice(-4).join('\n')}\n` +
-    `Check: 1) API key valid, 2) OpenRouter credits, 3) Model names at openrouter.ai/models`
+    `All models failed.\n${errors.slice(-2).join('\n')}\n` +
+    `Check: 1) ANTHROPIC_API_KEY valid, 2) account has credits at console.anthropic.com.`
   );
 }
 
@@ -313,110 +402,103 @@ function parseJSON(text) {
 
 /**
  * Streaming completion — forwards each delta to onToken(chunk).
- * Falls back through MODEL_CHAIN on soft failures before first token.
- * Resolves to { content, usage, model, stats }.
+ * Falls back to FALLBACK_MODEL on transient errors before first token.
  */
-async function completeStream({ messages, temperature = 0.3, maxTokens = 2048, forceModel = null, onToken }) {
+async function completeStream({
+  messages,
+  temperature = 0.3,
+  maxTokens = 2048,
+  forceModel = null,
+  fallbackModel = null,
+  cacheSystem = false,
+  onToken,
+}) {
   checkDailyReset();
   if (tokenSession.dailyUsed >= DAILY_BUDGET) {
     throw new Error(`Daily token budget (${DAILY_BUDGET}) exhausted.`);
   }
-  const chain = forceModel ? [forceModel] : MODEL_CHAIN;
+
+  const primary  = normalizeModel(forceModel || PRIMARY_MODEL);
+  const fallback = normalizeModel(fallbackModel || FALLBACK_MODEL);
+  const chain = primary === fallback ? [primary] : [primary, fallback];
+
+  const { system, messages: anthMessages } = toAnthropicMessages(messages, cacheSystem);
+
   const errors = [];
+  const client = getClient();
 
   for (const m of chain) {
     console.log(`[LLM stream] Trying model: ${m}`);
     try {
-      const resp = await axios.post(
-        `${OPENROUTER_BASE}/chat/completions`,
-        { model: m, messages, temperature, max_tokens: maxTokens, stream: true },
-        {
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'Content-Type':  'application/json',
-            'HTTP-Referer':  'http://localhost:3000',
-            'X-Title':       'Verbatim AI Card Cutter',
-          },
-          timeout: 120000,
-          responseType: 'stream',
-        }
-      );
-
-      let content = '';
-      let usage = null;
-      let buffer = '';
-      const IDLE_MS = 10000;
-      const WALL_MS = 30000;
-      await new Promise((resolve, reject) => {
-        let idle = setTimeout(() => {
-          try { resp.data.destroy(); } catch {}
-          reject(new Error(`stream idle > ${IDLE_MS}ms (no tokens)`));
-        }, IDLE_MS);
-        const wall = setTimeout(() => {
-          try { resp.data.destroy(); } catch {}
-          reject(new Error(`stream wall-clock > ${WALL_MS}ms`));
-        }, WALL_MS);
-        const bumpIdle = () => {
-          clearTimeout(idle);
-          idle = setTimeout(() => {
-            try { resp.data.destroy(); } catch {}
-            reject(new Error(`stream idle > ${IDLE_MS}ms (no tokens)`));
-          }, IDLE_MS);
-        };
-        resp.data.on('data', (chunk) => {
-          bumpIdle();
-          buffer += chunk.toString('utf8');
-          let lineEnd;
-          while ((lineEnd = buffer.indexOf('\n')) !== -1) {
-            const rawLine = buffer.slice(0, lineEnd).trim();
-            buffer = buffer.slice(lineEnd + 1);
-            if (!rawLine || !rawLine.startsWith('data:')) continue;
-            const payload = rawLine.slice(5).trim();
-            if (payload === '[DONE]') continue;
-            try {
-              const j = JSON.parse(payload);
-              if (j.usage) usage = j.usage;
-              const delta = j.choices?.[0]?.delta?.content;
-              if (delta) {
-                content += delta;
-                try { onToken?.(delta, content); } catch {}
-              }
-            } catch {}
-          }
-        });
-        resp.data.on('end', () => { clearTimeout(idle); clearTimeout(wall); resolve(); });
-        resp.data.on('error', (err) => { clearTimeout(idle); clearTimeout(wall); reject(err); });
+      const stream = client.messages.stream({
+        model: m,
+        max_tokens: maxTokens,
+        temperature,
+        ...(system !== undefined && { system }),
+        messages: anthMessages,
       });
 
+      let content = '';
+      stream.on('text', (delta, snapshot) => {
+        content = snapshot;
+        try { onToken?.(delta, snapshot); } catch {}
+      });
+
+      const finalMsg = await stream.finalMessage();
+      recordUsage(finalMsg.usage);
+
+      if (!content) {
+        // finalMessage gives us full text even if no text events fired
+        // (extremely short or non-text-only completions).
+        content = (finalMsg.content || [])
+          .filter(b => b.type === 'text')
+          .map(b => b.text)
+          .join('');
+      }
       if (!content) throw new Error('Empty stream from model');
-      recordUsage(usage);
-      console.log(`[LLM stream] ✓ ${m} | Tokens: ${JSON.stringify(usage)}`);
-      return { content, usage, model: m, stats: getTokenStats() };
+
+      const usageOut = {
+        prompt_tokens:     (finalMsg.usage?.input_tokens || 0)
+                          + (finalMsg.usage?.cache_read_input_tokens || 0)
+                          + (finalMsg.usage?.cache_creation_input_tokens || 0),
+        completion_tokens: finalMsg.usage?.output_tokens || 0,
+        total_tokens:      (finalMsg.usage?.input_tokens || 0)
+                          + (finalMsg.usage?.output_tokens || 0)
+                          + (finalMsg.usage?.cache_read_input_tokens || 0)
+                          + (finalMsg.usage?.cache_creation_input_tokens || 0),
+      };
+
+      console.log(`[LLM stream] ✓ ${m} | Tokens: ${JSON.stringify(usageOut)}`);
+      return { content, usage: usageOut, model: m, stats: getTokenStats() };
+
     } catch (err) {
-      const status = err.response?.status;
-      const errMsg = err.response?.data?.error?.message || err.message;
+      const status = err?.status || err?.response?.status;
+      const errMsg = err?.error?.message || err?.message || String(err);
       console.warn(`[LLM stream] ✗ ${m} (${status || 'ERR'}): ${errMsg}`);
       errors.push(`${m}: ${errMsg}`);
-      if (isSoftFailure(err)) continue;
-      if (status === 401 || status === 402) throw new Error(`Auth/billing error (${status}): ${errMsg}`);
+      if (status === 401 || status === 402 || status === 403) {
+        throw new Error(`Auth/billing error (${status}): ${errMsg}`);
+      }
+      if (isRetryable(err) || (status && status >= 400 && status < 500)) {
+        continue;
+      }
+      throw err;
     }
   }
 
-  throw new Error(`All models failed on stream.\n${errors.slice(-4).join('\n')}`);
+  throw new Error(`All models failed on stream.\n${errors.slice(-2).join('\n')}`);
 }
 
 /**
- * completeJSON — strict JSON-schema completion with one structural fallback.
+ * completeJSON — strict JSON completion with one structural fallback.
  *
- * Tries the requested model first with json_schema strict mode. If JSON
- * parse fails (rare in strict mode), tries once more on the fallback model
- * with the same prompt. Throws if both attempts fail to produce valid JSON.
- *
- * Returns the parsed object plus call stats.
+ * Tries the requested model first. If JSON parse fails, retries on the
+ * fallback model with the same prompt. Throws if both fail to produce
+ * valid JSON.
  *
  * @param {object} args
  * @param {array}  args.messages
- * @param {object} args.schema             — { name, strict, schema } object (the json_schema payload).
+ * @param {object} [args.schema]            — { name, strict, schema } for json_schema mode.
  * @param {number} [args.temperature=0.1]
  * @param {number} [args.maxTokens=1500]
  * @param {string} [args.forceModel]
@@ -431,13 +513,9 @@ async function completeJSON({
   forceModel = null,
   fallbackModel = null,
   cacheSystem = true,
-  provider = null,
+  provider: _provider = null,  // eslint-disable-line no-unused-vars
   preferJsonObject = false,
 }) {
-  // json_object is broadly supported across providers; json_schema strict is
-  // not (e.g., Haiku 4.5 via some OpenRouter backends returns 400 "Provider
-  // returned error" when given json_schema). Default to json_object — the
-  // reconstructor's defensive validation makes strict schema unnecessary.
   const responseFormat = (schema && !preferJsonObject)
     ? { type: 'json_schema', json_schema: schema }
     : { type: 'json_object' };
@@ -448,9 +526,12 @@ async function completeJSON({
       temperature,
       maxTokens,
       forceModel: model,
+      // Disable internal fallback inside complete() — completeJSON owns it
+      // here so JSON-parse failures (not transport failures) drive the
+      // escalation.
+      fallbackModel: model,
       responseFormat,
       cacheSystem,
-      provider,
     });
     let parsed = null;
     let parseErr = null;
@@ -473,18 +554,43 @@ async function completeJSON({
 
   const primary = await tryOnce(forceModel);
   if (primary.parsed) {
-    return { json: primary.parsed, model: primary.result.model, usage: primary.result.usage, stats: primary.result.stats, fallback: false };
+    return {
+      json: primary.parsed,
+      model: primary.result.model,
+      usage: primary.result.usage,
+      stats: primary.result.stats,
+      fallback: false,
+    };
   }
 
   if (fallbackModel) {
     console.warn(`[LLM] completeJSON: primary returned non-parseable JSON, escalating to ${fallbackModel}`);
     const secondary = await tryOnce(fallbackModel);
     if (secondary.parsed) {
-      return { json: secondary.parsed, model: secondary.result.model, usage: secondary.result.usage, stats: secondary.result.stats, fallback: true };
+      return {
+        json: secondary.parsed,
+        model: secondary.result.model,
+        usage: secondary.result.usage,
+        stats: secondary.result.stats,
+        fallback: true,
+      };
     }
   }
 
-  throw new Error('completeJSON: model produced non-parseable JSON on primary' + (fallbackModel ? ' and fallback' : '') + '.');
+  throw new Error(
+    'completeJSON: model produced non-parseable JSON on primary'
+    + (fallbackModel ? ' and fallback' : '') + '.'
+  );
 }
 
-module.exports = { complete, completeJSON, completeStream, parseJSON, smartTruncate, estimateTokens, getTokenStats, MODEL_CHAIN, applyPromptCache };
+module.exports = {
+  complete,
+  completeJSON,
+  completeStream,
+  parseJSON,
+  smartTruncate,
+  estimateTokens,
+  getTokenStats,
+  MODEL_CHAIN,
+  applyPromptCache,
+};

@@ -2,7 +2,9 @@
 
 const { complete, parseJSON } = require('./llm');
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'google/gemini-2.5-flash-lite';
+// Despite the file/var name (kept for callsite compat), this now routes to
+// Anthropic Haiku via llm.js. Override with RANK_MODEL or legacy GEMINI_MODEL.
+const GEMINI_MODEL = process.env.RANK_MODEL || process.env.GEMINI_MODEL || 'claude-haiku-4-5';
 
 function firstWords(text, n) {
   return String(text || '')

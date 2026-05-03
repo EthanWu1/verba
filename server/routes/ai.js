@@ -42,8 +42,8 @@ const { saveCutCardForUser } = require('../services/autoSaveCard');
 // shortcomings rather than escalating to a more expensive model.
 // CARD_CUT_FALLBACK_MODEL exists for env override but is no longer wired
 // into the cut flow.
-const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'anthropic/claude-haiku-4.5';
-const CARD_CUT_FALLBACK_MODEL = process.env.CARD_CUT_FALLBACK_MODEL || 'anthropic/claude-haiku-4.5';
+const CARD_CUT_MODEL          = process.env.CARD_CUT_MODEL          || 'claude-haiku-4-5';
+const CARD_CUT_FALLBACK_MODEL = process.env.CARD_CUT_FALLBACK_MODEL || 'claude-haiku-4-5';
 
 // Detect refusal / hedge text in raw model output so we can escalate even
 // when JSON parsing technically succeeded but the body is empty or apologetic.

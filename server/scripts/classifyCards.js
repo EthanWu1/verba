@@ -22,8 +22,8 @@ const { complete, parseJSON } = require('../services/llm');
 
 const BATCH_SIZE = 75;
 const DELAY_MS   = 100;
-const PRIMARY_MODEL  = 'google/gemini-2.5-flash-lite';
-const FALLBACK_MODEL = 'openai/gpt-4o-mini';
+const PRIMARY_MODEL  = process.env.CLASSIFY_MODEL          || 'claude-haiku-4-5';
+const FALLBACK_MODEL = process.env.CLASSIFY_FALLBACK_MODEL || 'claude-sonnet-4-6';
 
 const args = process.argv.slice(2);
 const RECLASSIFY_ALL = args.includes('--all');

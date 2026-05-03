@@ -72,7 +72,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status:  'ok',
     version: '2.0.0',
-    model:   process.env.MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
+    model:   process.env.MODEL || 'claude-haiku-4-5',
     time:    new Date().toISOString(),
   });
 });
@@ -148,7 +148,7 @@ app.get('*', (req, res) => {
     console.log('╔════════════════════════════════════════╗');
     console.log('║   Verbatim AI — Card Cutter v2.0       ║');
     console.log(`║   Running at http://localhost:${PORT}      ║`);
-    console.log(`║   Model: ${(process.env.MODEL || 'llama-3.3-70b').padEnd(30)}║`);
+    console.log(`║   Model: ${(process.env.MODEL || 'claude-haiku-4-5').padEnd(30)}║`);
     console.log('╚════════════════════════════════════════╝');
     console.log('');
 
