@@ -255,6 +255,48 @@ async function main() {
   // an elected canonical with the same groupKey. If we still see
   // violations, surface them and exit non-zero so the workflow fails
   // visibly instead of leaving duplicates in the default browse.
+  // Auto-repair pass: cards below MIN_WORDS skip the merge logic entirely,
+  // so any pre-existing 2-canonical state in their group survives this
+  // script. Repair by SQL: for every violating group, keep the row with
+  // the longest body as canonical and demote the rest. Idempotent —
+  // re-running on a clean DB is a no-op.
+  console.log('Auto-repair: enforcing one-canonical-per-group...');
+  const repairTx = db.transaction(() => {
+    const violatingGroups = db.prepare(`
+      SELECT canonicalGroupKey
+      FROM cards
+      WHERE canonicalGroupKey IS NOT NULL AND canonicalGroupKey != ''
+      GROUP BY canonicalGroupKey
+      HAVING SUM(isCanonical) > 1
+    `).all().map(r => r.canonicalGroupKey);
+
+    if (violatingGroups.length === 0) return 0;
+
+    let demoted = 0;
+    const pickPrimary = db.prepare(`
+      SELECT id FROM cards
+      WHERE canonicalGroupKey = ? AND isCanonical = 1
+      ORDER BY length(body_plain) DESC, id ASC
+      LIMIT 1
+    `);
+    const demoteRest = db.prepare(`
+      UPDATE cards SET isCanonical = 0
+      WHERE canonicalGroupKey = ? AND isCanonical = 1 AND id != ?
+    `);
+    for (const gk of violatingGroups) {
+      const primary = pickPrimary.get(gk);
+      if (!primary) continue;
+      const r = demoteRest.run(gk, primary.id);
+      demoted += r.changes;
+    }
+    console.log(`  demoted ${demoted} extra canonicals across ${violatingGroups.length} groups`);
+    return demoted;
+  });
+  repairTx();
+
+  // Re-validate after repair. If anything STILL violates the invariant,
+  // it's a different problem — empty group (no canonical at all). Surface
+  // and exit non-zero so the workflow fails visibly.
   console.log('Validating one-canonical-per-group invariant...');
   const violations = db.prepare(`
     SELECT canonicalGroupKey, SUM(isCanonical) AS canonCount, COUNT(*) AS total
@@ -264,7 +306,7 @@ async function main() {
     HAVING SUM(isCanonical) != 1
   `).all();
   if (violations.length > 0) {
-    console.error(`[INVARIANT] ${violations.length} groups violate one-canonical rule.`);
+    console.error(`[INVARIANT] ${violations.length} groups still violate one-canonical rule after auto-repair.`);
     for (const v of violations.slice(0, 5)) {
       console.error(`  group=${v.canonicalGroupKey.slice(0,40)} canonical=${v.canonCount} total=${v.total}`);
     }
