@@ -123,6 +123,8 @@ function decodeXml(s) {
 const { parseCommand, buildExplainPrompt, buildAnalyticPrompt, buildBlockPrompt } = require('../services/chatCommands');
 const retrieval = require('../services/chatRetrieval');
 const { complete, completeStream, parseJSON } = require('../services/llm');
+const { CHAT_STYLE_BRIEF, CHAT_FORMATTING_BRIEF } = require('../prompts/chatPatterns');
+const { SHORT_BRIEF, pickChatMaxTokens } = require('../prompts/chatBrevity');
 
 // Defaults — chosen by VERIFIED OpenRouter availability + cost/quality:
 //   FAST: gemini-2.5-flash — strong reasoning at ~$0.30/$2.50 per 1M; fast TTFT.
@@ -210,9 +212,14 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
         retrieval.retrieveAnalytics(parsed.intent, 5),
       ]);
       const prompt = buildBlockPrompt({ intent: parsed.intent, cards, analytics, contextDocs: attachedDocs });
+      const blockSystem = [
+        'You are a competitive debate assistant. Reply with valid JSON only.',
+        CHAT_STYLE_BRIEF,
+        CHAT_FORMATTING_BRIEF,
+      ].join('\n\n');
       const raw = await complete({
         messages: [
-          { role: 'system', content: 'You are a competitive debate assistant. Reply with valid JSON only.' },
+          { role: 'system', content: blockSystem },
           ...priorTurns,
           { role: 'user', content: prompt },
         ],
@@ -250,8 +257,10 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
       ? buildAnalyticPrompt({ intent: parsed.intent, analytics, contextDocs: attachedDocs })
       : buildExplainPrompt({ intent: parsed.intent, context: analytics, contextDocs: attachedDocs });
 
+    const baseSystem = 'You are Verba, a competitive debate assistant. You have access to the user\'s uploaded context documents — when they\'re provided, ground your answer in them. Maintain conversational continuity across the thread\'s prior turns.';
+    const fullSystem = [baseSystem, SHORT_BRIEF, CHAT_STYLE_BRIEF, CHAT_FORMATTING_BRIEF].join('\n\n');
     const messages = [
-      { role: 'system', content: 'You are Verba, a competitive debate assistant. You have access to the user\'s uploaded context documents — when they\'re provided, ground your answer in them. Maintain conversational continuity across the thread\'s prior turns.' },
+      { role: 'system', content: fullSystem },
       ...priorTurns,
       { role: 'user', content: userPrompt },
     ];
@@ -261,13 +270,18 @@ router.post('/threads/:id/messages', enforceLimit('chat', CHAT_MONTHLY_LIMIT), a
     let full = '';
     const chatChain = [MODEL_FAST, MODEL_BLOCK].filter((v, i, a) => a.indexOf(v) === i);
     let lastErr = null;
+    // Brevity-aware budget: short by default (~220 tok), expand when the
+    // user asks for a block / frontline / overview / extension. Keeps
+    // single-question answers from sprawling without capping legitimate
+    // long-form requests.
+    const chatMaxTokens = pickChatMaxTokens(content);
     for (const m of chatChain) {
       try {
         await completeStream({
           messages,
           forceModel: m,
           temperature: 0.4,
-          maxTokens: 2048,
+          maxTokens: chatMaxTokens,
           onToken: (tok) => {
             full += tok;
             res.write('event: token\ndata: ' + JSON.stringify({ t: tok }) + '\n\n');
