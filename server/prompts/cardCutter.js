@@ -175,7 +175,7 @@ function buildSelectionSystemPrompt({ density = 'heavy', length = 'long', calibr
   const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
   const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
   const dynamicCalBlock = calibration ? `\n\nUSER LIBRARY REFERENCE:\n${calibration}\n` : '';
-  return `You are an elite LD debate card cutter. You select source paragraphs and place underline / highlight / bold marks at CHARACTER offsets. The server pulls source verbatim and inserts your marks — you NEVER write source words yourself.
+  return `You are an elite LD debate card cutter. You select source paragraphs and emit VERBATIM TEXT QUOTES that the server will mark as underline / highlight / bold. You echo source text exactly — punctuation, spelling, capitalization — and the server inserts marks where your quotes match.
 
 ═══════════════════════════════════════════════
 THE ONLY HARD RULE: 100% verbatim integrity.
@@ -208,21 +208,20 @@ Break your composed speech into beats:
 Each beat is going to become a highlight.
 
 STEP 3 — FIND THE BEATS IN SOURCE.
-For each beat in your speech, locate the verbatim words in the candidate paragraphs. Mark those verbatim positions as highlights. The highlights together, in document order, should READ AS YOUR COMPOSED SPEECH.
+For each beat in your speech, locate the verbatim text in the candidate paragraphs. Emit each beat as a SHORT VERBATIM STRING (typically 1–3 words) in the "h" array. The highlights together, in document order, should READ AS YOUR COMPOSED SPEECH.
 
 STEP 4 — UNDERLINE THE READ.
 For each highlighted region, underline the surrounding clause that makes it grammatically readable (so the debater can underline-read it for context if they have time). Underlines wrap highlights — they don't ENGULF the entire paragraph. If a sentence is pure setup or filler, leave it un-underlined. The server will collapse 100% underlines anyway, so be selective from the start.
 
-STEP 5 — BOLD THE LANDING WORDS (emit MANY short bold ranges, not few long ones).
+STEP 5 — BOLD THE LANDING WORDS (emit MANY short bold quotes, not few long ones).
 Bolds are for SPOKEN EMPHASIS. Hand-cut LD cards have 5–10 bolds per typical body paragraph — debaters bold every content word that should LAND.
 
-  - Emit ONE bold range per landing word. Not one big bold range over a clause.
-  - Each bold range = 1 word (occasionally 2–3 for tight phrases like "upper hand", "use them or lose them", "impossible to win", "extremely difficult").
+  - Emit ONE bold string per landing word. Not one big bold string over a clause.
+  - Each bold = 1 word (occasionally 2–3 for tight phrases like "upper hand", "use them or lose them", "impossible to win", "extremely difficult").
   - NEVER bold a single letter, a stopword alone, a filler word, or a 4+ word span.
   - Bold magnitudes (extinction, war, collapse), named actors (Russia, U.S., Iran), operative verbs (collapses, undermines, eliminates), numbers (3 degrees, 2040), and tight warrant phrases.
-  - Each bold range MUST overlap a highlight range (bolds live INSIDE highlights — they're emphasized highlights).
-  - The server caps bold-run length at 14 chars and SPLITS oversize ranges into 1-word fragments.
-  - Target: 4–8 bold RANGES per body paragraph at heavy density.
+  - Each bold string SHOULD also appear in the "h" array (bolds live INSIDE highlights — they're emphasized highlights).
+  - Target: 4–8 bolds per body paragraph at heavy density.
 
 STEP 6 — VALIDATE.
 Read your highlights aloud, in document order, in your head. Does the result sound like the speech you composed in Step 1? Does it actually deliver the argument? If not, REVISE. Drop highlights that don't fit. Add missing connectors. Reorder if needed.
@@ -233,30 +232,41 @@ WIRE FORMAT — argument FIRST, picks SECOND
 
 OUTPUT — JSON ONLY. No prose. No fence. No commentary.
 
-The "argument" field is REQUIRED and MUST come before "picks" in your output. This forces compose-first thinking. The server EXTRACTS your highlight chain (every highlighted phrase in document order) and COMPARES it to your argument. If they don't match — meaning your highlights don't actually deliver the argument you composed — the server retries on a stronger model. So write a real argument, then make the highlights match it.
+The "argument" field is REQUIRED. Compose your spoken argument FIRST, THEN emit the quotes that deliver it.
 
 {
   "tag":      "Offensive strategic claim that wins the round. ~9-17 words. Causal mechanism + magnitude.",
   "cite":     "Lastname 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]   ← prefix is JUST the LAST name + 2-digit year, e.g. \"Bowers '23 [Ian Bowers; ...]\" — NOT \"Ian Bowers '23 [...]\"",
-  "argument": "REQUIRED. 30-50 word spoken speech the highlights deliver. Use only words/phrases that appear VERBATIM in the source paragraphs. Stitch with minimal connectors. Read it aloud — it should sound like a debater making the case.",
+  "argument": "REQUIRED. 30-50 word spoken speech the highlights deliver. Read it aloud — it should sound like a debater making the case.",
   "picks": [
-    { "p": 0, "u": [[12, 110]], "h": [[18, 30], [38, 47], [62, 81]], "b": [[18, 30], [62, 81]] }
-  ],
-  "loudest": { "p": 0, "from": 62, "to": 81 }
+    {
+      "p": 0,
+      "u": ["Trump tried in his first term to negotiate a deal with Kim that would swap an easing in U.S. sanctions in exchange for Pyongyang committing to give up its nukes."],
+      "h": ["Trump tried", "to negotiate a deal", "Kim", "swap", "sanctions", "Pyongyang", "give up its nukes"],
+      "b": ["swap", "Pyongyang"]
+    }
+  ]
 }
 
-VALIDATION CHECK before submitting:
-1. Read your "argument" field aloud. Is it the speech a debater would actually deliver to win the round?
-2. Read each highlight's text (slice the source by [from, to)) in document order.
-3. Do these read-aloud highlights deliver the argument? Do they match almost word-for-word?
-4. If NO — revise picks until they do. Add missing connectors. Drop irrelevant highlights.
-5. If YES — submit.
-
 DEFINITIONS:
-- "p" = paragraph index from CANDIDATES (0-indexed).
-- "u"/"h"/"b" = arrays of [from, to) CHARACTER ranges. "to" is exclusive. Spaces and punctuation count.
-- Snap to word boundaries. The server snaps mid-word edges inward and trims leading/trailing whitespace.
-- Partial-word highlights (e.g. just the "U" of "United" for "U.S.") are supported when intentional.
+- "p"   = paragraph index from CANDIDATES (0-indexed).
+- "u"   = array of VERBATIM strings to UNDERLINE. Each string is a full warrant clause/sentence the debater will read silently for context.
+- "h"   = array of VERBATIM strings to HIGHLIGHT (read aloud). Each string is a SHORT warrant fragment, typically 1–3 words. The chain of highlights, in order, IS the spoken argument.
+- "b"   = array of VERBATIM strings to BOLD (loudest emphasis). Each string is 1 word usually, max 2–3. Bolds usually overlap a highlight (the loudest part of an already-loud span).
+
+QUOTE RULES — STRICT:
+1. EVERY string MUST appear VERBATIM in the source paragraph "p". Match exact characters: same spelling, same punctuation, same capitalization. The server will reject quotes it can't find.
+2. Highlights are SHORT — 1–3 words each. NEVER emit a 5+ word highlight. Split long phrases into multiple short ones.
+3. NEVER emit a highlight that consists ENTIRELY of a stopword ("the", "and", "of", "to") or a filler word ("however", "further", "unfortunately", "first", "in addition"). Skip those — let the underline carry them as plain context.
+4. NEVER emit a bold that's just a single letter, a stopword, or a filler word.
+5. Order matters: emit highlights in DOCUMENT ORDER (left-to-right, top-to-bottom).
+6. The same exact string should NOT appear twice in the same array. If a phrase repeats in source, you can pick which occurrence by including more surrounding context in the quote.
+
+VALIDATION CHECK before submitting:
+1. For every quote in u/h/b, can you find it character-for-character in the paragraph? If not, fix it.
+2. Read the h array in order — does it deliver the "argument" field?
+3. Are highlights mostly 1–3 words? If any is 5+ words, split it.
+4. Do bolds overlap highlights? They should be the LOUDEST sub-phrase of a highlighted span, almost always.
 
 ${HARDCODED_CALIBRATION}${dynamicCalBlock}
 
@@ -429,15 +439,18 @@ function buildSelectionUserPrompt({
     meta.url && `URL: ${meta.url}`,
   ].filter(Boolean).join('\n');
 
+  // Iteration 8: dropped char-position ruler. Model emits VERBATIM QUOTES,
+  // not offsets — server resolves quotes via indexOf, so positions don't
+  // matter. The ruler was confusing the model into emitting block ranges.
   const candidateBlock = candidates.map(c =>
-    `[P${c.index}] (length: ${c.text.length} chars)\n${annotateParagraphWithRuler(c.text)}`
+    `[P${c.index}]\n${c.text}`
   ).join('\n\n');
 
   return [
     intentLine,
     citeLine,
     metaLines && `SOURCE METADATA:\n${metaLines}`,
-    `CANDIDATES — these are the only paragraphs you may pick from. Each paragraph has CHARACTER position rulers above it (tens row, ones row). Use those positions in your [from, to) ranges.\n---\n${candidateBlock}\n---`,
+    `CANDIDATES — these are the only paragraphs you may pick from. Reference each by its [P#] index. Echo VERBATIM strings from these paragraphs in your u/h/b arrays.\n---\n${candidateBlock}\n---`,
     `Return the JSON now. Pick ${l.paragraphRule}, ≤${l.maxWords} body words, underline ${d.underlineRange}. ${d.highlightRule}. SELECTIVITY > coverage: highlight ONLY the warrant-bearing phrases that read together as the spoken argument. Plain text is fine — most words should NOT be highlighted.`,
   ].filter(Boolean).join('\n\n');
 }

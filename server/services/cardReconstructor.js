@@ -545,70 +545,226 @@ function trimToUnderlineCap(underlines, highlights, cap, totalChars, paragraphTe
  * Closes happen BEFORE opens at the same boundary so spans close before
  * new ones open (avoiding malformed `<u></u><u>` interleaving).
  */
+// Render spans into markdown using PROPER LIFO STACK NESTING. Earlier
+// versions used fixed open/close orders which produced malformed output
+// like `==text **bold==**` when a bold opened inside a highlight but both
+// closed at the same boundary (close order should be inner-first).
+//
+// Strategy: build an event list sorted by position. At each position, do
+// closes in reverse-open-order (LIFO), then opens in order of nesting
+// preference. Track an open stack so closes always pop in LIFO order.
 function applyMarks({ paragraphText, underlines, highlights, bolds, loudestSpan }) {
   const N = paragraphText.length;
 
-  // Build lists of opens/closes at each character boundary 0..N.
-  const opens  = Array.from({ length: N + 1 }, () => []);
-  const closes = Array.from({ length: N + 1 }, () => []);
+  // Collect all spans as (kind, from, to). Tier order at OPEN: u, loud, b, h
+  // so when multiple kinds open at the same position, u is outermost and h
+  // is innermost. For subsequent same-position opens, ordering is by tier.
+  const tierIdx = { u: 0, loud: 1, b: 2, h: 3 };
+  const openTokens  = { u: '<u>', loud: '**', b: '**', h: '==' };
+  const closeTokens = { u: '</u>', loud: '**', b: '**', h: '==' };
 
-  for (const u of underlines) {
-    opens[u[0]].push({ kind: 'u',    open: '<u>', close: '</u>' });
-    closes[u[1]].push({ kind: 'u',   close: '</u>' });
-  }
-  if (loudestSpan) {
-    opens[loudestSpan[0]].push({ kind: 'loud',  open: '**', close: '**' });
-    closes[loudestSpan[1]].push({ kind: 'loud', close: '**' });
-  }
-  for (const b of bolds) {
-    opens[b[0]].push({ kind: 'b',    open: '**', close: '**' });
-    closes[b[1]].push({ kind: 'b',   close: '**' });
-  }
-  for (const h of highlights) {
-    opens[h[0]].push({ kind: 'h',    open: '==', close: '==' });
-    closes[h[1]].push({ kind: 'h',   close: '==' });
-  }
+  const spans = [];
+  let nextId = 0;
+  for (const u of underlines) spans.push({ id: nextId++, kind: 'u', from: u[0], to: u[1] });
+  if (loudestSpan) spans.push({ id: nextId++, kind: 'loud', from: loudestSpan[0], to: loudestSpan[1] });
+  for (const b of bolds)      spans.push({ id: nextId++, kind: 'b', from: b[0], to: b[1] });
+  for (const h of highlights) spans.push({ id: nextId++, kind: 'h', from: h[0], to: h[1] });
 
-  // Collapse touching close+open pairs of the SAME kind at the same boundary.
-  // If two h spans end+start at pos i, suppressing both prevents `====` (which
-  // markdown renders as empty highlight). Iterate until no more pairs found —
-  // multiple touching spans at the same position can have multiple pairs to
-  // collapse.
-  for (let i = 0; i <= N; i++) {
-    for (const k of ['u', 'h', 'b', 'loud']) {
-      let collapsed = true;
-      while (collapsed) {
-        collapsed = false;
-        const closeIdx = closes[i].findIndex(c => c.kind === k);
-        const openIdx  = opens[i].findIndex(o => o.kind === k);
-        if (closeIdx !== -1 && openIdx !== -1) {
-          closes[i].splice(closeIdx, 1);
-          opens[i].splice(openIdx, 1);
-          collapsed = true;
-        }
-      }
-    }
+  // Sort spans for deterministic open ordering when multiple start at same pos.
+  // Open priority: outer kind first (lower tierIdx), then earlier id breaks ties.
+  spans.sort((a, b) => a.from - b.from || tierIdx[a.kind] - tierIdx[b.kind] || a.id - b.id);
+
+  // Bucket opens by position; closes processed via LIFO stack.
+  const opensAt = new Map();
+  for (const s of spans) {
+    if (!opensAt.has(s.from)) opensAt.set(s.from, []);
+    opensAt.get(s.from).push(s);
   }
 
   let out = '';
-  const closeOrder = ['h', 'b', 'loud', 'u'];
-  const openOrder  = ['u', 'loud', 'b', 'h'];
-
+  const stack = [];   // currently-open spans, LIFO
   for (let i = 0; i <= N; i++) {
-    for (const k of closeOrder) {
-      for (const ev of closes[i]) if (ev.kind === k) out += ev.close;
+    // Pre-collapse touching same-kind close+open at this position:
+    // if a span of kind k is on top of stack with to==i AND another span
+    // of kind k starts at i, suppress BOTH the close and the open. They
+    // logically continue as one span and avoid `====` / `****` artifacts.
+    const startingHere = opensAt.get(i) || [];
+    const collapsedOpenIds = new Set();
+    {
+      let suppressed = true;
+      while (suppressed) {
+        suppressed = false;
+        if (!stack.length) break;
+        const top = stack[stack.length - 1];
+        if (top.to !== i) break;
+        // Find a starting-here span of same kind not already collapsed.
+        const idx = startingHere.findIndex(s => s.kind === top.kind && !collapsedOpenIds.has(s.id) && s.to > i);
+        if (idx === -1) break;
+        const matched = startingHere[idx];
+        // Suppress: keep `top` on stack but EXTEND its end to matched.to,
+        // so it'll close when matched would have. Mark matched as collapsed
+        // so we don't open it.
+        top.to = matched.to;
+        collapsedOpenIds.add(matched.id);
+        suppressed = true;
+      }
     }
-    for (const k of openOrder) {
-      for (const ev of opens[i]) if (ev.kind === k) out += ev.open;
+    // Close any spans whose `to` == i, in LIFO order (innermost first).
+    while (stack.length && stack[stack.length - 1].to === i) {
+      const s = stack.pop();
+      out += closeTokens[s.kind];
+    }
+    while (stack.length && stack[stack.length - 1].to < i) {
+      const s = stack.pop();
+      out += closeTokens[s.kind];
+    }
+    // Open any spans starting at i (skipping collapsed ones).
+    if (startingHere.length) {
+      const list = startingHere
+        .filter(s => !collapsedOpenIds.has(s.id))
+        .sort((a, b) => (b.to - a.to) || (tierIdx[a.kind] - tierIdx[b.kind]) || (a.id - b.id));
+      for (const s of list) {
+        if (s.to <= s.from) continue;
+        out += openTokens[s.kind];
+        stack.push(s);
+      }
     }
     if (i < N) out += paragraphText[i];
   }
+  while (stack.length) {
+    const s = stack.pop();
+    out += closeTokens[s.kind];
+  }
   return out;
+}
+
+// --- quote-based pick resolver ---------------------------------------------
+// Iteration 8 (2026-05-03): switched from char-offset picks to quote-based.
+// The model emits the EXACT verbatim string it wants marked, and the server
+// finds it via indexOf. This eliminates the "model can't precisely count
+// characters" failure mode that produced mid-word boundaries and bloated
+// 50-char block ranges.
+//
+// Resolver behavior:
+//   - Each string is normalized (collapse whitespace) before matching.
+//   - First occurrence is returned. If string appears multiple times,
+//     first match wins (model can disambiguate by including more context).
+//   - If string not found verbatim, try a fuzzy match (collapse all
+//     whitespace and re-find). If still not found, drop with warning.
+//   - Punctuation is matched STRICTLY — model must echo source exactly.
+
+function normalizeForMatch(s) {
+  return String(s || '').replace(/\s+/g, ' ').trim();
+}
+
+// Map Unicode "smart" punctuation back to ASCII so a quote emitted with
+// straight quotes/apostrophes matches source text using curly ones (and
+// vice versa). Articles imported via OCR/PDF/Word frequently mix these.
+function normalizeUnicodePunct(s) {
+  return String(s || '')
+    .replace(/[‘’‚‛′]/g, "'")     // ' ' ‚ ‛ ′ → '
+    .replace(/[“”„‟″]/g, '"')     // " " „ ‟ ″ → "
+    .replace(/[–—−]/g, '-')                  // – — − → -
+    .replace(/…/g, '...')                              // …  → ...
+    .replace(/ /g, ' ');                               // NBSP → space
+}
+
+// Find a quote in paragraph text. Returns [from, to] or null.
+// Strategy: try strict match first; fall back to Unicode-normalized match;
+// fall back to whitespace-tolerant regex match. The match is performed
+// against the NORMALIZED source, but the returned offsets index the
+// ORIGINAL source — we keep a position map for that.
+function findQuoteInText(quote, text, searchStart = 0) {
+  if (!quote || !text) return null;
+  const q = String(quote);
+  // 1. Strict match against original.
+  let idx = text.indexOf(q, searchStart);
+  if (idx !== -1) return [idx, idx + q.length];
+  // 2. Unicode-normalized match. Normalize both sides 1:1 (same length, so
+  //    offsets in normalized == offsets in original).
+  const qNorm = normalizeUnicodePunct(q);
+  const tNorm = normalizeUnicodePunct(text);
+  if (qNorm.length === q.length && tNorm.length === text.length) {
+    idx = tNorm.indexOf(qNorm, searchStart);
+    if (idx !== -1) return [idx, idx + qNorm.length];
+  }
+  // 3. Whitespace-tolerant regex match (also Unicode-normalized).
+  const pattern = qNorm
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+');
+  const re = new RegExp(pattern);
+  const m = re.exec(tNorm.slice(searchStart));
+  if (m) return [searchStart + m.index, searchStart + m.index + m[0].length];
+  return null;
+}
+
+// Resolve a list of quote strings against paragraph text. Tracks search
+// cursor so adjacent quotes find their later occurrences in order.
+function resolveQuotesInParagraph(quotes, text) {
+  const ranges = [];
+  let cursor = 0;
+  const dropped = [];
+  for (const raw of (quotes || [])) {
+    const q = normalizeForMatch(raw);
+    if (!q) continue;
+    let r = findQuoteInText(q, text, cursor);
+    // If not found from cursor, try from start of paragraph (model may have
+    // emitted quotes out of order).
+    if (!r) r = findQuoteInText(q, text, 0);
+    if (!r) { dropped.push(q.slice(0, 60)); continue; }
+    ranges.push(r);
+    cursor = r[1];
+  }
+  return { ranges, dropped };
+}
+
+// Convert a quote-based picks JSON (strings) into a range-based picks JSON
+// (offsets) by looking up each quote in the candidate paragraphs. Returns
+// the same shape as the old picksJson so the rest of the reconstructor
+// pipeline works unchanged.
+function resolveQuotePicks(picksJson, candidates) {
+  const candidateByIndex = new Map();
+  for (const c of candidates) candidateByIndex.set(c.index, c);
+
+  const droppedTotal = [];
+  const newPicks = [];
+  for (const pick of (picksJson?.picks || [])) {
+    const cand = candidateByIndex.get(pick.p);
+    if (!cand) continue;
+    const text = cand.text;
+    // Auto-detect: if u/h/b items are arrays of NUMBERS, this is the old
+    // range-based format — pass through unchanged.
+    const uIsRange = Array.isArray(pick.u) && pick.u.length && Array.isArray(pick.u[0]) && typeof pick.u[0][0] === 'number';
+    if (uIsRange) {
+      newPicks.push(pick);
+      continue;
+    }
+    const u = resolveQuotesInParagraph(pick.u || [], text);
+    const h = resolveQuotesInParagraph(pick.h || [], text);
+    const b = resolveQuotesInParagraph(pick.b || [], text);
+    droppedTotal.push(...u.dropped.map(q => `u: "${q}"`));
+    droppedTotal.push(...h.dropped.map(q => `h: "${q}"`));
+    droppedTotal.push(...b.dropped.map(q => `b: "${q}"`));
+    newPicks.push({ p: pick.p, u: u.ranges, h: h.ranges, b: b.ranges });
+  }
+
+  if (droppedTotal.length) {
+    console.warn(`[resolveQuotePicks] dropped ${droppedTotal.length} unmatched quotes:`,
+      droppedTotal.slice(0, 8).join(' | '));
+  }
+
+  return {
+    ...picksJson,
+    picks: newPicks,
+  };
 }
 
 // --- main entry -------------------------------------------------------------
 
 function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
+  // Resolve quote-based picks to range-based first (no-op if already ranges).
+  picksJson = resolveQuotePicks(picksJson, candidates);
+
   const tag = String(picksJson?.tag || '').trim();
   const cite = String(picksJson?.cite || '').trim();
   const picks = Array.isArray(picksJson?.picks) ? picksJson.picks : [];
@@ -785,6 +941,11 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // Re-extending here catches that.
     highlights = fixDanglingEnds(highlights, paragraphText);
     bolds      = fixDanglingEnds(bolds,      paragraphText);
+    // fixDanglingEnds can extend a span forward past the start of the next
+    // span, creating overlap. Re-merge so highlights/bolds remain
+    // non-overlapping (renderer assumes non-overlap).
+    highlights = mergeSpans(highlights);
+    bolds      = mergeSpans(bolds);
     // Final bad-bold pass: trimMaxRun could shrink a 14-char "the upper" to
     // "the" or a 14-char "asymmetric" to "asymm" depending on snap; reject.
     bolds      = dropBadBolds(bolds, paragraphText);
@@ -847,17 +1008,12 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
 
 // --- the JSON schema for the picks output ----------------------------------
 
-// Anthropic structured outputs reject `maxItems` and `minItems` on array
-// types. Even when we use `response_format: json_object` mode, OpenRouter
-// can auto-translate to Anthropic's structured output format and pass our
-// schema through. So this schema must be Anthropic-compatible: NO
-// minItems/maxItems anywhere.
-const SPAN_SCHEMA = {
+// Iteration 8 (2026-05-03): switched from char-offset spans to QUOTE-based.
+// Each u/h/b is now an array of VERBATIM strings to find in the paragraph.
+// Backward-compat: resolveQuotePicks auto-detects old [from,to] arrays.
+const QUOTE_SCHEMA = {
   type: 'array',
-  items: {
-    type: 'array',
-    items: { type: 'integer', minimum: 0 },
-  },
+  items: { type: 'string' },
 };
 
 const CARD_PICKS_JSON_SCHEMA = {
@@ -870,11 +1026,6 @@ const CARD_PICKS_JSON_SCHEMA = {
     properties: {
       tag:  { type: 'string' },
       cite: { type: 'string' },
-      // The 30-50 word spoken speech the highlights MUST deliver in order.
-      // The model is required to compose this BEFORE picks, forcing
-      // argument-first thinking. Server extracts the actual read-aloud
-      // chain from picks and compares to this argument; if they don't
-      // match, retry on Sonnet.
       argument: { type: 'string' },
       picks: {
         type: 'array',
@@ -884,20 +1035,10 @@ const CARD_PICKS_JSON_SCHEMA = {
           required: ['p', 'u'],
           properties: {
             p: { type: 'integer', minimum: 0 },
-            u: SPAN_SCHEMA,
-            h: SPAN_SCHEMA,
-            b: SPAN_SCHEMA,
+            u: QUOTE_SCHEMA,
+            h: QUOTE_SCHEMA,
+            b: QUOTE_SCHEMA,
           },
-        },
-      },
-      loudest: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['p', 'from', 'to'],
-        properties: {
-          p:    { type: 'integer', minimum: 0 },
-          from: { type: 'integer', minimum: 0 },
-          to:   { type: 'integer', minimum: 1 },
         },
       },
     },
@@ -909,6 +1050,9 @@ const CARD_PICKS_JSON_SCHEMA = {
 // only the highlighted portions. Compare this to the model's stated
 // `argument` to detect chain incoherence.
 function extractReadAloudChain(picksJson, candidates) {
+  // Resolve quotes first (no-op if already ranges).
+  picksJson = resolveQuotePicks(picksJson, candidates);
+
   const candidateByIndex = new Map();
   for (const c of candidates) candidateByIndex.set(c.index, c);
   const chain = [];
@@ -1035,4 +1179,9 @@ module.exports = {
   trimFillerEdgesAll,
   STOPWORD_ONLY_BAD_BOLDS,
   MIN_BOLD_RUN_CHARS,
+  // quote-based resolver (iteration 8):
+  resolveQuotePicks,
+  resolveQuotesInParagraph,
+  findQuoteInText,
+  normalizeForMatch,
 };

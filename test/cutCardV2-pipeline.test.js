@@ -331,17 +331,18 @@ test('selection prompt: HARDCODED_CALIBRATION includes empirical patterns', () =
   assert.match(HARDCODED_CALIBRATION, /landing/i);
 });
 
-test('selection prompt: system prompt embeds calibration and char-offset language', () => {
+test('selection prompt: system prompt embeds calibration and quote-based language', () => {
+  // Iteration 8 (2026-05-03): switched from char-offset picks to quote-based.
+  // Model now emits VERBATIM strings instead of [from,to] ranges.
   const p = buildSelectionSystemPrompt({ density: 'heavy', length: 'long' });
-  assert.match(p, /CHARACTER offsets/i);
-  assert.match(p, /partial-word/i);
+  assert.match(p, /VERBATIM/i);
   assert.match(p, /hand-cut/i);
   assert.match(p, /JSON/);
-  // Argument-driven workflow lives in the prompt now.
   assert.match(p, /WORKFLOW|UNDERSTAND THE ARGUMENT|composed speech/i);
 });
 
-test('selection prompt: user prompt includes per-paragraph rulers', () => {
+test('selection prompt: user prompt includes paragraph indices for verbatim quotes', () => {
+  // Iter 8: dropped char rulers (model emits quotes, not offsets).
   const candidates = [
     { index: 0, originalIndex: 0, text: 'First paragraph here.' },
     { index: 1, originalIndex: 1, text: 'Second paragraph here.' },
@@ -349,9 +350,9 @@ test('selection prompt: user prompt includes per-paragraph rulers', () => {
   const out = buildSelectionUserPrompt({
     argument: 'test', candidates, density: 'heavy', length: 'long',
   });
-  assert.match(out, /\[P0\][\s\S]*length: 21 chars/);
+  assert.match(out, /\[P0\]/);
   assert.match(out, /\[P1\]/);
-  assert.match(out, /character.*ruler/i);
+  assert.match(out, /verbatim/i);
 });
 
 // ── JSON schema sanity ────────────────────────────────────────────
@@ -476,8 +477,10 @@ test('reconstructCard: trims filler prefix from highlight', () => {
     }],
   };
   const out = reconstructCard({ picksJson, candidates, density: 'heavy' });
-  // The highlight should NOT include "First," — should start at "conventional".
-  assert.ok(/==conventional counterforce==/.test(out.body_markdown),
+  // The highlight must NOT include "First," — should start at "conventional".
+  // (After iter-2 splitter, "conventional counterforce" may be split into
+  //  "conventional" and "counterforce" so we check "==conventional==" alone.)
+  assert.ok(/==conventional==?/.test(out.body_markdown),
     `highlight should start at "conventional", got: ${out.body_markdown}`);
   assert.ok(!/==First,? conventional/.test(out.body_markdown),
     `highlight must not include "First," prefix, got: ${out.body_markdown}`);
