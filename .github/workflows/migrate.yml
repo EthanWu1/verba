@@ -20,6 +20,7 @@ on:
           - dry-run-fingerprints       # preview only, no DB writes
           - dry-run-containment        # preview only, no DB writes
           - vacuum                     # offline-VACUUM the prod DB (~30-60 min, brief downtime)
+          - cleanup                    # delete orphan vacuum-new file + restart pm2
 
 concurrency:
   group: migrate-prod
@@ -105,6 +106,16 @@ jobs:
               dry-run-fingerprints) run_fp_dry ;;
               dry-run-containment)  run_cont_dry ;;
               vacuum)               run_vacuum ;;
+              cleanup)
+                echo "── Cleaning up failed vacuum artifacts ──"
+                df -h server/data/ || true
+                ls -lh server/data/library.db.vacuum-new 2>/dev/null || echo "(no orphan vacuum file)"
+                rm -f server/data/library.db.vacuum-new
+                echo "── Disk after cleanup ──"
+                df -h server/data/ || true
+                pm2 restart ${{ secrets.PM2_PROCESS_NAME }} --update-env || pm2 start ${{ secrets.PM2_PROCESS_NAME }} || true
+                pm2 list || true
+                ;;
               *) echo "Unknown step: $STEP"; exit 1 ;;
             esac
 
