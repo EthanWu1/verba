@@ -149,7 +149,11 @@ jobs:
                 # Frees ~22GB on root, gives vacuum/import operations
                 # plenty of headroom going forward.
                 DB="server/data/library.db"
-                TARGET_DIR="/mnt/volume/verba"
+                # /mnt/volume is root-owned; cannot mkdir directly. The
+                # existing /mnt/volume/backfiles/ is user-owned and empty
+                # after purge — repurpose that path. Symlink target is
+                # the .../backfiles/library.db file directly.
+                TARGET_DIR="/mnt/volume/backfiles"
                 TARGET="$TARGET_DIR/library.db"
                 if [ -L "$DB" ]; then
                   echo "── $DB is already a symlink → $(readlink -f $DB). Nothing to do. ──"
@@ -166,7 +170,16 @@ jobs:
                   echo "ERR: /mnt/volume only has ${AVAIL_KB}K free, need ${NEED_KB}K + 10% buffer"
                   df -h /mnt/volume; exit 1
                 fi
-                mkdir -p "$TARGET_DIR"
+                if [ ! -d "$TARGET_DIR" ]; then
+                  echo "ERR: $TARGET_DIR doesn't exist. mkdir requires write on /mnt/volume which is root-owned."
+                  echo "Run sudo on the server: sudo mkdir -p $TARGET_DIR && sudo chown \$USER:\$USER $TARGET_DIR"
+                  exit 1
+                fi
+                if [ ! -w "$TARGET_DIR" ]; then
+                  echo "ERR: $TARGET_DIR exists but is not writable by SSH user"
+                  ls -ld "$TARGET_DIR"
+                  exit 1
+                fi
                 echo "── Stopping pm2 (no writes during cross-mount mv) ──"
                 pm2 stop ${{ secrets.PM2_PROCESS_NAME }} || true
                 echo "── Checkpointing WAL ──"
