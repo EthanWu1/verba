@@ -14,6 +14,7 @@
 const axios    = require('axios');
 const cheerio  = require('cheerio');
 const webfetch = require('./webfetch');
+const { fetchViaJina } = require('./sources/jina');
 
 const USE_WEBFETCH = String(process.env.USE_WEBFETCH || '').toLowerCase() === 'true';
 
@@ -161,18 +162,44 @@ async function scrapeUrl(url) {
   let bodyText = paragraphs.map(p => p.text).join('\n\n');
 
   // Detect anti-bot challenge pages (Cloudflare, PerimeterX, reCAPTCHA, etc.)
-  // BEFORE returning. Without this, the cutter ingests the captcha text
-  // ("Just a moment...", "Performing security verification") and produces a
-  // useless card. Throw a user-facing error so the route surfaces it cleanly.
-  if (isBotBlockedPage({ html, title, bodyText })) {
-    throw new Error(
-      'Source blocked by anti-bot protection (Cloudflare/CAPTCHA). ' +
-      'The article cannot be scraped automatically. Paste the article text directly.'
-    );
-  }
-
-  if (bodyText.length < 200) {
-    bodyText = '[SCRAPE LIMITED] This site may be paywalled. Paste the article text directly.';
+  // OR suspiciously thin content (some captcha variants return 200 with
+  // minimal HTML that doesn't trip the explicit patterns). On either signal,
+  // try the Jina reader mirror (r.jina.ai) which runs headless Chrome and
+  // often bypasses Cloudflare. If Jina also fails, throw.
+  const blocked = isBotBlockedPage({ html, title, bodyText });
+  const tooThin = bodyText.length < 800;
+  if (blocked || tooThin) {
+    try {
+      const mirror = await fetchViaJina(url);
+      if (mirror?.bodyText && mirror.bodyText.length >= 500 &&
+          !isBotBlockedPage({ html: '', title: mirror.title || '', bodyText: mirror.bodyText })) {
+        const mirrorTitle = mirror.title || title || '';
+        const mirrorParagraphs = mirror.bodyText
+          .split(/\n\s*\n+/)
+          .map((t, i) => ({ text: t.trim(), anchor: `jina-${i}` }))
+          .filter(p => p.text);
+        return {
+          title:  mirrorTitle,
+          author: author || '',
+          date:   date || '',
+          source: source || '',
+          url,
+          bodyText: mirrorParagraphs.map(p => p.text).join('\n\n') || mirror.bodyText,
+          paragraphs: mirrorParagraphs,
+          isPdf: false,
+          via: 'jina',
+        };
+      }
+    } catch { /* fall through */ }
+    if (blocked) {
+      throw new Error(
+        'Source blocked by anti-bot protection (Cloudflare/CAPTCHA). ' +
+        'Tried bypass via Jina reader; that also failed. ' +
+        'Paste the article text directly.'
+      );
+    }
+    // tooThin but not detected as blocked — surface the [SCRAPE LIMITED] sentinel.
+    bodyText = '[SCRAPE LIMITED] This site may be paywalled or blocked. Paste the article text directly.';
   }
 
   return {
