@@ -19,6 +19,7 @@ on:
           - indexer                    # populate cards_vec via OpenRouter embeddings
           - dry-run-fingerprints       # preview only, no DB writes
           - dry-run-containment        # preview only, no DB writes
+          - vacuum                     # offline-VACUUM the prod DB (~30-60 min, brief downtime)
 
 concurrency:
   group: migrate-prod
@@ -53,6 +54,44 @@ jobs:
             run_idx()      { node server/scripts/indexCardsVec.js; }
             run_fp_dry()   { node server/scripts/migrateFingerprints.js; }
             run_cont_dry() { node server/scripts/migrateContainment.js;  }
+            run_vacuum() {
+              # VACUUM INTO copies live data to a fresh file with no dead
+              # pages. We stop pm2 first so writes during the copy can't be
+              # lost, then atomically swap and restart. Total downtime is
+              # the copy duration (~30-60 min on a 33GB DB).
+              local DB="server/data/library.db"
+              local NEW="$DB.vacuum-new"
+              local BAK="$DB.bak-$(date +%Y%m%d-%H%M)"
+              echo "── Stopping pm2 to prevent writes during vacuum ──"
+              pm2 stop ${{ secrets.PM2_PROCESS_NAME }} || true
+              echo "── Pre-vacuum size: $(du -h "$DB" | cut -f1) ──"
+              rm -f "$NEW"
+              echo "── Running VACUUM INTO ──"
+              local T0=$(date +%s)
+              node -e "
+                const Database = require('better-sqlite3');
+                const db = new Database('$DB');
+                try { require('sqlite-vec').load(db); } catch {}
+                db.pragma('journal_mode = WAL');
+                db.pragma('wal_checkpoint(TRUNCATE)');
+                db.exec(\`VACUUM INTO '$NEW'\`);
+                db.close();
+                console.log('VACUUM INTO complete');
+              "
+              local T1=$(date +%s)
+              echo "── VACUUM finished in $((T1-T0))s ──"
+              echo "── Post-vacuum size: $(du -h "$NEW" | cut -f1) ──"
+              echo "── Atomic swap (keeping old as $BAK) ──"
+              mv "$DB" "$BAK"
+              mv "$NEW" "$DB"
+              # Aux SQLite files won't match the new main file; remove them
+              # so SQLite regenerates from the swapped file.
+              rm -f "$DB-wal" "$DB-shm"
+              echo "── Restarting pm2 ──"
+              pm2 start ${{ secrets.PM2_PROCESS_NAME }} || pm2 restart ${{ secrets.PM2_PROCESS_NAME }} || true
+              echo "── Old DB preserved at: $BAK ──"
+              echo "── Verify, then delete .bak when comfortable: rm '$BAK' ──"
+            }
 
             case "$STEP" in
               all)
@@ -65,6 +104,7 @@ jobs:
               indexer)              run_idx ;;
               dry-run-fingerprints) run_fp_dry ;;
               dry-run-containment)  run_cont_dry ;;
+              vacuum)               run_vacuum ;;
               *) echo "Unknown step: $STEP"; exit 1 ;;
             esac
 
