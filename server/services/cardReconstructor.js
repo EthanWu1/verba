@@ -50,8 +50,12 @@ const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.35 };
 // degrees" without trimming.
 const MAX_HIGHLIGHT_RUN_CHARS = 50;
 // Bolds should be SHORT. Real cards bold single words usually, 2-3 max,
-// for spoken emphasis. Cap at 18 chars so multi-clause bolds get trimmed.
-const MAX_BOLD_RUN_CHARS = 18;
+// for spoken emphasis. 14 chars covers "use them or" / "upper hand" /
+// "extremely diff…" — anything longer is clause-marking, not emphasis.
+const MAX_BOLD_RUN_CHARS = 14;
+// Bolds shorter than this are almost always off-by-one slips ("e" of
+// "extreme", "s" of "weapons") — drop them.
+const MIN_BOLD_RUN_CHARS = 2;
 
 // When the model lazily underlines 100% of a paragraph, we ABANDON its
 // underline and auto-regenerate underlines wrapping the highlights with
@@ -260,6 +264,70 @@ function isFillerOnlySpan(span, text) {
 
 function dropFillerOnlySpans(spans, text) {
   return spans.filter(s => !isFillerOnlySpan(s, text));
+}
+
+// Stopwords that should NEVER be the entire content of a bold. Bolds are
+// for spoken emphasis — bolding "the" or "and" alone is a slip.
+const STOPWORD_ONLY_BAD_BOLDS = new Set([
+  'a','an','the','and','or','but','of','to','in','on','at','by','for',
+  'with','from','into','onto','about','as','is','are','was','were','be',
+  'been','being','am','have','has','had','do','does','did','its','their',
+  'his','her','our','your','my','this','that','these','those','it','they',
+  'we','he','she','i','you',
+]);
+
+function isBadBoldSpan(span, text) {
+  if (!span) return true;
+  const len = span[1] - span[0];
+  // Single-char bolds: almost always off-by-one ("e" of "extreme").
+  if (len < MIN_BOLD_RUN_CHARS) return true;
+  const slice = text.slice(span[0], span[1]).trim();
+  if (!slice) return true;
+  // Bolds that are entirely a single stopword.
+  const lower = slice.toLowerCase().replace(/[^a-z']/g, '');
+  if (STOPWORD_ONLY_BAD_BOLDS.has(lower)) return true;
+  return false;
+}
+
+function dropBadBolds(spans, text) {
+  return spans.filter(s => !isBadBoldSpan(s, text));
+}
+
+// Trim filler prefixes/suffixes from a HIGHLIGHT span. Catches highlights
+// like "==As a result, conventional counterforce==" — the "As a result,"
+// portion gets snipped so only "conventional counterforce" highlights.
+// Symmetric: also trims trailing filler.
+const FILLER_TRIM_PREFIX_PATTERNS = [
+  /^(further(?:more)?|however|moreover|additionally|also|unfortunately|accordingly|thus|therefore|hence|indeed|essentially|ultimately|importantly|notably|specifically|meanwhile|nonetheless|nevertheless|arguably|presumably|fundamentally|crucially|clearly|obviously|first|second|third|fourth|fifth|finally|lastly)\s*[,;:]?\s+/i,
+  /^(in\s+addition|in\s+essence|to\s+be\s+sure|in\s+other\s+words|for\s+instance|for\s+example|as\s+a\s+result|on\s+top\s+of\s+(?:that|this))\s*[,;:]?\s+/i,
+];
+
+function trimFillerEdges(span, text) {
+  if (!span) return null;
+  let [from, to] = span;
+  let slice = text.slice(from, to);
+  let progress = true;
+  let safety = 4;
+  while (progress && safety-- > 0) {
+    progress = false;
+    for (const re of FILLER_TRIM_PREFIX_PATTERNS) {
+      const m = slice.match(re);
+      if (m) {
+        from += m[0].length;
+        slice = text.slice(from, to);
+        progress = true;
+        break;
+      }
+    }
+  }
+  if (to <= from) return null;
+  // Re-snap to word boundary so we don't leave leading whitespace/punct.
+  const snapped = snapToWordBoundaries([from, to], text);
+  return snapped || null;
+}
+
+function trimFillerEdgesAll(spans, text) {
+  return spans.map(s => trimFillerEdges(s, text)).filter(Boolean);
 }
 
 // --- priority scoring (used when over cap) ----------------------------------
@@ -501,7 +569,10 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     const boldCap = BOLD_CAPS[density] ?? BOLD_CAPS.heavy;
 
     let underlines = mergeSpans(
-      snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
+      trimFillerEdgesAll(
+        snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+        paragraphText
+      )
     );
     // Highlights AND bolds get dangling-end fix: if a span ends on a
     // preposition/article/conjunction (e.g. "the upper", "impossible to"),
@@ -511,23 +582,48 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // Filler-only highlights ("==However==", "==Further==") get dropped
     // silently so the chain quality check doesn't retry-on-Sonnet for
     // something we can fix structurally.
+    // Pipeline: clamp → snap → trim-filler-edges → fix-danglers
+    //   → drop-filler-only → merge.
+    // trimFillerEdges runs BEFORE fixDanglingEnds: a span like
+    // "As a result, conventional counterforce is impossible to" first
+    // gets the "As a result," prefix trimmed → "conventional counterforce
+    // is impossible to" → then dangler fix extends "to" → "to operationalize".
     let highlights = mergeSpans(
       dropFillerOnlySpans(
         fixDanglingEnds(
-          snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+          trimFillerEdgesAll(
+            snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+            paragraphText
+          ),
           paragraphText
         ),
         paragraphText
       )
     );
-    let bolds = mergeSpans(
-      dropFillerOnlySpans(
-        fixDanglingEnds(
-          snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+    // Bolds pipeline: bad-bold drop runs FIRST (right after snap) — otherwise
+    // fixDanglingEnds would extend a stopword-only bold like [0,3]="The"
+    // forward to "The asymmetric" (since "the" is a dangling tail word),
+    // creating a 14-char bold that is no longer "stopword only" but is
+    // exactly the cluster-bolding we wanted to prevent.
+    // After merge, a final dropBadBolds pass catches cases where merging
+    // adjacent valid spans yields a bad result.
+    let bolds = dropBadBolds(
+      mergeSpans(
+        dropFillerOnlySpans(
+          fixDanglingEnds(
+            dropBadBolds(
+              trimFillerEdgesAll(
+                snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+                paragraphText
+              ),
+              paragraphText
+            ),
+            paragraphText
+          ),
           paragraphText
-        ),
-        paragraphText
-      )
+        )
+      ),
+      paragraphText
     );
 
     // LAZY-UNDERLINE OVERRIDE: when the model emits 90%+ underline coverage
@@ -576,6 +672,9 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // Re-extending here catches that.
     highlights = fixDanglingEnds(highlights, paragraphText);
     bolds      = fixDanglingEnds(bolds,      paragraphText);
+    // Final bad-bold pass: trimMaxRun could shrink a 14-char "the upper" to
+    // "the" or a 14-char "asymmetric" to "asymm" depending on snap; reject.
+    bolds      = dropBadBolds(bolds, paragraphText);
 
     const beforeHiCap = highlights.length;
     highlights = trimToHighlightCap(highlights, highlightCap, N, paragraphText);
@@ -697,6 +796,7 @@ function extractReadAloudChain(picksJson, candidates) {
       .filter(Boolean);
     // Apply same auto-fixes the reconstructor uses, so chain reflects
     // what the user will actually see.
+    hRanges = trimFillerEdgesAll(hRanges, text);
     hRanges = fixDanglingEnds(hRanges, text);
     hRanges = dropFillerOnlySpans(hRanges, text);
     hRanges.sort((a, b) => a[0] - b[0]);
@@ -751,9 +851,18 @@ function chainArgumentScore(argument, chainText) {
     if (m && DANGLING_TAIL_WORDS.has(m[1])) danglerCount++;
   }
 
+  // Fragmentation: average words per highlight phrase. Hand-cut gold:
+  // 5–6 phrases, 3–5 words each → avg 3.5+ words/phrase. Confetti machine
+  // cut: 15+ phrases, 1–2 words each → avg <2 words/phrase.
+  // Lower = worse. Used as informational diagnostic only — no retry.
+  const avgWordsPerPhrase = phrases.length
+    ? phrases.reduce((a, p) => a + p.trim().split(/\s+/).filter(Boolean).length, 0) / phrases.length
+    : 0;
+
   return {
     coverage, bloat, filler: fillerHits, danglers: danglerCount,
     argSize: argSet.size, chainSize: chainTokens.length, phraseCount: phrases.length,
+    avgWordsPerPhrase,
   };
 }
 
@@ -787,4 +896,10 @@ module.exports = {
   isFillerOnlySpan,
   dropFillerOnlySpans,
   FILLER_HIGHLIGHT_WORDS,
+  isBadBoldSpan,
+  dropBadBolds,
+  trimFillerEdges,
+  trimFillerEdgesAll,
+  STOPWORD_ONLY_BAD_BOLDS,
+  MIN_BOLD_RUN_CHARS,
 };
