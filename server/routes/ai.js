@@ -11,7 +11,7 @@ const requireUser = require('../middleware/requireUser');
 const enforceLimit = require('../middleware/enforceLimit');
 const CUT_DAILY_LIMIT = Number(process.env.FREE_CUTCARD_DAILY || 5);
 
-const { complete, completeStream, parseJSON, smartTruncate, getTokenStats, MODEL_CHAIN } = require('../services/llm');
+const { complete, completeStream, completeJSON: llmCompleteJSON, parseJSON, smartTruncate, getTokenStats, MODEL_CHAIN } = require('../services/llm');
 const { SYSTEM_PROMPT, buildSystemPrompt, buildCutPrompt, buildEditPrompt, LENGTH_PRESETS, DENSITY_PRESETS } = require('../prompts/cardCutter');
 const { getCalibration, buildCalibrationSnippet } = require('../services/cutterCalibration');
 const { cutCardV2 } = require('../services/cutCardV2');
@@ -864,6 +864,124 @@ router.get('/cutter-calibration', (_req, res) => {
   const cal = getCalibration();
   if (!cal) return res.status(404).json({ error: 'no_calibration_yet' });
   res.json(cal);
+});
+
+// In-memory cache for tag suggestions: key = sha256 of body+title, value
+// = { tags, expiresAt }. 1-hour TTL. Cheap memo so reloading the cut UI
+// doesn't re-charge per click.
+const SUGGEST_CACHE = new Map();
+const SUGGEST_TTL_MS = 60 * 60 * 1000;
+const SUGGEST_MAX_ENTRIES = 200;
+
+function suggestCacheKey({ bodyText, title }) {
+  const h = require('crypto').createHash('sha256');
+  h.update(String(bodyText || '').slice(0, 12000));
+  h.update('|');
+  h.update(String(title || ''));
+  return h.digest('hex');
+}
+
+function suggestCacheGet(k) {
+  const e = SUGGEST_CACHE.get(k);
+  if (!e) return null;
+  if (e.expiresAt < Date.now()) { SUGGEST_CACHE.delete(k); return null; }
+  return e.tags;
+}
+
+function suggestCacheSet(k, tags) {
+  if (SUGGEST_CACHE.size >= SUGGEST_MAX_ENTRIES) {
+    const oldest = SUGGEST_CACHE.keys().next().value;
+    if (oldest) SUGGEST_CACHE.delete(oldest);
+  }
+  SUGGEST_CACHE.set(k, { tags, expiresAt: Date.now() + SUGGEST_TTL_MS });
+}
+
+const {
+  buildTagSuggesterSystemPrompt,
+  buildTagSuggesterUserPrompt,
+} = require('../prompts/tagSuggester');
+
+// POST /api/ai/suggest-tags — returns 3 candidate tags for a source.
+//
+// Body shape (any one of):
+//   { url: string, argument?: string }   — scrape URL via existing pipeline
+//   { fileToken: string }                — use cached uploaded file
+//   { bodyText: string, title?: string } — direct body text
+//
+// Response: { tags: [string, string, string], cached: boolean }
+router.post('/suggest-tags', requireUser, async (req, res) => {
+  try {
+    const { url = '', fileToken = '', bodyText = '', title = '' } = req.body || {};
+
+    // Resolve body text from one of the three input modes.
+    let resolvedBody = '';
+    let resolvedTitle = title;
+    let resolvedMeta = {};
+
+    if (bodyText && bodyText.length >= 200) {
+      resolvedBody = bodyText;
+    } else if (fileToken) {
+      const cached = fileCache.get(fileToken);
+      if (!cached) return res.status(400).json({ error: 'file_token_expired' });
+      resolvedBody = cached.bodyText;
+      resolvedTitle = resolvedTitle || cached.title || '';
+    } else if (url) {
+      try {
+        const result = await findBestResearchSource({ query: '', url, onPhase: () => {} });
+        resolvedBody = result?.article?.bodyText || '';
+        resolvedTitle = resolvedTitle || result?.article?.title || '';
+        resolvedMeta = {
+          author: result?.article?.author || '',
+          date:   result?.article?.date   || '',
+          source: result?.article?.source || '',
+        };
+      } catch (err) {
+        return res.status(400).json({ error: `Could not fetch source: ${err.message}` });
+      }
+    } else {
+      return res.status(400).json({ error: 'url, fileToken, or bodyText required' });
+    }
+
+    if (!resolvedBody || resolvedBody.length < 200) {
+      return res.status(400).json({ error: 'source body too short for tag suggestion' });
+    }
+
+    // Cache hit?
+    const cacheKey = suggestCacheKey({ bodyText: resolvedBody, title: resolvedTitle });
+    const cached = suggestCacheGet(cacheKey);
+    if (cached) return res.json({ tags: cached, cached: true });
+
+    // LLM call.
+    const result = await llmCompleteJSON({
+      messages: [
+        { role: 'system', content: buildTagSuggesterSystemPrompt() },
+        { role: 'user',   content: buildTagSuggesterUserPrompt({
+            bodyText: resolvedBody,
+            meta: { ...resolvedMeta, title: resolvedTitle },
+          }) },
+      ],
+      schema: null,
+      temperature: 0.4,   // a bit of variety across the 3 angles
+      maxTokens: 500,
+      forceModel: process.env.TAG_SUGGEST_MODEL || 'claude-haiku-4-5',
+      fallbackModel: null,
+      cacheSystem: true,
+    });
+
+    const tags = Array.isArray(result?.json?.tags) ? result.json.tags : [];
+    const clean = tags
+      .map(t => String(t || '').trim())
+      .filter(t => t.length >= 5 && t.length <= 200)
+      .slice(0, 3);
+
+    if (!clean.length) return res.status(502).json({ error: 'no_tags_returned' });
+
+    suggestCacheSet(cacheKey, clean);
+    res.json({ tags: clean, cached: false });
+  } catch (err) {
+    console.warn('[suggest-tags] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.get('/tokens', (req, res) => res.json(getTokenStats()));
