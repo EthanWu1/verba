@@ -54,6 +54,55 @@ const HEADERS = {
   'Accept-Language': 'en-US,en;q=0.9',
 };
 
+// Anti-bot / captcha page detection. Cloudflare and similar services serve
+// challenge pages that look like normal HTML but contain only verification
+// content. Without this check, the scraper extracts the placeholder text
+// ("Just a moment...", "Performing security verification") and feeds it to
+// the cutter, producing a useless card. Detect and throw early.
+
+const BLOCK_TITLE_PATTERNS = [
+  /^\s*just a moment/i,                    // Cloudflare classic
+  /^\s*attention required/i,               // Cloudflare WAF
+  /^\s*access denied/i,
+  /please verify you are (a |)human/i,
+  /pardon our interruption/i,              // PerimeterX
+  /^\s*are you a robot/i,
+  /^\s*security check/i,
+  /human verification/i,
+  /verifying you are human/i,
+  /one moment, please/i,                   // Akamai
+  /access to this page has been denied/i,  // PerimeterX
+];
+
+const BLOCK_HTML_PATTERNS = [
+  /cdn-cgi\/challenge-platform/i,          // Cloudflare Turnstile/JS challenge
+  /cf-browser-verification/i,
+  /__cf_chl_rt_tk/i,
+  /_cf_chl_opt/i,
+  /performing security verification/i,     // exact text from user's failure
+  /checking your browser before accessing/i,
+  /ddos protection by cloudflare/i,
+  /please stand by, while we are checking/i,
+  /enable javascript and cookies to continue/i,
+  /sorry, we just need to make sure you[''']re not a robot/i,
+  /www\.google\.com\/recaptcha\/api\.js/i, // standalone reCAPTCHA challenge
+  /<title>\s*just a moment/i,
+];
+
+function isBotBlockedPage({ html = '', title = '', bodyText = '' }) {
+  const t = String(title).trim();
+  for (const re of BLOCK_TITLE_PATTERNS) if (re.test(t)) return true;
+  const hay = String(html);
+  for (const re of BLOCK_HTML_PATTERNS) if (re.test(hay)) return true;
+  // Soft signal: short body that contains captcha-flavour words.
+  const body = String(bodyText || '').toLowerCase();
+  if (body.length < 800 &&
+      /(verify|verification|robot|captcha|cloudflare|just a moment|security check)/.test(body)) {
+    return true;
+  }
+  return false;
+}
+
 async function scrapeUrl(url) {
   if (url.toLowerCase().endsWith('.pdf') || url.includes('/pdf/')) {
     return scrapePdf(url);
@@ -110,6 +159,17 @@ async function scrapeUrl(url) {
 
   const paragraphs = extractStructuredBody($, bodyEl || $('body'));
   let bodyText = paragraphs.map(p => p.text).join('\n\n');
+
+  // Detect anti-bot challenge pages (Cloudflare, PerimeterX, reCAPTCHA, etc.)
+  // BEFORE returning. Without this, the cutter ingests the captcha text
+  // ("Just a moment...", "Performing security verification") and produces a
+  // useless card. Throw a user-facing error so the route surfaces it cleanly.
+  if (isBotBlockedPage({ html, title, bodyText })) {
+    throw new Error(
+      'Source blocked by anti-bot protection (Cloudflare/CAPTCHA). ' +
+      'The article cannot be scraped automatically. Paste the article text directly.'
+    );
+  }
 
   if (bodyText.length < 200) {
     bodyText = '[SCRAPE LIMITED] This site may be paywalled. Paste the article text directly.';
@@ -324,4 +384,4 @@ function extractSource($, url) {
   }
 }
 
-module.exports = { scrapeUrl };
+module.exports = { scrapeUrl, isBotBlockedPage };
