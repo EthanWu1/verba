@@ -522,3 +522,12 @@ test('isBotBlockedPage: short body without captcha keywords is NOT blocked', () 
   const bodyText = 'Brief article about climate change.';
   assert.equal(isBotBlockedPage({ title: 'Climate', html: '', bodyText }), false);
 });
+
+test('isBotBlockedPage: detects "verifying you are human" body text', () => {
+  const bodyText = 'tandfonline.com\n\nVerifying you are human. This may take a few seconds.';
+  assert.equal(isBotBlockedPage({ title: '', html: '', bodyText }), true);
+});
+
+test('isBotBlockedPage: detects "Pardon Our Interruption" PerimeterX', () => {
+  assert.equal(isBotBlockedPage({ title: 'Pardon Our Interruption', html: '', bodyText: '' }), true);
+});
