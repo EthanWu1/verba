@@ -77,6 +77,13 @@ function cacheSet(key, payload) {
 
 function clearCache() { CACHE.clear(); }
 
+// Normalize em dashes in tag/title text. Verbatim convention is `---` (three
+// hyphens) instead of the Unicode em dash `—` (U+2014). Safety-net post-
+// processor in case the model emits the Unicode form despite prompt rules.
+function normalizeTagDashes(text) {
+  return String(text || '').replace(/[—–]/g, '---');
+}
+
 // Reduce a multi-word author prefix to LastName 'YY.
 //   "Ian Bowers '23"          → "Bowers '23"
 //   "James M. Acton '24"      → "Acton '24"
@@ -386,7 +393,7 @@ Compose the argument FIRST. Then mark only the verbatim source words that delive
   const finalOverlap = finalScore.coverage;
 
   const card = {
-    tag: rebuilt.tag,
+    tag: normalizeTagDashes(rebuilt.tag),
     cite: finalCite,
     shortCite,
     body_markdown: rebuilt.body_markdown,

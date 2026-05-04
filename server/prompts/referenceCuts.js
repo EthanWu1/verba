@@ -27,7 +27,7 @@ const REFERENCE_CUTS = [
   // ── Policy: news article, North Korea threat ────────────────────────
   {
     type: 'policy',
-    tag: 'Diplomacy fails. Threats not abating, ignoring backfires.',
+    tag: 'Diplomacy fails to stabilize Northeast Asia, ignoring North Korean threats backfires.',
     source:
       "There's no evidence that threats from North Korea have abated. Pyongyang " +
       "rolled out a hypersonic missile system in August and Defense Minister NO " +
@@ -43,7 +43,7 @@ const REFERENCE_CUTS = [
   // ── Policy: academic, nuclear strategy ──────────────────────────────
   {
     type: 'policy',
-    tag: 'US nuclear primacy is dangerous illusion. Limited nuclear war escalates.',
+    tag: 'US nuclear primacy is a dangerous illusion that escalates limited war into extinction.',
     source:
       "Five elements of Blackett's critique stand out: First, a counterforce " +
       "first-strike against other major nuclear nations is strategically, " +
@@ -62,7 +62,7 @@ const REFERENCE_CUTS = [
   // ── Policy: forward deployment, regional security ───────────────────
   {
     type: 'policy',
-    tag: 'Forward deployment destabilizes the region. Goes nuclear, draws in Russia and China.',
+    tag: 'Forward deployment destabilizes the region---goes nuclear and draws in Russia and China.',
     source:
       "Moreover, deploying US nuclear weapons a couple hundred miles from one " +
       "of the most militarized and tense region of the world – closer to a " +
@@ -79,7 +79,7 @@ const REFERENCE_CUTS = [
   // ── K: Wilderson, debate / preconscious ─────────────────────────────
   {
     type: 'k',
-    tag: 'Debates must center the preconscious. Grammar represses pain.',
+    tag: 'Debates must center the preconscious: grammar of abstraction represses pain.',
     source:
       "In semiotics, what you have is processes of signification. There is the " +
       "preconscious interest, and then unconscious identification, then the " +
