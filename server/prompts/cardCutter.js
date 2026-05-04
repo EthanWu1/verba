@@ -311,6 +311,49 @@ These are TRANSITIONAL FILLER. They add nothing to the argument. Skip them — t
 If a sentence STARTS with one of these (e.g. "Further, there is evidence..."), your underline should start AFTER the filler word.
 
 ═══════════════════════════════════════════════
+TAG-ANCHORED HIGHLIGHTING — repeat the tag's key concepts
+═══════════════════════════════════════════════
+
+The TAG names 3–6 KEY CONCEPTS. Extract them. For each KEY CONCEPT, search source paragraphs for that word/phrase (or close synonym) and highlight EVERY occurrence. This anchors the chain to the tag.
+
+Tag types — adapt the cut style:
+- POLICY tag (countries, numbers, "fails to", "destabilizes"): tight impact chains, dense bolding of landing words, capture numbers/actors.
+- KRITIK/THEORY tag (theoretical terms like "fantasy", "discourse", "preconscious", "grammar of"; philosopher names like Wilderson, Meiches, Foucault): highlight CONCEPT FLAGS every time they appear; capture claim-level statements ("X is constituted by Y", "X produces Z", "X is connected to W").
+- HYBRID tag: blend both.
+
+Extra K-card warrant verbs: "is constituted by" / "produces" / "engenders" / "renders thinkable" / "represses" / "naturalizes" / "donates" / "intensifies" / "operates as" / "structures".
+
+Example, tag = "Forward deployment destabilizes the region — goes nuclear and draws in Russia and China":
+  Key concepts: deployment, destabilizes, region, nuclear, Russia, China
+  Highlight every "deploying", "deployment", "destabilizes", "region", "nuclear weapons", "Russia", "China", "Beijing", "increasing the nuclear threat".
+
+Example, tag = "Debates must center the preconscious. Debate's grammar of abstraction moves away from pain":
+  Key concepts: debates, preconscious, grammar, abstraction, pain
+  Highlight every "debate(s)", "preconscious", "grammar", "abstraction", "pain", "sorrow/heartbreak/joy" (synonyms of pain).
+
+If a key concept appears 5 times in source, highlight all 5. Repetition anchors the argument.
+
+WORKED K-CARD EXAMPLE (Wilderson on debate / preconscious):
+  Tag: "Debates must center the preconscious. Debate's grammar of abstraction moves away from pain"
+  Key concepts: debates, preconscious, grammar, abstraction, pain
+
+  Source excerpt: "...secondary processes of signification and that is 99 percent of the way you all win or lose debates ... the structure of grammar, which represses the nonsensical utterances ... that is the part of the mind that is least susceptible or least alive, to laughter, sorrow, tears, heartbreak, joy ... in debate, you're really moving 99 percent of the time through secondary processes of signification..."
+
+  GOOD K-cut h: ["preconscious", "secondary processes", "of signification", "99 percent", "win or lose debates", "structure of grammar", "represses", "nonsensical utterances", "least alive", "sorrow", "tears", "heartbreak", "in debate", "moving 99 percent", "secondary processes"]
+  GOOD K-cut b: ["preconscious", "99 percent", "represses", "sorrow", "heartbreak", "secondary processes"]
+
+  Notice: "preconscious", "99 percent", and "secondary processes" each appear MULTIPLE TIMES in h — that's correct K-card style. The chain is theoretical claims, not impact predictions.
+
+WORKED POLICY-CARD EXAMPLE (Forward deployment destabilizes):
+  Tag: "Forward deployment destabilizes — goes nuclear and draws in Russia and China"
+  Key concepts: deployment, destabilizes, nuclear, Russia, China
+
+  GOOD policy-cut h: ["deploying US", "nuclear weapons", "most militarized", "tense region", "nuclear adversary", "unique dangers", "198 kilometers", "North Korean border", "even closer", "80 kilometers", "proximity", "increase the risk", "overreaction", "escalation", "nuclear weapons would be used", "China and Russia", "increasing the nuclear threat"]
+  GOOD policy-cut b: ["unique dangers", "198 kilometers", "North Korean border", "even closer", "80 kilometers", "overreaction", "escalation", "would be used", "China and Russia", "nuclear threat"]
+
+  Notice: SPECIFIC NUMBERS (198 km, 80 km) and NAMED ACTORS (China, Russia, North Korean border) are bolded. The chain reads like a debate spike: "deploying nukes ... most militarized ... 198 km from border ... overreaction ... escalation ... nuclear weapons would be used ... draws in China and Russia."
+
+═══════════════════════════════════════════════
 QUOTED MATERIAL ALSO carries warrants
 ═══════════════════════════════════════════════
 
@@ -402,12 +445,37 @@ EXTRACTION CHECKLIST — before submitting, scan your candidate paragraphs and e
 If the source mentions "198 kilometers" and you didn't highlight it, you missed a warrant beat.
 
 ═══════════════════════════════════════════════
-ARGUMENT-CHAIN ALIGNMENT (chain coverage)
+ARGUMENT-CHAIN ALIGNMENT (chain MUST match the TAG)
 ═══════════════════════════════════════════════
 
-Your "argument" field and your "h" array must MATCH word-for-word as much as possible. Every CONTENT WORD in your composed argument should appear (verbatim) in your highlights — and vice versa.
+The TAG declares the argument. Your COMPOSED ARGUMENT (the "argument" field) restates it as a 30-50 word speech. Your HIGHLIGHTS (the "h" array) deliver that argument verbatim from source.
 
-Test: lay your argument and the joined h-array side by side. Do they read like the same speech? If 30%+ of argument content words are missing from h, your highlights aren't capturing the argument — fix the highlights (or simplify the argument).
+Step-by-step:
+  1. Read the TAG. Identify its KEY CONCEPTS (the warrant words) and its IMPACT.
+  2. For each KEY CONCEPT in the tag, find the source sentence(s) that prove it.
+  3. Highlight the warrant words IN those sentences.
+  4. Verify: every key concept in the tag has at least 1–2 highlights that prove it.
+
+EXAMPLE (K card, tag="Debates must center the preconscious. Debate's grammar of abstraction moves away from pain"):
+  Tag key concepts: preconscious, debate(s), grammar of abstraction, moves away from pain
+  Required highlights:
+    - "preconscious" (must appear, multiple times)
+    - "99 percent of debates" (concrete claim about debate)
+    - "structure of grammar represses" (proves "grammar moves away")
+    - "sorrow / heartbreak / pain" (the pain)
+    - "unconscious wants fantasies" (the move-away-from)
+
+EXAMPLE (policy card, tag="Forward deployment destabilizes the region — goes nuclear and draws in Russia and China"):
+  Tag key concepts: forward deployment, destabilizes, region, nuclear, Russia, China
+  Required highlights:
+    - "deploying US nuclear weapons"
+    - "most militarized region"
+    - "198 kilometers from North Korean border"
+    - "increase the risk of overreaction and escalation"
+    - "nuclear weapons would be used"
+    - "China and Russia" / "increasing the nuclear threat"
+
+VALIDATION: read your h-array in order. Does it deliver the tag's argument? Specifically — for EACH KEY CONCEPT in the tag, point to ≥1 highlight that proves it. If you can't, the chain is incomplete — add more highlights from warrant-bearing sentences.
 
 ═══════════════════════════════════════════════
 RUTHLESS EDITORIAL DISCIPLINE
