@@ -41,14 +41,18 @@
 // the model emits something absurd. The PROMPT drives correct density via
 // argument-driven reasoning; the server's only hard rule is verbatim
 // integrity. Word-boundary snap + punctuation trim = cosmetic safety.
-const HIGHLIGHT_CAPS = { minimal: 0.30, standard: 0.45, heavy: 0.60 };
-const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.80 };
-const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.35 };
+// Iteration-2 calibration: lowered heavy from 0.60 → 0.30 to match measured
+// gold density. Caps are SAFETY NETS — only fire when model overshoots —
+// but with 0.60 they never fired. Real gold tops out around 22% highlight.
+const HIGHLIGHT_CAPS = { minimal: 0.18, standard: 0.25, heavy: 0.30 };
+const UNDERLINE_CAPS = { minimal: 0.45, standard: 0.55, heavy: 0.65 };
+const BOLD_CAPS      = { minimal: 0.10, standard: 0.18, heavy: 0.25 };
 
-// Maximum length of a single highlight RUN. 50 chars allows ~8-word
-// phrase-level claims like "locks in catastrophic warming above 3
-// degrees" without trimming.
-const MAX_HIGHLIGHT_RUN_CHARS = 50;
+// Maximum length of a single highlight RUN. Iteration 2 (2026-05-03):
+// dropped from 50 → 22 to match measured gold patterns (median 1.67 words
+// per highlight ≈ ~10 chars). Long model spans get split into multiple
+// short fragments via splitOversizeHighlight rather than naive trim.
+const MAX_HIGHLIGHT_RUN_CHARS = 22;
 // Bolds should be SHORT. Real cards bold single words usually, 2-3 max,
 // for spoken emphasis. 14 chars covers "use them or" / "upper hand" /
 // "extremely diff…" — anything longer is clause-marking, not emphasis.
@@ -114,6 +118,55 @@ function trimMaxRun(spans, maxChars = MAX_HIGHLIGHT_RUN_CHARS, text = '') {
       return snapped || null;
     })
     .filter(s => s && s[1] > s[0]);
+}
+
+// Split a long highlight range into multiple short STITCHED FRAGMENTS at
+// word boundaries. The hand-cut style is many 1–2 word highlights stitched
+// via underline; long model spans should be diced rather than naively
+// truncated. Algorithm: tokenize the slice into words, emit 2-word groups
+// as separate highlight ranges. Punctuation/whitespace between words stays
+// PLAIN (acts as the stitching gap). Returns an array of [from,to) sub-ranges.
+function splitOversizeHighlight(span, text, maxChars = MAX_HIGHLIGHT_RUN_CHARS, wordsPerFragment = 2) {
+  if (!span) return [];
+  const [from, to] = span;
+  const len = to - from;
+  if (len <= maxChars) return [span];
+  const slice = text.slice(from, to);
+  // Find every word's [start,end) within the slice.
+  const words = [];
+  let i = 0;
+  while (i < slice.length) {
+    while (i < slice.length && !/[a-zA-Z0-9'-]/.test(slice[i])) i++;
+    if (i >= slice.length) break;
+    const ws = i;
+    while (i < slice.length && /[a-zA-Z0-9'-]/.test(slice[i])) i++;
+    words.push([ws, i]);
+  }
+  if (words.length === 0) return [];
+  if (words.length === 1) return [[from + words[0][0], from + words[0][1]]];
+  // Group consecutive words into fragments of `wordsPerFragment` content words.
+  const fragments = [];
+  for (let g = 0; g < words.length; g += wordsPerFragment) {
+    const group = words.slice(g, g + wordsPerFragment);
+    if (!group.length) continue;
+    const a = from + group[0][0];
+    const b = from + group[group.length - 1][1];
+    fragments.push([a, b]);
+  }
+  return fragments;
+}
+
+function splitOversizeHighlights(spans, text, maxChars = MAX_HIGHLIGHT_RUN_CHARS) {
+  const out = [];
+  for (const s of spans) {
+    const frags = splitOversizeHighlight(s, text, maxChars);
+    // Drop tiny fragments (<3 chars) that are usually punctuation-split
+    // artifacts from abbreviations like "U.S." → ["U", "S"].
+    for (const f of frags) {
+      if (f[1] - f[0] >= 3) out.push(f);
+    }
+  }
+  return out;
 }
 
 // Snap a span to nearest word boundaries. The model emits char offsets that
@@ -291,6 +344,38 @@ function isBadBoldSpan(span, text) {
 
 function dropBadBolds(spans, text) {
   return spans.filter(s => !isBadBoldSpan(s, text));
+}
+
+// Split each bold span at every highlight boundary so the resulting bolds
+// are either FULLY inside a highlight or FULLY outside any highlight. This
+// fixes the markdown interleaving bug where `**==text**` (bold close before
+// highlight close) renders as garbage like `**==text==** more text==`.
+//
+// Strategy: for each bold [a, b], collect all highlight boundaries within
+// that range and split at each one. Each resulting sub-bold is then either
+// entirely inside a highlight (renders as `**==text==**`) or entirely
+// outside (renders as `**text**`). No partial overlaps survive.
+function splitBoldsAtHighlightBoundaries(bolds, highlights) {
+  if (!bolds.length || !highlights.length) return bolds;
+  const sortedHi = [...highlights].sort((a, b) => a[0] - b[0]);
+  const out = [];
+  for (const [a, b] of bolds) {
+    // Collect all highlight starts and ends that fall STRICTLY inside (a, b).
+    const cuts = new Set();
+    for (const [h0, h1] of sortedHi) {
+      if (h0 > a && h0 < b) cuts.add(h0);
+      if (h1 > a && h1 < b) cuts.add(h1);
+    }
+    if (!cuts.size) { out.push([a, b]); continue; }
+    const sortedCuts = [...cuts].sort((x, y) => x - y);
+    let cur = a;
+    for (const c of sortedCuts) {
+      if (c > cur) out.push([cur, c]);
+      cur = c;
+    }
+    if (cur < b) out.push([cur, b]);
+  }
+  return out;
 }
 
 // Trim filler prefixes/suffixes from a HIGHLIGHT span. Catches highlights
@@ -484,6 +569,27 @@ function applyMarks({ paragraphText, underlines, highlights, bolds, loudestSpan 
     closes[h[1]].push({ kind: 'h',   close: '==' });
   }
 
+  // Collapse touching close+open pairs of the SAME kind at the same boundary.
+  // If two h spans end+start at pos i, suppressing both prevents `====` (which
+  // markdown renders as empty highlight). Iterate until no more pairs found —
+  // multiple touching spans at the same position can have multiple pairs to
+  // collapse.
+  for (let i = 0; i <= N; i++) {
+    for (const k of ['u', 'h', 'b', 'loud']) {
+      let collapsed = true;
+      while (collapsed) {
+        collapsed = false;
+        const closeIdx = closes[i].findIndex(c => c.kind === k);
+        const openIdx  = opens[i].findIndex(o => o.kind === k);
+        if (closeIdx !== -1 && openIdx !== -1) {
+          closes[i].splice(closeIdx, 1);
+          opens[i].splice(openIdx, 1);
+          collapsed = true;
+        }
+      }
+    }
+  }
+
   let out = '';
   const closeOrder = ['h', 'b', 'loud', 'u'];
   const openOrder  = ['u', 'loud', 'b', 'h'];
@@ -583,44 +689,51 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // silently so the chain quality check doesn't retry-on-Sonnet for
     // something we can fix structurally.
     // Pipeline: clamp → snap → trim-filler-edges → fix-danglers
-    //   → drop-filler-only → merge.
+    //   → drop-filler-only → SPLIT-OVERSIZE → merge.
+    // splitOversize: model often emits 50-100 char block ranges; we dice
+    // them into 2-word stitched fragments to match the hand-cut style.
     // trimFillerEdges runs BEFORE fixDanglingEnds: a span like
     // "As a result, conventional counterforce is impossible to" first
     // gets the "As a result," prefix trimmed → "conventional counterforce
     // is impossible to" → then dangler fix extends "to" → "to operationalize".
     let highlights = mergeSpans(
-      dropFillerOnlySpans(
-        fixDanglingEnds(
-          trimFillerEdgesAll(
-            snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+      splitOversizeHighlights(
+        dropFillerOnlySpans(
+          fixDanglingEnds(
+            trimFillerEdgesAll(
+              snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+              paragraphText
+            ),
             paragraphText
           ),
           paragraphText
         ),
-        paragraphText
+        paragraphText,
+        MAX_HIGHLIGHT_RUN_CHARS
       )
     );
-    // Bolds pipeline: bad-bold drop runs FIRST (right after snap) — otherwise
-    // fixDanglingEnds would extend a stopword-only bold like [0,3]="The"
-    // forward to "The asymmetric" (since "the" is a dangling tail word),
-    // creating a 14-char bold that is no longer "stopword only" but is
-    // exactly the cluster-bolding we wanted to prevent.
-    // After merge, a final dropBadBolds pass catches cases where merging
-    // adjacent valid spans yields a bad result.
+    // Bolds pipeline: same fragmentation logic as highlights — model
+    // emits long block bolds; we dice them into 1-word fragments. Then
+    // bad-bold drop catches single-char/stopword artifacts. The bold-cap
+    // trim later keeps only the highest-priority bolds.
     let bolds = dropBadBolds(
       mergeSpans(
-        dropFillerOnlySpans(
-          fixDanglingEnds(
-            dropBadBolds(
-              trimFillerEdgesAll(
-                snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+        splitOversizeHighlights(
+          dropFillerOnlySpans(
+            fixDanglingEnds(
+              dropBadBolds(
+                trimFillerEdgesAll(
+                  snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+                  paragraphText
+                ),
                 paragraphText
               ),
               paragraphText
             ),
             paragraphText
           ),
-          paragraphText
+          paragraphText,
+          MAX_BOLD_RUN_CHARS
         )
       ),
       paragraphText
@@ -690,6 +803,26 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
 
     highlights = filterContainedIn(highlights, underlines);
     bolds      = filterContainedIn(bolds, underlines);
+    // Split bolds at highlight boundaries so each bold is fully-inside or
+    // fully-outside a highlight. Prevents interleaved `**==x**` markup bugs.
+    bolds      = splitBoldsAtHighlightBoundaries(bolds, highlights);
+    // After splitting, drop any too-short or stopword fragments that emerged.
+    bolds      = dropBadBolds(bolds, paragraphText);
+    // Re-merge any bolds that overlap or touch — touching bolds at the same
+    // boundary render as `****` which markdown sees as bold-italic. Merge first,
+    // then dedupe identical ranges.
+    bolds      = mergeSpans(bolds);
+    // Final dedupe by [a,b] tuple in case duplicates slipped through from
+    // multiple processing passes.
+    {
+      const seen = new Set();
+      bolds = bolds.filter(s => {
+        const k = `${s[0]}-${s[1]}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    }
 
     let loudestSpan = null;
     if (loudestPickIdx === pick.p && loudest) {

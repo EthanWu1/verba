@@ -1,17 +1,18 @@
 'use strict';
 
-// Density presets calibrated to real hand-cut LD cards. The user's gold
-// standard: ~22% chars highlighted (cohesive 2–4 word warrant phrases),
-// ~50–60% chars underlined (full warrant clauses). Bolds: strategic single
-// words on landing impact words, no hard count.
+// Density presets calibrated to real hand-cut LD cards. Iteration-1 calibration
+// (2026-05-03): empirical measurement on 5 hand-cut gold cards shows debaters
+// use RAPID STITCHED FRAGMENTS — many 1-word highlights per paragraph, not
+// few "cohesive phrases". Median 1.67 words per highlight, ~10–15 highlights
+// per typical body paragraph. The earlier "2-4 word cohesive phrases" framing
+// produced 6+ word machine highlights, exactly the wrong direction.
 //
-// Earlier presets pushed for 28–50%+ highlight which produced fragmented
-// "cyan confetti" — Haiku over-highlighted, chain validation always failed
-// on bloat, every cut paid for a Sonnet retry.
+// Underline density also lower than expected: gold averages ~25–35% underline
+// (only the warrant clauses, leaving setup/connector sentences plain).
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '25–40%', highlightRule: '1–4 highlights per paragraph, mostly 1–2 words (~5–10% of chars highlighted)',                                                unhighlightedRule: '≥90%' },
-  standard: { underlineRange: '40–55%', highlightRule: '3–6 highlights per paragraph, mostly 2–3 words (~10–16% of chars highlighted)',                                                unhighlightedRule: '≥84%' },
-  heavy:    { underlineRange: '50–65%', highlightRule: '5–9 highlights per paragraph, mostly 2–4 words — cohesive warrant phrases that read as a coherent speech (~18–26% of chars highlighted)', unhighlightedRule: '≥74%' },
+  minimal:  { underlineRange: '20–35%', highlightRule: '4–8 highlights per paragraph, mostly 1 word (~5–10% of chars highlighted)',                                                unhighlightedRule: '≥90%' },
+  standard: { underlineRange: '25–45%', highlightRule: '6–12 highlights per paragraph, mostly 1–2 words (~10–15% of chars highlighted)',                                                unhighlightedRule: '≥85%' },
+  heavy:    { underlineRange: '30–55%', highlightRule: '10–18 highlights per paragraph, mostly 1–2 words, occasionally 3 — RAPID STITCHED FRAGMENTS that read aloud as a stitched speech (~15–22% of chars highlighted)', unhighlightedRule: '≥78%' },
 };
 
 // Paragraph counts vary wildly by card type. Long preset covers framework
@@ -153,18 +154,22 @@ function buildEditPrompt({ instruction = '', argument = '', card = {}, sourceTex
 //   - Multiple worked examples, including partial-word and stopword-glue.
 // =====================================================================
 
-const HIGHLIGHT_HINT = { minimal: 0.08, standard: 0.13, heavy: 0.22 };
-const UNDERLINE_HINT = { minimal: 0.32, standard: 0.48, heavy: 0.58 };
+const HIGHLIGHT_HINT = { minimal: 0.07, standard: 0.12, heavy: 0.18 };
+const UNDERLINE_HINT = { minimal: 0.28, standard: 0.40, heavy: 0.45 };
 
-// Reference data from real hand-cut LD cards. PATTERNS, not quotas.
-const HARDCODED_CALIBRATION = `REFERENCE — patterns from real hand-cut LD cards.
+// Reference data from real hand-cut LD cards. PATTERNS measured on 5 gold cards.
+const HARDCODED_CALIBRATION = `REFERENCE — measured patterns from 5 real hand-cut LD cards.
 
-  - Most words stay PLAIN (context the debater skips). Only warrant clauses are underlined.
-  - Highlights are COHESIVE warrant phrases, mostly 2–4 words ("asymmetric arms race", "impossible to win", "use them or lose them"). They read together as a coherent speech in document order.
-  - Highlights are NOT confetti: avoid 1-word fragments like ==has== ==found==, single-letter highlights, or highlighting random connectors that don't carry the warrant.
-  - Bolds are LANDING WORDS — the moments the debater leans in. Usually 1 word, occasionally 2–3 for a tight phrase. NEVER bold a whole clause. NEVER bold a single letter, a stopword, or a filler word. Use bolds where they earn their place; if a paragraph has no obvious landing word, use 0 bolds in it.
-  - Filler words at sentence start (First, Further, Unfortunately, In addition, However, Moreover, Accordingly) stay PLAIN. The underline begins AFTER them.
-  - Some paragraphs may have NO highlights/bolds if they're pure setup/transition.`;
+  - Hand-cut style is RAPID STITCHED FRAGMENTS, NOT cohesive phrases.
+  - Median highlight = 1.67 WORDS. ~70% of highlights are 1 word, ~20% are 2 words, ~10% are 3+ words.
+  - A typical body paragraph has 10–15 highlights, NOT 4–6. Debaters chop sentences into 1-word fragments and stitch via underline.
+  - Example pattern: "Trump tried in his first term to negotiate a deal with Kim that would swap" → highlights: ==Trump==, ==tried==, ==deal==, ==with Kim==, ==swap==. Five short fragments, NOT one long phrase.
+  - Underlines wrap the warrant clauses (~25–45% of paragraph chars). Setup/transition sentences stay PLAIN.
+  - Bolds (~2–4 per paragraph) are LANDING WORDS for spoken emphasis. Usually 1 word, occasionally 2–3 for tight phrases ("upper hand", "use them or lose them").
+  - Filler words at sentence start (First, Further, Unfortunately, In addition, However, Moreover, Accordingly) stay PLAIN. Underline starts AFTER them.
+  - Some paragraphs may have NO highlights/bolds if they're pure setup/transition.
+
+  COUNTING NOTE: in a 100-word paragraph at heavy density, you should be emitting 10–15 separate ==short== ==highlights==, not 3–4 long ones. If you find yourself wrapping 5+ source words inside a single ==…==, you are doing it wrong — split into 2-3 separate highlights.`;
 
 function buildSelectionSystemPrompt({ density = 'heavy', length = 'long', calibration = '' } = {}) {
   const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
@@ -208,16 +213,16 @@ For each beat in your speech, locate the verbatim words in the candidate paragra
 STEP 4 — UNDERLINE THE READ.
 For each highlighted region, underline the surrounding clause that makes it grammatically readable (so the debater can underline-read it for context if they have time). Underlines wrap highlights — they don't ENGULF the entire paragraph. If a sentence is pure setup or filler, leave it un-underlined. The server will collapse 100% underlines anyway, so be selective from the start.
 
-STEP 5 — BOLD THE LOUDEST (impact-driven, single words preferred).
-Bolds are for SPOKEN EMPHASIS — the moments the debater leans in. They MUST be impactful. Hard rules:
-  - 1 word usually. 2-3 words ONLY for tight phrases ("upper hand", "use them or lose them", "impossible to win", "extremely difficult").
-  - NEVER bold a single letter (no bolding "e" or "s" of a word).
-  - NEVER bold a stopword by itself ("the", "and", "to", "of", "is").
-  - NEVER bold a filler word ("however", "further", "unfortunately", "in addition").
-  - NEVER bold 4+ word spans — that's clause-marking, not emphasis.
-  - Bold magnitudes (extinction, war, collapse), named actors (Russia, U.S., Iran), operative verbs (collapses, undermines, eliminates), numbers (3 degrees, 2040), and tight warrant phrases (impossible to win, use them or lose them).
-  - No hard count, but be selective — if a paragraph has no obvious landing words, 0 bolds is correct. Hand-cut paragraphs typically have 3–7 bolds; some have 1–2; almost none have >10.
-  - The server caps bold-run length at 14 chars and trims overflow.
+STEP 5 — BOLD THE LANDING WORDS (emit MANY short bold ranges, not few long ones).
+Bolds are for SPOKEN EMPHASIS. Hand-cut LD cards have 5–10 bolds per typical body paragraph — debaters bold every content word that should LAND.
+
+  - Emit ONE bold range per landing word. Not one big bold range over a clause.
+  - Each bold range = 1 word (occasionally 2–3 for tight phrases like "upper hand", "use them or lose them", "impossible to win", "extremely difficult").
+  - NEVER bold a single letter, a stopword alone, a filler word, or a 4+ word span.
+  - Bold magnitudes (extinction, war, collapse), named actors (Russia, U.S., Iran), operative verbs (collapses, undermines, eliminates), numbers (3 degrees, 2040), and tight warrant phrases.
+  - Each bold range MUST overlap a highlight range (bolds live INSIDE highlights — they're emphasized highlights).
+  - The server caps bold-run length at 14 chars and SPLITS oversize ranges into 1-word fragments.
+  - Target: 4–8 bold RANGES per body paragraph at heavy density.
 
 STEP 6 — VALIDATE.
 Read your highlights aloud, in document order, in your head. Does the result sound like the speech you composed in Step 1? Does it actually deliver the argument? If not, REVISE. Drop highlights that don't fit. Add missing connectors. Reorder if needed.
@@ -289,23 +294,39 @@ RUTHLESS EDITORIAL DISCIPLINE
 
 Every highlighted word must EARN its place. Test: if you removed this highlight, would the argument still land? If yes, drop it.
 
-GOLD-STANDARD HAND-CUT vs BAD MACHINE OUTPUT (same paragraph):
+GOLD-STANDARD HAND-CUT — actual cuts measured from 5 real LD cards.
 
-Source: "As North Korea's deployment of the new missile launchers attests, South Korea has found itself in an asymmetric arms race that is impossible to win. No matter what conventional capability South Korea introduces, North Korean nuclear weapons will always have the upper hand. This fundamental asymmetry could severely impact crisis stability on the Korean Peninsula."
+Source paragraph: "Trump tried in his first term to negotiate a deal with Kim that would swap an easing in U.S. sanctions in exchange for Pyongyang committing to give up its nukes. Despite three meetings in 2018 and 2019 the effort failed."
 
-❌ BAD MACHINE chain (real production failure — fragmented, includes filler, dangling tails, garbage bolds on single letter "e" and on filler "no matter what" and on overlong run "short-range missiles has expanded rapidly. As a result"):
-"e ... new missile launchers attests ... has found ... No matter what conventional ... South Korea introduces, North ... nuclear weapons will always have the upper"
+❌ BAD MACHINE OUTPUT (what cutter currently produces — too few, too long):
+"<u>==Trump== tried in his first term to negotiate a deal ==with Kim that would swap an easing== in U.S. sanctions in exchange for</u> Pyongyang committing to give up its nukes."
+(Only 2 highlights. Second is 7 words — way too long. Reads like one big blob.)
 
-Why bad: highlights start mid-word ("e"), include filler ("No matter what"), include source connectors that aren't the warrant ("South Korea introduces"), end on dangler ("the upper"). Reads as confetti, not a speech.
+✅ GOLD HAND-CUT (rapid stitched fragments — many short highlights):
+"<u>==Trump tried== in his first term ==to negotiate a deal== with ==Kim== that would ==swap== an easing in U.S. ==sanctions== in exchange for ==Pyongyang== committing to ==give up its nukes==.</u> Despite ==three meetings in 2018 and 2019== the effort ==failed==."
 
-✅ GOLD hand-cut chain (cohesive warrant-bearing phrases, every word earns its place):
-"South Korea has found ... asymmetric ... arms race ... is impossible to win ... North Korean nuclear weapons ... will always ... have the upper hand ... severely impact ... crisis stability"
+Highlights: ==Trump tried==, ==to negotiate a deal==, ==Kim==, ==swap==, ==sanctions==, ==Pyongyang==, ==give up its nukes==, ==three meetings in 2018 and 2019==, ==failed==. NINE highlights. Average 2 words each. Each one earns its place by carrying actor / mechanism / magnitude / number / verb.
 
-Reads aloud as: "South Korea has found... asymmetric arms race... is impossible to win... North Korean nuclear weapons... will always have the upper hand... severely impact crisis stability." That IS the speech.
+Bolds (sparingly, on the LANDING words): **swap**, **failed**. Two bolds for this paragraph.
 
-Bolds in the gold cut: **asymmetric**, **impossible to win**, **upper hand**, **severely impact**, **crisis stability**. Each bold is a LANDING word the debater leans into. None on filler, none on connectors, none on a single letter, none over 3 words.
+Underline: wraps the warrant sentences. Setup like "Despite" stays plain.
 
-Underline: the full sentence wrapping each highlighted region — gives the debater the option to read context if time allows. The opening "As North Korea's deployment of the new missile launchers attests," is plain (it's setup, not the warrant).
+═══════════════════════════════════════════════
+SHORTER IS BETTER — anti-blob rule
+═══════════════════════════════════════════════
+
+If your highlight is 5+ source words, you are CLUSTER-HIGHLIGHTING. Split it into 2–3 separate fragments. Examples:
+
+  ❌ ==with Kim that would swap an easing==  (7 words, blob)
+  ✅ ==with Kim== ... ==swap== ... ==easing==  (3 separate highlights)
+
+  ❌ ==North Korean nuclear weapons will always have the upper hand==  (10 words, blob)
+  ✅ ==North Korean nuclear weapons== ... ==will always== ... ==have the upper hand==  (3 highlights)
+
+  ❌ ==aimed to freeze Pyongyang's nuclear weapons program==  (7 words, blob)
+  ✅ ==freeze== ... ==Pyongyang's nuclear weapons==  (2 highlights)
+
+The underline holds the sentence together. The highlights are the read-aloud BEATS within it.
 
 ═══════════════════════════════════════════════
 FAILURE MODES TO AVOID — observed in past cuts:
