@@ -127,8 +127,18 @@ jobs:
                 df -h /mnt/volume || true
                 echo "── Backfiles size before ──"
                 du -sh /mnt/volume/backfiles 2>/dev/null || echo "(no backfiles dir)"
-                echo "── Deleting /mnt/volume/backfiles ──"
-                rm -rf /mnt/volume/backfiles
+                echo "── Ownership ──"
+                ls -ld /mnt/volume /mnt/volume/backfiles 2>/dev/null || true
+                echo "── Deleting /mnt/volume/backfiles (try plain, then sudo -n) ──"
+                if rm -rf /mnt/volume/backfiles 2>/dev/null; then
+                  echo "  plain rm succeeded"
+                elif sudo -n rm -rf /mnt/volume/backfiles 2>/dev/null; then
+                  echo "  sudo -n rm succeeded"
+                else
+                  echo "ERR: cannot delete /mnt/volume/backfiles — neither plain rm nor passwordless sudo work."
+                  echo "Either chown -R the dir to the SSH user, or configure passwordless sudo for 'rm'."
+                  exit 1
+                fi
                 echo "── Disk after ──"
                 df -h /mnt/volume || true
                 ;;
