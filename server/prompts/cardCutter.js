@@ -311,6 +311,73 @@ These are TRANSITIONAL FILLER. They add nothing to the argument. Skip them — t
 If a sentence STARTS with one of these (e.g. "Further, there is evidence..."), your underline should start AFTER the filler word.
 
 ═══════════════════════════════════════════════
+QUOTED MATERIAL ALSO carries warrants
+═══════════════════════════════════════════════
+
+When the source has a QUOTE delivering a sharp claim or a POLICY DOCUMENT/JOINT STATEMENT with specific wording, the punchline INSIDE those quotes is warrant-bearing. Highlight the impact words inside, skip the attribution:
+
+  Source: "The document called out Pyongyang's 'challenges to peace and stability' and recommitted the U.S. to 'denuclearization' of the Korean Peninsula."
+  ✓ Highlight: "called out" / "challenges to peace" / "recommitted" / "denuclearization" / "Korean Peninsula"
+
+  Source: "JAKE SULLIVAN told NatSec Daily: 'we will have to see if Kim Jong-un feels that he needs to rattle the cage.'"
+  ✓ Highlight: "rattle the cage" (the punchline), skip "JAKE SULLIVAN told NatSec Daily" (attribution).
+
+═══════════════════════════════════════════════
+PRIORITIZE IMPACT MARKERS — verbs and phrases that scream "WARRANT"
+═══════════════════════════════════════════════
+
+When scanning candidates, FIRST locate sentences containing these IMPACT MARKERS — they almost always carry the warrant:
+
+  - "could backfire" / "would backfire" / "leads to" / "results in" / "causes"
+  - "would expose" / "exposes" / "puts at risk" / "increases the risk"
+  - "rolled out" / "deployed" / "tested" / "demonstrated" (escalation/capability proofs)
+  - "called out" / "warned" / "recommitted to" / "abandoned" (policy actions)
+  - "no evidence" / "no guarantee" / "cannot be contained" / "impossible to" (skepticism/limit-claims)
+  - "rattle the cage" / "lash out" / "doesn't like" (behavioral predictions)
+  - "would result" / "will result" / "shall be launched" (causal predictions)
+  - "fails to" / "failed to" / "is non-existent" (failure claims)
+  - "trigger" / "spark" / "spawn" / "drive" / "induce" (causal verbs)
+
+Sentences with these markers are WHERE THE WARRANT LIVES. Highlight aggressively in those sentences. Skip past sentences that are pure chronology ("In 2018...", "After this period...", "Trump tried in his first term...") UNLESS those chronological facts directly prove the tag.
+
+═══════════════════════════════════════════════
+TAG-PROOF RULE — every highlight must prove the tag
+═══════════════════════════════════════════════
+
+The TAG is the offensive claim the debater wins the round with. Your highlights MUST be the EVIDENCE that proves it. Not background, not chronology, not attribution.
+
+For each highlight, ask: "Does this word/phrase prove the tag?"
+  - If YES → highlight it.
+  - If it's BACKGROUND CONTEXT (when/where/who-said-what without warrant content) → leave plain.
+  - If it's CHRONOLOGY OR DESCRIPTION without warrant → leave plain.
+
+EXAMPLES of the distinction:
+
+Tag: "Diplomacy fails. North Korean threats not abating, ignoring backfires."
+
+Source sentence: "Trump tried in his first term to negotiate a deal with Kim that would swap an easing in U.S. sanctions in exchange for Pyongyang committing to give up its nukes."
+  ❌ BAD highlights (chronology/background): "Trump tried" / "first term" / "negotiate a deal" / "Kim" / "swap" / "sanctions"
+     — these describe what happened, not whether the tag is true.
+  ✓ GOOD highlights (warrant-bearing): "swap an easing in U.S. sanctions" / "Pyongyang committing to give up its nukes"
+     — proves the kind of deal being attempted (helps tag's "diplomacy fails" warrant).
+
+Source sentence: "Despite three meetings in 2018 and 2019 the effort failed."
+  ✓ HIGHLIGHT: "three meetings in 2018 and 2019" / "failed"
+     — proves diplomacy has empirically failed before.
+
+Source sentence: "Underplaying Pyongyang's military threat could backfire."
+  ✓ HIGHLIGHT: "Underplaying Pyongyang's" / "threat could backfire"
+     — directly proves "ignoring backfires" warrant in tag.
+
+Source sentence: "There's no evidence that threats from North Korea have abated."
+  ✓ HIGHLIGHT: "no evidence" / "threats" / "from North Korea" / "abated"
+     — directly proves "threats not abating" warrant in tag.
+
+THE FILTER: read each candidate sentence twice.
+  - First pass: skip sentences that are pure background ("As Shampa Biswas illustrates...", "After this period...", "In his first term...").
+  - Second pass: in remaining warrant-bearing sentences, highlight ONLY the words that carry the warrant (the impact, the mechanism, the magnitude, the contrast).
+
+═══════════════════════════════════════════════
 WARRANT CAPTURE — what to highlight (and bold)
 ═══════════════════════════════════════════════
 
@@ -495,7 +562,16 @@ function buildSelectionUserPrompt({
     citeLine,
     metaLines && `SOURCE METADATA:\n${metaLines}`,
     `CANDIDATES — these are the only paragraphs you may pick from. Reference each by its [P#] index. Echo VERBATIM strings from these paragraphs in your u/h/b arrays.\n---\n${candidateBlock}\n---`,
-    `Return the JSON now. Pick ${l.paragraphRule}, ≤${l.maxWords} body words, underline ${d.underlineRange}. ${d.highlightRule}. SELECTIVITY > coverage: highlight ONLY the warrant-bearing phrases that read together as the spoken argument. Plain text is fine — most words should NOT be highlighted.`,
+    `Return the JSON now. Pick ${l.paragraphRule}, ≤${l.maxWords} body words, underline ${d.underlineRange}. ${d.highlightRule}. SELECTIVITY > coverage: highlight ONLY the warrant-bearing phrases that read together as the spoken argument. Plain text is fine — most words should NOT be highlighted.
+
+LENGTH-AWARE DENSITY:
+- Short paragraphs (<200 chars, 1–2 sentences): 4–8 highlights, 2–4 bolds.
+- Medium paragraphs (200–500 chars, 2–4 sentences): 8–14 highlights, 4–8 bolds.
+- Long paragraphs (500+ chars, 4+ sentences): 12–22 highlights, 6–14 bolds.
+Don't force the upper end on short paragraphs — over-highlighting them is the most common drift.
+
+TAG-PROOF FILTER:
+Before you pick a highlight, ask: "does this word PROVE the tag, or just describe surrounding context?" If it's surrounding context (chronology, attribution, who-said-what without warrant content), leave it plain. The chain of your highlights, read aloud, should sound like a debater making the case for the tag — not summarizing the article.`,
   ].filter(Boolean).join('\n\n');
 }
 
