@@ -77,6 +77,55 @@ function cacheSet(key, payload) {
 
 function clearCache() { CACHE.clear(); }
 
+// Reduce a multi-word author prefix to LastName 'YY.
+//   "Ian Bowers '23"          → "Bowers '23"
+//   "James M. Acton '24"      → "Acton '24"
+//   "Bowers '23"              → "Bowers '23" (unchanged)
+//   "International Crisis Group '22" → unchanged (no first-last name pattern)
+//   "Smith"                   → "Smith"
+//   ""                        → ""
+// Heuristic: take the year token (e.g. "'23" or "23"), and the WORD
+// directly before it. If preceded by a comma or "et al.", keep the form.
+// Honorifics (Dr., Mr., Prof.) are stripped from the front.
+function reduceShortCiteToLastName(prefix) {
+  let p = String(prefix || '').trim();
+  if (!p) return p;
+  // Strip leading honorifics.
+  p = p.replace(/^(Dr|Mr|Mrs|Ms|Prof|Professor|Sir|Lord|Lady|Rev|Hon)\.?\s+/i, '');
+
+  // Detect a 2-or-4-digit year at the END (with optional leading apostrophe).
+  // Examples: "Bowers '23", "Acton 24", "Smith 2024".
+  const yearMatch = p.match(/^(.+?)\s+('?\d{2}(?:\d{2})?)\s*$/);
+  if (!yearMatch) return p;
+  const namePart = yearMatch[1].trim();
+  const yearPart = yearMatch[2].trim();
+
+  // If namePart has a comma (e.g. "Bowers, Ian"), take the first piece.
+  if (namePart.includes(',')) {
+    const lastName = namePart.split(',')[0].trim();
+    return `${lastName} ${yearPart}`;
+  }
+
+  // Skip if it's clearly an organization, not a person:
+  // "International Crisis Group", "United Nations", etc. — 3+ tokens with
+  // no period/comma usually = org. Heuristic: if 3+ tokens AND no token
+  // looks like a first-name single capitalised word, leave alone.
+  const tokens = namePart.split(/\s+/);
+  if (tokens.length === 1) return p; // already lastname-only
+  // Drop trailing "et al." or "et al" before checking.
+  let cleanTokens = tokens.filter(t => !/^et\.?$|^al\.?$/i.test(t));
+  if (cleanTokens.length < 2) return p;
+  // Drop initials and middle initials like "M." or "J.".
+  cleanTokens = cleanTokens.filter(t => !/^[A-Z]\.?$/.test(t));
+  if (cleanTokens.length < 2) {
+    // Only one substantive token → use it.
+    return cleanTokens.length ? `${cleanTokens[0]} ${yearPart}` : p;
+  }
+  // Take the LAST substantive token as the last name.
+  const lastName = cleanTokens[cleanTokens.length - 1];
+  return `${lastName} ${yearPart}`;
+}
+
 // ── Pipeline ────────────────────────────────────────────────────────
 
 const DEFAULT_PRIMARY  = process.env.CARD_CUT_MODEL          || 'claude-haiku-4-5';
@@ -322,9 +371,13 @@ Compose the argument FIRST. Then mark only the verbatim source words that delive
   }
 
   // Derive shortCite from cite for the legacy response shape.
+  // shortCite is "Lastname 'YY" — never "Firstname Lastname 'YY". Some
+  // upstream LLM emissions include the full name in the prefix; reduce
+  // here so the UI label is consistent.
   let shortCite = '';
   const m = (finalCite || '').match(/^([^\[]+?)\s*\[/);
   shortCite = m ? m[1].trim() : (finalCite || '').slice(0, 40).trim();
+  shortCite = reduceShortCiteToLastName(shortCite);
 
   // Final chain extraction for the response (post-reconstruction).
   const finalChain = extractReadAloudChain(llmResult.json, candidates);
@@ -373,7 +426,7 @@ Compose the argument FIRST. Then mark only the verbatim source words that delive
     `[cutCardV2] ok in ${elapsed}ms model=${llmResult.model} ` +
     `paragraphs=${rebuilt.stats.paragraphs} ` +
     `marks=${marksRendered} highlight=${highlightPct}% ` +
-    `chain coverage=${(finalScore.coverage * 100).toFixed(0)}% bloat=${(finalScore.bloat * 100).toFixed(0)}% filler=${finalScore.filler} danglers=${finalScore.danglers}/${finalScore.phraseCount} ` +
+    `chain coverage=${(finalScore.coverage * 100).toFixed(0)}% bloat=${(finalScore.bloat * 100).toFixed(0)}% filler=${finalScore.filler} danglers=${finalScore.danglers}/${finalScore.phraseCount} avgw=${(finalScore.avgWordsPerPhrase || 0).toFixed(1)} ` +
     `prompt=${u.prompt_tokens || '?'}tok completion=${u.completion_tokens || '?'}tok ` +
     `cache=${cacheHitRate}%(read=${cacheRead}/write=${cacheWrite}) ` +
     `cost=$${(u.cost || 0).toFixed(5)}` +
@@ -391,6 +444,7 @@ module.exports = {
   cutCardV2,
   cacheKey,
   clearCache,
+  reduceShortCiteToLastName,
   // exposed for tests:
   CACHE,
 };

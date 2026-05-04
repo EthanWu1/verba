@@ -324,24 +324,25 @@ test('selection prompt: annotateParagraphWithRuler shows char positions', () => 
 });
 
 test('selection prompt: HARDCODED_CALIBRATION includes empirical patterns', () => {
-  assert.match(HARDCODED_CALIBRATION, /Vanguard cards/i);
-  assert.match(HARDCODED_CALIBRATION, /Median 1 word/i);
-  assert.match(HARDCODED_CALIBRATION, /sanity check|guideline|reference/i);
-  // Argument-driven prompt now lives in buildSelectionSystemPrompt itself
-  // rather than being inlined into the calibration block.
+  // 2026-05-03: rewritten to reference real hand-cut LD cards rather than
+  // "Vanguard cards" — same gold-standard, more general phrasing.
+  assert.match(HARDCODED_CALIBRATION, /hand-cut/i);
+  assert.match(HARDCODED_CALIBRATION, /warrant/i);
+  assert.match(HARDCODED_CALIBRATION, /landing/i);
 });
 
-test('selection prompt: system prompt embeds calibration and char-offset language', () => {
+test('selection prompt: system prompt embeds calibration and quote-based language', () => {
+  // Iteration 8 (2026-05-03): switched from char-offset picks to quote-based.
+  // Model now emits VERBATIM strings instead of [from,to] ranges.
   const p = buildSelectionSystemPrompt({ density: 'heavy', length: 'long' });
-  assert.match(p, /CHARACTER offsets/i);
-  assert.match(p, /partial-word/i);
-  assert.match(p, /Vanguard cards/i);
+  assert.match(p, /VERBATIM/i);
+  assert.match(p, /hand-cut/i);
   assert.match(p, /JSON/);
-  // Argument-driven workflow lives in the prompt now.
   assert.match(p, /WORKFLOW|UNDERSTAND THE ARGUMENT|composed speech/i);
 });
 
-test('selection prompt: user prompt includes per-paragraph rulers', () => {
+test('selection prompt: user prompt includes paragraph indices for verbatim quotes', () => {
+  // Iter 8: dropped char rulers (model emits quotes, not offsets).
   const candidates = [
     { index: 0, originalIndex: 0, text: 'First paragraph here.' },
     { index: 1, originalIndex: 1, text: 'Second paragraph here.' },
@@ -349,9 +350,9 @@ test('selection prompt: user prompt includes per-paragraph rulers', () => {
   const out = buildSelectionUserPrompt({
     argument: 'test', candidates, density: 'heavy', length: 'long',
   });
-  assert.match(out, /\[P0\][\s\S]*length: 21 chars/);
+  assert.match(out, /\[P0\]/);
   assert.match(out, /\[P1\]/);
-  assert.match(out, /character.*ruler/i);
+  assert.match(out, /verbatim/i);
 });
 
 // ── JSON schema sanity ────────────────────────────────────────────
@@ -365,4 +366,122 @@ test('CARD_PICKS_JSON_SCHEMA: requires tag, cite, argument, picks', () => {
 test('CARD_PICKS_JSON_SCHEMA: each pick requires p and u', () => {
   const item = CARD_PICKS_JSON_SCHEMA.schema.properties.picks.items;
   assert.deepEqual(item.required.sort(), ['p', 'u']);
+});
+
+// ── 2026-05-03: quality fixes (cite, bolds, filler-prefix) ────────
+
+const {
+  isBadBoldSpan, dropBadBolds, trimFillerEdges, trimFillerEdgesAll,
+} = require('../server/services/cardReconstructor');
+const { reduceShortCiteToLastName } = require('../server/services/cutCardV2');
+
+test('reduceShortCiteToLastName: full-name prefix → lastname only', () => {
+  assert.equal(reduceShortCiteToLastName("Ian Bowers '23"), "Bowers '23");
+  assert.equal(reduceShortCiteToLastName("James M. Acton '24"), "Acton '24");
+  assert.equal(reduceShortCiteToLastName("Bowers '23"), "Bowers '23");
+  assert.equal(reduceShortCiteToLastName("Smith"), "Smith");
+  assert.equal(reduceShortCiteToLastName(""), "");
+  assert.equal(reduceShortCiteToLastName("Dr. Jane Goodall '21"), "Goodall '21");
+  // Comma form: "Bowers, Ian '23" → "Bowers '23".
+  assert.equal(reduceShortCiteToLastName("Bowers, Ian '23"), "Bowers '23");
+  // 4-digit year form.
+  assert.equal(reduceShortCiteToLastName("Smith 2024"), "Smith 2024");
+  assert.equal(reduceShortCiteToLastName("John Smith 2024"), "Smith 2024");
+});
+
+test('isBadBoldSpan: rejects single-char bolds', () => {
+  const text = 'extreme threats';
+  assert.equal(isBadBoldSpan([0, 1], text), true);   // "e" alone
+  assert.equal(isBadBoldSpan([0, 7], text), false);  // "extreme"
+});
+
+test('isBadBoldSpan: rejects stopword-only bolds', () => {
+  const text = 'the upper hand';
+  assert.equal(isBadBoldSpan([0, 3], text), true);    // "the"
+  assert.equal(isBadBoldSpan([4, 9], text), false);   // "upper"
+  assert.equal(isBadBoldSpan([4, 14], text), false);  // "upper hand"
+});
+
+test('dropBadBolds: filters single-char and stopword-only', () => {
+  const text = 'the asymmetric arms';
+  const spans = [[0, 3], [4, 14], [0, 1]];  // "the", "asymmetric", "t"
+  const out = dropBadBolds(spans, text);
+  assert.deepEqual(out, [[4, 14]]);
+});
+
+test('trimFillerEdges: strips leading "As a result," from highlight', () => {
+  const text = 'As a result, conventional counterforce is impossible';
+  const span = [0, text.length];
+  const out = trimFillerEdges(span, text);
+  // Should start at "conventional", not at "As".
+  assert.ok(out, 'should not return null');
+  assert.equal(text.slice(out[0], out[1]).startsWith('conventional'), true);
+});
+
+test('trimFillerEdges: strips leading "First," from highlight', () => {
+  const text = 'First, conventional counterforce is hard';
+  const span = [0, text.length];
+  const out = trimFillerEdges(span, text);
+  assert.ok(out);
+  assert.equal(text.slice(out[0], out[1]).startsWith('conventional'), true);
+});
+
+test('trimFillerEdges: leaves clean spans alone', () => {
+  const text = 'asymmetric arms race';
+  const span = [0, text.length];
+  const out = trimFillerEdges(span, text);
+  assert.deepEqual(out, [0, text.length]);
+});
+
+test('reconstructCard: drops single-char and stopword bolds in pipeline', () => {
+  const candidates = [
+    { index: 0, originalIndex: 0, text: 'The asymmetric arms race is impossible to win.' },
+  ];
+  const picksJson = {
+    tag: 'test', cite: 'X', argument: 'asymmetric arms race',
+    picks: [{
+      p: 0,
+      u: [[0, 46]],
+      h: [[4, 14]],
+      // bolds: single "T", stopword "the", and good "asymmetric"
+      b: [[0, 1], [0, 3], [4, 14]],
+    }],
+  };
+  const out = reconstructCard({ picksJson, candidates, density: 'heavy' });
+  // The valid bold "asymmetric" survives. The renderer nests bold OUTSIDE
+  // highlight when both cover the same span (`**==asymmetric==**`), so
+  // check for the bold-marker pair around "asymmetric" rather than the
+  // strict `**asymmetric**` literal.
+  assert.ok(/\*\*[^*]*asymmetric[^*]*\*\*/.test(out.body_markdown),
+    `should bold "asymmetric", got: ${out.body_markdown}`);
+  // Bad bolds must NOT appear: no single "T" bold, no "The" bold, and
+  // no clustered "The asymmetric" bold (the trap fixDanglingEnds used to
+  // produce when extending a stopword-only span).
+  assert.ok(!/\*\*T\s/.test(out.body_markdown), 'must not bold single "T"');
+  assert.ok(!/\*\*[Tt]he\*\*/.test(out.body_markdown), 'must not bold "the"');
+  assert.ok(!/\*\*[Tt]he\s+[a-z]+\*\*/.test(out.body_markdown),
+    'must not cluster-bold "The asymmetric"');
+});
+
+test('reconstructCard: trims filler prefix from highlight', () => {
+  const candidates = [
+    { index: 0, originalIndex: 0, text: 'First, conventional counterforce is hard to deploy.' },
+  ];
+  const picksJson = {
+    tag: 'test', cite: 'X', argument: 'conventional counterforce is hard',
+    picks: [{
+      p: 0,
+      u: [[0, 51]],
+      h: [[0, 33]],   // span includes "First, conventional counterforce"
+      b: [],
+    }],
+  };
+  const out = reconstructCard({ picksJson, candidates, density: 'heavy' });
+  // The highlight must NOT include "First," — should start at "conventional".
+  // (After iter-2 splitter, "conventional counterforce" may be split into
+  //  "conventional" and "counterforce" so we check "==conventional==" alone.)
+  assert.ok(/==conventional==?/.test(out.body_markdown),
+    `highlight should start at "conventional", got: ${out.body_markdown}`);
+  assert.ok(!/==First,? conventional/.test(out.body_markdown),
+    `highlight must not include "First," prefix, got: ${out.body_markdown}`);
 });

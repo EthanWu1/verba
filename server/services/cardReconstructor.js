@@ -41,17 +41,29 @@
 // the model emits something absurd. The PROMPT drives correct density via
 // argument-driven reasoning; the server's only hard rule is verbatim
 // integrity. Word-boundary snap + punctuation trim = cosmetic safety.
-const HIGHLIGHT_CAPS = { minimal: 0.30, standard: 0.45, heavy: 0.60 };
-const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.80 };
-const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.35 };
+// Iteration-3 calibration (2026-05-03): raised underline cap from 0.65 → 0.85.
+// Long warrant paragraphs in gold cards run through 4–5 sentences
+// (Moreover/Kunsan/Osan/proximity); a 0.65 cap dropped key warrant
+// sentences. Lazy-underline threshold (0.90) still catches model laziness.
+//
+// Highlight cap stays at 0.30 — gold tops out around 22% per paragraph.
+// Bold cap raised to 0.40 to allow aggressive warrant bolding.
+const HIGHLIGHT_CAPS = { minimal: 0.18, standard: 0.25, heavy: 0.30 };
+const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.85 };
+const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.40 };
 
-// Maximum length of a single highlight RUN. 50 chars allows ~8-word
-// phrase-level claims like "locks in catastrophic warming above 3
-// degrees" without trimming.
-const MAX_HIGHLIGHT_RUN_CHARS = 50;
+// Maximum length of a single highlight RUN. Iteration 2 (2026-05-03):
+// dropped from 50 → 22 to match measured gold patterns (median 1.67 words
+// per highlight ≈ ~10 chars). Long model spans get split into multiple
+// short fragments via splitOversizeHighlight rather than naive trim.
+const MAX_HIGHLIGHT_RUN_CHARS = 22;
 // Bolds should be SHORT. Real cards bold single words usually, 2-3 max,
-// for spoken emphasis. Cap at 18 chars so multi-clause bolds get trimmed.
-const MAX_BOLD_RUN_CHARS = 18;
+// for spoken emphasis. 14 chars covers "use them or" / "upper hand" /
+// "extremely diff…" — anything longer is clause-marking, not emphasis.
+const MAX_BOLD_RUN_CHARS = 14;
+// Bolds shorter than this are almost always off-by-one slips ("e" of
+// "extreme", "s" of "weapons") — drop them.
+const MIN_BOLD_RUN_CHARS = 2;
 
 // When the model lazily underlines 100% of a paragraph, we ABANDON its
 // underline and auto-regenerate underlines wrapping the highlights with
@@ -110,6 +122,55 @@ function trimMaxRun(spans, maxChars = MAX_HIGHLIGHT_RUN_CHARS, text = '') {
       return snapped || null;
     })
     .filter(s => s && s[1] > s[0]);
+}
+
+// Split a long highlight range into multiple short STITCHED FRAGMENTS at
+// word boundaries. The hand-cut style is many 1–2 word highlights stitched
+// via underline; long model spans should be diced rather than naively
+// truncated. Algorithm: tokenize the slice into words, emit 2-word groups
+// as separate highlight ranges. Punctuation/whitespace between words stays
+// PLAIN (acts as the stitching gap). Returns an array of [from,to) sub-ranges.
+function splitOversizeHighlight(span, text, maxChars = MAX_HIGHLIGHT_RUN_CHARS, wordsPerFragment = 2) {
+  if (!span) return [];
+  const [from, to] = span;
+  const len = to - from;
+  if (len <= maxChars) return [span];
+  const slice = text.slice(from, to);
+  // Find every word's [start,end) within the slice.
+  const words = [];
+  let i = 0;
+  while (i < slice.length) {
+    while (i < slice.length && !/[a-zA-Z0-9'-]/.test(slice[i])) i++;
+    if (i >= slice.length) break;
+    const ws = i;
+    while (i < slice.length && /[a-zA-Z0-9'-]/.test(slice[i])) i++;
+    words.push([ws, i]);
+  }
+  if (words.length === 0) return [];
+  if (words.length === 1) return [[from + words[0][0], from + words[0][1]]];
+  // Group consecutive words into fragments of `wordsPerFragment` content words.
+  const fragments = [];
+  for (let g = 0; g < words.length; g += wordsPerFragment) {
+    const group = words.slice(g, g + wordsPerFragment);
+    if (!group.length) continue;
+    const a = from + group[0][0];
+    const b = from + group[group.length - 1][1];
+    fragments.push([a, b]);
+  }
+  return fragments;
+}
+
+function splitOversizeHighlights(spans, text, maxChars = MAX_HIGHLIGHT_RUN_CHARS) {
+  const out = [];
+  for (const s of spans) {
+    const frags = splitOversizeHighlight(s, text, maxChars);
+    // Drop tiny fragments (<3 chars) that are usually punctuation-split
+    // artifacts from abbreviations like "U.S." → ["U", "S"].
+    for (const f of frags) {
+      if (f[1] - f[0] >= 3) out.push(f);
+    }
+  }
+  return out;
 }
 
 // Snap a span to nearest word boundaries. The model emits char offsets that
@@ -262,6 +323,102 @@ function dropFillerOnlySpans(spans, text) {
   return spans.filter(s => !isFillerOnlySpan(s, text));
 }
 
+// Stopwords that should NEVER be the entire content of a bold. Bolds are
+// for spoken emphasis — bolding "the" or "and" alone is a slip.
+const STOPWORD_ONLY_BAD_BOLDS = new Set([
+  'a','an','the','and','or','but','of','to','in','on','at','by','for',
+  'with','from','into','onto','about','as','is','are','was','were','be',
+  'been','being','am','have','has','had','do','does','did','its','their',
+  'his','her','our','your','my','this','that','these','those','it','they',
+  'we','he','she','i','you',
+]);
+
+function isBadBoldSpan(span, text) {
+  if (!span) return true;
+  const len = span[1] - span[0];
+  // Single-char bolds: almost always off-by-one ("e" of "extreme").
+  if (len < MIN_BOLD_RUN_CHARS) return true;
+  const slice = text.slice(span[0], span[1]).trim();
+  if (!slice) return true;
+  // Bolds that are entirely a single stopword.
+  const lower = slice.toLowerCase().replace(/[^a-z']/g, '');
+  if (STOPWORD_ONLY_BAD_BOLDS.has(lower)) return true;
+  return false;
+}
+
+function dropBadBolds(spans, text) {
+  return spans.filter(s => !isBadBoldSpan(s, text));
+}
+
+// Split each bold span at every highlight boundary so the resulting bolds
+// are either FULLY inside a highlight or FULLY outside any highlight. This
+// fixes the markdown interleaving bug where `**==text**` (bold close before
+// highlight close) renders as garbage like `**==text==** more text==`.
+//
+// Strategy: for each bold [a, b], collect all highlight boundaries within
+// that range and split at each one. Each resulting sub-bold is then either
+// entirely inside a highlight (renders as `**==text==**`) or entirely
+// outside (renders as `**text**`). No partial overlaps survive.
+function splitBoldsAtHighlightBoundaries(bolds, highlights) {
+  if (!bolds.length || !highlights.length) return bolds;
+  const sortedHi = [...highlights].sort((a, b) => a[0] - b[0]);
+  const out = [];
+  for (const [a, b] of bolds) {
+    // Collect all highlight starts and ends that fall STRICTLY inside (a, b).
+    const cuts = new Set();
+    for (const [h0, h1] of sortedHi) {
+      if (h0 > a && h0 < b) cuts.add(h0);
+      if (h1 > a && h1 < b) cuts.add(h1);
+    }
+    if (!cuts.size) { out.push([a, b]); continue; }
+    const sortedCuts = [...cuts].sort((x, y) => x - y);
+    let cur = a;
+    for (const c of sortedCuts) {
+      if (c > cur) out.push([cur, c]);
+      cur = c;
+    }
+    if (cur < b) out.push([cur, b]);
+  }
+  return out;
+}
+
+// Trim filler prefixes/suffixes from a HIGHLIGHT span. Catches highlights
+// like "==As a result, conventional counterforce==" — the "As a result,"
+// portion gets snipped so only "conventional counterforce" highlights.
+// Symmetric: also trims trailing filler.
+const FILLER_TRIM_PREFIX_PATTERNS = [
+  /^(further(?:more)?|however|moreover|additionally|also|unfortunately|accordingly|thus|therefore|hence|indeed|essentially|ultimately|importantly|notably|specifically|meanwhile|nonetheless|nevertheless|arguably|presumably|fundamentally|crucially|clearly|obviously|first|second|third|fourth|fifth|finally|lastly)\s*[,;:]?\s+/i,
+  /^(in\s+addition|in\s+essence|to\s+be\s+sure|in\s+other\s+words|for\s+instance|for\s+example|as\s+a\s+result|on\s+top\s+of\s+(?:that|this))\s*[,;:]?\s+/i,
+];
+
+function trimFillerEdges(span, text) {
+  if (!span) return null;
+  let [from, to] = span;
+  let slice = text.slice(from, to);
+  let progress = true;
+  let safety = 4;
+  while (progress && safety-- > 0) {
+    progress = false;
+    for (const re of FILLER_TRIM_PREFIX_PATTERNS) {
+      const m = slice.match(re);
+      if (m) {
+        from += m[0].length;
+        slice = text.slice(from, to);
+        progress = true;
+        break;
+      }
+    }
+  }
+  if (to <= from) return null;
+  // Re-snap to word boundary so we don't leave leading whitespace/punct.
+  const snapped = snapToWordBoundaries([from, to], text);
+  return snapped || null;
+}
+
+function trimFillerEdgesAll(spans, text) {
+  return spans.map(s => trimFillerEdges(s, text)).filter(Boolean);
+}
+
 // --- priority scoring (used when over cap) ----------------------------------
 
 const PRIORITY_VERBS = new Set([
@@ -392,49 +549,226 @@ function trimToUnderlineCap(underlines, highlights, cap, totalChars, paragraphTe
  * Closes happen BEFORE opens at the same boundary so spans close before
  * new ones open (avoiding malformed `<u></u><u>` interleaving).
  */
+// Render spans into markdown using PROPER LIFO STACK NESTING. Earlier
+// versions used fixed open/close orders which produced malformed output
+// like `==text **bold==**` when a bold opened inside a highlight but both
+// closed at the same boundary (close order should be inner-first).
+//
+// Strategy: build an event list sorted by position. At each position, do
+// closes in reverse-open-order (LIFO), then opens in order of nesting
+// preference. Track an open stack so closes always pop in LIFO order.
 function applyMarks({ paragraphText, underlines, highlights, bolds, loudestSpan }) {
   const N = paragraphText.length;
 
-  // Build lists of opens/closes at each character boundary 0..N.
-  const opens  = Array.from({ length: N + 1 }, () => []);
-  const closes = Array.from({ length: N + 1 }, () => []);
+  // Collect all spans as (kind, from, to). Tier order at OPEN: u, loud, b, h
+  // so when multiple kinds open at the same position, u is outermost and h
+  // is innermost. For subsequent same-position opens, ordering is by tier.
+  const tierIdx = { u: 0, loud: 1, b: 2, h: 3 };
+  const openTokens  = { u: '<u>', loud: '**', b: '**', h: '==' };
+  const closeTokens = { u: '</u>', loud: '**', b: '**', h: '==' };
 
-  for (const u of underlines) {
-    opens[u[0]].push({ kind: 'u',    open: '<u>', close: '</u>' });
-    closes[u[1]].push({ kind: 'u',   close: '</u>' });
-  }
-  if (loudestSpan) {
-    opens[loudestSpan[0]].push({ kind: 'loud',  open: '**', close: '**' });
-    closes[loudestSpan[1]].push({ kind: 'loud', close: '**' });
-  }
-  for (const b of bolds) {
-    opens[b[0]].push({ kind: 'b',    open: '**', close: '**' });
-    closes[b[1]].push({ kind: 'b',   close: '**' });
-  }
-  for (const h of highlights) {
-    opens[h[0]].push({ kind: 'h',    open: '==', close: '==' });
-    closes[h[1]].push({ kind: 'h',   close: '==' });
+  const spans = [];
+  let nextId = 0;
+  for (const u of underlines) spans.push({ id: nextId++, kind: 'u', from: u[0], to: u[1] });
+  if (loudestSpan) spans.push({ id: nextId++, kind: 'loud', from: loudestSpan[0], to: loudestSpan[1] });
+  for (const b of bolds)      spans.push({ id: nextId++, kind: 'b', from: b[0], to: b[1] });
+  for (const h of highlights) spans.push({ id: nextId++, kind: 'h', from: h[0], to: h[1] });
+
+  // Sort spans for deterministic open ordering when multiple start at same pos.
+  // Open priority: outer kind first (lower tierIdx), then earlier id breaks ties.
+  spans.sort((a, b) => a.from - b.from || tierIdx[a.kind] - tierIdx[b.kind] || a.id - b.id);
+
+  // Bucket opens by position; closes processed via LIFO stack.
+  const opensAt = new Map();
+  for (const s of spans) {
+    if (!opensAt.has(s.from)) opensAt.set(s.from, []);
+    opensAt.get(s.from).push(s);
   }
 
   let out = '';
-  const closeOrder = ['h', 'b', 'loud', 'u'];
-  const openOrder  = ['u', 'loud', 'b', 'h'];
-
+  const stack = [];   // currently-open spans, LIFO
   for (let i = 0; i <= N; i++) {
-    for (const k of closeOrder) {
-      for (const ev of closes[i]) if (ev.kind === k) out += ev.close;
+    // Pre-collapse touching same-kind close+open at this position:
+    // if a span of kind k is on top of stack with to==i AND another span
+    // of kind k starts at i, suppress BOTH the close and the open. They
+    // logically continue as one span and avoid `====` / `****` artifacts.
+    const startingHere = opensAt.get(i) || [];
+    const collapsedOpenIds = new Set();
+    {
+      let suppressed = true;
+      while (suppressed) {
+        suppressed = false;
+        if (!stack.length) break;
+        const top = stack[stack.length - 1];
+        if (top.to !== i) break;
+        // Find a starting-here span of same kind not already collapsed.
+        const idx = startingHere.findIndex(s => s.kind === top.kind && !collapsedOpenIds.has(s.id) && s.to > i);
+        if (idx === -1) break;
+        const matched = startingHere[idx];
+        // Suppress: keep `top` on stack but EXTEND its end to matched.to,
+        // so it'll close when matched would have. Mark matched as collapsed
+        // so we don't open it.
+        top.to = matched.to;
+        collapsedOpenIds.add(matched.id);
+        suppressed = true;
+      }
     }
-    for (const k of openOrder) {
-      for (const ev of opens[i]) if (ev.kind === k) out += ev.open;
+    // Close any spans whose `to` == i, in LIFO order (innermost first).
+    while (stack.length && stack[stack.length - 1].to === i) {
+      const s = stack.pop();
+      out += closeTokens[s.kind];
+    }
+    while (stack.length && stack[stack.length - 1].to < i) {
+      const s = stack.pop();
+      out += closeTokens[s.kind];
+    }
+    // Open any spans starting at i (skipping collapsed ones).
+    if (startingHere.length) {
+      const list = startingHere
+        .filter(s => !collapsedOpenIds.has(s.id))
+        .sort((a, b) => (b.to - a.to) || (tierIdx[a.kind] - tierIdx[b.kind]) || (a.id - b.id));
+      for (const s of list) {
+        if (s.to <= s.from) continue;
+        out += openTokens[s.kind];
+        stack.push(s);
+      }
     }
     if (i < N) out += paragraphText[i];
   }
+  while (stack.length) {
+    const s = stack.pop();
+    out += closeTokens[s.kind];
+  }
   return out;
+}
+
+// --- quote-based pick resolver ---------------------------------------------
+// Iteration 8 (2026-05-03): switched from char-offset picks to quote-based.
+// The model emits the EXACT verbatim string it wants marked, and the server
+// finds it via indexOf. This eliminates the "model can't precisely count
+// characters" failure mode that produced mid-word boundaries and bloated
+// 50-char block ranges.
+//
+// Resolver behavior:
+//   - Each string is normalized (collapse whitespace) before matching.
+//   - First occurrence is returned. If string appears multiple times,
+//     first match wins (model can disambiguate by including more context).
+//   - If string not found verbatim, try a fuzzy match (collapse all
+//     whitespace and re-find). If still not found, drop with warning.
+//   - Punctuation is matched STRICTLY — model must echo source exactly.
+
+function normalizeForMatch(s) {
+  return String(s || '').replace(/\s+/g, ' ').trim();
+}
+
+// Map Unicode "smart" punctuation back to ASCII so a quote emitted with
+// straight quotes/apostrophes matches source text using curly ones (and
+// vice versa). Articles imported via OCR/PDF/Word frequently mix these.
+function normalizeUnicodePunct(s) {
+  return String(s || '')
+    .replace(/[‘’‚‛′]/g, "'")     // ' ' ‚ ‛ ′ → '
+    .replace(/[“”„‟″]/g, '"')     // " " „ ‟ ″ → "
+    .replace(/[–—−]/g, '-')                  // – — − → -
+    .replace(/…/g, '...')                              // …  → ...
+    .replace(/ /g, ' ');                               // NBSP → space
+}
+
+// Find a quote in paragraph text. Returns [from, to] or null.
+// Strategy: try strict match first; fall back to Unicode-normalized match;
+// fall back to whitespace-tolerant regex match. The match is performed
+// against the NORMALIZED source, but the returned offsets index the
+// ORIGINAL source — we keep a position map for that.
+function findQuoteInText(quote, text, searchStart = 0) {
+  if (!quote || !text) return null;
+  const q = String(quote);
+  // 1. Strict match against original.
+  let idx = text.indexOf(q, searchStart);
+  if (idx !== -1) return [idx, idx + q.length];
+  // 2. Unicode-normalized match. Normalize both sides 1:1 (same length, so
+  //    offsets in normalized == offsets in original).
+  const qNorm = normalizeUnicodePunct(q);
+  const tNorm = normalizeUnicodePunct(text);
+  if (qNorm.length === q.length && tNorm.length === text.length) {
+    idx = tNorm.indexOf(qNorm, searchStart);
+    if (idx !== -1) return [idx, idx + qNorm.length];
+  }
+  // 3. Whitespace-tolerant regex match (also Unicode-normalized).
+  const pattern = qNorm
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+');
+  const re = new RegExp(pattern);
+  const m = re.exec(tNorm.slice(searchStart));
+  if (m) return [searchStart + m.index, searchStart + m.index + m[0].length];
+  return null;
+}
+
+// Resolve a list of quote strings against paragraph text. Tracks search
+// cursor so adjacent quotes find their later occurrences in order.
+function resolveQuotesInParagraph(quotes, text) {
+  const ranges = [];
+  let cursor = 0;
+  const dropped = [];
+  for (const raw of (quotes || [])) {
+    const q = normalizeForMatch(raw);
+    if (!q) continue;
+    let r = findQuoteInText(q, text, cursor);
+    // If not found from cursor, try from start of paragraph (model may have
+    // emitted quotes out of order).
+    if (!r) r = findQuoteInText(q, text, 0);
+    if (!r) { dropped.push(q.slice(0, 60)); continue; }
+    ranges.push(r);
+    cursor = r[1];
+  }
+  return { ranges, dropped };
+}
+
+// Convert a quote-based picks JSON (strings) into a range-based picks JSON
+// (offsets) by looking up each quote in the candidate paragraphs. Returns
+// the same shape as the old picksJson so the rest of the reconstructor
+// pipeline works unchanged.
+function resolveQuotePicks(picksJson, candidates) {
+  const candidateByIndex = new Map();
+  for (const c of candidates) candidateByIndex.set(c.index, c);
+
+  const droppedTotal = [];
+  const newPicks = [];
+  for (const pick of (picksJson?.picks || [])) {
+    const cand = candidateByIndex.get(pick.p);
+    if (!cand) continue;
+    const text = cand.text;
+    // Auto-detect: if u/h/b items are arrays of NUMBERS, this is the old
+    // range-based format — pass through unchanged.
+    const uIsRange = Array.isArray(pick.u) && pick.u.length && Array.isArray(pick.u[0]) && typeof pick.u[0][0] === 'number';
+    if (uIsRange) {
+      newPicks.push(pick);
+      continue;
+    }
+    const u = resolveQuotesInParagraph(pick.u || [], text);
+    const h = resolveQuotesInParagraph(pick.h || [], text);
+    const b = resolveQuotesInParagraph(pick.b || [], text);
+    droppedTotal.push(...u.dropped.map(q => `u: "${q}"`));
+    droppedTotal.push(...h.dropped.map(q => `h: "${q}"`));
+    droppedTotal.push(...b.dropped.map(q => `b: "${q}"`));
+    newPicks.push({ p: pick.p, u: u.ranges, h: h.ranges, b: b.ranges });
+  }
+
+  if (droppedTotal.length) {
+    console.warn(`[resolveQuotePicks] dropped ${droppedTotal.length} unmatched quotes:`,
+      droppedTotal.slice(0, 8).join(' | '));
+  }
+
+  return {
+    ...picksJson,
+    picks: newPicks,
+  };
 }
 
 // --- main entry -------------------------------------------------------------
 
 function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
+  // Resolve quote-based picks to range-based first (no-op if already ranges).
+  picksJson = resolveQuotePicks(picksJson, candidates);
+
   const tag = String(picksJson?.tag || '').trim();
   const cite = String(picksJson?.cite || '').trim();
   const picks = Array.isArray(picksJson?.picks) ? picksJson.picks : [];
@@ -501,7 +835,10 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     const boldCap = BOLD_CAPS[density] ?? BOLD_CAPS.heavy;
 
     let underlines = mergeSpans(
-      snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText)
+      trimFillerEdgesAll(
+        snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+        paragraphText
+      )
     );
     // Highlights AND bolds get dangling-end fix: if a span ends on a
     // preposition/article/conjunction (e.g. "the upper", "impossible to"),
@@ -511,23 +848,55 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // Filler-only highlights ("==However==", "==Further==") get dropped
     // silently so the chain quality check doesn't retry-on-Sonnet for
     // something we can fix structurally.
+    // Pipeline: clamp → snap → trim-filler-edges → fix-danglers
+    //   → drop-filler-only → SPLIT-OVERSIZE → merge.
+    // splitOversize: model often emits 50-100 char block ranges; we dice
+    // them into 2-word stitched fragments to match the hand-cut style.
+    // trimFillerEdges runs BEFORE fixDanglingEnds: a span like
+    // "As a result, conventional counterforce is impossible to" first
+    // gets the "As a result," prefix trimmed → "conventional counterforce
+    // is impossible to" → then dangler fix extends "to" → "to operationalize".
     let highlights = mergeSpans(
-      dropFillerOnlySpans(
-        fixDanglingEnds(
-          snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+      splitOversizeHighlights(
+        dropFillerOnlySpans(
+          fixDanglingEnds(
+            trimFillerEdgesAll(
+              snapSpansToWordBoundaries((pick.h || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+              paragraphText
+            ),
+            paragraphText
+          ),
           paragraphText
         ),
-        paragraphText
+        paragraphText,
+        MAX_HIGHLIGHT_RUN_CHARS
       )
     );
-    let bolds = mergeSpans(
-      dropFillerOnlySpans(
-        fixDanglingEnds(
-          snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
-          paragraphText
-        ),
-        paragraphText
-      )
+    // Bolds pipeline: same fragmentation logic as highlights — model
+    // emits long block bolds; we dice them into 1-word fragments. Then
+    // bad-bold drop catches single-char/stopword artifacts. The bold-cap
+    // trim later keeps only the highest-priority bolds.
+    let bolds = dropBadBolds(
+      mergeSpans(
+        splitOversizeHighlights(
+          dropFillerOnlySpans(
+            fixDanglingEnds(
+              dropBadBolds(
+                trimFillerEdgesAll(
+                  snapSpansToWordBoundaries((pick.b || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+                  paragraphText
+                ),
+                paragraphText
+              ),
+              paragraphText
+            ),
+            paragraphText
+          ),
+          paragraphText,
+          MAX_BOLD_RUN_CHARS
+        )
+      ),
+      paragraphText
     );
 
     // LAZY-UNDERLINE OVERRIDE: when the model emits 90%+ underline coverage
@@ -576,6 +945,14 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // Re-extending here catches that.
     highlights = fixDanglingEnds(highlights, paragraphText);
     bolds      = fixDanglingEnds(bolds,      paragraphText);
+    // fixDanglingEnds can extend a span forward past the start of the next
+    // span, creating overlap. Re-merge so highlights/bolds remain
+    // non-overlapping (renderer assumes non-overlap).
+    highlights = mergeSpans(highlights);
+    bolds      = mergeSpans(bolds);
+    // Final bad-bold pass: trimMaxRun could shrink a 14-char "the upper" to
+    // "the" or a 14-char "asymmetric" to "asymm" depending on snap; reject.
+    bolds      = dropBadBolds(bolds, paragraphText);
 
     const beforeHiCap = highlights.length;
     highlights = trimToHighlightCap(highlights, highlightCap, N, paragraphText);
@@ -591,6 +968,26 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
 
     highlights = filterContainedIn(highlights, underlines);
     bolds      = filterContainedIn(bolds, underlines);
+    // Split bolds at highlight boundaries so each bold is fully-inside or
+    // fully-outside a highlight. Prevents interleaved `**==x**` markup bugs.
+    bolds      = splitBoldsAtHighlightBoundaries(bolds, highlights);
+    // After splitting, drop any too-short or stopword fragments that emerged.
+    bolds      = dropBadBolds(bolds, paragraphText);
+    // Re-merge any bolds that overlap or touch — touching bolds at the same
+    // boundary render as `****` which markdown sees as bold-italic. Merge first,
+    // then dedupe identical ranges.
+    bolds      = mergeSpans(bolds);
+    // Final dedupe by [a,b] tuple in case duplicates slipped through from
+    // multiple processing passes.
+    {
+      const seen = new Set();
+      bolds = bolds.filter(s => {
+        const k = `${s[0]}-${s[1]}`;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    }
 
     let loudestSpan = null;
     if (loudestPickIdx === pick.p && loudest) {
@@ -615,17 +1012,12 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
 
 // --- the JSON schema for the picks output ----------------------------------
 
-// Anthropic structured outputs reject `maxItems` and `minItems` on array
-// types. Even when we use `response_format: json_object` mode, OpenRouter
-// can auto-translate to Anthropic's structured output format and pass our
-// schema through. So this schema must be Anthropic-compatible: NO
-// minItems/maxItems anywhere.
-const SPAN_SCHEMA = {
+// Iteration 8 (2026-05-03): switched from char-offset spans to QUOTE-based.
+// Each u/h/b is now an array of VERBATIM strings to find in the paragraph.
+// Backward-compat: resolveQuotePicks auto-detects old [from,to] arrays.
+const QUOTE_SCHEMA = {
   type: 'array',
-  items: {
-    type: 'array',
-    items: { type: 'integer', minimum: 0 },
-  },
+  items: { type: 'string' },
 };
 
 const CARD_PICKS_JSON_SCHEMA = {
@@ -638,11 +1030,6 @@ const CARD_PICKS_JSON_SCHEMA = {
     properties: {
       tag:  { type: 'string' },
       cite: { type: 'string' },
-      // The 30-50 word spoken speech the highlights MUST deliver in order.
-      // The model is required to compose this BEFORE picks, forcing
-      // argument-first thinking. Server extracts the actual read-aloud
-      // chain from picks and compares to this argument; if they don't
-      // match, retry on Sonnet.
       argument: { type: 'string' },
       picks: {
         type: 'array',
@@ -652,20 +1039,10 @@ const CARD_PICKS_JSON_SCHEMA = {
           required: ['p', 'u'],
           properties: {
             p: { type: 'integer', minimum: 0 },
-            u: SPAN_SCHEMA,
-            h: SPAN_SCHEMA,
-            b: SPAN_SCHEMA,
+            u: QUOTE_SCHEMA,
+            h: QUOTE_SCHEMA,
+            b: QUOTE_SCHEMA,
           },
-        },
-      },
-      loudest: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['p', 'from', 'to'],
-        properties: {
-          p:    { type: 'integer', minimum: 0 },
-          from: { type: 'integer', minimum: 0 },
-          to:   { type: 'integer', minimum: 1 },
         },
       },
     },
@@ -677,6 +1054,9 @@ const CARD_PICKS_JSON_SCHEMA = {
 // only the highlighted portions. Compare this to the model's stated
 // `argument` to detect chain incoherence.
 function extractReadAloudChain(picksJson, candidates) {
+  // Resolve quotes first (no-op if already ranges).
+  picksJson = resolveQuotePicks(picksJson, candidates);
+
   const candidateByIndex = new Map();
   for (const c of candidates) candidateByIndex.set(c.index, c);
   const chain = [];
@@ -697,6 +1077,7 @@ function extractReadAloudChain(picksJson, candidates) {
       .filter(Boolean);
     // Apply same auto-fixes the reconstructor uses, so chain reflects
     // what the user will actually see.
+    hRanges = trimFillerEdgesAll(hRanges, text);
     hRanges = fixDanglingEnds(hRanges, text);
     hRanges = dropFillerOnlySpans(hRanges, text);
     hRanges.sort((a, b) => a[0] - b[0]);
@@ -751,9 +1132,18 @@ function chainArgumentScore(argument, chainText) {
     if (m && DANGLING_TAIL_WORDS.has(m[1])) danglerCount++;
   }
 
+  // Fragmentation: average words per highlight phrase. Hand-cut gold:
+  // 5–6 phrases, 3–5 words each → avg 3.5+ words/phrase. Confetti machine
+  // cut: 15+ phrases, 1–2 words each → avg <2 words/phrase.
+  // Lower = worse. Used as informational diagnostic only — no retry.
+  const avgWordsPerPhrase = phrases.length
+    ? phrases.reduce((a, p) => a + p.trim().split(/\s+/).filter(Boolean).length, 0) / phrases.length
+    : 0;
+
   return {
     coverage, bloat, filler: fillerHits, danglers: danglerCount,
     argSize: argSet.size, chainSize: chainTokens.length, phraseCount: phrases.length,
+    avgWordsPerPhrase,
   };
 }
 
@@ -787,4 +1177,15 @@ module.exports = {
   isFillerOnlySpan,
   dropFillerOnlySpans,
   FILLER_HIGHLIGHT_WORDS,
+  isBadBoldSpan,
+  dropBadBolds,
+  trimFillerEdges,
+  trimFillerEdgesAll,
+  STOPWORD_ONLY_BAD_BOLDS,
+  MIN_BOLD_RUN_CHARS,
+  // quote-based resolver (iteration 8):
+  resolveQuotePicks,
+  resolveQuotesInParagraph,
+  findQuoteInText,
+  normalizeForMatch,
 };

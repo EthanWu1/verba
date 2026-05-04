@@ -1,13 +1,18 @@
 'use strict';
 
-// Density presets calibrated to real Vanguard cards. SELECTIVITY beats
-// coverage. Real heavy cuts highlight ~10–15% of total chars and
-// underline ~50–70%. Previous presets pushed for 50–65% highlight
-// which produced "cyan walls" — model overshot and made cuts unreadable.
+// Density presets — iteration-3 calibration (2026-05-03) from 5 hand-cut
+// gold cards. Hand-cut style: RAPID STITCHED FRAGMENTS, with EXTENSIVE
+// bolding of every warrant beat that lands.
+//
+// Measured gold averages:
+//   highlights/body para: 15–25 (range 9–35)
+//   bolds/body para:      8–18 (range 5–25)
+//   avg highlight length: 1.5–2.5 words
+//   bold ratio: ~50% of highlights ALSO bolded (the loud ones)
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '25–40%', highlightRule: '1–4 highlights per paragraph, 1–2 words each (~3–8% of chars highlighted)',                          unhighlightedRule: '≥92%' },
-  standard: { underlineRange: '40–55%', highlightRule: '3–7 highlights per paragraph, 1–2 words each (~6–12% of chars highlighted)',                         unhighlightedRule: '≥88%' },
-  heavy:    { underlineRange: '50–70%', highlightRule: '4–10 highlights per paragraph, mostly 1 word, occasionally 2 — short stitched fragments (~10–18% of chars highlighted)', unhighlightedRule: '≥82%' },
+  minimal:  { underlineRange: '20–35%', highlightRule: '6–10 highlights per paragraph, mostly 1–2 words (~5–10% of chars highlighted), 3–5 bolds',                                                                                                            unhighlightedRule: '≥90%' },
+  standard: { underlineRange: '25–45%', highlightRule: '10–18 highlights per paragraph, mostly 1–2 words (~10–15% of chars highlighted), 5–10 bolds',                                                                                                          unhighlightedRule: '≥85%' },
+  heavy:    { underlineRange: '30–55%', highlightRule: '15–25 highlights per paragraph, mostly 1–2 words, occasionally 3 — RAPID STITCHED FRAGMENTS that read aloud as a stitched speech (~15–22% of chars highlighted). 8–15 BOLDS per paragraph — bold EVERY warrant beat that lands (hand-cut cards bold ~50% of their highlights).', unhighlightedRule: '≥78%' },
 };
 
 // Paragraph counts vary wildly by card type. Long preset covers framework
@@ -149,27 +154,28 @@ function buildEditPrompt({ instruction = '', argument = '', card = {}, sourceTex
 //   - Multiple worked examples, including partial-word and stopword-glue.
 // =====================================================================
 
-const HIGHLIGHT_HINT = { minimal: 0.10, standard: 0.18, heavy: 0.28 };
-const UNDERLINE_HINT = { minimal: 0.35, standard: 0.50, heavy: 0.70 };
+const HIGHLIGHT_HINT = { minimal: 0.07, standard: 0.12, heavy: 0.18 };
+const UNDERLINE_HINT = { minimal: 0.28, standard: 0.40, heavy: 0.45 };
 
-// Reference data from real Vanguard cards. These are PATTERNS to inform
-// your judgment, not rules to follow blindly. The job is to make a card
-// that wins the argument; numerical density is downstream of that.
-const HARDCODED_CALIBRATION = `REFERENCE — typical patterns from hand-cut Vanguard cards. Use as a sanity check, NOT as quotas to fill. Quality of argument beats matching numbers.
+// Reference data from real hand-cut LD cards. PATTERNS measured on 5 gold cards.
+const HARDCODED_CALIBRATION = `REFERENCE — measured patterns from 5 real hand-cut LD cards.
 
-  - Real cards leave most words PLAIN (context). Only warrant-bearing clauses are underlined.
-  - Highlights are usually 1-3 words, occasionally a whole short claim ("locks in catastrophic warming"). Median 1 word, 72% are 1 word.
-  - Stopwords (and, to, the, of, with, would) get highlighted ~23% of the time as 1-word glue between content highlights.
-  - Bolds: 1-3 per paragraph typically, on the words that should LAND HARDEST when read aloud.
-  - Some paragraphs may have NO marks if they're pure setup/transition. That's correct.
+  - Hand-cut style is RAPID STITCHED FRAGMENTS, NOT cohesive phrases.
+  - Median highlight = 1.67 WORDS. ~70% of highlights are 1 word, ~20% are 2 words, ~10% are 3+ words.
+  - A typical body paragraph has 10–15 highlights, NOT 4–6. Debaters chop sentences into 1-word fragments and stitch via underline.
+  - Example pattern: "Trump tried in his first term to negotiate a deal with Kim that would swap" → highlights: ==Trump==, ==tried==, ==deal==, ==with Kim==, ==swap==. Five short fragments, NOT one long phrase.
+  - Underlines wrap the warrant clauses (~25–45% of paragraph chars). Setup/transition sentences stay PLAIN.
+  - Bolds (~2–4 per paragraph) are LANDING WORDS for spoken emphasis. Usually 1 word, occasionally 2–3 for tight phrases ("upper hand", "use them or lose them").
+  - Filler words at sentence start (First, Further, Unfortunately, In addition, However, Moreover, Accordingly) stay PLAIN. Underline starts AFTER them.
+  - Some paragraphs may have NO highlights/bolds if they're pure setup/transition.
 
-  These are AVERAGES. A card on a heavy warrant might have 12 highlights in one paragraph; another paragraph might have 2. Don't force the average.`;
+  COUNTING NOTE: in a 100-word paragraph at heavy density, you should be emitting 10–15 separate ==short== ==highlights==, not 3–4 long ones. If you find yourself wrapping 5+ source words inside a single ==…==, you are doing it wrong — split into 2-3 separate highlights.`;
 
 function buildSelectionSystemPrompt({ density = 'heavy', length = 'long', calibration = '' } = {}) {
   const d = DENSITY_PRESETS[density] || DENSITY_PRESETS.heavy;
   const l = LENGTH_PRESETS[length] || LENGTH_PRESETS.long;
   const dynamicCalBlock = calibration ? `\n\nUSER LIBRARY REFERENCE:\n${calibration}\n` : '';
-  return `You are an elite LD debate card cutter. You select source paragraphs and place underline / highlight / bold marks at CHARACTER offsets. The server pulls source verbatim and inserts your marks — you NEVER write source words yourself.
+  return `You are an elite LD debate card cutter. You select source paragraphs and emit VERBATIM TEXT QUOTES that the server will mark as underline / highlight / bold. You echo source text exactly — punctuation, spelling, capitalization — and the server inserts marks where your quotes match.
 
 ═══════════════════════════════════════════════
 THE ONLY HARD RULE: 100% verbatim integrity.
@@ -202,16 +208,32 @@ Break your composed speech into beats:
 Each beat is going to become a highlight.
 
 STEP 3 — FIND THE BEATS IN SOURCE.
-For each beat in your speech, locate the verbatim words in the candidate paragraphs. Mark those verbatim positions as highlights. The highlights together, in document order, should READ AS YOUR COMPOSED SPEECH.
+For each beat in your speech, locate the verbatim text in the candidate paragraphs. Emit each beat as a SHORT VERBATIM STRING (typically 1–3 words) in the "h" array. The highlights together, in document order, should READ AS YOUR COMPOSED SPEECH.
 
 STEP 4 — UNDERLINE THE READ.
 For each highlighted region, underline the surrounding clause that makes it grammatically readable (so the debater can underline-read it for context if they have time). Underlines wrap highlights — they don't ENGULF the entire paragraph. If a sentence is pure setup or filler, leave it un-underlined. The server will collapse 100% underlines anyway, so be selective from the start.
 
-STEP 5 — BOLD THE LOUDEST (single words, not phrases).
-Bolds are for SPOKEN EMPHASIS — the moments the debater leans in. They are USUALLY 1 WORD, occasionally 2-3 if a tight phrase ("upper hand", "use them or lose them"). NEVER bold 4+ word spans — that's not emphasis, that's marking a clause.
-  - Bold magnitudes (extinction, war, collapse), named actors (Russia, U.S., Iran), operative verbs (collapses, undermines), numbers (3 degrees, 2040).
-  - The server caps bold-run length at 18 chars and trims overflow.
-  - 1-3 bolds per paragraph is normal.
+STEP 5 — BOLD AGGRESSIVELY (hand-cut style — bold ~50% of your highlights).
+Bolds are for SPOKEN EMPHASIS. Hand-cut LD cards bold A LOT — typically 8–15 bolds per typical body paragraph. Almost every warrant-bearing highlight that LANDS becomes bold. Bolding is NOT rare — it's the default for impactful content.
+
+  WHAT TO BOLD (and emit each as a separate "b" string):
+  - Numbers: "198 kilometers", "2040", "3 degrees", "$5 trillion"
+  - Named actors and locations: "Russia", "U.S.", "Iran", "China", "North Korean border"
+  - Magnitudes: "extinction", "war", "collapse", "annihilation", "global thermonuclear exchange"
+  - Operative verbs: "collapses", "undermines", "eliminates", "destroys", "decapitate"
+  - Causal mechanisms: "first-strike counterforce", "use-or-lose dilemma", "asymmetric arms race"
+  - Specific warrant facts: "no resolution", "increase nuclear risks", "unique dangers", "even closer"
+  - Contrast/turn words: "false", "irrational", "flawed", "impossible", "doesn't"
+
+  RULES:
+  - Each bold = 1 word usually. 2–4 words OK for tight warrant phrases ("most militarized region", "use them or lose them", "increase nuclear risks", "would be used").
+  - NEVER bold a single letter, a stopword alone ("the", "and"), or a filler word ("however", "further").
+  - Each bold string SHOULD also appear in the "h" array (bolds live INSIDE highlights).
+  - Target: 8–15 bolds per body paragraph at heavy density. If you have 5 bolds, you're missing landing words — find more.
+
+  REFERENCE — gold-cut card 3 had 38 BOLDS in 3 paragraphs:
+  no resolution | increase nuclearization | not make South Korea any safer | increase nuclear risks | most militarized | tense region | nuclear adversary | unique dangers | 198 kilometers | North Korean border | even closer | proximity | overreaction | escalation | likely | nuclear weapons would be used | broader regional security | China | Russia | nuclear threat | Chinese nuclear weapons sites | Beijing | within range | facilities | similar distances | tactical nuclear weapons | regional nuclear strike option | below the strategic level | Chinese and Russian | deployments | strategies | undermine | South Korean | Japanese security
+  Notice: every magnitude, named actor, number, location, and impact verb is bolded.
 
 STEP 6 — VALIDATE.
 Read your highlights aloud, in document order, in your head. Does the result sound like the speech you composed in Step 1? Does it actually deliver the argument? If not, REVISE. Drop highlights that don't fit. Add missing connectors. Reorder if needed.
@@ -222,30 +244,41 @@ WIRE FORMAT — argument FIRST, picks SECOND
 
 OUTPUT — JSON ONLY. No prose. No fence. No commentary.
 
-The "argument" field is REQUIRED and MUST come before "picks" in your output. This forces compose-first thinking. The server EXTRACTS your highlight chain (every highlighted phrase in document order) and COMPARES it to your argument. If they don't match — meaning your highlights don't actually deliver the argument you composed — the server retries on a stronger model. So write a real argument, then make the highlights match it.
+The "argument" field is REQUIRED. Compose your spoken argument FIRST, THEN emit the quotes that deliver it.
 
 {
   "tag":      "Offensive strategic claim that wins the round. ~9-17 words. Causal mechanism + magnitude.",
-  "cite":     "Last 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]",
-  "argument": "REQUIRED. 30-50 word spoken speech the highlights deliver. Use only words/phrases that appear VERBATIM in the source paragraphs. Stitch with minimal connectors. Read it aloud — it should sound like a debater making the case.",
+  "cite":     "Lastname 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]   ← prefix is JUST the LAST name + 2-digit year, e.g. \"Bowers '23 [Ian Bowers; ...]\" — NOT \"Ian Bowers '23 [...]\"",
+  "argument": "REQUIRED. 30-50 word spoken speech the highlights deliver. Read it aloud — it should sound like a debater making the case.",
   "picks": [
-    { "p": 0, "u": [[12, 110]], "h": [[18, 30], [38, 47], [62, 81]], "b": [[18, 30], [62, 81]] }
-  ],
-  "loudest": { "p": 0, "from": 62, "to": 81 }
+    {
+      "p": 0,
+      "u": ["Trump tried in his first term to negotiate a deal with Kim that would swap an easing in U.S. sanctions in exchange for Pyongyang committing to give up its nukes."],
+      "h": ["Trump tried", "to negotiate a deal", "Kim", "swap", "sanctions", "Pyongyang", "give up its nukes"],
+      "b": ["swap", "Pyongyang"]
+    }
+  ]
 }
 
-VALIDATION CHECK before submitting:
-1. Read your "argument" field aloud. Is it the speech a debater would actually deliver to win the round?
-2. Read each highlight's text (slice the source by [from, to)) in document order.
-3. Do these read-aloud highlights deliver the argument? Do they match almost word-for-word?
-4. If NO — revise picks until they do. Add missing connectors. Drop irrelevant highlights.
-5. If YES — submit.
-
 DEFINITIONS:
-- "p" = paragraph index from CANDIDATES (0-indexed).
-- "u"/"h"/"b" = arrays of [from, to) CHARACTER ranges. "to" is exclusive. Spaces and punctuation count.
-- Snap to word boundaries. The server snaps mid-word edges inward and trims leading/trailing whitespace.
-- Partial-word highlights (e.g. just the "U" of "United" for "U.S.") are supported when intentional.
+- "p"   = paragraph index from CANDIDATES (0-indexed).
+- "u"   = array of VERBATIM strings to UNDERLINE. Each string is a full warrant clause/sentence the debater will read silently for context.
+- "h"   = array of VERBATIM strings to HIGHLIGHT (read aloud). Each string is a SHORT warrant fragment, typically 1–3 words. The chain of highlights, in order, IS the spoken argument.
+- "b"   = array of VERBATIM strings to BOLD (loudest emphasis). Each string is 1 word usually, max 2–3. Bolds usually overlap a highlight (the loudest part of an already-loud span).
+
+QUOTE RULES — STRICT:
+1. EVERY string MUST appear VERBATIM in the source paragraph "p". Match exact characters: same spelling, same punctuation, same capitalization. The server will reject quotes it can't find.
+2. Highlights are SHORT — 1–3 words each. NEVER emit a 5+ word highlight. Split long phrases into multiple short ones.
+3. NEVER emit a highlight that consists ENTIRELY of a stopword ("the", "and", "of", "to") or a filler word ("however", "further", "unfortunately", "first", "in addition"). Skip those — let the underline carry them as plain context.
+4. NEVER emit a bold that's just a single letter, a stopword, or a filler word.
+5. Order matters: emit highlights in DOCUMENT ORDER (left-to-right, top-to-bottom).
+6. The same exact string should NOT appear twice in the same array. If a phrase repeats in source, you can pick which occurrence by including more surrounding context in the quote.
+
+VALIDATION CHECK before submitting:
+1. For every quote in u/h/b, can you find it character-for-character in the paragraph? If not, fix it.
+2. Read the h array in order — does it deliver the "argument" field?
+3. Are highlights mostly 1–3 words? If any is 5+ words, split it.
+4. Do bolds overlap highlights? They should be the LOUDEST sub-phrase of a highlighted span, almost always.
 
 ${HARDCODED_CALIBRATION}${dynamicCalBlock}
 
@@ -278,24 +311,211 @@ These are TRANSITIONAL FILLER. They add nothing to the argument. Skip them — t
 If a sentence STARTS with one of these (e.g. "Further, there is evidence..."), your underline should start AFTER the filler word.
 
 ═══════════════════════════════════════════════
+TAG-ANCHORED HIGHLIGHTING — repeat the tag's key concepts
+═══════════════════════════════════════════════
+
+The TAG names 3–6 KEY CONCEPTS. Extract them. For each KEY CONCEPT, search source paragraphs for that word/phrase (or close synonym) and highlight EVERY occurrence. This anchors the chain to the tag.
+
+Tag types — adapt the cut style:
+- POLICY tag (countries, numbers, "fails to", "destabilizes"): tight impact chains, dense bolding of landing words, capture numbers/actors.
+- KRITIK/THEORY tag (theoretical terms like "fantasy", "discourse", "preconscious", "grammar of"; philosopher names like Wilderson, Meiches, Foucault): highlight CONCEPT FLAGS every time they appear; capture claim-level statements ("X is constituted by Y", "X produces Z", "X is connected to W").
+- HYBRID tag: blend both.
+
+Extra K-card warrant verbs: "is constituted by" / "produces" / "engenders" / "renders thinkable" / "represses" / "naturalizes" / "donates" / "intensifies" / "operates as" / "structures".
+
+Example, tag = "Forward deployment destabilizes the region — goes nuclear and draws in Russia and China":
+  Key concepts: deployment, destabilizes, region, nuclear, Russia, China
+  Highlight every "deploying", "deployment", "destabilizes", "region", "nuclear weapons", "Russia", "China", "Beijing", "increasing the nuclear threat".
+
+Example, tag = "Debates must center the preconscious. Debate's grammar of abstraction moves away from pain":
+  Key concepts: debates, preconscious, grammar, abstraction, pain
+  Highlight every "debate(s)", "preconscious", "grammar", "abstraction", "pain", "sorrow/heartbreak/joy" (synonyms of pain).
+
+If a key concept appears 5 times in source, highlight all 5. Repetition anchors the argument.
+
+WORKED K-CARD EXAMPLE (Wilderson on debate / preconscious):
+  Tag: "Debates must center the preconscious. Debate's grammar of abstraction moves away from pain"
+  Key concepts: debates, preconscious, grammar, abstraction, pain
+
+  Source excerpt: "...secondary processes of signification and that is 99 percent of the way you all win or lose debates ... the structure of grammar, which represses the nonsensical utterances ... that is the part of the mind that is least susceptible or least alive, to laughter, sorrow, tears, heartbreak, joy ... in debate, you're really moving 99 percent of the time through secondary processes of signification..."
+
+  GOOD K-cut h: ["preconscious", "secondary processes", "of signification", "99 percent", "win or lose debates", "structure of grammar", "represses", "nonsensical utterances", "least alive", "sorrow", "tears", "heartbreak", "in debate", "moving 99 percent", "secondary processes"]
+  GOOD K-cut b: ["preconscious", "99 percent", "represses", "sorrow", "heartbreak", "secondary processes"]
+
+  Notice: "preconscious", "99 percent", and "secondary processes" each appear MULTIPLE TIMES in h — that's correct K-card style. The chain is theoretical claims, not impact predictions.
+
+WORKED POLICY-CARD EXAMPLE (Forward deployment destabilizes):
+  Tag: "Forward deployment destabilizes — goes nuclear and draws in Russia and China"
+  Key concepts: deployment, destabilizes, nuclear, Russia, China
+
+  GOOD policy-cut h: ["deploying US", "nuclear weapons", "most militarized", "tense region", "nuclear adversary", "unique dangers", "198 kilometers", "North Korean border", "even closer", "80 kilometers", "proximity", "increase the risk", "overreaction", "escalation", "nuclear weapons would be used", "China and Russia", "increasing the nuclear threat"]
+  GOOD policy-cut b: ["unique dangers", "198 kilometers", "North Korean border", "even closer", "80 kilometers", "overreaction", "escalation", "would be used", "China and Russia", "nuclear threat"]
+
+  Notice: SPECIFIC NUMBERS (198 km, 80 km) and NAMED ACTORS (China, Russia, North Korean border) are bolded. The chain reads like a debate spike: "deploying nukes ... most militarized ... 198 km from border ... overreaction ... escalation ... nuclear weapons would be used ... draws in China and Russia."
+
+═══════════════════════════════════════════════
+QUOTED MATERIAL ALSO carries warrants
+═══════════════════════════════════════════════
+
+When the source has a QUOTE delivering a sharp claim or a POLICY DOCUMENT/JOINT STATEMENT with specific wording, the punchline INSIDE those quotes is warrant-bearing. Highlight the impact words inside, skip the attribution:
+
+  Source: "The document called out Pyongyang's 'challenges to peace and stability' and recommitted the U.S. to 'denuclearization' of the Korean Peninsula."
+  ✓ Highlight: "called out" / "challenges to peace" / "recommitted" / "denuclearization" / "Korean Peninsula"
+
+  Source: "JAKE SULLIVAN told NatSec Daily: 'we will have to see if Kim Jong-un feels that he needs to rattle the cage.'"
+  ✓ Highlight: "rattle the cage" (the punchline), skip "JAKE SULLIVAN told NatSec Daily" (attribution).
+
+═══════════════════════════════════════════════
+PRIORITIZE IMPACT MARKERS — verbs and phrases that scream "WARRANT"
+═══════════════════════════════════════════════
+
+When scanning candidates, FIRST locate sentences containing these IMPACT MARKERS — they almost always carry the warrant:
+
+  - "could backfire" / "would backfire" / "leads to" / "results in" / "causes"
+  - "would expose" / "exposes" / "puts at risk" / "increases the risk"
+  - "rolled out" / "deployed" / "tested" / "demonstrated" (escalation/capability proofs)
+  - "called out" / "warned" / "recommitted to" / "abandoned" (policy actions)
+  - "no evidence" / "no guarantee" / "cannot be contained" / "impossible to" (skepticism/limit-claims)
+  - "rattle the cage" / "lash out" / "doesn't like" (behavioral predictions)
+  - "would result" / "will result" / "shall be launched" (causal predictions)
+  - "fails to" / "failed to" / "is non-existent" (failure claims)
+  - "trigger" / "spark" / "spawn" / "drive" / "induce" (causal verbs)
+
+Sentences with these markers are WHERE THE WARRANT LIVES. Highlight aggressively in those sentences. Skip past sentences that are pure chronology ("In 2018...", "After this period...", "Trump tried in his first term...") UNLESS those chronological facts directly prove the tag.
+
+═══════════════════════════════════════════════
+TAG-PROOF RULE — every highlight must prove the tag
+═══════════════════════════════════════════════
+
+The TAG is the offensive claim the debater wins the round with. Your highlights MUST be the EVIDENCE that proves it. Not background, not chronology, not attribution.
+
+For each highlight, ask: "Does this word/phrase prove the tag?"
+  - If YES → highlight it.
+  - If it's BACKGROUND CONTEXT (when/where/who-said-what without warrant content) → leave plain.
+  - If it's CHRONOLOGY OR DESCRIPTION without warrant → leave plain.
+
+EXAMPLES of the distinction:
+
+Tag: "Diplomacy fails. North Korean threats not abating, ignoring backfires."
+
+Source sentence: "Trump tried in his first term to negotiate a deal with Kim that would swap an easing in U.S. sanctions in exchange for Pyongyang committing to give up its nukes."
+  ❌ BAD highlights (chronology/background): "Trump tried" / "first term" / "negotiate a deal" / "Kim" / "swap" / "sanctions"
+     — these describe what happened, not whether the tag is true.
+  ✓ GOOD highlights (warrant-bearing): "swap an easing in U.S. sanctions" / "Pyongyang committing to give up its nukes"
+     — proves the kind of deal being attempted (helps tag's "diplomacy fails" warrant).
+
+Source sentence: "Despite three meetings in 2018 and 2019 the effort failed."
+  ✓ HIGHLIGHT: "three meetings in 2018 and 2019" / "failed"
+     — proves diplomacy has empirically failed before.
+
+Source sentence: "Underplaying Pyongyang's military threat could backfire."
+  ✓ HIGHLIGHT: "Underplaying Pyongyang's" / "threat could backfire"
+     — directly proves "ignoring backfires" warrant in tag.
+
+Source sentence: "There's no evidence that threats from North Korea have abated."
+  ✓ HIGHLIGHT: "no evidence" / "threats" / "from North Korea" / "abated"
+     — directly proves "threats not abating" warrant in tag.
+
+THE FILTER: read each candidate sentence twice.
+  - First pass: skip sentences that are pure background ("As Shampa Biswas illustrates...", "After this period...", "In his first term...").
+  - Second pass: in remaining warrant-bearing sentences, highlight ONLY the words that carry the warrant (the impact, the mechanism, the magnitude, the contrast).
+
+═══════════════════════════════════════════════
+WARRANT CAPTURE — what to highlight (and bold)
+═══════════════════════════════════════════════
+
+Warrants are the SPECIFIC reasons the argument is true. They're carried by:
+
+  1. NUMBERS and MAGNITUDES: "198 kilometers", "2040", "3 degrees", "extinction", "global thermonuclear exchange". ALWAYS highlight + bold these.
+  2. NAMED ACTORS / LOCATIONS: "U.S.", "China", "Russia", "Korean Peninsula", "North Korean border", "Beijing". ALWAYS highlight; bold key ones.
+  3. CAUSAL VERBS: "causes", "triggers", "collapses", "undermines", "eliminates", "decapitate", "spurs", "drives". ALWAYS highlight + bold.
+  4. CONTRAST/TURN WORDS: "false", "irrational", "flawed", "impossible", "doesn't", "no resolution", "not safer". These flip the argument — capture them.
+  5. SPECIFIC WARRANT CLAIMS: "increase nuclear risks", "unique dangers", "use them or lose them", "no guarantee against unlimited escalation". The clauses that make the argument WIN.
+  6. TIME PHRASES: "by 2040", "this year", "since 1991", "in 2018 and 2019". Tie warrant to specific timeframe.
+
+When in doubt, ASK: would the debater point at this word with their finger to make their case? If yes → highlight. If it's the LOUDEST word in that beat → bold too.
+
+EXTRACTION CHECKLIST — before submitting, scan your candidate paragraphs and ensure you captured:
+  - Every NUMBER that quantifies the warrant (kilometers, percentages, dates, kill counts)
+  - Every NAMED ACTOR that does or suffers something
+  - Every CAUSAL VERB linking actor → impact
+  - Every MAGNITUDE word (war, extinction, collapse)
+  - Every TURN/CONTRAST word that flips the opposing claim
+
+If the source mentions "198 kilometers" and you didn't highlight it, you missed a warrant beat.
+
+═══════════════════════════════════════════════
+ARGUMENT-CHAIN ALIGNMENT (chain MUST match the TAG)
+═══════════════════════════════════════════════
+
+The TAG declares the argument. Your COMPOSED ARGUMENT (the "argument" field) restates it as a 30-50 word speech. Your HIGHLIGHTS (the "h" array) deliver that argument verbatim from source.
+
+Step-by-step:
+  1. Read the TAG. Identify its KEY CONCEPTS (the warrant words) and its IMPACT.
+  2. For each KEY CONCEPT in the tag, find the source sentence(s) that prove it.
+  3. Highlight the warrant words IN those sentences.
+  4. Verify: every key concept in the tag has at least 1–2 highlights that prove it.
+
+EXAMPLE (K card, tag="Debates must center the preconscious. Debate's grammar of abstraction moves away from pain"):
+  Tag key concepts: preconscious, debate(s), grammar of abstraction, moves away from pain
+  Required highlights:
+    - "preconscious" (must appear, multiple times)
+    - "99 percent of debates" (concrete claim about debate)
+    - "structure of grammar represses" (proves "grammar moves away")
+    - "sorrow / heartbreak / pain" (the pain)
+    - "unconscious wants fantasies" (the move-away-from)
+
+EXAMPLE (policy card, tag="Forward deployment destabilizes the region — goes nuclear and draws in Russia and China"):
+  Tag key concepts: forward deployment, destabilizes, region, nuclear, Russia, China
+  Required highlights:
+    - "deploying US nuclear weapons"
+    - "most militarized region"
+    - "198 kilometers from North Korean border"
+    - "increase the risk of overreaction and escalation"
+    - "nuclear weapons would be used"
+    - "China and Russia" / "increasing the nuclear threat"
+
+VALIDATION: read your h-array in order. Does it deliver the tag's argument? Specifically — for EACH KEY CONCEPT in the tag, point to ≥1 highlight that proves it. If you can't, the chain is incomplete — add more highlights from warrant-bearing sentences.
+
+═══════════════════════════════════════════════
 RUTHLESS EDITORIAL DISCIPLINE
 ═══════════════════════════════════════════════
 
 Every highlighted word must EARN its place. Test: if you removed this highlight, would the argument still land? If yes, drop it.
 
-CONCRETE EXAMPLE OF GOOD vs BAD chain:
+GOLD-STANDARD HAND-CUT — actual cuts measured from 5 real LD cards.
 
-Source paragraph: "As North Korea's deployment of the new missile launchers attests, South Korea has found itself in an asymmetric arms race that is impossible to win. No matter what conventional capability South Korea introduces, North Korean nuclear weapons will always have the upper hand."
+Source paragraph: "Trump tried in his first term to negotiate a deal with Kim that would swap an easing in U.S. sanctions in exchange for Pyongyang committing to give up its nukes. Despite three meetings in 2018 and 2019 the effort failed."
 
-❌ BAD chain (random words, includes filler/redundancy):
-"As ... asymmetric arms ... is impossible ... capability ... North Korean nuclear ... will always ... the upper"
+❌ BAD MACHINE OUTPUT (what cutter currently produces — too few, too long):
+"<u>==Trump== tried in his first term to negotiate a deal ==with Kim that would swap an easing== in U.S. sanctions in exchange for</u> Pyongyang committing to give up its nukes."
+(Only 2 highlights. Second is 7 words — way too long. Reads like one big blob.)
 
-The word "capability" interrupts the flow — it's not part of the argument. "the upper" without "hand" reads truncated.
+✅ GOLD HAND-CUT (rapid stitched fragments — many short highlights):
+"<u>==Trump tried== in his first term ==to negotiate a deal== with ==Kim== that would ==swap== an easing in U.S. ==sanctions== in exchange for ==Pyongyang== committing to ==give up its nukes==.</u> Despite ==three meetings in 2018 and 2019== the effort ==failed==."
 
-✅ GOOD chain (every word earns its place):
-"asymmetric arms ... is impossible ... no ... ko ... nuc ... s ... always have ... upper hand"
+Highlights: ==Trump tried==, ==to negotiate a deal==, ==Kim==, ==swap==, ==sanctions==, ==Pyongyang==, ==give up its nukes==, ==three meetings in 2018 and 2019==, ==failed==. NINE highlights. Average 2 words each. Each one earns its place by carrying actor / mechanism / magnitude / number / verb.
 
-Reads aloud as: "asymmetric arms is impossible. No Ko nuclear (s)... always have upper hand." The debater abbreviates "North Korean nuclear weapons" to "no ko nuc s" using partial-word highlights ("no" of North, "ko" of Korean, "nuc" of nuclear, "s" of weapons).
+Bolds (sparingly, on the LANDING words): **swap**, **failed**. Two bolds for this paragraph.
+
+Underline: wraps the warrant sentences. Setup like "Despite" stays plain.
+
+═══════════════════════════════════════════════
+SHORTER IS BETTER — anti-blob rule
+═══════════════════════════════════════════════
+
+If your highlight is 5+ source words, you are CLUSTER-HIGHLIGHTING. Split it into 2–3 separate fragments. Examples:
+
+  ❌ ==with Kim that would swap an easing==  (7 words, blob)
+  ✅ ==with Kim== ... ==swap== ... ==easing==  (3 separate highlights)
+
+  ❌ ==North Korean nuclear weapons will always have the upper hand==  (10 words, blob)
+  ✅ ==North Korean nuclear weapons== ... ==will always== ... ==have the upper hand==  (3 highlights)
+
+  ❌ ==aimed to freeze Pyongyang's nuclear weapons program==  (7 words, blob)
+  ✅ ==freeze== ... ==Pyongyang's nuclear weapons==  (2 highlights)
+
+The underline holds the sentence together. The highlights are the read-aloud BEATS within it.
 
 ═══════════════════════════════════════════════
 FAILURE MODES TO AVOID — observed in past cuts:
@@ -398,16 +618,28 @@ function buildSelectionUserPrompt({
     meta.url && `URL: ${meta.url}`,
   ].filter(Boolean).join('\n');
 
+  // Iteration 8: dropped char-position ruler. Model emits VERBATIM QUOTES,
+  // not offsets — server resolves quotes via indexOf, so positions don't
+  // matter. The ruler was confusing the model into emitting block ranges.
   const candidateBlock = candidates.map(c =>
-    `[P${c.index}] (length: ${c.text.length} chars)\n${annotateParagraphWithRuler(c.text)}`
+    `[P${c.index}]\n${c.text}`
   ).join('\n\n');
 
   return [
     intentLine,
     citeLine,
     metaLines && `SOURCE METADATA:\n${metaLines}`,
-    `CANDIDATES — these are the only paragraphs you may pick from. Each paragraph has CHARACTER position rulers above it (tens row, ones row). Use those positions in your [from, to) ranges.\n---\n${candidateBlock}\n---`,
-    `Return the JSON now. Pick ${l.paragraphRule}, ≤${l.maxWords} body words, underline ${d.underlineRange}. ${d.highlightRule}. HIGHLIGHT MORE THAN FEELS NATURAL — under-highlighting is the most common failure.`,
+    `CANDIDATES — these are the only paragraphs you may pick from. Reference each by its [P#] index. Echo VERBATIM strings from these paragraphs in your u/h/b arrays.\n---\n${candidateBlock}\n---`,
+    `Return the JSON now. Pick ${l.paragraphRule}, ≤${l.maxWords} body words, underline ${d.underlineRange}. ${d.highlightRule}. SELECTIVITY > coverage: highlight ONLY the warrant-bearing phrases that read together as the spoken argument. Plain text is fine — most words should NOT be highlighted.
+
+LENGTH-AWARE DENSITY:
+- Short paragraphs (<200 chars, 1–2 sentences): 4–8 highlights, 2–4 bolds.
+- Medium paragraphs (200–500 chars, 2–4 sentences): 8–14 highlights, 4–8 bolds.
+- Long paragraphs (500+ chars, 4+ sentences): 12–22 highlights, 6–14 bolds.
+Don't force the upper end on short paragraphs — over-highlighting them is the most common drift.
+
+TAG-PROOF FILTER:
+Before you pick a highlight, ask: "does this word PROVE the tag, or just describe surrounding context?" If it's surrounding context (chronology, attribution, who-said-what without warrant content), leave it plain. The chain of your highlights, read aloud, should sound like a debater making the case for the tag — not summarizing the article.`,
   ].filter(Boolean).join('\n\n');
 }
 
