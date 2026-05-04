@@ -42,6 +42,7 @@ EXAMPLES of BAD tags (do NOT do these):
   - "Forward deployment of US tactical nuclear weapons in South Korea would have implications for regional security and could potentially destabilize the area" (way too long)
   - "Trump's policy fails — disaster looms" (Unicode em dash forbidden — use ---)
   - "Forward deployment destabilizes. It draws in Russia. It also draws in China." (3 sentences for a non-K card — chain into one)
+  - "Nukes — bad" (too short, no mechanism, em dash)
 
 OUTPUT — JSON ONLY, no prose, no fence:
 { "tags": ["tag 1", "tag 2", "tag 3"] }`;
