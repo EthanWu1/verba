@@ -101,6 +101,62 @@ function mergeSpans(spans) {
   return out;
 }
 
+// Bridge two adjacent spans whose gap is ONLY whitespace, apostrophes,
+// hyphens, or possessive "'s ". Hand-cut convention: if two highlighted
+// words are next to each other in source, the space (and any apostrophe-
+// possessive) between them is also highlighted, rendering as one continuous
+// run. Same for bolds. Without bridging, `==Kim== ==Jong-un's policy==`
+// renders as two visually-separate highlights with a gap between.
+//
+// IMPORTANT: bridging is capped by `maxLen` so the splitter's stitched
+// fragments (which intentionally split a >22-char range into 2-word chunks)
+// don't get re-merged into one big run. Pass MAX_HIGHLIGHT_RUN_CHARS for
+// highlights, MAX_BOLD_RUN_CHARS for bolds, Infinity for underlines.
+const BRIDGE_PUNCT_ONLY = /^[\s'‘’′\-]*$/;
+const BRIDGE_POSSESSIVE = /^['‘’]s\s*$/;
+
+function isBridgeableGap(gap) {
+  return BRIDGE_PUNCT_ONLY.test(gap) || BRIDGE_POSSESSIVE.test(gap);
+}
+
+function bridgeAdjacentSpans(spans, text, maxLen = Infinity) {
+  if (!Array.isArray(spans) || spans.length < 2) return spans;
+  const sorted = [...spans].sort((a, b) => a[0] - b[0]);
+  const out = [sorted[0].slice()];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = out[out.length - 1];
+    const cur = sorted[i];
+    if (cur[0] <= last[1]) {
+      last[1] = Math.max(last[1], cur[1]);
+      continue;
+    }
+    const gap = String(text || '').slice(last[1], cur[0]);
+    const wouldBe = cur[1] - last[0];
+    if (gap.length <= 3 && isBridgeableGap(gap) && wouldBe <= maxLen) {
+      last[1] = cur[1];
+    } else {
+      out.push(cur.slice());
+    }
+  }
+  return out;
+}
+
+// Final-pass edge trim — strip leading/trailing whitespace from a span. The
+// snap function already does most of this but extensions and re-merges can
+// leave fresh edge whitespace.
+function trimSpanEdges(span, text) {
+  if (!span) return null;
+  let [from, to] = span;
+  while (from < to && /\s/.test(text[from] || '')) from++;
+  while (to > from && /\s/.test(text[to - 1] || '')) to--;
+  if (to <= from) return null;
+  return [from, to];
+}
+
+function trimSpanEdgesAll(spans, text) {
+  return spans.map(s => trimSpanEdges(s, text)).filter(Boolean);
+}
+
 function filterContainedIn(spans, containerSpans) {
   return spans.filter(s =>
     containerSpans.some(c => s[0] >= c[0] && s[1] <= c[1])
@@ -834,11 +890,14 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // back to word boundaries so highlights are coherent.
     const boldCap = BOLD_CAPS[density] ?? BOLD_CAPS.heavy;
 
-    let underlines = mergeSpans(
-      trimFillerEdgesAll(
-        snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
-        paragraphText
-      )
+    let underlines = bridgeAdjacentSpans(
+      mergeSpans(
+        trimFillerEdgesAll(
+          snapSpansToWordBoundaries((pick.u || []).map(s => clampSpan(s, N)).filter(Boolean), paragraphText),
+          paragraphText
+        )
+      ),
+      paragraphText
     );
     // Highlights AND bolds get dangling-end fix: if a span ends on a
     // preposition/article/conjunction (e.g. "the upper", "impossible to"),
@@ -950,6 +1009,15 @@ function reconstructCard({ picksJson, candidates, density = 'heavy' } = {}) {
     // non-overlapping (renderer assumes non-overlap).
     highlights = mergeSpans(highlights);
     bolds      = mergeSpans(bolds);
+    // BRIDGE adjacent spans separated only by whitespace/apostrophe/hyphen
+    // (or possessive "'s "). Two highlights right next to each other in
+    // source render as one continuous highlight. Capped by per-kind max
+    // run length so splitter fragments (>22 chars combined) don't re-merge.
+    highlights = bridgeAdjacentSpans(highlights, paragraphText, MAX_HIGHLIGHT_RUN_CHARS);
+    bolds      = bridgeAdjacentSpans(bolds,      paragraphText, MAX_BOLD_RUN_CHARS);
+    // Final edge-trim: ensure no leading/trailing whitespace in any span.
+    highlights = trimSpanEdgesAll(highlights, paragraphText);
+    bolds      = trimSpanEdgesAll(bolds,      paragraphText);
     // Final bad-bold pass: trimMaxRun could shrink a 14-char "the upper" to
     // "the" or a 14-char "asymmetric" to "asymm" depending on snap; reject.
     bolds      = dropBadBolds(bolds, paragraphText);
@@ -1188,4 +1256,8 @@ module.exports = {
   resolveQuotesInParagraph,
   findQuoteInText,
   normalizeForMatch,
+  // bridging + edge trim (post-deploy formatting fixes):
+  bridgeAdjacentSpans,
+  trimSpanEdges,
+  trimSpanEdgesAll,
 };

@@ -247,7 +247,7 @@ OUTPUT — JSON ONLY. No prose. No fence. No commentary.
 The "argument" field is REQUIRED. Compose your spoken argument FIRST, THEN emit the quotes that deliver it.
 
 {
-  "tag":      "Offensive strategic claim that wins the round. ~9-17 words. Causal mechanism + magnitude.",
+  "tag":      "Offensive strategic claim that wins the round. 7–13 words, AS SHORT AS POSSIBLE while still carrying mechanism + magnitude. AVOID EM DASHES (—) — use a period or just shorten the tag instead. Hyphens (-) are fine. Examples: 'Forward deployment destabilizes the region. Goes nuclear and draws in Russia and China.' / 'Diplomacy fails. North Korean threats not abating, ignoring backfires.'",
   "cite":     "Lastname 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]   ← prefix is JUST the LAST name + 2-digit year, e.g. \"Bowers '23 [Ian Bowers; ...]\" — NOT \"Ian Bowers '23 [...]\"",
   "argument": "REQUIRED. 30-50 word spoken speech the highlights deliver. Read it aloud — it should sound like a debater making the case.",
   "picks": [
