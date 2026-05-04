@@ -624,3 +624,51 @@ test('reconstructCard: bridges two adjacent highlights into one render', () => {
   assert.ok(!/==Kim== ==Jong-un==/.test(out.body_markdown),
     `Should not render as two separate highlights, got: ${out.body_markdown}`);
 });
+
+// ── Giant-paragraph splitter for BM25 stability ──────────────────────
+
+const {
+  splitGiantParagraphs,
+  MAX_PARAGRAPH_CHARS,
+  TARGET_CHUNK_CHARS,
+} = require('../server/services/argumentRelevance');
+
+test('splitGiantParagraphs: short paragraphs pass through unchanged', () => {
+  const paras = ['Short first.', 'Short second sentence here.'];
+  assert.deepEqual(splitGiantParagraphs(paras), paras);
+});
+
+test('splitGiantParagraphs: dices a giant paragraph at sentence boundaries', () => {
+  // Build one paragraph way over MAX_PARAGRAPH_CHARS with clear sentences.
+  const sentence = 'This is a sentence with enough content to register as substantial. ';
+  const giant = sentence.repeat(40); // ~2700 chars
+  const out = splitGiantParagraphs([giant]);
+  assert.ok(out.length >= 4, `Should produce multiple chunks, got ${out.length}`);
+  // Each chunk should be near targetChars, never wildly over.
+  for (const chunk of out) {
+    assert.ok(chunk.length <= TARGET_CHUNK_CHARS + sentence.length,
+      `Chunk exceeded target by too much: ${chunk.length}`);
+  }
+  // Recombined text should equal the original (modulo whitespace).
+  const rejoined = out.join(' ').replace(/\s+/g, ' ').trim();
+  const original = giant.replace(/\s+/g, ' ').trim();
+  assert.equal(rejoined, original, 'Splitting must preserve all source text verbatim');
+});
+
+test('splitGiantParagraphs: never splits in the middle of a sentence', () => {
+  const oneLongSentence = 'A'.repeat(800) + '.';   // single 801-char "sentence"
+  const out = splitGiantParagraphs([oneLongSentence]);
+  // No clean sentence boundary → keep as one chunk even though over target.
+  assert.equal(out.length, 1);
+  assert.equal(out[0], oneLongSentence);
+});
+
+test('splitGiantParagraphs: mixed input — small + giant + small', () => {
+  const giant = 'This is one sentence. '.repeat(80);  // ~1760 chars, multiple sentences
+  const paras = ['Small intro.', giant, 'Small outro.'];
+  const out = splitGiantParagraphs(paras);
+  assert.equal(out[0], 'Small intro.');
+  assert.equal(out[out.length - 1], 'Small outro.');
+  // Middle giant should have produced multiple chunks.
+  assert.ok(out.length >= 4, `Expected at least 4 chunks, got ${out.length}`);
+});
