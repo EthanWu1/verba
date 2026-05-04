@@ -531,3 +531,96 @@ test('isBotBlockedPage: detects "verifying you are human" body text', () => {
 test('isBotBlockedPage: detects "Pardon Our Interruption" PerimeterX', () => {
   assert.equal(isBotBlockedPage({ title: 'Pardon Our Interruption', html: '', bodyText: '' }), true);
 });
+
+// ── Span bridging + edge trim (formatting polish) ────────────────────
+
+const { bridgeAdjacentSpans, trimSpanEdges } = require('../server/services/cardReconstructor');
+
+test('bridgeAdjacentSpans: bridges two spans separated by single space', () => {
+  const text = 'Kim Jong-un policy';
+  const spans = [[0, 3], [4, 11]]; // "Kim", "Jong-un"
+  const out = bridgeAdjacentSpans(spans, text);
+  assert.deepEqual(out, [[0, 11]], `Should bridge to "Kim Jong-un", got ${JSON.stringify(out)}`);
+});
+
+test('bridgeAdjacentSpans: bridges across possessive "\'s "', () => {
+  // "Kim's policy" — model emits "Kim" and "policy" separately.
+  // Gap = "'s " (apostrophe + s + space) → bridgeable as possessive.
+  const text = "Kim's policy is failing";
+  // K(0)i(1)m(2)'(3)s(4) (5)p(6)o(7)l(8)i(9)c(10)y(11)
+  const spans = [[0, 3], [6, 12]];
+  const out = bridgeAdjacentSpans(spans, text);
+  assert.deepEqual(out, [[0, 12]],
+    `Should bridge across "'s ", got ${JSON.stringify(out)}`);
+});
+
+test('bridgeAdjacentSpans: respects maxLen cap', () => {
+  // Two 11-char spans with single space gap → combined 23 chars.
+  // With maxLen=22 should NOT bridge (preserves splitter fragments).
+  const text = 'aaaaaaaaaaa bbbbbbbbbbb';  // 11 a's, space, 11 b's = 23 chars
+  const spans = [[0, 11], [12, 23]];
+  const out = bridgeAdjacentSpans(spans, text, 22);
+  assert.deepEqual(out, [[0, 11], [12, 23]], 'Should NOT bridge — over cap');
+  // Without cap, should bridge.
+  const out2 = bridgeAdjacentSpans(spans, text, 100);
+  assert.deepEqual(out2, [[0, 23]], 'Should bridge with high cap');
+});
+
+test('bridgeAdjacentSpans: does NOT bridge across content words', () => {
+  const text = 'Kim met with Trump';
+  const spans = [[0, 3], [13, 18]]; // "Kim", "Trump"
+  const out = bridgeAdjacentSpans(spans, text);
+  assert.deepEqual(out, [[0, 3], [13, 18]],
+    'Should NOT bridge across "met with" (content words)');
+});
+
+test('bridgeAdjacentSpans: does NOT bridge if gap is too long', () => {
+  const text = 'A      B';   // 6 spaces between
+  const spans = [[0, 1], [7, 8]];
+  const out = bridgeAdjacentSpans(spans, text);
+  assert.deepEqual(out, [[0, 1], [7, 8]],
+    'Should NOT bridge if gap >3 chars');
+});
+
+test('trimSpanEdges: strips leading whitespace', () => {
+  // 'word here' — w(0) o(1) r(2) d(3) ' '(4) h(5) e(6) r(7) e(8). length 9.
+  const text = 'word here';
+  assert.deepEqual(trimSpanEdges([5, 9], text), [5, 9]);  // "here" no change
+  assert.deepEqual(trimSpanEdges([4, 9], text), [5, 9]);  // " here" → "here"
+});
+
+test('trimSpanEdges: strips trailing whitespace', () => {
+  // 'word here ' — last char is space at index 9.
+  const text = 'word here ';
+  assert.deepEqual(trimSpanEdges([0, 5], text), [0, 4]);  // "word "→"word"
+  assert.deepEqual(trimSpanEdges([0, 10], text), [0, 9]); // strip final space
+});
+
+test('trimSpanEdges: returns null if span collapses', () => {
+  const text = '   ';
+  assert.equal(trimSpanEdges([0, 3], text), null);
+});
+
+test('reconstructCard: bridges two adjacent highlights into one render', () => {
+  // "Kim Jong-un" — model emits "Kim" and "Jong-un" as separate highlights.
+  // Expected: rendered as one continuous ==Kim Jong-un== span.
+  const candidates = [
+    { index: 0, originalIndex: 0, text: 'A statement about Kim Jong-un policy.' },
+  ];
+  const picksJson = {
+    tag: 't', cite: 'C', argument: 'Kim Jong-un policy',
+    picks: [{
+      p: 0,
+      u: [[0, 37]],
+      h: [[18, 21], [22, 29]],   // "Kim", "Jong-un"
+      b: [],
+    }],
+  };
+  const out = reconstructCard({ picksJson, candidates, density: 'heavy' });
+  // After bridging: ==Kim Jong-un== as one continuous span.
+  assert.ok(/==Kim Jong-un==/.test(out.body_markdown),
+    `Adjacent highlights should bridge, got: ${out.body_markdown}`);
+  // Should NOT have two separate ==..== blocks for the bridged words.
+  assert.ok(!/==Kim== ==Jong-un==/.test(out.body_markdown),
+    `Should not render as two separate highlights, got: ${out.body_markdown}`);
+});
