@@ -249,7 +249,7 @@ OUTPUT — JSON ONLY. No prose. No fence. No commentary.
 The "argument" field is REQUIRED. Compose your spoken argument FIRST, THEN emit the quotes that deliver it.
 
 {
-  "tag":      "Offensive strategic claim that wins the round. 7–13 words, AS SHORT AS POSSIBLE while still carrying mechanism + magnitude. AVOID EM DASHES (—) — use a period or just shorten the tag instead. Hyphens (-) are fine. Examples: 'Forward deployment destabilizes the region. Goes nuclear and draws in Russia and China.' / 'Diplomacy fails. North Korean threats not abating, ignoring backfires.'",
+  "tag":      "Offensive strategic claim that wins the round. 7–13 words, AS SHORT AS POSSIBLE while still carrying mechanism + magnitude. ONE SENTENCE preferred — chain clauses with commas, colons, or --- (triple hyphens for em-dash-like breaks). Use TWO sentences only for dense K-cards with two distinct theoretical claims. NEVER emit the Unicode em dash (—); always use --- instead. Hyphens (-) are fine. Examples: 'Forward deployment destabilizes the region---goes nuclear and draws in Russia and China.' / 'Diplomacy fails to stabilize Northeast Asia, ignoring North Korean threats backfires.' / 'Debates must center the preconscious: grammar of abstraction represses pain.'",
   "cite":     "Lastname 'YY [Full Name; Credentials; \\"Title\\"; Source; Date; URL]   ← prefix is JUST the LAST name + 2-digit year, e.g. \"Bowers '23 [Ian Bowers; ...]\" — NOT \"Ian Bowers '23 [...]\"",
   "argument": "REQUIRED. 30-50 word spoken speech the highlights deliver. Read it aloud — it should sound like a debater making the case.",
   "picks": [

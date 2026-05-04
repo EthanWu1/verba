@@ -969,8 +969,10 @@ router.post('/suggest-tags', requireUser, async (req, res) => {
     });
 
     const tags = Array.isArray(result?.json?.tags) ? result.json.tags : [];
+    // Normalize Unicode em dashes (— or –) to --- per Verbatim convention.
+    const normalizeDashes = (s) => String(s || '').replace(/[—–]/g, '---');
     const clean = tags
-      .map(t => String(t || '').trim())
+      .map(t => normalizeDashes(String(t || '').trim()))
       .filter(t => t.length >= 5 && t.length <= 200)
       .slice(0, 3);
 
