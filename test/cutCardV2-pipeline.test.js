@@ -485,3 +485,40 @@ test('reconstructCard: trims filler prefix from highlight', () => {
   assert.ok(!/==First,? conventional/.test(out.body_markdown),
     `highlight must not include "First," prefix, got: ${out.body_markdown}`);
 });
+
+// ── Anti-bot / captcha detection (scraper) ──────────────────────────
+
+const { isBotBlockedPage } = require('../server/services/scraper');
+
+test('isBotBlockedPage: detects Cloudflare "Just a moment..." title', () => {
+  assert.equal(isBotBlockedPage({ title: 'Just a moment...', html: '', bodyText: '' }), true);
+  assert.equal(isBotBlockedPage({ title: 'Just a moment', html: '', bodyText: '' }), true);
+});
+
+test('isBotBlockedPage: detects "Attention Required" Cloudflare WAF', () => {
+  assert.equal(isBotBlockedPage({ title: 'Attention Required! | Cloudflare', html: '', bodyText: '' }), true);
+});
+
+test('isBotBlockedPage: detects "Performing security verification" body text', () => {
+  const bodyText = 'www.tandfonline.com\n\nPerforming security verification';
+  assert.equal(isBotBlockedPage({ title: '', html: '', bodyText }), true);
+});
+
+test('isBotBlockedPage: detects Cloudflare challenge platform marker in HTML', () => {
+  const html = '<html><body><script src="/cdn-cgi/challenge-platform/h/g/scripts/jsd/main.js"></script></body></html>';
+  assert.equal(isBotBlockedPage({ title: 'Article title', html, bodyText: 'normal content' }), true);
+});
+
+test('isBotBlockedPage: lets through normal article pages', () => {
+  const bodyText = 'A long article about nuclear deterrence policy in the Korean peninsula. '.repeat(50);
+  const title = 'Nuclear Deterrence in Northeast Asia';
+  const html = '<html><head><title>Nuclear Deterrence in Northeast Asia</title></head>...';
+  assert.equal(isBotBlockedPage({ title, html, bodyText }), false);
+});
+
+test('isBotBlockedPage: short body without captcha keywords is NOT blocked', () => {
+  // Short bodies without verification keywords pass — handled by separate
+  // [SCRAPE LIMITED] check in scrapeUrl.
+  const bodyText = 'Brief article about climate change.';
+  assert.equal(isBotBlockedPage({ title: 'Climate', html: '', bodyText }), false);
+});
