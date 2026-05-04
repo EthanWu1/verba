@@ -24,6 +24,7 @@ on:
           - disk-audit                 # READ-ONLY: list biggest files/dirs eating space
           - free-disk                  # delete known-safe junk (logs, npm cache, etc.) — prints before/after
           - relocate-db-to-volume      # one-time: mv library.db to /mnt/volume + symlink (~10 min downtime)
+          - purge-backfiles            # DESTRUCTIVE: delete all of /mnt/volume/backfiles/ (~23GB)
 
 concurrency:
   group: migrate-prod
@@ -117,6 +118,20 @@ jobs:
               dry-run-fingerprints) run_fp_dry ;;
               dry-run-containment)  run_cont_dry ;;
               vacuum)               run_vacuum ;;
+              purge-backfiles)
+                # User-confirmed deletion of /mnt/volume/backfiles/.
+                # The zips are already imported into library.db; deleting
+                # them only loses the ability to re-import from local
+                # archive (re-fetch from opencaselist would be needed).
+                echo "── Disk before ──"
+                df -h /mnt/volume || true
+                echo "── Backfiles size before ──"
+                du -sh /mnt/volume/backfiles 2>/dev/null || echo "(no backfiles dir)"
+                echo "── Deleting /mnt/volume/backfiles ──"
+                rm -rf /mnt/volume/backfiles
+                echo "── Disk after ──"
+                df -h /mnt/volume || true
+                ;;
               relocate-db-to-volume)
                 # One-time structural fix: move library.db from the tight
                 # /dev/sda1 (38GB, 8GB free) to /dev/sdb mounted at
