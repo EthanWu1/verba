@@ -191,6 +191,15 @@ jobs:
                 echo "── biggest files in server/data/ ──"
                 find server/data/ -maxdepth 2 -type f -size +50M -exec ls -lh {} \; 2>/dev/null | sort -k5 -h | tail -20 || true
                 echo
+                echo "── /mnt/volume contents (top-level) ──"
+                ls -lah /mnt/volume 2>/dev/null || echo "(no /mnt/volume access)"
+                echo
+                echo "── /mnt/volume du (1 level deep) ──"
+                du -h --max-depth=1 /mnt/volume 2>/dev/null | sort -h | tail -20 || true
+                echo
+                echo "── biggest files anywhere on /mnt/volume ──"
+                find /mnt/volume -maxdepth 4 -type f -size +50M -exec ls -lh {} \; 2>/dev/null | sort -k5 -h | tail -20 || true
+                echo
                 echo "── npm/cache dirs ──"
                 du -sh ~/.npm 2>/dev/null || true
                 du -sh ~/.cache 2>/dev/null || true
