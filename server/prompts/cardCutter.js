@@ -318,12 +318,22 @@ TAG-ANCHORED HIGHLIGHTING — repeat the tag's key concepts
 
 The TAG names 3–6 KEY CONCEPTS. Extract them. For each KEY CONCEPT, search source paragraphs for that word/phrase (or close synonym) and highlight EVERY occurrence. This anchors the chain to the tag.
 
-Tag types — adapt the cut style:
-- POLICY tag (countries, numbers, "fails to", "destabilizes"): tight impact chains, dense bolding of landing words, capture numbers/actors.
-- KRITIK/THEORY tag (theoretical terms like "fantasy", "discourse", "preconscious", "grammar of"; philosopher names like Wilderson, Meiches, Foucault): highlight CONCEPT FLAGS every time they appear; capture claim-level statements ("X is constituted by Y", "X produces Z", "X is connected to W").
-- HYBRID tag: blend both.
+Tag types — adapt the cut style. LD cards fall into these families:
 
-Extra K-card warrant verbs: "is constituted by" / "produces" / "engenders" / "renders thinkable" / "represses" / "naturalizes" / "donates" / "intensifies" / "operates as" / "structures".
+- **POLICY / EMPIRICAL** (countries, numbers, "fails to", "destabilizes"): tight impact chains, dense bolding of landing words, capture numbers/actors.
+
+- **K / KRITIK** (theoretical framing like "fantasy", "discourse", "preconscious", "grammar of"; philosopher names like Wilderson, Meiches, Foucault): highlight CONCEPT FLAGS every time they appear; capture claim-level statements ("X is constituted by Y", "X produces Z").
+
+- **PHIL / FRAMEWORK** (philosophical premises — Kant, util, virtue, moral epistemology, philosophy of science; tags often invoke a normative framework: "Kant affirms…", "Util good…", "Thermodynamics doesn't support creationism…"): highlight syllogism premises and normative claims; bold the framework's core principle and its implication for the resolution. Less impact-density than policy; emphasis on inferential structure.
+
+- **TRICK** (specific argumentation tactics: paraconsistent logic, NIBs, skep, indexicals, monism; tags often claim self-evidence or categorical outweighing — "X is self-evident", "outweighs on proximity"): SHORT, DENSE cuts. Highlight every step of the trick's logic. Bold the categorical claim and the outweighing mechanism. Tricks are usually 1–3 paragraphs; selectivity is key.
+
+- **HYBRID**: mixes families (e.g. K with concrete impact, phil framework with policy aff). Blend conventions.
+
+Extra warrant verbs by family:
+  K:    "is constituted by" / "produces" / "engenders" / "renders thinkable" / "represses" / "naturalizes" / "donates" / "intensifies" / "operates as" / "structures"
+  Phil: "follows from" / "implies" / "entails" / "is grounded in" / "presupposes" / "necessitates" / "morally obligates" / "is a necessary condition for"
+  Trick:"outweighs" / "is self-evident" / "is presupposed by" / "cannot be denied without" / "exhausts the" / "is sufficient for" / "categorically"
 
 Example, tag = "Forward deployment destabilizes the region — goes nuclear and draws in Russia and China":
   Key concepts: deployment, destabilizes, region, nuclear, Russia, China
@@ -347,6 +357,8 @@ Notice across these examples:
   - Bolds usually appear in h too (loud sub-phrases of highlighted spans)
   - Policy cuts capture numbers and named actors aggressively
   - K cuts repeat key concepts (preconscious, nuclear policy) and capture claim-level statements ("is deeply connected to", "is constituted by")
+  - Phil cuts capture syllogism premises ("evaluating X in light of Y", "considerable plausibility", "visible traces in every stage") and bold the framework's core principle
+  - Trick cuts are dense and categorical — every step of the logic gets highlighted, the outweighing mechanism gets bolded
   - Filler/attribution stays plain (not in h or b)
 
 ═══════════════════════════════════════════════
