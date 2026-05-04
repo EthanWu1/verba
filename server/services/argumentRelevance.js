@@ -43,6 +43,49 @@ function splitParagraphs(text) {
     .filter(Boolean);
 }
 
+// Split overly-long paragraphs at sentence boundaries so BM25 can rank
+// FRAGMENTS of them rather than treating the whole giant block as a single
+// candidate. Without this, K-card sources like a Wilderson interview or
+// a Meiches paper (one 18,000-char paragraph) cause the model to pick 5
+// random sentences out of dozens — different runs, different picks, huge
+// run-to-run variance.
+//
+// Strategy: paragraphs <= MAX_PARAGRAPH_CHARS pass through untouched.
+// Larger ones are sliced into sentence groups of ~TARGET_CHUNK_CHARS each.
+// Sentence detection is regex-based ([.!?] followed by space/quote/end).
+// Single sentences >TARGET_CHUNK_CHARS stay whole — we never split a
+// sentence in half.
+const MAX_PARAGRAPH_CHARS = 1500;
+const TARGET_CHUNK_CHARS  = 600;
+
+function splitGiantParagraphs(paragraphs, maxChars = MAX_PARAGRAPH_CHARS, targetChars = TARGET_CHUNK_CHARS) {
+  const out = [];
+  for (const p of paragraphs) {
+    if (p.length <= maxChars) {
+      out.push(p);
+      continue;
+    }
+    // Match sentence-like spans: chars up to and including a [.!?], then
+    // optional closing quote/paren and trailing whitespace. Catches "...end."
+    // and "...end!" reliably; falls back to whole paragraph if no matches.
+    const sentences = p.match(/[^.!?]+[.!?]+(?:["'\)\]]\s*|\s+|$)/g) || [p];
+    let current = '';
+    for (const s of sentences) {
+      if (!current) {
+        current = s;
+      } else if (current.length + s.length <= targetChars) {
+        current += s;
+      } else {
+        out.push(current.trim());
+        current = s;
+      }
+    }
+    const tail = current.trim();
+    if (tail) out.push(tail);
+  }
+  return out;
+}
+
 // BM25 with Okapi defaults (k1=1.5, b=0.75).
 function bm25Rank({ corpus, query, k1 = 1.5, b = 0.75 }) {
   const N = corpus.length;
@@ -121,7 +164,12 @@ function selectCandidates({
   if (stripBoilerplate) {
     body = stripBoilerplateSections(stripAbstractPrelude(body));
   }
-  const paragraphs = splitParagraphs(body);
+  // Split paragraphs, then dice any giant paragraphs into smaller chunks so
+  // BM25 ranks at the warrant-sentence level instead of the whole-block level.
+  // Critical for K-card sources where one huge paragraph contains dozens of
+  // theoretical claims; without this, model picks ~5 sentences randomly.
+  const rawParagraphs = splitParagraphs(body);
+  const paragraphs = splitGiantParagraphs(rawParagraphs);
   if (!paragraphs.length) {
     return { candidates: [], skipped: [], totalParagraphs: 0 };
   }
@@ -193,5 +241,8 @@ module.exports = {
   tokenize,            // exported for tests
   bm25Rank,            // exported for tests
   splitParagraphs,
+  splitGiantParagraphs,
+  MAX_PARAGRAPH_CHARS,
+  TARGET_CHUNK_CHARS,
   STOPWORDS,
 };
