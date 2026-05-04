@@ -112,6 +112,107 @@ const REFERENCE_CUTS = [
     b: ['nuclear policy', 'racialized violence', 'racialized warfare',
         'nuclear dominance', 'white supremacy', 'fantasies of atomic genocide'],
   },
+
+  // ── Policy: constitutional / unitary executive ──────────────────────
+  {
+    type: 'policy',
+    tag: 'A unitary executive prevents solutions to existential threats.',
+    source:
+      "Effective governance requires systems that can respond to complex " +
+      "challenges with appropriate speed, expertise, and democratic input. " +
+      "The unitary executive theory, while appealing in its theoretical " +
+      "clarity, may actually impede these goals in practice. Concentrating " +
+      "decision-making power in a single executive has not demonstrably " +
+      "improved government performance on basic aspects of governance.",
+    h: ['Effective governance', 'speed', 'expertise', 'democratic input',
+        'unitary executive', 'impede these goals', 'concentrating',
+        'decision-making power', 'not demonstrably improved', 'performance'],
+    b: ['speed', 'expertise', 'democratic input', 'unitary executive',
+        'impede', 'not demonstrably improved'],
+  },
+
+  // ── K: state-engagement / coopted micropolitics ─────────────────────
+  {
+    type: 'k',
+    tag: 'Absent state engagement, the alt is coopted---micropolitics fails to match state power.',
+    source:
+      "The notion of resistance came to stress that power and counterpower " +
+      "were not in binary opposition, but in a decoupled, complex, ambivalent, " +
+      "and perpetual dance of control. It based itself on the Foucauldian idea " +
+      "that wherever there is power there is resistance, although the latter " +
+      "consisted largely of small-scale, everyday, tiny activities that the " +
+      "agents could afford to articulate given their political constraints. " +
+      "Yet a number of conceptual and political problems also emerge from this paradigm.",
+    h: ['resistance', 'power and counterpower', 'decoupled', 'dance of control',
+        'wherever there is power', 'small-scale', 'tiny activities',
+        'political constraints', 'conceptual', 'political problems',
+        'emerge from this paradigm'],
+    b: ['resistance', 'dance of control', 'small-scale', 'tiny activities',
+        'conceptual', 'political problems'],
+  },
+
+  // ── Framework: Kant / UN alignment ──────────────────────────────────
+  {
+    type: 'policy',
+    tag: 'Kant affirms---aff aligns with the U.N., founded on Kantian ideals.',
+    source:
+      "Historically, evaluating the UN in light of Kantian standards bears " +
+      "considerable plausibility. Although the UN has been founded not less " +
+      "than 150 years after Kantian thoughts on perpetual peace have been " +
+      "published, they have left visible traces in every stage of the " +
+      "historical development from the merely philosophical conception to the " +
+      "present stage of political realisation. The League of Nations constitutes " +
+      "the first attempt to put philosophical peace projects into practice.",
+    h: ['evaluating the UN', 'Kantian standards', 'considerable plausibility',
+        'founded', '150 years after Kantian thoughts', 'perpetual peace',
+        'visible traces in every stage', 'philosophical conception',
+        'political realisation', 'first attempt'],
+    b: ['Kantian standards', 'considerable plausibility',
+        'visible traces in every stage', 'political realisation'],
+  },
+
+  // ── STEM: thermodynamics / entropy / creationism ────────────────────
+  {
+    type: 'policy',
+    tag: 'Thermodynamics doesn\'t support creationism---entropy makes evolution probabilistically likely.',
+    source:
+      "Creationists are not showing that evolution contradicts the second law " +
+      "of thermodynamics; instead, they are saying that the second law, as " +
+      "accepted by conventional science, is incorrect and insufficient to " +
+      "explain natural phenomena. They insist that something else of their own " +
+      "making must be added---namely, a divinely created directing program or " +
+      "a distinction between different kinds of entropy. Their notions are " +
+      "wrong and unnecessary.",
+    h: ['Creationists are not showing', 'evolution contradicts',
+        'the second law', 'they are saying', 'is incorrect',
+        'divinely created directing program',
+        'distinction between different kinds of entropy',
+        'are wrong and unnecessary'],
+    b: ['the second law', 'is incorrect', 'divinely created directing program',
+        'are wrong and unnecessary'],
+  },
+
+  // ── Formal logic: paraconsistent / philosophy ───────────────────────
+  {
+    type: 'k',
+    tag: 'Paraconsistent logic is self-evident, necessary, and outweighs on proximity.',
+    source:
+      "If the world were a perfect place, we would not need logic. Logic " +
+      "tells us what follows from things we already believe, things we are " +
+      "already committed to. Logic helps us work around our fallible and " +
+      "finite limitations. We need logic because we can go wrong, because " +
+      "things do go wrong, and we need guidance. Logic is most important for " +
+      "navigating inconsistency---paraconsistent logic refuses to let " +
+      "contradiction explode into total triviality.",
+    h: ['Logic', 'what follows from things we already believe',
+        'fallible and finite limitations', 'we need logic',
+        'we can go wrong', 'we need guidance', 'most important',
+        'navigating inconsistency', 'paraconsistent logic',
+        'contradiction explode', 'total triviality'],
+    b: ['Logic', 'fallible and finite', 'we need logic',
+        'most important', 'paraconsistent logic',
+        'contradiction explode'],
+  },
 ];
 
 // Render the references into a prompt section. Stable formatting so the
