@@ -151,9 +151,9 @@ const REFERENCE_CUTS = [
         'conceptual', 'political problems'],
   },
 
-  // ── Framework: Kant / UN alignment ──────────────────────────────────
+  // ── Phil: Kant framework / UN alignment ─────────────────────────────
   {
-    type: 'policy',
+    type: 'phil',
     tag: 'Kant affirms---aff aligns with the U.N., founded on Kantian ideals.',
     source:
       "Historically, evaluating the UN in light of Kantian standards bears " +
@@ -171,9 +171,9 @@ const REFERENCE_CUTS = [
         'visible traces in every stage', 'political realisation'],
   },
 
-  // ── STEM: thermodynamics / entropy / creationism ────────────────────
+  // ── Phil: thermodynamics / entropy / philosophy of science ──────────
   {
-    type: 'policy',
+    type: 'phil',
     tag: 'Thermodynamics doesn\'t support creationism---entropy makes evolution probabilistically likely.',
     source:
       "Creationists are not showing that evolution contradicts the second law " +
@@ -192,9 +192,9 @@ const REFERENCE_CUTS = [
         'are wrong and unnecessary'],
   },
 
-  // ── Formal logic: paraconsistent / philosophy ───────────────────────
+  // ── Trick: paraconsistent logic / proximity outweighing ─────────────
   {
-    type: 'k',
+    type: 'trick',
     tag: 'Paraconsistent logic is self-evident, necessary, and outweighs on proximity.',
     source:
       "If the world were a perfect place, we would not need logic. Logic " +
