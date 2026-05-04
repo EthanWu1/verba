@@ -58,18 +58,23 @@ jobs:
             run_fp_dry()   { node server/scripts/migrateFingerprints.js; }
             run_cont_dry() { node server/scripts/migrateContainment.js;  }
             run_vacuum() {
-              # VACUUM INTO copies live data to a fresh file with no dead
-              # pages. We stop pm2 first so writes during the copy can't be
-              # lost, then atomically swap and restart. Total downtime is
-              # the copy duration (~30-60 min on a 33GB DB).
+              # VACUUM INTO writes to /mnt/volume (40GB volume) instead of the
+              # tight root partition (38GB, only ~8GB free with the 22GB DB).
+              # After VACUUM completes there, mv the result back to server/data.
+              # Stop pm2 so writes during the copy aren't lost. Downtime is
+              # the copy + cross-mount move (~30-90 min).
               local DB="server/data/library.db"
-              local NEW="$DB.vacuum-new"
+              local VOL="/mnt/volume/verba-vacuum"
+              local NEW="$VOL/library.db.vacuum-new"
               local BAK="$DB.bak-$(date +%Y%m%d-%H%M)"
+              mkdir -p "$VOL"
               echo "── Stopping pm2 to prevent writes during vacuum ──"
               pm2 stop ${{ secrets.PM2_PROCESS_NAME }} || true
               echo "── Pre-vacuum size: $(du -h "$DB" | cut -f1) ──"
+              echo "── Disk before vacuum ──"
+              df -h server/data/ /mnt/volume || true
               rm -f "$NEW"
-              echo "── Running VACUUM INTO ──"
+              echo "── Running VACUUM INTO ($NEW) ──"
               local T0=$(date +%s)
               node -e "
                 const Database = require('better-sqlite3');
@@ -84,8 +89,11 @@ jobs:
               local T1=$(date +%s)
               echo "── VACUUM finished in $((T1-T0))s ──"
               echo "── Post-vacuum size: $(du -h "$NEW" | cut -f1) ──"
+              echo "── Disk after vacuum ──"
+              df -h server/data/ /mnt/volume || true
               echo "── Atomic swap (keeping old as $BAK) ──"
               mv "$DB" "$BAK"
+              # Cross-mount mv = copy + delete; takes a minute or two.
               mv "$NEW" "$DB"
               # Aux SQLite files won't match the new main file; remove them
               # so SQLite regenerates from the swapped file.
