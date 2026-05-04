@@ -1,5 +1,7 @@
 'use strict';
 
+const { formatReferenceCuts } = require('./referenceCuts');
+
 // Density presets — iteration-3 calibration (2026-05-03) from 5 hand-cut
 // gold cards. Hand-cut style: RAPID STITCHED FRAGMENTS, with EXTENSIVE
 // bolding of every warrant beat that lands.
@@ -333,25 +335,19 @@ Example, tag = "Debates must center the preconscious. Debate's grammar of abstra
 
 If a key concept appears 5 times in source, highlight all 5. Repetition anchors the argument.
 
-WORKED K-CARD EXAMPLE (Wilderson on debate / preconscious):
-  Tag: "Debates must center the preconscious. Debate's grammar of abstraction moves away from pain"
-  Key concepts: debates, preconscious, grammar, abstraction, pain
+═══════════════════════════════════════════════
+WORKED EXAMPLES — real hand-cut LD cards. Match this style.
+═══════════════════════════════════════════════
 
-  Source excerpt: "...secondary processes of signification and that is 99 percent of the way you all win or lose debates ... the structure of grammar, which represses the nonsensical utterances ... that is the part of the mind that is least susceptible or least alive, to laughter, sorrow, tears, heartbreak, joy ... in debate, you're really moving 99 percent of the time through secondary processes of signification..."
+${formatReferenceCuts()}
 
-  GOOD K-cut h: ["preconscious", "secondary processes", "of signification", "99 percent", "win or lose debates", "structure of grammar", "represses", "nonsensical utterances", "least alive", "sorrow", "tears", "heartbreak", "in debate", "moving 99 percent", "secondary processes"]
-  GOOD K-cut b: ["preconscious", "99 percent", "represses", "sorrow", "heartbreak", "secondary processes"]
-
-  Notice: "preconscious", "99 percent", and "secondary processes" each appear MULTIPLE TIMES in h — that's correct K-card style. The chain is theoretical claims, not impact predictions.
-
-WORKED POLICY-CARD EXAMPLE (Forward deployment destabilizes):
-  Tag: "Forward deployment destabilizes — goes nuclear and draws in Russia and China"
-  Key concepts: deployment, destabilizes, nuclear, Russia, China
-
-  GOOD policy-cut h: ["deploying US", "nuclear weapons", "most militarized", "tense region", "nuclear adversary", "unique dangers", "198 kilometers", "North Korean border", "even closer", "80 kilometers", "proximity", "increase the risk", "overreaction", "escalation", "nuclear weapons would be used", "China and Russia", "increasing the nuclear threat"]
-  GOOD policy-cut b: ["unique dangers", "198 kilometers", "North Korean border", "even closer", "80 kilometers", "overreaction", "escalation", "would be used", "China and Russia", "nuclear threat"]
-
-  Notice: SPECIFIC NUMBERS (198 km, 80 km) and NAMED ACTORS (China, Russia, North Korean border) are bolded. The chain reads like a debate spike: "deploying nukes ... most militarized ... 198 km from border ... overreaction ... escalation ... nuclear weapons would be used ... draws in China and Russia."
+Notice across these examples:
+  - h-array order matches document order (left-to-right reading)
+  - Most highlights are 1–3 words; some are longer warrant phrases
+  - Bolds usually appear in h too (loud sub-phrases of highlighted spans)
+  - Policy cuts capture numbers and named actors aggressively
+  - K cuts repeat key concepts (preconscious, nuclear policy) and capture claim-level statements ("is deeply connected to", "is constituted by")
+  - Filler/attribution stays plain (not in h or b)
 
 ═══════════════════════════════════════════════
 QUOTED MATERIAL ALSO carries warrants
