@@ -725,7 +725,11 @@
     setTimeout(() => { el.hidden = true; }, 2000);
   }
 
-  function askArgument(url) {
+  function askArgument(url, opts = {}) {
+    // opts: { fileToken?: string }  — passed to /api/ai/suggest-tags
+    // Suggest button only fires when we have something the backend can fetch:
+    // a real URL or a fileToken. Bare filename strings hide the button.
+    const canSuggest = Boolean(opts.fileToken) || /^https?:\/\//i.test(url);
     return new Promise((resolve) => {
       const wrap = document.createElement('div');
       wrap.style.cssText = 'position:fixed;inset:0;background:var(--scrim);z-index:var(--z-modal);display:flex;align-items:center;justify-content:center;font-family:var(--font-ui)';
@@ -733,10 +737,14 @@
       wrap.setAttribute('aria-modal', 'true');
       wrap.setAttribute('aria-label', 'Argument for this article');
       wrap.innerHTML = `
-        <div style="background:var(--bg);border-radius:var(--radius-lg);padding:20px;min-width:420px;box-shadow:var(--shadow-lg);border:1px solid var(--line)">
+        <div style="background:var(--bg);border-radius:var(--radius-lg);padding:20px;min-width:460px;max-width:560px;box-shadow:var(--shadow-lg);border:1px solid var(--line)">
           <div style="font:600 var(--fs-md) var(--font-display);color:var(--ink);margin-bottom:6px">Argument for this article?</div>
           <div style="font-size:var(--fs-sm);color:var(--muted);margin-bottom:12px;word-break:break-all">${esc(url)}</div>
-          <input id="arg-input" type="text" placeholder="e.g. Nuclear deterrence is stable" style="width:100%;padding:10px;font:var(--fs-md) var(--font-ui);border:1px solid var(--line-2);border-radius:var(--radius);color:var(--ink);box-sizing:border-box">
+          <div style="position:relative">
+            <input id="arg-input" type="text" placeholder="e.g. Nuclear deterrence is stable" style="width:100%;padding:10px 38px 10px 10px;font:var(--fs-md) var(--font-ui);border:1px solid var(--line-2);border-radius:var(--radius);color:var(--ink);box-sizing:border-box">
+            <button id="arg-suggest" type="button" title="Suggest tags from the article" aria-label="Suggest tags" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--lilac);font-size:18px;cursor:pointer;border-radius:var(--radius);display:${canSuggest ? 'flex' : 'none'};align-items:center;justify-content:center">💡</button>
+          </div>
+          <div id="arg-chips" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
           <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px">
             <button id="arg-cancel" style="padding:8px 14px;border-radius:var(--radius);border:1px solid var(--line-2);background:var(--bg);color:var(--ink);cursor:pointer">Cancel</button>
             <button id="arg-ok" style="padding:8px 14px;border-radius:var(--radius);border:1px solid var(--lilac);background:var(--lilac);color:var(--lilac-ink);cursor:pointer">Cut</button>
@@ -744,6 +752,8 @@
         </div>`;
       document.body.appendChild(wrap);
       const input = wrap.querySelector('#arg-input');
+      const chips = wrap.querySelector('#arg-chips');
+      const suggestBtn = wrap.querySelector('#arg-suggest');
       input.focus();
       const done = (v) => { document.body.removeChild(wrap); resolve(v); };
       wrap.querySelector('#arg-cancel').onclick = () => done(null);
@@ -752,6 +762,48 @@
         if (e.key === 'Enter') done(input.value.trim());
         if (e.key === 'Escape') done(null);
       });
+
+      // 💡 click → fetch 3 candidate tags, render as clickable rows.
+      let suggestPending = false;
+      suggestBtn.onclick = async () => {
+        if (suggestPending) return;
+        suggestPending = true;
+        suggestBtn.textContent = '⏳';
+        suggestBtn.disabled = true;
+        chips.innerHTML = '';
+        try {
+          const body = {};
+          if (opts.fileToken) body.fileToken = opts.fileToken;
+          else body.url = url;
+          const resp = await fetch('/api/ai/suggest-tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body),
+          });
+          const data = await resp.json();
+          if (!resp.ok || !Array.isArray(data.tags) || !data.tags.length) {
+            chips.innerHTML = `<div style="font-size:var(--fs-sm);color:var(--muted)">${esc(data.error || 'no suggestions returned')}</div>`;
+            return;
+          }
+          for (const tag of data.tags) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.textContent = tag;
+            chip.style.cssText = 'text-align:left;padding:8px 10px;font:var(--fs-sm) var(--font-ui);border:1px solid var(--line-2);border-radius:var(--radius);background:var(--bg);color:var(--ink);cursor:pointer;white-space:normal;line-height:1.3';
+            chip.onmouseenter = () => { chip.style.background = 'var(--bg-2)'; chip.style.borderColor = 'var(--lilac)'; };
+            chip.onmouseleave = () => { chip.style.background = 'var(--bg)'; chip.style.borderColor = 'var(--line-2)'; };
+            chip.onclick = () => { input.value = tag; input.focus(); };
+            chips.appendChild(chip);
+          }
+        } catch (err) {
+          chips.innerHTML = `<div style="font-size:var(--fs-sm);color:var(--muted)">${esc('Suggest failed: ' + err.message)}</div>`;
+        } finally {
+          suggestPending = false;
+          suggestBtn.textContent = '💡';
+          suggestBtn.disabled = false;
+        }
+      };
     });
   }
 
