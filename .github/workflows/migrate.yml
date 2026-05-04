@@ -66,10 +66,13 @@ jobs:
               # Stop pm2 so writes during the copy aren't lost. Downtime is
               # the copy + cross-mount move (~30-90 min).
               local DB="server/data/library.db"
-              local VOL="/mnt/volume/verba-vacuum"
-              local NEW="$VOL/library.db.vacuum-new"
+              # Resolve the symlink — VACUUM INTO needs the real DB path
+              # so SQLite can read pages directly.
+              local REAL_DB=$(readlink -f "$DB")
+              # Put vacuum-new alongside the real DB; same user-owned dir,
+              # same filesystem so the post-vacuum mv is instant (rename).
+              local NEW="$(dirname "$REAL_DB")/library.db.vacuum-new"
               local BAK="$DB.bak-$(date +%Y%m%d-%H%M)"
-              mkdir -p "$VOL"
               echo "── Stopping pm2 to prevent writes during vacuum ──"
               pm2 stop ${{ secrets.PM2_PROCESS_NAME }} || true
               echo "── Pre-vacuum size: $(du -h "$DB" | cut -f1) ──"
@@ -93,16 +96,26 @@ jobs:
               echo "── Post-vacuum size: $(du -h "$NEW" | cut -f1) ──"
               echo "── Disk after vacuum ──"
               df -h server/data/ /mnt/volume || true
-              echo "── Atomic swap (keeping old as $BAK) ──"
-              mv "$DB" "$BAK"
-              # Cross-mount mv = copy + delete; takes a minute or two.
-              mv "$NEW" "$DB"
-              # Aux SQLite files won't match the new main file; remove them
-              # so SQLite regenerates from the swapped file.
-              rm -f "$DB-wal" "$DB-shm"
+              echo "── Atomic swap (keeping old as $REAL_DB.bak-...) ──"
+              # If $DB is a symlink (relocated DB), swap on the real file
+              # so the symlink keeps pointing at the right place. mv the
+              # real file to a backup name, then rename the new file into
+              # the real path. Same filesystem → atomic rename.
+              if [ -L "$DB" ]; then
+                local REAL_BAK="$REAL_DB.bak-$(date +%Y%m%d-%H%M)"
+                mv "$REAL_DB" "$REAL_BAK"
+                mv "$NEW" "$REAL_DB"
+                rm -f "$REAL_DB-wal" "$REAL_DB-shm"
+                echo "── Old DB preserved at: $REAL_BAK ──"
+                BAK="$REAL_BAK"
+              else
+                mv "$DB" "$BAK"
+                mv "$NEW" "$DB"
+                rm -f "$DB-wal" "$DB-shm"
+                echo "── Old DB preserved at: $BAK ──"
+              fi
               echo "── Restarting pm2 ──"
               pm2 start ${{ secrets.PM2_PROCESS_NAME }} || pm2 restart ${{ secrets.PM2_PROCESS_NAME }} || true
-              echo "── Old DB preserved at: $BAK ──"
               echo "── Verify, then delete .bak when comfortable: rm '$BAK' ──"
             }
 
