@@ -41,12 +41,16 @@
 // the model emits something absurd. The PROMPT drives correct density via
 // argument-driven reasoning; the server's only hard rule is verbatim
 // integrity. Word-boundary snap + punctuation trim = cosmetic safety.
-// Iteration-2 calibration: lowered heavy from 0.60 → 0.30 to match measured
-// gold density. Caps are SAFETY NETS — only fire when model overshoots —
-// but with 0.60 they never fired. Real gold tops out around 22% highlight.
+// Iteration-3 calibration (2026-05-03): raised underline cap from 0.65 → 0.85.
+// Long warrant paragraphs in gold cards run through 4–5 sentences
+// (Moreover/Kunsan/Osan/proximity); a 0.65 cap dropped key warrant
+// sentences. Lazy-underline threshold (0.90) still catches model laziness.
+//
+// Highlight cap stays at 0.30 — gold tops out around 22% per paragraph.
+// Bold cap raised to 0.40 to allow aggressive warrant bolding.
 const HIGHLIGHT_CAPS = { minimal: 0.18, standard: 0.25, heavy: 0.30 };
-const UNDERLINE_CAPS = { minimal: 0.45, standard: 0.55, heavy: 0.65 };
-const BOLD_CAPS      = { minimal: 0.10, standard: 0.18, heavy: 0.25 };
+const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.85 };
+const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.40 };
 
 // Maximum length of a single highlight RUN. Iteration 2 (2026-05-03):
 // dropped from 50 → 22 to match measured gold patterns (median 1.67 words

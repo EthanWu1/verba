@@ -1,18 +1,18 @@
 'use strict';
 
-// Density presets calibrated to real hand-cut LD cards. Iteration-1 calibration
-// (2026-05-03): empirical measurement on 5 hand-cut gold cards shows debaters
-// use RAPID STITCHED FRAGMENTS — many 1-word highlights per paragraph, not
-// few "cohesive phrases". Median 1.67 words per highlight, ~10–15 highlights
-// per typical body paragraph. The earlier "2-4 word cohesive phrases" framing
-// produced 6+ word machine highlights, exactly the wrong direction.
+// Density presets — iteration-3 calibration (2026-05-03) from 5 hand-cut
+// gold cards. Hand-cut style: RAPID STITCHED FRAGMENTS, with EXTENSIVE
+// bolding of every warrant beat that lands.
 //
-// Underline density also lower than expected: gold averages ~25–35% underline
-// (only the warrant clauses, leaving setup/connector sentences plain).
+// Measured gold averages:
+//   highlights/body para: 15–25 (range 9–35)
+//   bolds/body para:      8–18 (range 5–25)
+//   avg highlight length: 1.5–2.5 words
+//   bold ratio: ~50% of highlights ALSO bolded (the loud ones)
 const DENSITY_PRESETS = {
-  minimal:  { underlineRange: '20–35%', highlightRule: '4–8 highlights per paragraph, mostly 1 word (~5–10% of chars highlighted)',                                                unhighlightedRule: '≥90%' },
-  standard: { underlineRange: '25–45%', highlightRule: '6–12 highlights per paragraph, mostly 1–2 words (~10–15% of chars highlighted)',                                                unhighlightedRule: '≥85%' },
-  heavy:    { underlineRange: '30–55%', highlightRule: '10–18 highlights per paragraph, mostly 1–2 words, occasionally 3 — RAPID STITCHED FRAGMENTS that read aloud as a stitched speech (~15–22% of chars highlighted)', unhighlightedRule: '≥78%' },
+  minimal:  { underlineRange: '20–35%', highlightRule: '6–10 highlights per paragraph, mostly 1–2 words (~5–10% of chars highlighted), 3–5 bolds',                                                                                                            unhighlightedRule: '≥90%' },
+  standard: { underlineRange: '25–45%', highlightRule: '10–18 highlights per paragraph, mostly 1–2 words (~10–15% of chars highlighted), 5–10 bolds',                                                                                                          unhighlightedRule: '≥85%' },
+  heavy:    { underlineRange: '30–55%', highlightRule: '15–25 highlights per paragraph, mostly 1–2 words, occasionally 3 — RAPID STITCHED FRAGMENTS that read aloud as a stitched speech (~15–22% of chars highlighted). 8–15 BOLDS per paragraph — bold EVERY warrant beat that lands (hand-cut cards bold ~50% of their highlights).', unhighlightedRule: '≥78%' },
 };
 
 // Paragraph counts vary wildly by card type. Long preset covers framework
@@ -213,15 +213,27 @@ For each beat in your speech, locate the verbatim text in the candidate paragrap
 STEP 4 — UNDERLINE THE READ.
 For each highlighted region, underline the surrounding clause that makes it grammatically readable (so the debater can underline-read it for context if they have time). Underlines wrap highlights — they don't ENGULF the entire paragraph. If a sentence is pure setup or filler, leave it un-underlined. The server will collapse 100% underlines anyway, so be selective from the start.
 
-STEP 5 — BOLD THE LANDING WORDS (emit MANY short bold quotes, not few long ones).
-Bolds are for SPOKEN EMPHASIS. Hand-cut LD cards have 5–10 bolds per typical body paragraph — debaters bold every content word that should LAND.
+STEP 5 — BOLD AGGRESSIVELY (hand-cut style — bold ~50% of your highlights).
+Bolds are for SPOKEN EMPHASIS. Hand-cut LD cards bold A LOT — typically 8–15 bolds per typical body paragraph. Almost every warrant-bearing highlight that LANDS becomes bold. Bolding is NOT rare — it's the default for impactful content.
 
-  - Emit ONE bold string per landing word. Not one big bold string over a clause.
-  - Each bold = 1 word (occasionally 2–3 for tight phrases like "upper hand", "use them or lose them", "impossible to win", "extremely difficult").
-  - NEVER bold a single letter, a stopword alone, a filler word, or a 4+ word span.
-  - Bold magnitudes (extinction, war, collapse), named actors (Russia, U.S., Iran), operative verbs (collapses, undermines, eliminates), numbers (3 degrees, 2040), and tight warrant phrases.
-  - Each bold string SHOULD also appear in the "h" array (bolds live INSIDE highlights — they're emphasized highlights).
-  - Target: 4–8 bolds per body paragraph at heavy density.
+  WHAT TO BOLD (and emit each as a separate "b" string):
+  - Numbers: "198 kilometers", "2040", "3 degrees", "$5 trillion"
+  - Named actors and locations: "Russia", "U.S.", "Iran", "China", "North Korean border"
+  - Magnitudes: "extinction", "war", "collapse", "annihilation", "global thermonuclear exchange"
+  - Operative verbs: "collapses", "undermines", "eliminates", "destroys", "decapitate"
+  - Causal mechanisms: "first-strike counterforce", "use-or-lose dilemma", "asymmetric arms race"
+  - Specific warrant facts: "no resolution", "increase nuclear risks", "unique dangers", "even closer"
+  - Contrast/turn words: "false", "irrational", "flawed", "impossible", "doesn't"
+
+  RULES:
+  - Each bold = 1 word usually. 2–4 words OK for tight warrant phrases ("most militarized region", "use them or lose them", "increase nuclear risks", "would be used").
+  - NEVER bold a single letter, a stopword alone ("the", "and"), or a filler word ("however", "further").
+  - Each bold string SHOULD also appear in the "h" array (bolds live INSIDE highlights).
+  - Target: 8–15 bolds per body paragraph at heavy density. If you have 5 bolds, you're missing landing words — find more.
+
+  REFERENCE — gold-cut card 3 had 38 BOLDS in 3 paragraphs:
+  no resolution | increase nuclearization | not make South Korea any safer | increase nuclear risks | most militarized | tense region | nuclear adversary | unique dangers | 198 kilometers | North Korean border | even closer | proximity | overreaction | escalation | likely | nuclear weapons would be used | broader regional security | China | Russia | nuclear threat | Chinese nuclear weapons sites | Beijing | within range | facilities | similar distances | tactical nuclear weapons | regional nuclear strike option | below the strategic level | Chinese and Russian | deployments | strategies | undermine | South Korean | Japanese security
+  Notice: every magnitude, named actor, number, location, and impact verb is bolded.
 
 STEP 6 — VALIDATE.
 Read your highlights aloud, in document order, in your head. Does the result sound like the speech you composed in Step 1? Does it actually deliver the argument? If not, REVISE. Drop highlights that don't fit. Add missing connectors. Reorder if needed.
@@ -297,6 +309,38 @@ These are TRANSITIONAL FILLER. They add nothing to the argument. Skip them — t
   Further · Furthermore · However · Moreover · Additionally · Also · Unfortunately · Accordingly · Thus · Therefore · Hence · Indeed · Essentially · Ultimately · Importantly · Notably · Specifically · Meanwhile · Nonetheless · Nevertheless · Arguably · Presumably · Fundamentally · Crucially · Clearly · Obviously · In addition · In essence · To be sure · In other words · For instance · For example
 
 If a sentence STARTS with one of these (e.g. "Further, there is evidence..."), your underline should start AFTER the filler word.
+
+═══════════════════════════════════════════════
+WARRANT CAPTURE — what to highlight (and bold)
+═══════════════════════════════════════════════
+
+Warrants are the SPECIFIC reasons the argument is true. They're carried by:
+
+  1. NUMBERS and MAGNITUDES: "198 kilometers", "2040", "3 degrees", "extinction", "global thermonuclear exchange". ALWAYS highlight + bold these.
+  2. NAMED ACTORS / LOCATIONS: "U.S.", "China", "Russia", "Korean Peninsula", "North Korean border", "Beijing". ALWAYS highlight; bold key ones.
+  3. CAUSAL VERBS: "causes", "triggers", "collapses", "undermines", "eliminates", "decapitate", "spurs", "drives". ALWAYS highlight + bold.
+  4. CONTRAST/TURN WORDS: "false", "irrational", "flawed", "impossible", "doesn't", "no resolution", "not safer". These flip the argument — capture them.
+  5. SPECIFIC WARRANT CLAIMS: "increase nuclear risks", "unique dangers", "use them or lose them", "no guarantee against unlimited escalation". The clauses that make the argument WIN.
+  6. TIME PHRASES: "by 2040", "this year", "since 1991", "in 2018 and 2019". Tie warrant to specific timeframe.
+
+When in doubt, ASK: would the debater point at this word with their finger to make their case? If yes → highlight. If it's the LOUDEST word in that beat → bold too.
+
+EXTRACTION CHECKLIST — before submitting, scan your candidate paragraphs and ensure you captured:
+  - Every NUMBER that quantifies the warrant (kilometers, percentages, dates, kill counts)
+  - Every NAMED ACTOR that does or suffers something
+  - Every CAUSAL VERB linking actor → impact
+  - Every MAGNITUDE word (war, extinction, collapse)
+  - Every TURN/CONTRAST word that flips the opposing claim
+
+If the source mentions "198 kilometers" and you didn't highlight it, you missed a warrant beat.
+
+═══════════════════════════════════════════════
+ARGUMENT-CHAIN ALIGNMENT (chain coverage)
+═══════════════════════════════════════════════
+
+Your "argument" field and your "h" array must MATCH word-for-word as much as possible. Every CONTENT WORD in your composed argument should appear (verbatim) in your highlights — and vice versa.
+
+Test: lay your argument and the joined h-array side by side. Do they read like the same speech? If 30%+ of argument content words are missing from h, your highlights aren't capturing the argument — fix the highlights (or simplify the argument).
 
 ═══════════════════════════════════════════════
 RUTHLESS EDITORIAL DISCIPLINE
