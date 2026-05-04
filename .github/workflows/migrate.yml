@@ -228,14 +228,13 @@ jobs:
                 # Vacuum-new can live in either of two places depending on
                 # the workflow version: alongside server/data/ (legacy) or
                 # alongside the relocated DB at /mnt/volume/backfiles/.
-                local DB="server/data/library.db"
-                local REAL_DB
-                REAL_DB=$(readlink -f "$DB" 2>/dev/null || echo "$DB")
-                local LEGACY="server/data/library.db.vacuum-new"
-                local SIDECAR="$(dirname "$REAL_DB")/library.db.vacuum-new"
+                DB_PATH="server/data/library.db"
+                REAL_DB=$(readlink -f "$DB_PATH" 2>/dev/null || echo "$DB_PATH")
+                LEGACY="server/data/library.db.vacuum-new"
+                SIDECAR="$(dirname "$REAL_DB")/library.db.vacuum-new"
                 for p in "$LEGACY" "$SIDECAR"; do
                   if [ -f "$p" ]; then
-                    echo "  rm $p ($(du -h "$p" | cut -f1))"
+                    echo "  rm $p ($(du -h "$p" 2>/dev/null | cut -f1))"
                     rm -f "$p"
                   fi
                 done
