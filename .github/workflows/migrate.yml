@@ -21,6 +21,8 @@ on:
           - dry-run-containment        # preview only, no DB writes
           - vacuum                     # offline-VACUUM the prod DB (~30-60 min, brief downtime)
           - cleanup                    # delete orphan vacuum-new file + restart pm2
+          - disk-audit                 # READ-ONLY: list biggest files/dirs eating space
+          - free-disk                  # delete known-safe junk (logs, npm cache, etc.) — prints before/after
 
 concurrency:
   group: migrate-prod
@@ -115,6 +117,62 @@ jobs:
                 df -h server/data/ || true
                 pm2 restart ${{ secrets.PM2_PROCESS_NAME }} --update-env || pm2 start ${{ secrets.PM2_PROCESS_NAME }} || true
                 pm2 list || true
+                ;;
+              disk-audit)
+                echo "── df -h ──"
+                df -h
+                echo
+                echo "── server/data/ contents ──"
+                du -h --max-depth=1 server/data/ 2>/dev/null | sort -h | tail -20 || true
+                echo
+                echo "── biggest files in server/data/ ──"
+                find server/data/ -maxdepth 2 -type f -size +50M -exec ls -lh {} \; 2>/dev/null | sort -k5 -h | tail -20 || true
+                echo
+                echo "── npm/cache dirs ──"
+                du -sh ~/.npm 2>/dev/null || true
+                du -sh ~/.cache 2>/dev/null || true
+                du -sh ~/.pm2/logs/ 2>/dev/null || true
+                du -sh /tmp 2>/dev/null || true
+                echo
+                echo "── git pack files (in case repo is bloated) ──"
+                du -sh .git 2>/dev/null || true
+                ;;
+              free-disk)
+                echo "── df -h BEFORE ──"
+                df -h server/data/ || true
+                echo
+                echo "── Removing known-safe junk ──"
+
+                # Old classifier/debug logs in server/data
+                ls -lh server/data/classify*.log 2>/dev/null || echo "(no classify logs)"
+                rm -f server/data/classify*.log
+
+                # Stale blockfile artifacts (regeneratable)
+                ls -lh server/data/blockfile-* 2>/dev/null | head -10 || echo "(no blockfile artifacts)"
+                rm -f server/data/blockfile-corpus.jsonl
+                # Keep manifest + analysis (small, occasionally referenced)
+
+                # Old DB backups from prior migrations
+                ls -lh server/data/library.db.bak-* 2>/dev/null || echo "(no .bak files)"
+                # Conservative: only delete .bak older than 14 days
+                find server/data/ -maxdepth 1 -name 'library.db.bak-*' -mtime +14 -print -delete 2>/dev/null || true
+
+                # Any leftover vacuum-new (defense in depth)
+                rm -f server/data/library.db.vacuum-new
+
+                # Rotated pm2 logs older than 14 days
+                find ~/.pm2/logs/ -name '*.log.gz' -mtime +14 -print -delete 2>/dev/null || true
+                find ~/.pm2/logs/ -name '*__*' -mtime +14 -print -delete 2>/dev/null || true
+
+                # npm cache (rebuilt on next install)
+                npm cache clean --force 2>/dev/null || true
+
+                # /tmp items >7 days old
+                find /tmp -maxdepth 2 -mtime +7 -print -delete 2>/dev/null | head -20 || true
+
+                echo
+                echo "── df -h AFTER ──"
+                df -h server/data/ || true
                 ;;
               *) echo "Unknown step: $STEP"; exit 1 ;;
             esac
