@@ -479,6 +479,31 @@ THE CONNECTOR-INCLUSION RULE:
 - Articles ("the", "a") — INCLUDE when they're inside a noun phrase you're highlighting.
 - Adjectives — never highlight alone; ALWAYS include the noun they modify ("conventional capability", not "conventional").
 
+THE SUBJECT-BEFORE-VERB RULE — CRITICAL:
+Verb phrases ("improved dramatically", "expanded rapidly", "negatively affects strategic stability", "easier to expand", "would be used") need their SUBJECT to make sense. Highlight the subject + verb together, OR highlight the subject in a SEPARATE highlight that comes RIGHT BEFORE the verb in the chain.
+
+  ❌ Verb without subject:
+     Source: "North Korea's nuclear weapons capabilities have improved dramatically, and its arsenal of particularly short-range missiles has expanded rapidly."
+     BAD chain:  "improved dramatically ... expanded rapidly"   (improved WHAT? expanded WHAT?)
+     GOOD chain: "North Korea's nuclear weapons capabilities ... improved dramatically ... arsenal of particularly short-range missiles ... expanded rapidly"
+
+  ❌ Verb without its passive subject:
+     Source: "conventional counterforce on the Korean Peninsula has become almost impossible to operationalize"
+     BAD highlight: "almost impossible to operationalize"   (operationalize WHAT?)
+     GOOD: "conventional counterforce ... almost impossible to operationalize"
+
+  ❌ Verb without explicit subject:
+     Source: "the conventional deterrence strategy negatively affects strategic stability"
+     BAD highlight: "negatively affects strategic stability"   (WHAT negatively affects?)
+     GOOD: "the conventional deterrence strategy negatively affects strategic stability"
+
+  ❌ Comparative without comparison:
+     Source: "it is much easier for North Korea to expand its nuclear weapons program than it is for South Korea to maintain conventional capabilities"
+     BAD highlight: "easier for North Korea to expand its nuclear weapons program"   (easier than what?)
+     GOOD: "easier for North Korea to expand its nuclear weapons program ... than for South Korea to maintain conventional capabilities"
+
+The pattern: **never strip a verb phrase from its subject, never strip a comparative from its comparison.** The chain must read as a complete clause, not a sentence fragment.
+
 COHERENCE PATTERNS BY CARD TYPE:
 
 K / KRITIK cards — chain reads as a sequence of THEORETICAL CLAIMS. Each highlight is a complete claim or concept-flag. Repetition of the core concept (preconscious / fantasy / atomic genocide) is GOOD — the same word appearing 5 times anchors the K. But each instance still needs to be a complete grammatical unit:
