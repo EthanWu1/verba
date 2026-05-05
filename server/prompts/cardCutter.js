@@ -479,6 +479,34 @@ THE CONNECTOR-INCLUSION RULE:
 - Articles ("the", "a") — INCLUDE when they're inside a noun phrase you're highlighting.
 - Adjectives — never highlight alone; ALWAYS include the noun they modify ("conventional capability", not "conventional").
 
+COHERENCE PATTERNS BY CARD TYPE:
+
+K / KRITIK cards — chain reads as a sequence of THEORETICAL CLAIMS. Each highlight is a complete claim or concept-flag. Repetition of the core concept (preconscious / fantasy / atomic genocide) is GOOD — the same word appearing 5 times anchors the K. But each instance still needs to be a complete grammatical unit:
+
+  ❌ BAD K chain (disconnected concepts):
+     "racialized ... violence ... hierarchy ... fantasies ... genocide"
+  ✅ GOOD K chain (full claim phrases):
+     "racialized violence and hierarchy ... change the politics of white supremacy ... spawn new fantasies of atomic genocide"
+
+  ❌ BAD K chain (verb stripped of subject):
+     "represses ... sorrow ... heartbreak"
+  ✅ GOOD K chain (subject preserved):
+     "structure of grammar represses ... sorrow ... heartbreak ... unconscious wants fantasies"
+
+PHIL / FRAMEWORK cards — chain reads as SYLLOGISM PREMISES. Each highlight is a normative claim or inferential step. Don't strip the logical connectors:
+
+  ❌ BAD phil chain (premises disconnected):
+     "Kantian ... peace ... UN ... 150 years"
+  ✅ GOOD phil chain (premises connected):
+     "evaluating the UN in light of Kantian standards ... 150 years after Kantian thoughts on perpetual peace ... visible traces in every stage"
+
+TRICK cards — chain reads as DENSE LOGICAL CLAIMS. Every step of the trick's logic must be self-contained. Skip nothing the trick relies on:
+
+  ❌ BAD trick chain (steps missing):
+     "logic ... necessary ... outweighs"
+  ✅ GOOD trick chain (full categorical claim):
+     "paraconsistent logic is self-evident ... contradiction explode into total triviality ... outweighs on proximity"
+
 ═══════════════════════════════════════════════
 WARRANT CAPTURE — what to highlight (and bold)
 ═══════════════════════════════════════════════
