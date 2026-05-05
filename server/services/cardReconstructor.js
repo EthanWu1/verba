@@ -58,11 +58,11 @@ const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.40 };
 // "within a severely constrained time frame" to survive without chopping.
 // User feedback: chopping these into 2-word fragments destroys read-aloud
 // coherence (highlights need their connector words to make sense).
-const MAX_HIGHLIGHT_RUN_CHARS = 30;
-// Bolds should be SHORT. Real cards bold single words usually, 2-3 max,
-// for spoken emphasis. 14 chars covers "use them or" / "upper hand" /
-// "extremely diff…" — anything longer is clause-marking, not emphasis.
-const MAX_BOLD_RUN_CHARS = 14;
+const MAX_HIGHLIGHT_RUN_CHARS = 45;
+// Bolds should be SHORT for spoken emphasis. Iter 2: 18→14, iter 33: 14→22
+// to allow 3-4 word landing phrases like "would have to strike", "negatively
+// affects strategic", "more offensive action" without chopping.
+const MAX_BOLD_RUN_CHARS = 22;
 // Bolds shorter than this are almost always off-by-one slips ("e" of
 // "extreme", "s" of "weapons") — drop them.
 const MIN_BOLD_RUN_CHARS = 2;
@@ -114,7 +114,7 @@ function mergeSpans(spans) {
 // fragments (which intentionally split a >22-char range into 2-word chunks)
 // don't get re-merged into one big run. Pass MAX_HIGHLIGHT_RUN_CHARS for
 // highlights, MAX_BOLD_RUN_CHARS for bolds, Infinity for underlines.
-const BRIDGE_PUNCT_ONLY = /^[\s'‘’′\-]*$/;
+const BRIDGE_PUNCT_ONLY = /^[\s'‘’′\-,]*$/;   // includes comma
 const BRIDGE_POSSESSIVE = /^['‘’]s\s*$/;
 
 function isBridgeableGap(gap) {
@@ -134,7 +134,7 @@ function bridgeAdjacentSpans(spans, text, maxLen = Infinity) {
     }
     const gap = String(text || '').slice(last[1], cur[0]);
     const wouldBe = cur[1] - last[0];
-    if (gap.length <= 3 && isBridgeableGap(gap) && wouldBe <= maxLen) {
+    if (gap.length <= 5 && isBridgeableGap(gap) && wouldBe <= maxLen) {
       last[1] = cur[1];
     } else {
       out.push(cur.slice());

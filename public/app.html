@@ -416,6 +416,15 @@ body.hl-green .today-h1 .mark{background:linear-gradient(180deg, transparent 60%
 .shrink{font-size:8pt;color:#9CA3AF;line-height:1.5}
 .lib-pv-body p{margin:0 0 16px}
 
+/* Card body paragraph rendering — Verbatim convention: plain (non-underlined)
+   context text is shrunk to 8pt so the read-aloud (underlined) parts visually
+   dominate. Underlined / bold-underlined / highlighted spans override back
+   to normal reading size. */
+.vb-card-para{font-size:8pt;color:#9CA3AF;line-height:1.55}
+.vb-card-para .fmt-underline,
+.vb-card-para .fmt-verbatimize,
+.vb-card-para .fmt-highlight{font-size:13.5px;color:var(--ink);line-height:1.65}
+
 /* Copy-success state */
 .btn.copied{background:var(--ok)!important;color:#fff!important;border-color:var(--ok)!important;transition:background .14s, color .14s, border-color .14s}
 .btn.copied svg{stroke:#fff}

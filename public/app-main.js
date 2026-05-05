@@ -434,7 +434,10 @@
       p = p.replace(/\*\*/g, '');
       p = p.replace(/\[FIGURE OMITTED\]/g, '<span class="figure-omitted">[FIGURE OMITTED]</span>');
       p = p.replace(/\n/g, '<br>');
-      return '<p>' + p + '</p>';
+      // vb-card-para class: shrinks plain (non-underlined) text to 8pt; the
+      // .fmt-underline / .fmt-verbatimize / .fmt-highlight spans inside
+      // override back to readable size via app.html CSS.
+      return '<p class="vb-card-para">' + p + '</p>';
     }).join('');
     return out || '<p><br></p>';
   }
