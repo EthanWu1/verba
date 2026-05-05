@@ -464,23 +464,30 @@ test('reconstructCard: drops single-char and stopword bolds in pipeline', () => 
 });
 
 test('reconstructCard: trims filler prefix from highlight', () => {
+  // Padding to a realistic paragraph length so the highlight cap doesn't
+  // drop the only highlight (cap is % of paragraph, so a 30-char highlight
+  // in a 50-char paragraph exceeds it).
+  const sentence1 = 'First, conventional counterforce is hard to deploy. ';
+  const filler = 'There are many reasons why this is the case in modern military strategy and policy. '.repeat(3);
+  const text = sentence1 + filler;
   const candidates = [
-    { index: 0, originalIndex: 0, text: 'First, conventional counterforce is hard to deploy.' },
+    { index: 0, originalIndex: 0, text },
   ];
   const picksJson = {
     tag: 'test', cite: 'X', argument: 'conventional counterforce is hard',
     picks: [{
       p: 0,
-      u: [[0, 51]],
+      u: [[0, text.length]],
       h: [[0, 33]],   // span includes "First, conventional counterforce"
       b: [],
     }],
   };
   const out = reconstructCard({ picksJson, candidates, density: 'heavy' });
   // The highlight must NOT include "First," — should start at "conventional".
-  // (After iter-2 splitter, "conventional counterforce" may be split into
-  //  "conventional" and "counterforce" so we check "==conventional==" alone.)
-  assert.ok(/==conventional==?/.test(out.body_markdown),
+  // The phrase "conventional counterforce" may stay whole (with bumped
+  // 30-char cap) or be split into 2-word fragments. Either way, the
+  // highlighted region must START at "conventional".
+  assert.ok(/==conventional( |=)/.test(out.body_markdown),
     `highlight should start at "conventional", got: ${out.body_markdown}`);
   assert.ok(!/==First,? conventional/.test(out.body_markdown),
     `highlight must not include "First," prefix, got: ${out.body_markdown}`);

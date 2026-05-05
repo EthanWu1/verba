@@ -237,8 +237,8 @@ Bolds are for SPOKEN EMPHASIS. Hand-cut LD cards bold A LOT — typically 8–15
   no resolution | increase nuclearization | not make South Korea any safer | increase nuclear risks | most militarized | tense region | nuclear adversary | unique dangers | 198 kilometers | North Korean border | even closer | proximity | overreaction | escalation | likely | nuclear weapons would be used | broader regional security | China | Russia | nuclear threat | Chinese nuclear weapons sites | Beijing | within range | facilities | similar distances | tactical nuclear weapons | regional nuclear strike option | below the strategic level | Chinese and Russian | deployments | strategies | undermine | South Korean | Japanese security
   Notice: every magnitude, named actor, number, location, and impact verb is bolded.
 
-STEP 6 — VALIDATE.
-Read your highlights aloud, in document order, in your head. Does the result sound like the speech you composed in Step 1? Does it actually deliver the argument? If not, REVISE. Drop highlights that don't fit. Add missing connectors. Reorder if needed.
+STEP 6 — VALIDATE READ-ALOUD COHERENCE.
+Read your highlights aloud, in document order, in your head, joined by " ... ". Does it form GRAMMATICAL ENGLISH that makes sense ON ITS OWN, without reference to the surrounding plain text? If a highlight needs a preposition / verb / context noun from the surrounding text to make sense, EXTEND that highlight to include the connector. If a highlight doesn't add a new warrant beat (just restates what an earlier highlight already said), DROP it. See the READ-ALOUD COHERENCE section below for concrete failure patterns.
 
 ═══════════════════════════════════════════════
 WIRE FORMAT — argument FIRST, picks SECOND
@@ -427,6 +427,57 @@ Source sentence: "There's no evidence that threats from North Korea have abated.
 THE FILTER: read each candidate sentence twice.
   - First pass: skip sentences that are pure background ("As Shampa Biswas illustrates...", "After this period...", "In his first term...").
   - Second pass: in remaining warrant-bearing sentences, highlight ONLY the words that carry the warrant (the impact, the mechanism, the magnitude, the contrast).
+
+═══════════════════════════════════════════════
+READ-ALOUD COHERENCE — chain must form COHERENT SPEECH
+═══════════════════════════════════════════════
+
+THE MOST IMPORTANT RULE: when your h-array is read in document order with " ... " between each highlight, it MUST form GRAMMATICAL ENGLISH that makes sense ON ITS OWN. Each highlight must be a SELF-CONTAINED phrase — not an isolated content word that needs surrounding context to make sense.
+
+THE SELF-CONTAINMENT TEST: for each highlight, ask: "if I read this aloud without the surrounding plain text, does it make sense?" If no, EXTEND it to include the connector words that make it stand alone.
+
+CONCRETE FAILURE PATTERNS (real production failures — never do these):
+
+❌ Isolated adjective without its noun:
+   Source: "conventional capability South Korea introduces"
+   BAD highlight: "conventional"   (adjective floating alone)
+   GOOD highlight: "conventional capability"   (adjective + noun)
+
+❌ Noun phrase without its preposition:
+   Source: "severely impact crisis stability on the Korean Peninsula"
+   BAD chain:  "severely impact ... crisis stability ... Korean Peninsula"   (no link between stability and Peninsula)
+   GOOD chain: "severely impact ... crisis stability ... on the Korean Peninsula"   (preserves "on the")
+
+❌ Verb without its object/qualifier:
+   Source: "conventional counterforce is extremely difficult to enact, even against a weak nuclear adversary"
+   BAD chain:  "conventional ... extremely difficult ... nuclear adversary"   (no link, "against" missing)
+   GOOD chain: "conventional counterforce ... extremely difficult ... against a weak nuclear adversary"   (full warrant flows)
+
+❌ Verb in passive voice without subject context:
+   Source: "conventional counterforce on the Korean Peninsula has become almost impossible to operationalize"
+   BAD highlight: "almost impossible to operationalize"   (operationalize WHAT?)
+   GOOD highlight: "conventional counterforce ... almost impossible to operationalize"   (subject preserved)
+
+❌ Magnitude phrase without verb/preposition link:
+   Source: "South Korea would have to strike possibly hundreds, if not thousands, of targets within a severely constrained time frame"
+   BAD chain:  "hundreds, if not thousands ... severely constrained time frame"   (jumps from numbers to time, no verb)
+   GOOD chain: "South Korea would have to strike ... thousands of targets ... within a severely constrained time frame"   (preserves "would have to strike" and "within")
+
+❌ Impact verb without its actor and reasoning:
+   Source: "North Korean leaders would potentially have incentives to use nuclear weapons early, facing a 'use them or lose them' dilemma"
+   BAD chain:  "use nuclear weapons early ... use them or lose them"   (no actor, no causal link)
+   GOOD chain: "North Korean leaders ... incentives to use nuclear weapons early ... facing a 'use them or lose them' dilemma"   (actor + cause both included)
+
+❌ Generic causal phrase with no context:
+   Source: "an entirely predictable response to South Korea's threats against North Korean leaders"
+   BAD highlight: "predictable response to South Korea's threats"   (response to what cause? could mean anything)
+   ✅ Better: SKIP this beat entirely if the chain is already complete. Don't highlight what doesn't add a NEW warrant beat.
+
+THE CONNECTOR-INCLUSION RULE:
+- Prepositions ("on", "to", "of", "from", "against", "within", "by") — INCLUDE in the highlight when they tie the next noun phrase to the warrant.
+- Auxiliary/modal verbs ("would have to", "is", "has become", "could") — INCLUDE when they tie the actor to the action.
+- Articles ("the", "a") — INCLUDE when they're inside a noun phrase you're highlighting.
+- Adjectives — never highlight alone; ALWAYS include the noun they modify ("conventional capability", not "conventional").
 
 ═══════════════════════════════════════════════
 WARRANT CAPTURE — what to highlight (and bold)
