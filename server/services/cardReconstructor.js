@@ -52,11 +52,13 @@ const HIGHLIGHT_CAPS = { minimal: 0.18, standard: 0.25, heavy: 0.30 };
 const UNDERLINE_CAPS = { minimal: 0.55, standard: 0.70, heavy: 0.85 };
 const BOLD_CAPS      = { minimal: 0.15, standard: 0.25, heavy: 0.40 };
 
-// Maximum length of a single highlight RUN. Iteration 2 (2026-05-03):
-// dropped from 50 → 22 to match measured gold patterns (median 1.67 words
-// per highlight ≈ ~10 chars). Long model spans get split into multiple
-// short fragments via splitOversizeHighlight rather than naive trim.
-const MAX_HIGHLIGHT_RUN_CHARS = 22;
+// Maximum length of a single highlight RUN. Iter 2: 50 → 22 (match median
+// gold word-count). Iter 32 (2026-05-04): 22 → 30 to allow 4-5 word warrant
+// phrases like "conventional counterforce", "would have to strike",
+// "within a severely constrained time frame" to survive without chopping.
+// User feedback: chopping these into 2-word fragments destroys read-aloud
+// coherence (highlights need their connector words to make sense).
+const MAX_HIGHLIGHT_RUN_CHARS = 30;
 // Bolds should be SHORT. Real cards bold single words usually, 2-3 max,
 // for spoken emphasis. 14 chars covers "use them or" / "upper hand" /
 // "extremely diff…" — anything longer is clause-marking, not emphasis.
