@@ -230,8 +230,15 @@ async function cutCardV2({
   //      "unfortunately") that should be skipped entirely.
   // Quality bar: coverage ≥ 0.55, bloat ≤ 0.40, filler == 0. If any
   // fails AND fallback model is different, retry with explicit critique.
+  // Iter 34 (2026-05-05): bumped CHAIN_BLOAT_MAX from 0.40 → 0.65 to match
+  // the new SUBJECT-BEFORE-VERB / connector-inclusive chains. Haiku now
+  // produces longer warrant phrases (subject + verb + context words) per
+  // coherence rules, which mathematically inflates "bloat" because
+  // connector words aren't in the short argument summary. Sonnet retries
+  // were firing on every cut, ~5x cost increase. Loosened gate so Haiku
+  // passes when quality is good.
   const CHAIN_COVERAGE_MIN = 0.55;
-  const CHAIN_BLOAT_MAX    = 0.40;
+  const CHAIN_BLOAT_MAX    = 0.65;
   const initialChain = extractReadAloudChain(llmResult.json, candidates);
   const initialArgument = String(llmResult.json?.argument || '').trim();
   const initialScore = chainArgumentScore(initialArgument, initialChain);
